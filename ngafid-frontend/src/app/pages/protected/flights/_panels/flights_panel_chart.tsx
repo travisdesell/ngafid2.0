@@ -123,6 +123,16 @@ type ChartModel = {
     data: Array<Record<string, number | string>>;
     config: ChartConfig;
     seriesKeys: string[];
+    seriesFlightIDByKey: Record<string, number>;
+    eventOverlays: Array<{
+        id: string;
+        flightId: number;
+        eventName: string;
+        severity: number;
+        x1: number;
+        x2: number;
+        color: string;
+    }>;
     xMin: number;
     xMax: number;
     yMin: number;
@@ -135,6 +145,8 @@ const buildEmptyChartModel = (loading: boolean): ChartModel => ({
     data: [],
     config: {} as ChartConfig,
     seriesKeys: [],
+    seriesFlightIDByKey: {},
+    eventOverlays: [],
     xMin: 0,
     xMax: 0,
     yMin: 0,
@@ -431,6 +443,33 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
     const timeLabelFormatter = (label: any) => {
 
         const numericLabel = Number(label);
+        const overlayTolerance = (useAlignedStartTimes ? 0.001 : 1); // ~1ms for absolute mode
+
+        const activeEventNames = Array.from(
+            new Set(
+                chartModel.eventOverlays
+                    .filter((overlay) => (
+                        numericLabel >= (overlay.x1 - overlayTolerance)
+                        && numericLabel <= (overlay.x2 + overlayTolerance)
+                    ))
+                    .map((overlay) => overlay.eventName),
+            ),
+        ).sort((a, b) => a.localeCompare(b));
+
+        const activeEventsSummary = (() => {
+            if (activeEventNames.length === 0)
+                return null;
+
+            const maxNames = 3;
+            const shown = activeEventNames.slice(0, maxNames).join(", ");
+            const remaining = activeEventNames.length - maxNames;
+
+            return remaining > 0
+                ? `${shown} (+${remaining} more)`
+                : shown;
+        })();
+
+        let timeLabelOut: string;
 
         if (useAlignedStartTimes) {
 
@@ -450,20 +489,29 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
                 : `${pad(hours)}:${pad(minutes)}`;
 
-            return `Elapsed ${timePart}`;
+            timeLabelOut = `Elapsed ${timePart}`;
+
+        } else {
+
+            const date = new Date(numericLabel);
+            timeLabelOut = date.toLocaleTimeString(undefined, {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+            });
 
         }
 
-        const date = new Date(numericLabel);
-        return date.toLocaleTimeString(undefined, {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-        });
+        if (!activeEventsSummary)
+            return timeLabelOut;
+
+        return (
+            <div>{timeLabelOut}</div>
+        );
 
     };
 
@@ -558,9 +606,109 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                             <ChartTooltipContent
                                 className={isInteracting ? "opacity-0" : ""}
                                 labelFormatter={timeLabelFormatter}
+                                formatter={(value, name, item: any, index, payload) => {
+
+                                    const row = item?.payload as Record<string, number | string> | undefined;
+                                    const time = Number(row?.time ?? Number.NaN);
+                                    const seriesKey = String(item?.dataKey ?? "");
+                                    const flightId = chartModel.seriesFlightIDByKey[seriesKey];
+                                    const displayName = String(chartModel.config[seriesKey]?.label ?? name ?? seriesKey);
+                                    const seriesColor = String(item?.color ?? chartModel.config[seriesKey]?.color ?? "currentColor");
+
+                                    const rowValue = Number(value ?? 0);
+                                    const formattedValue = Number.isFinite(rowValue)
+                                        ? rowValue.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                                        : String(value ?? "");
+
+                                    const overlayTolerance = (useAlignedStartTimes ? 0.001 : 1);
+
+                                    const activeEventsForFlight = (
+                                        Number.isFinite(time) && Number.isFinite(flightId)
+                                    )
+                                        ? chartModel.eventOverlays
+                                            .filter((overlay) => (
+                                                overlay.flightId === flightId
+                                                && time >= (overlay.x1 - overlayTolerance)
+                                                && time <= (overlay.x2 + overlayTolerance)
+                                            ))
+                                        : [];
+
+                                    const firstRowForFlight = (() => {
+                                        if (!Number.isFinite(flightId))
+                                            return true;
+
+                                        const seenFlightIDs = new Set<number>();
+
+                                        for (let i = 0; i < payload.length; i++) {
+
+                                            const payloadItem = payload[i] as any;
+                                            const payloadSeriesKey = String(payloadItem?.dataKey ?? "");
+                                            const payloadFlightID = chartModel.seriesFlightIDByKey[payloadSeriesKey];
+
+                                            if (Number.isFinite(payloadFlightID) && !seenFlightIDs.has(payloadFlightID)) {
+                                                seenFlightIDs.add(payloadFlightID);
+
+                                                if (payloadFlightID === flightId)
+                                                    return i === index;
+                                            }
+
+                                        }
+
+                                        return true;
+                                    })();
+
+                                    return (
+                                        <div className="grid w-full gap-1">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className="inline-block h-2 w-2 rounded-[2px]"
+                                                        style={{ backgroundColor: seriesColor }}
+                                                    />
+                                                    <span className="text-muted-foreground">{displayName}</span>
+                                                </div>
+                                                <span className="text-foreground font-mono font-medium tabular-nums">{formattedValue}</span>
+                                            </div>
+                                            {
+                                                firstRowForFlight && activeEventsForFlight.length > 0
+                                                    ? (
+                                                        <div className="ml-3 grid gap-0.5 text-[10px] text-muted-foreground/90">
+                                                            {
+                                                                activeEventsForFlight.map((overlay) => (
+                                                                    <div key={overlay.id} className="flex items-center gap-1.5">
+                                                                        <span
+                                                                            className="inline-block h-1.5 w-1.5 rounded-full"
+                                                                            style={{ backgroundColor: overlay.color }}
+                                                                        />
+                                                                        <span>{`${overlay.eventName} (${overlay.severity.toFixed(2)})`}</span>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                    )
+                                                    : null
+                                            }
+                                        </div>
+                                    );
+                                }}
                             />
                         }
                     />
+                    {
+                        chartModel.eventOverlays.map((overlay) => (
+                            <ReferenceArea
+                                key={overlay.id}
+                                x1={overlay.x1}
+                                x2={overlay.x2}
+                                y1={activeYDomain ? activeYDomain[0] : chartModel.yMin}
+                                y2={activeYDomain ? activeYDomain[1] : chartModel.yMax}
+                                ifOverflow="hidden"
+                                stroke="none"
+                                fill={overlay.color}
+                                fillOpacity={0.22}
+                            />
+                        ))
+                    }
                     {
                         chartModel.seriesKeys.map((key) => (
                             <Line
@@ -612,6 +760,7 @@ export function FlightsPanelChart() {
         chartFlights,
         setChartFlights,
         chartSelection,
+        eventSelection,
         chartData,
         ensureSeries,
         toggleUniversalParam,
@@ -659,6 +808,32 @@ export function FlightsPanelChart() {
         return result;
 
     }, [chartFlights, chartSelection]);
+
+    // Map flightId to selected event names (union of universal and per-flight events)
+    const selectedEventsByFlight = useMemo(() => {
+
+        const result: Record<number, Set<string>> = {};
+        const universal = eventSelection.universalEvents;
+        const perFlight = eventSelection.perFlightEvents;
+
+        for (const flight of chartFlights) {
+
+            const names = new Set<string>();
+
+            universal.forEach((name) => names.add(name));
+
+            const perSet = perFlight[flight.id];
+            if (perSet)
+                perSet.forEach((name) => names.add(name));
+
+            if (names.size > 0)
+                result[flight.id] = names;
+
+        }
+
+        return result;
+
+    }, [chartFlights, eventSelection]);
 
     const hasAnySelectedParams = useMemo(
         () => Object.values(selectedParamsByFlight).some((list) => list.length > 0),
@@ -965,6 +1140,9 @@ export function FlightsPanelChart() {
         });
 
         const seriesKeys = preparedSeries.map((s) => s.seriesKey);
+        const seriesFlightIDByKey = Object.fromEntries(
+            activeSeries.map((entry) => [entry.seriesKey, entry.flight.id]),
+        ) as Record<string, number>;
         const config = buildChartConfig(activeSeries);
 
         // Compute global Y domain across all series
@@ -986,6 +1164,163 @@ export function FlightsPanelChart() {
             yMax = 0;
         }
 
+        const selectedEventNames = Array.from(
+            new Set(
+                Object.values(selectedEventsByFlight)
+                    .flatMap((set) => Array.from(set)),
+            ),
+        ).sort((a, b) => a.localeCompare(b));
+
+        // Keep one representative timestamps array per flight for event line-index mapping.
+        const representativeTimestampsByFlight = new Map<number, number[]>();
+        for (const entry of activeSeries) {
+
+            const candidate = entry.series.timestamps ?? [];
+            if (candidate.length === 0)
+                continue;
+
+            const current = representativeTimestampsByFlight.get(entry.flight.id);
+            if (!current || candidate.length > current.length)
+                representativeTimestampsByFlight.set(entry.flight.id, candidate);
+
+        }
+
+        const eventColorByName = new Map<string, string>();
+        selectedEventNames.forEach((eventName, idx) => {
+
+            if (useHighContrastCharts) {
+                eventColorByName.set(eventName, `var(--chart-hc-${(idx % 12) + 1})`);
+                return;
+            }
+
+            const denominator = Math.max(1, selectedEventNames.length - 1);
+            const hue = Math.round((idx / denominator) * 360);
+            eventColorByName.set(eventName, `hsl(${hue} 85% 56%)`);
+
+        });
+
+        const eventOverlays: ChartModel["eventOverlays"] = [];
+
+        for (const flight of chartFlights) {
+
+            const selectedNames = selectedEventsByFlight[flight.id];
+            if (!selectedNames || selectedNames.size === 0)
+                continue;
+
+            if (!flight.events || !flight.eventDefinitions)
+                continue;
+
+            const definitionNameByID = new Map<number, string>();
+            for (const definition of flight.eventDefinitions)
+                definitionNameByID.set(definition.id, definition.name);
+
+            const flightStartMS = flightStartMsById.get(flight.id);
+            const representativeTimestamps = representativeTimestampsByFlight.get(flight.id) ?? [];
+
+            for (const event of flight.events) {
+
+                const eventName = definitionNameByID.get(event.eventDefinitionId);
+                if (!eventName || !selectedNames.has(eventName))
+                    continue;
+
+                let x1: number;
+                let x2: number;
+
+                const startLine = Number(event.startLine);
+                const endLine = Number(event.endLine);
+
+                const lineIndicesUsable = (
+                    representativeTimestamps.length > 0
+                    && Number.isFinite(startLine)
+                    && Number.isFinite(endLine)
+                    && startLine >= 0
+                    && endLine >= 0
+                    && startLine < representativeTimestamps.length
+                );
+
+                if (lineIndicesUsable) {
+
+                    const startIndex = Math.floor(startLine);
+                    const endIndexRaw = Math.floor(endLine);
+
+                    // Use one point beyond end index (when available) for a full event span.
+                    const endIndex = Math.min(
+                        Math.max(endIndexRaw + 1, startIndex),
+                        representativeTimestamps.length - 1,
+                    );
+
+                    const tStart = representativeTimestamps[startIndex];
+                    const tEnd = representativeTimestamps[endIndex];
+
+                    if (!Number.isFinite(tStart) || !Number.isFinite(tEnd))
+                        continue;
+
+                    if (useAlignedStartTimes) {
+                        x1 = tStart;
+                        x2 = tEnd;
+                    } else {
+                        if (flightStartMS === undefined || Number.isNaN(flightStartMS))
+                            continue;
+
+                        x1 = flightStartMS + tStart * 1_000;
+                        x2 = flightStartMS + tEnd * 1_000;
+                    }
+
+                } else {
+
+                    // Fallback for unusual data where line indices are unavailable.
+                    const startMS = Date.parse(String(event.startTime));
+                    const endMS = Date.parse(String(event.endTime));
+
+                    if (!Number.isFinite(startMS) || !Number.isFinite(endMS))
+                        continue;
+
+                    if (useAlignedStartTimes) {
+
+                        if (flightStartMS === undefined || Number.isNaN(flightStartMS))
+                            continue;
+
+                        x1 = (startMS - flightStartMS) / 1000;
+                        x2 = (endMS - flightStartMS) / 1000;
+
+                    } else {
+
+                        x1 = startMS;
+                        x2 = endMS;
+
+                    }
+
+                }
+
+                if (!Number.isFinite(x1) || !Number.isFinite(x2))
+                    continue;
+
+                if (x2 < x1) {
+                    const temp = x1;
+                    x1 = x2;
+                    x2 = temp;
+                }
+
+                // Ensure zero-length events remain visible.
+                if (x1 === x2)
+                    x2 = x1 + (useAlignedStartTimes ? 0.25 : 250);
+
+                eventOverlays.push({
+                    id: `evt-${flight.id}-${event.id}-${event.eventDefinitionId}`,
+                    flightId: flight.id,
+                    eventName,
+                    severity: Number.isFinite(event.severity) ? event.severity : 0,
+                    x1,
+                    x2,
+                    color: eventColorByName.get(eventName) ?? "var(--warning)",
+                });
+
+            }
+
+        }
+
+        eventOverlays.sort((a, b) => (a.x1 - b.x1) || (a.x2 - b.x2));
+
         log("Built chart config and base domains: ", {
             xMin,
             xMax,
@@ -993,6 +1328,7 @@ export function FlightsPanelChart() {
             yMax,
             seriesCount: seriesKeys.length,
             pointCount: data.length,
+            eventOverlayCount: eventOverlays.length,
         });
 
         return {
@@ -1001,6 +1337,8 @@ export function FlightsPanelChart() {
             data,
             config,
             seriesKeys,
+            seriesFlightIDByKey,
+            eventOverlays,
             xMin,
             xMax,
             yMin,
@@ -1011,6 +1349,7 @@ export function FlightsPanelChart() {
         hasAnySelectedParams,
         chartFlights,
         selectedParamsByFlight,
+        selectedEventsByFlight,
         chartData.seriesByFlight,
         useHighContrastCharts,
         flightStartMsById,
