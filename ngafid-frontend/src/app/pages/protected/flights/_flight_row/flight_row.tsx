@@ -14,7 +14,7 @@ import { useFlightsChart } from "@/pages/protected/flights/_flights_context_char
 import { useFlightsSearchFilter } from "@/pages/protected/flights/_flights_context_search_filter";
 import { addFlightToChart } from "@/pages/protected/flights/chart_data";
 import { type Flight } from "@/pages/protected/flights/types";
-import { Calendar, Check, Clock, Dot, Download, List, Loader2, Minus, MousePointerClick, PlaneTakeoff, Tag, Tags } from "lucide-react";
+import { Calendar, Check, Clock, Dot, Download, List, Loader2, MapPinned, Minus, MousePointerClick, PlaneTakeoff, Tag, Tags } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 
 
@@ -455,18 +455,17 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipContent>
             </Tooltip>
 
-            {/* Download Button */}
+            {/* Labeling Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8" disabled>
-                        <Download size={16} />
+                    <Button variant="ghost" className="w-8 h-8">
+                        <MapPinned size={16} />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    Download
+                    Labeling Tool
                 </TooltipContent>
             </Tooltip>
-
 
         </div>
 
