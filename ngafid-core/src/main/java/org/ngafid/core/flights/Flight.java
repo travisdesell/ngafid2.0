@@ -163,8 +163,17 @@ public class Flight {
     public static List<Flight> getFlightsWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode, int limit)
             throws SQLException {
+        return getFlightsWithinDateRangeFromAirport(connection, startDate, endDate, airportIataCode, limit, 0);
+    }
+
+    /**
+     * Like getFlightsWithinDateRangeFromAirport but with offset for chunked loading.
+     */
+    public static List<Flight> getFlightsWithinDateRangeFromAirport(
+            Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
+            throws SQLException {
         String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
-        return getFlights(connection, extraCondition, limit);
+        return getFlights(connection, extraCondition, limit, offset);
     }
 
     /**
@@ -510,10 +519,21 @@ public class Flight {
      */
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit)
             throws SQLException {
+        return getFlights(connection, extraCondition, limit, 0);
+    }
+
+    /**
+     * Returns flights matching the extra condition with limit and offset for chunked loading.
+     */
+    public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit, int offset)
+            throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) {
             queryString += " ORDER BY id DESC LIMIT " + limit;
+            if (offset > 0) {
+                queryString += " OFFSET " + offset;
+            }
         }
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
