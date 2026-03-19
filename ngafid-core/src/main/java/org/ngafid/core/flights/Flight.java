@@ -163,33 +163,8 @@ public class Flight {
     public static List<Flight> getFlightsWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode, int limit)
             throws SQLException {
-        return getFlightsWithinDateRangeFromAirport(connection, startDate, endDate, airportIataCode, limit, 0);
-    }
-
-    /**
-     * Like getFlightsWithinDateRangeFromAirport but with offset for chunked loading.
-     */
-    public static List<Flight> getFlightsWithinDateRangeFromAirport(
-            Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
-            throws SQLException {
-        // CHECKSTYLE:OFF
-        String extraCondition = "    (                " + "    EXISTS(          "
-                + "        SELECT       "
-                + "          id         "
-                + "        FROM         "
-                + "          itinerary  "
-                + "        WHERE        "
-                + "          itinerary.flight_id = flights.id AND "
-                + "          airport = '"
-                + airportIataCode + "' " + "    ) "
-                + "AND   "
-                + "    ( "
-                + "           (start_time BETWEEN '"
-                + startDate + "' AND '" + endDate + "') " + "        OR (end_time   BETWEEN '"
-                + startDate + "' AND '" + endDate + "')  " + "    )"
-                + " ) ";
-        // CHECKSTYLE:ON
-        return getFlights(connection, extraCondition, limit, offset);
+        String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
+        return getFlights(connection, extraCondition, limit);
     }
 
     /**
@@ -198,23 +173,7 @@ public class Flight {
     public static List<Integer> getFlightIdsWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
             throws SQLException {
-        // CHECKSTYLE:OFF
-        String extraCondition = "    (                " + "    EXISTS(          "
-                + "        SELECT       "
-                + "          id         "
-                + "        FROM         "
-                + "          itinerary  "
-                + "        WHERE        "
-                + "          itinerary.flight_id = flights.id AND "
-                + "          airport = '"
-                + airportIataCode + "' " + "    ) "
-                + "AND   "
-                + "    ( "
-                + "           (start_time BETWEEN '"
-                + startDate + "' AND '" + endDate + "') " + "        OR (end_time   BETWEEN '"
-                + startDate + "' AND '" + endDate + "')  " + "    )"
-                + " ) ";
-        // CHECKSTYLE:ON
+        String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
         String queryString = "SELECT id FROM flights WHERE (" + extraCondition + ") ORDER BY id DESC LIMIT " + limit;
         if (offset > 0) {
             queryString += " OFFSET " + offset;
@@ -234,8 +193,18 @@ public class Flight {
      */
     public static int getFlightsCountWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode) throws SQLException {
+        String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
+        String queryString = "SELECT COUNT(*) FROM flights WHERE (" + extraCondition + ")";
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet rs = query.executeQuery()) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    private static String buildDateRangeAirportCondition(String startDate, String endDate, String airportIataCode) {
         // CHECKSTYLE:OFF
-        String extraCondition = "    (                " + "    EXISTS(          "
+        return "    (                " + "    EXISTS(          "
                 + "        SELECT       "
                 + "          id         "
                 + "        FROM         "
@@ -251,12 +220,6 @@ public class Flight {
                 + startDate + "' AND '" + endDate + "')  " + "    )"
                 + " ) ";
         // CHECKSTYLE:ON
-        String queryString = "SELECT COUNT(*) FROM flights WHERE (" + extraCondition + ")";
-        try (PreparedStatement query = connection.prepareStatement(queryString);
-                ResultSet rs = query.executeQuery()) {
-            rs.next();
-            return rs.getInt(1);
-        }
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
@@ -547,21 +510,10 @@ public class Flight {
      */
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit)
             throws SQLException {
-        return getFlights(connection, extraCondition, limit, 0);
-    }
-
-    /**
-     * Returns flights matching the extra condition with limit and offset for chunked loading.
-     */
-    public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit, int offset)
-            throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) {
             queryString += " ORDER BY id DESC LIMIT " + limit;
-            if (offset > 0) {
-                queryString += " OFFSET " + offset;
-            }
         }
 
         try (PreparedStatement query = connection.prepareStatement(queryString);

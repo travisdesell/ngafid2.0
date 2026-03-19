@@ -386,29 +386,7 @@ public class TurnToFinal implements Serializable {
     }
 
     /**
-     * Batch variant: fetches TTFs for many flights using one cache query, then computes misses per-flight.
-     * Use when loading many flights at once (e.g. TTF map). Reversible via USE_BATCH_TTF_LOOKUP in route.
-     */
-    public static Map<Flight, ArrayList<TurnToFinal>> getTurnToFinalBatch(Connection connection,
-            List<Flight> flights, String airportIataCode)
-            throws SQLException, IOException, ClassNotFoundException {
-        if (flights == null || flights.isEmpty()) {
-            return new HashMap<>();
-        }
-        List<Integer> ids = flights.stream().map(Flight::getId).toList();
-        Map<Integer, ArrayList<TurnToFinal>> byId = getTurnToFinalBatchByFlightIds(connection, ids, airportIataCode);
-        Map<Flight, ArrayList<TurnToFinal>> result = new HashMap<>();
-        for (Flight flight : flights) {
-            ArrayList<TurnToFinal> ttfs = byId.get(flight.getId());
-            if (ttfs != null && !ttfs.isEmpty()) {
-                result.put(flight, ttfs);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Lightweight batch variant using flight IDs only. Avoids loading full Flight objects (Tails, Itinerary, Tags)
+     * Batch variant using flight IDs only. Avoids loading full Flight objects (Tails, Itinerary, Tags)
      * for cache hits. Only loads full Flight for cache misses.
      */
     public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(Connection connection,
@@ -432,9 +410,6 @@ public class TurnToFinal implements Serializable {
             return result;
         }
         Map<Integer, ArrayList<TurnToFinal>> cache = getTurnToFinalFromCacheBatch(connection, flightIds);
-        int hits = cache.size();
-        int misses = flightIds.size() - hits;
-        LOG.info(() -> "TTF batch lookup: " + flightIds.size() + " flights, " + hits + " cache hits, " + misses + " computed");
         for (Integer flightId : flightIds) {
             ArrayList<TurnToFinal> ttfs = cache.get(flightId);
             if (ttfs == null) {
