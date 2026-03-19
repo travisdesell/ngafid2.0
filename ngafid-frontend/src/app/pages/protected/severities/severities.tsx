@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchJson } from "@/fetchJson";
 import { CircleQuestionMark, Download } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from "recharts";
 
 const log = getLogger("Severities", "black", "Page");
@@ -266,9 +266,17 @@ const renderSeveritiesLegendContent = (
     if (!payload?.length)
         return null;
 
+    const visiblePayload = payload.filter((item, index) => {
+        const key = String(item.dataKey ?? item.value ?? `series-${index}`);
+        return !key.endsWith("__glow");
+    });
+
+    if (!visiblePayload.length)
+        return null;
+
     return (
         <div className="flex flex-col items-start gap-2 pt-3 ml-8">
-            {payload.map((item, index) => {
+            {visiblePayload.map((item, index) => {
                 const key = String(item.dataKey ?? item.value ?? `series-${index}`);
                 const label = String(config[key]?.label ?? item.value ?? key);
                 const symbol = symbolsBySeries[key] ?? "circle";
@@ -286,6 +294,7 @@ const renderSeveritiesLegendContent = (
 };
 
 export default function SeveritiesPage() {
+    const glowFilterId = `severity-glow-${useId().replace(/:/g, "")}`;
     const { setModal } = useModal();
     const { useHighContrastCharts } = useTheme();
     const { fleetTags } = useTags();
@@ -296,6 +305,7 @@ export default function SeveritiesPage() {
     const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
     const [isFetchingEvents, setIsFetchingEvents] = useState(false);
     const [tagName, setTagName] = useState(TAG_ALL);
+    const [glowMode, setGlowMode] = useState<"off" | "subtle" | "strong">("subtle");
 
     const [eventDescriptions, setEventDescriptions] = useState<Record<string, string>>({});
     const [eventChecked, setEventChecked] = useState<Record<string, boolean>>({ [EVENT_ANY]: false });
@@ -763,6 +773,37 @@ export default function SeveritiesPage() {
 
     const anyEventDisabled = !hasApplied || nonAnyEventNames.every((name) => eventsEmpty[name] ?? true);
     const hasSelectedData = chartModel.hasData;
+    const enableGlowLayer = !useHighContrastCharts && glowMode !== "off";
+    const totalVisiblePoints = chartModel.series.reduce((sum, series) => sum + series.data.length, 0);
+
+    // Adaptive glow tuning keeps dense datasets readable while preserving hotspot emphasis.
+    const glowDensityScale = totalVisiblePoints > 5000
+        ? 0.55
+        : totalVisiblePoints > 2000
+            ? 0.72
+            : totalVisiblePoints > 800
+                ? 0.86
+                : 1;
+
+    const glowIntensityScale = ({
+        subtle: 0.9,
+        strong: 1.4,
+        off: 0,
+    } as const)[glowMode] * glowDensityScale;
+
+    // Radius is intentionally much larger for clear hotspot envelopes.
+    const glowRadiusScale = ({
+        subtle: 3.2,
+        strong: 6.4,
+        off: 0,
+    } as const)[glowMode] * glowDensityScale;
+
+    const glowBlurStdDev = 4.8 * glowIntensityScale * 3.0;
+    const glowRadiusPrimary = 8 * glowRadiusScale;
+    const glowRadiusAny = 6.4 * glowRadiusScale;
+    const glowOpacityPrimary = 0.16 * glowIntensityScale;
+    const glowOpacityAny = 0.1 * glowIntensityScale;
+    const glowAlphaBoost = 1.12;
 
     return (
         <div className="page-container">
@@ -917,12 +958,40 @@ export default function SeveritiesPage() {
                                         !hasSelectedData
                                             ? <PanelAlert title="No Data Available!" description="Select one or more available events to render severity points." />
                                             : (
-                                                <ChartContainer config={chartModel.chartConfig} className="h-full w-full min-h-0 aspect-auto!">
-                                                    <ScatterChart
-                                                        margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
-                                                        accessibilityLayer
-                                                        onClick={handleChartClick}
-                                                    >
+                                                <div className="relative h-full w-full min-h-0">
+                                                    <div className="absolute right-3 bottom-3 z-10">
+                                                        <Select value={glowMode} onValueChange={(value) => setGlowMode(value as "off" | "subtle" | "strong")}>
+                                                            <Button asChild variant="outline">
+                                                                <SelectTrigger className="w-36 bg-card/90 backdrop-blur-sm">
+                                                                    <SelectValue placeholder="Glow" />
+                                                                </SelectTrigger>
+                                                            </Button>
+                                                            <SelectContent>
+                                                                <SelectItem value="off">Glow: Off</SelectItem>
+                                                                <SelectItem value="subtle">Glow: Subtle</SelectItem>
+                                                                <SelectItem value="strong">Glow: Strong</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    <ChartContainer config={chartModel.chartConfig} className="h-full w-full min-h-0 aspect-auto!">
+                                                        <ScatterChart
+                                                            margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
+                                                            accessibilityLayer
+                                                            onClick={handleChartClick}
+                                                        >
+                                                        {
+                                                            enableGlowLayer
+                                                                ? (
+                                                                    <defs>
+                                                                        <filter id={glowFilterId} x="-60%" y="-60%" width="220%" height="220%">
+                                                                            <feGaussianBlur stdDeviation={glowBlurStdDev} result="blur" />
+                                                                            <feColorMatrix in="blur" type="matrix" values={`1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${glowAlphaBoost} 0`} />
+                                                                        </filter>
+                                                                    </defs>
+                                                                )
+                                                                : null
+                                                        }
                                                         <CartesianGrid vertical={false} />
                                                         <XAxis
                                                             type="number"
@@ -947,8 +1016,10 @@ export default function SeveritiesPage() {
                                                                 <ChartTooltipContent
                                                                     hideLabel
                                                                     formatter={(_, name, item) => {
+                                                                        const seriesName = String(item?.name ?? "");
+
                                                                         // Scatter payload includes both x and y rows; only render once for y.
-                                                                        if (item?.dataKey !== "y")
+                                                                        if (item?.dataKey !== "y" || seriesName.endsWith("__glow"))
                                                                             return null;
 
                                                                         const point = item.payload as SeverityPoint;
@@ -994,6 +1065,32 @@ export default function SeveritiesPage() {
                                                             align="right"
                                                         />
                                                         {
+                                                            enableGlowLayer
+                                                                ? chartModel.series.map((series) => (
+                                                                    <Scatter
+                                                                        key={`${series.seriesKey}-glow`}
+                                                                        data={series.data}
+                                                                        name={`${series.seriesKey}__glow`}
+                                                                        legendType="none"
+                                                                        fill={`var(--color-${series.seriesKey})`}
+                                                                        stroke="none"
+                                                                        isAnimationActive={false}
+                                                                        shape={(props: any) => (
+                                                                            <circle
+                                                                                cx={props.cx}
+                                                                                cy={props.cy}
+                                                                                r={series.isAny ? glowRadiusAny : glowRadiusPrimary}
+                                                                                fill={`var(--color-${series.seriesKey})`}
+                                                                                fillOpacity={series.isAny ? glowOpacityAny : glowOpacityPrimary}
+                                                                                filter={`url(#${glowFilterId})`}
+                                                                                style={{ mixBlendMode: "screen", pointerEvents: "none" }}
+                                                                            />
+                                                                        )}
+                                                                    />
+                                                                ))
+                                                                : null
+                                                        }
+                                                        {
                                                             chartModel.series.map((series) => (
                                                                 <Scatter
                                                                     key={series.seriesKey}
@@ -1008,8 +1105,9 @@ export default function SeveritiesPage() {
                                                                 />
                                                             ))
                                                         }
-                                                    </ScatterChart>
-                                                </ChartContainer>
+                                                        </ScatterChart>
+                                                    </ChartContainer>
+                                                </div>
                                             )
                                     )
                             }
