@@ -1159,13 +1159,30 @@ class TTFCard extends React.Component {
             Object.assign(accumulatedAirports, responseAirports || {});
         };
 
-        const CHUNK_SIZE_FIRST = 1000;  // Larger first batch to amortize setup overhead (DB connection, etc.)
-        const CHUNK_SIZE_REST = 1000;
+        // Batch sizes: 100, 500, 500, then 1000 each (faster first paint)
+        const BATCH_SIZES = [100, 500, 500];
+        const BATCH_SIZE_REST = 1000;
 
-        const getBatchLimit = (offset) => (offset === 0 ? CHUNK_SIZE_FIRST : CHUNK_SIZE_REST);
-        const getBatchNum = (offset) => (offset === 0 ? 1 : 2 + Math.floor((offset - CHUNK_SIZE_FIRST) / CHUNK_SIZE_REST));
-        const getTotalBatches = (totalFlights) =>
-            totalFlights != null ? 1 + Math.ceil(Math.max(0, totalFlights - CHUNK_SIZE_FIRST) / CHUNK_SIZE_REST) : '?';
+        const getBatchLimit = (offset) => {
+            if (offset === 0) return BATCH_SIZES[0];
+            if (offset === 100) return BATCH_SIZES[1];
+            if (offset === 600) return BATCH_SIZES[2];
+            return BATCH_SIZE_REST;
+        };
+        const getBatchNum = (offset) => {
+            if (offset === 0) return 1;
+            if (offset === 100) return 2;
+            if (offset === 600) return 3;
+            return 4 + Math.floor((offset - 1100) / BATCH_SIZE_REST);
+        };
+        const getTotalBatches = (totalFlights) => {
+            if (totalFlights == null) return '?';
+            const n = totalFlights;
+            if (n <= 100) return 1;
+            if (n <= 600) return 2;
+            if (n <= 1100) return 3;
+            return 3 + Math.ceil(Math.max(0, n - 1100) / BATCH_SIZE_REST);
+        };
 
         const buildLoadingMessage = (startDate, endDate, totalFlights, totalFlightsRaw, batchNum, totalBatches, ttfsSoFar) => {
             const rangeStr = `${startDate} to ${endDate}`;
@@ -1173,9 +1190,6 @@ class TTFCard extends React.Component {
                 ? totalFlightsRaw.toLocaleString()
                 : (totalFlights != null ? totalFlights.toLocaleString() : '?');
             let msg = `Found ${countStr} flights in ${rangeStr}.`;
-            if (totalFlightsRaw != null && totalFlights != null && totalFlightsRaw > totalFlights) {
-                msg += ` Capped at 10,000.`;
-            }
             msg += totalFlights != null
                 ? ` Loading batch ${batchNum} of ${totalBatches} (${ttfsSoFar} TTFs so far)...`
                 : ` Loading batch ${batchNum}...`;
@@ -1186,7 +1200,7 @@ class TTFCard extends React.Component {
             return `Batch ${batchNum} of ${totalBatches} · ${ttfsLoaded.toLocaleString()} TTFs loaded`;
         };
 
-        const fetchBatch = (offset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw) => {
+        const fetchBatch = (offset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw, skipCount) => {
             const batchLimit = getBatchLimit(offset);
             const batchNum = getBatchNum(offset);
             const totalBatches = getTotalBatches(totalFlights);
@@ -1196,11 +1210,12 @@ class TTFCard extends React.Component {
             $.ajax({
                 type: 'GET',
                 url: '/api/flight/turn-to-final',
-                data: { ...submissionData, limit: batchLimit, offset },
+                data: { ...submissionData, limit: batchLimit, offset, ...(skipCount ? { skipCount: 'true' } : {}) },
                 async: true,
                 success: (response) => {
                     const batchTtfs = response?.ttfs ?? [];
-                    const effectiveTotal = totalFlights ?? (response?.totalFlights ?? 0);
+                    const batchFlightCount = response?.batchFlightCount ?? batchTtfs.length;
+                    const effectiveTotal = totalFlights ?? response?.totalFlights ?? null;
 
                     processBatch(batchTtfs, response?.airports, flightLookup, approachCounts, accumulatedTtfs, accumulatedAirports);
                     this.plotCharts(accumulatedTtfs, offset === 0);
@@ -1209,8 +1224,10 @@ class TTFCard extends React.Component {
                     const nextOffset = offset + batchLimit;
                     const rawTotal = response?.totalFlightsRaw;
                     const ttfCapReached = response?.ttfCapReached === true;
-                    if (!ttfCapReached && batchTtfs.length >= batchLimit && nextOffset < effectiveTotal) {
-                        fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, effectiveTotal, rawTotal);
+                    const gotFullBatch = batchFlightCount >= batchLimit;
+                    const hasMore = effectiveTotal == null ? gotFullBatch : nextOffset < effectiveTotal;
+                    if (!ttfCapReached && gotFullBatch && hasMore) {
+                        fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, effectiveTotal ?? response?.totalFlights, rawTotal, false);
                     } else {
                         $('#loading-progress-banner').hide();
                         this.setState({
@@ -1223,6 +1240,7 @@ class TTFCard extends React.Component {
                     }
                 },
                 error: (jqXHR) => {
+                    $('#loading').hide();
                     $('#loading-progress-banner').hide();
                     console.error("Error fetching TTF data: ", jqXHR.responseText);
                     this.setState({ disableFetching: false, datesChanged: false });
@@ -1252,8 +1270,10 @@ class TTFCard extends React.Component {
                 }
             }
             this.setState({ disableFetching: true });
-            $('#loading').show();
+            const firstBatchLimit = getBatchLimit(0);
             $('#loading-message').text('Loading flights...');
+            $('#loading').show();
+            $('#loading-progress-banner').hide();
 
             const accumulatedTtfs = [];
             const accumulatedAirports = {};
@@ -1262,7 +1282,7 @@ class TTFCard extends React.Component {
             $.ajax({
                 type: 'GET',
                 url: '/api/flight/turn-to-final',
-                data: { ...submissionData, limit: CHUNK_SIZE_FIRST, offset: 0 },
+                data: { ...submissionData, limit: firstBatchLimit, offset: 0, skipCount: 'true' },
                 async: true,
                 success: (response) => {
                     const missingFlightIds = (response?.ttfs ?? []).some((ttf) => this.extractFlightId(ttf) == null);
@@ -1287,15 +1307,20 @@ class TTFCard extends React.Component {
                             this.plotCharts(accumulatedTtfs, true);
                             this.updateMapViewForTTFs(accumulatedTtfs, accumulatedAirports);
 
-                            const totalFlights = response?.totalFlights ?? 0;
+                            const batchFlightCount = response?.batchFlightCount ?? accumulatedTtfs.length;
+                            const totalFlights = response?.totalFlights ?? null;
                             const totalFlightsRaw = response?.totalFlightsRaw;
                             const ttfCapReached = response?.ttfCapReached === true;
-                            const nextOffset = CHUNK_SIZE_FIRST;
-                            if (!ttfCapReached && accumulatedTtfs.length >= CHUNK_SIZE_FIRST && nextOffset < totalFlights) {
+                            const nextOffset = firstBatchLimit;
+                            const gotFullBatch = batchFlightCount >= firstBatchLimit;
+                            const hasMore = totalFlights == null ? gotFullBatch : nextOffset < totalFlights;
+                            if (!ttfCapReached && gotFullBatch && hasMore) {
                                 $('#loading').hide();
-                                fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw);
+                                $('#loading-progress-banner').show();
+                                fetchBatch(nextOffset, accumulatedTtfs, accumulatedAirports, approachCounts, flightLookup, totalFlights, totalFlightsRaw, false);
                             } else {
                                 $('#loading').hide();
+                                $('#loading-progress-banner').hide();
                                 this.setState({
                                     disableFetching: false,
                                     dataAirport: submissionData.airport,
@@ -1308,6 +1333,7 @@ class TTFCard extends React.Component {
                 },
                 error: (jqXHR) => {
                     $('#loading').hide();
+                    $('#loading-progress-banner').hide();
                     console.error("Error fetching TTF data: ", jqXHR.responseText);
                     this.setState({ disableFetching: false, datesChanged: false });
                 }
