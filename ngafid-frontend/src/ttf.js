@@ -602,20 +602,20 @@ class TTFCard extends React.Component {
     startLoadingEstimateCountdown(initialSeconds = 15) {
         this.stopLoadingEstimateCountdown();
         let remaining = initialSeconds;
-        const el = document.getElementById('loading-estimate');
-        if (el) {
-            el.textContent = `Estimated loading time: ${remaining} s`;
-            el.style.display = '';
-        }
+        const updateAll = (text, visible) => {
+            document.querySelectorAll('#loading-estimate').forEach((el) => {
+                el.textContent = text;
+                el.style.display = visible ? '' : 'none';
+            });
+        };
+        updateAll(`Estimated loading time: ${remaining} s`, true);
         this.loadingEstimateInterval = setInterval(() => {
             remaining -= 1;
-            if (el) {
-                if (remaining <= 0) {
-                    el.style.display = 'none';
-                    this.stopLoadingEstimateCountdown();
-                } else {
-                    el.textContent = `Estimated loading time: ${remaining} s`;
-                }
+            if (remaining <= 0) {
+                updateAll('', false);
+                this.stopLoadingEstimateCountdown();
+            } else {
+                updateAll(`Estimated loading time: ${remaining} s`, true);
             }
         }, 1000);
     }
