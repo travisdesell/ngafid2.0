@@ -1130,11 +1130,16 @@ class TTFCard extends React.Component {
             return BATCH_SIZE_REST;
         };
 
+        const LARGE_RANGE_THRESHOLD = 10000;
         const buildLoadingMessage = (ttfsLoaded, flightsProcessed, totalFlights) => {
             const ttfsStr = ttfsLoaded.toLocaleString();
             const flightsStr = flightsProcessed.toLocaleString();
             const totalStr = totalFlights != null ? totalFlights.toLocaleString() : '?';
-            return `${ttfsStr} approaches loaded (${flightsStr} of ${totalStr} flights)`;
+            let msg = `${ttfsStr} approaches loaded (${flightsStr} of ${totalStr} flights)`;
+            if (totalFlights != null && totalFlights > LARGE_RANGE_THRESHOLD) {
+                msg += ' · Consider narrowing your date range for faster loading.';
+            }
+            return msg;
         };
 
         const buildCompleteMessage = (ttfsLoaded, flightsProcessed) => {
