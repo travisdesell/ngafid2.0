@@ -25,6 +25,7 @@
         <kotlin.jvm.target>24</kotlin.jvm.target>
         <jacoco.version>0.8.14</jacoco.version>
 
+        <jacoco.skip>false</jacoco.skip>
 
         <spark.version>2.7.2</spark.version>
         <gson.version>2.13.1</gson.version>
@@ -296,7 +297,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Code Coverage Plugin -->
+            <!-- JaCoCo Code Coverage Plugin (0.8.14+ for Java 24 class files) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -313,6 +314,9 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <skip>${jacoco.skip}</skip>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -168,8 +168,57 @@ public class Flight {
     public static List<Flight> getFlightsWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode, int limit)
             throws SQLException {
+        return getFlightsWithinDateRangeFromAirport(connection, startDate, endDate, airportIataCode, limit, 0);
+    }
+
+    /**
+     * Like getFlightsWithinDateRangeFromAirport but with offset for chunked loading.
+     */
+    public static List<Flight> getFlightsWithinDateRangeFromAirport(
+            Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
+            throws SQLException {
+        String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
+        return getFlights(connection, extraCondition, limit, offset);
+    }
+
+    /**
+     * Returns flight IDs only (no Tails, Itinerary, Tags) for TTF batch loading. Avoids 3 queries per flight.
+     */
+    public static List<Integer> getFlightIdsWithinDateRangeFromAirport(
+            Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
+            throws SQLException {
+        String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
+        String queryString = "SELECT id FROM flights WHERE (" + extraCondition + ") ORDER BY id DESC LIMIT " + limit;
+        if (offset > 0) {
+            queryString += " OFFSET " + offset;
+        }
+        List<Integer> ids = new ArrayList<>();
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet rs = query.executeQuery()) {
+            while (rs.next()) {
+                ids.add(rs.getInt(1));
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Returns total count of flights matching the same condition as getFlightsWithinDateRangeFromAirport.
+     */
+    public static int getFlightsCountWithinDateRangeFromAirport(
+            Connection connection, String startDate, String endDate, String airportIataCode) throws SQLException {
+        String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
+        String queryString = "SELECT COUNT(*) FROM flights WHERE (" + extraCondition + ")";
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet rs = query.executeQuery()) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    private static String buildDateRangeAirportCondition(String startDate, String endDate, String airportIataCode) {
         // CHECKSTYLE:OFF
-        String extraCondition = "    (                " + "    EXISTS(          "
+        return "    (                " + "    EXISTS(          "
                 + "        SELECT       "
                 + "          id         "
                 + "        FROM         "
@@ -185,7 +234,6 @@ public class Flight {
                 + startDate + "' AND '" + endDate + "')  " + "    )"
                 + " ) ";
         // CHECKSTYLE:ON
-        return getFlights(connection, extraCondition, limit);
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
@@ -472,11 +520,28 @@ public class Flight {
         return getFlights(connection, extraCondition, 0);
     }
 
+    /**
+     * Returns flights matching the extra condition. When limit > 0, orders by id DESC so the most
+     * recent flights are returned first (e.g. TTF tool fetches up to 10k most recent for cache efficiency).
+     */
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit)
+            throws SQLException {
+        return getFlights(connection, extraCondition, limit, 0);
+    }
+
+    /**
+     * Returns flights matching the extra condition with limit and offset for chunked loading.
+     */
+    public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit, int offset)
             throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
-        if (limit > 0) queryString += " LIMIT " + limit;
+        if (limit > 0) {
+            queryString += " ORDER BY id DESC LIMIT " + limit;
+            if (offset > 0) {
+                queryString += " OFFSET " + offset;
+            }
+        }
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
                 ResultSet resultSet = query.executeQuery()) {

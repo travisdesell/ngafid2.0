@@ -356,23 +356,31 @@ public class AnalysisJavalinRoutes {
         String startDate = ctx.queryParam("startDate");
         String endDate = ctx.queryParam("endDate");
         String airportIataCode = ctx.queryParam("airport");
-        System.out.println(startDate);
-        System.out.println(endDate);
+        int limit = parseIntOrDefault(ctx.queryParam("limit"), 1000);
+        int offset = parseIntOrDefault(ctx.queryParam("offset"), 0);
+        boolean skipCount = "true".equalsIgnoreCase(ctx.queryParam("skipCount"));
 
         List<TurnToFinal.TurnToFinalJSON> ttfs = new ArrayList<>();
         Set<String> iataCodes = new HashSet<>();
+        int totalFlights = 0;
+        int batchFlightCount = 0;
         try (Connection connection = Database.getConnection()) {
+            if (offset == 0 && !skipCount) {
+                totalFlights = Flight.getFlightsCountWithinDateRangeFromAirport(
+                        connection, startDate, endDate, airportIataCode);
+            }
 
-            // TODO: Update this limit when caching of TTF objects is implemented.
-            List<Flight> flights =
-                    Flight.getFlightsWithinDateRangeFromAirport(connection, startDate, endDate, airportIataCode, 10000);
+            List<Integer> flightIds = (offset == 0 && !skipCount && totalFlights == 0)
+                    ? List.of()
+                    : Flight.getFlightIdsWithinDateRangeFromAirport(
+                            connection, startDate, endDate, airportIataCode, limit, offset);
 
-            for (Flight flight : flights) {
-                for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(connection, flight, airportIataCode)) {
-                    
-                    // Enforce flight ID (in case older cached TTF rows have an empty/incorrect flightId)
-                    ttf.setFlightId(flight.getId());
-                    
+            Map<Integer, ArrayList<TurnToFinal>> batchResult =
+                    TurnToFinal.getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode);
+            batchFlightCount = flightIds.size();
+            for (Integer flightId : flightIds) {
+                for (TurnToFinal ttf : batchResult.getOrDefault(flightId, new ArrayList<>())) {
+                    ttf.setFlightId(flightId);
                     var jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         ttfs.add(jsonElement);
@@ -381,17 +389,31 @@ public class AnalysisJavalinRoutes {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warning("TTF fetch failed: " + e.getMessage());
             ctx.json(new ErrorResponse(e)).status(500);
+            return;
         }
 
         List<String> iataCodesList = new ArrayList<>(iataCodes.size());
         iataCodesList.addAll(iataCodes);
-
         Map<String, Airport> airports = Airports.getAirports(iataCodesList);
 
         ctx.status(200);
-        ctx.json(of("airports", airports, "ttfs", ttfs));
+        Map<String, Object> payload = new HashMap<>(of("airports", airports, "ttfs", ttfs));
+        if (!skipCount) {
+            payload.put("totalFlights", totalFlights);
+        }
+        payload.put("batchFlightCount", batchFlightCount);
+        ctx.json(payload);
+    }
+
+    private static int parseIntOrDefault(String value, int defaultValue) {
+        if (value == null || value.isBlank()) return defaultValue;
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 
     public static void getTrends(Context ctx) {
