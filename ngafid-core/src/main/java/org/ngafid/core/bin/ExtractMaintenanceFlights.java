@@ -207,7 +207,7 @@ public final class ExtractMaintenanceFlights {
         String windowEndGmt = utcDateToGmtEndOfDay(windowEnd);
         PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM flights f " +
-                "JOIN tails t ON f.system_id = t.system_id " +
+                "JOIN tails t ON f.fleet_id = t.fleet_id AND f.system_id = t.system_id " +
                 "WHERE t.tail = ? AND f.start_time <= ? AND f.end_time >= ?");
         stmt.setString(1, tailNumber);
         stmt.setString(2, windowEndGmt);
