@@ -421,6 +421,18 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipContent>
             </Tooltip>
 
+            {/* Labeling Button */}
+            <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8">
+                        <MapPinned size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Labeling Tool
+                </TooltipContent>
+            </Tooltip>
+
             {/* Tags Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
@@ -452,18 +464,6 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipTrigger>
                 <TooltipContent>
                     Download
-                </TooltipContent>
-            </Tooltip>
-
-            {/* Labeling Button */}
-            <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
-                        <MapPinned size={16} />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    Labeling Tool
                 </TooltipContent>
             </Tooltip>
 
