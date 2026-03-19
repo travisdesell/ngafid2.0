@@ -1,7 +1,10 @@
 // ngafid-frontend/src/app/pages/summary/charts/chart-summary-percentage-of-flights-with-event.tsx
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { getLogger } from "@/components/providers/logger"
+import { useTheme } from "@/components/providers/theme-provider"
+import { useTimeHeader } from "@/components/providers/time_header/time_header_provider"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     BAR_RADIUS_HORIZONTAL_SOLO,
     ChartConfig,
@@ -11,12 +14,9 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
-import { useTimeHeader } from "@/components/providers/time_header/time_header_provider"
-import { AirframeEventCounts } from "src/types"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { JSX } from "react"
-import { useTheme } from "@/components/providers/theme-provider"
-import { getLogger } from "@/components/providers/logger"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { AirframeEventCounts } from "src/types"
 
 
 const log = getLogger("ChartSummaryPercentageOfFlightsWithEvent", "black", "Chart");
@@ -35,6 +35,11 @@ type PercentageChartDatum = {
     fleetTotalFlights: number;
     aggregateFlightsWithEvent: number;
     aggregateTotalFlights: number;
+};
+
+const SERIES_LABELS: Record<string, string> = {
+    fleetPercent: "Your Fleet",
+    aggregatePercent: "All Fleets",
 };
 
 const toPercent = (numerator: number, denominator: number): number => {
@@ -201,17 +206,26 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
                                                 ? Number(value[0] ?? 0)
                                                 : Number(value ?? 0);
 
+                                            const displayName = SERIES_LABELS[item?.dataKey as string] ?? String(name);
+                                            const indicatorColor = item?.color ?? item?.fill ?? "var(--muted-foreground)";
+
                                             return (
-                                                <div className="flex flex-1 justify-between leading-none gap-2 items-center">
-                                                    <div className="grid gap-1">
-                                                        <span className="text-muted-foreground">{name}</span>
-                                                        <span className="text-muted-foreground/80">
-                                                            {`${flightsWithEvent.toLocaleString()} / ${totalFlights.toLocaleString()} flights`}
+                                                <div className="flex w-full items-center gap-2">
+                                                    <div
+                                                        className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                                                        style={{ backgroundColor: indicatorColor }}
+                                                    />
+                                                    <div className="flex flex-1 justify-between leading-none gap-2 items-center">
+                                                        <div className="grid gap-1">
+                                                            <span className="text-muted-foreground">{displayName}</span>
+                                                            <span className="text-muted-foreground/80">
+                                                                {`${flightsWithEvent.toLocaleString()} / ${totalFlights.toLocaleString()} flights`}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-foreground font-mono font-medium tabular-nums">
+                                                            {formatPercent(percentValue)}
                                                         </span>
                                                     </div>
-                                                    <span className="text-foreground font-mono font-medium tabular-nums">
-                                                        {formatPercent(percentValue)}
-                                                    </span>
                                                 </div>
                                             );
                                         }}
