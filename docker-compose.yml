@@ -23,6 +23,7 @@ x-ngafid-service-common: &ngafid-service-common
     # Email credentials: repo-root email_info.txt (line 1=SMTP user, line 2=password) is mounted at /etc/ngafid-email.conf in the container.
     - ./email_info.txt:/etc/ngafid-email.conf:ro
     - /mnt/ngafid:/mnt/ngafid:ro   
+
 services:
   base:
     build:
