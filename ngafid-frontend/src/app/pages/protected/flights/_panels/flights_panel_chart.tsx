@@ -1269,7 +1269,7 @@ export function FlightsPanelChart() {
 
         );
 
-        return <Card className="absolute left-24 top-2 w-80 overflow-y-auto max-h-[90%] bg-red-500! backdrop-blur-3xl">
+        return <Card className="absolute left-24 top-2 w-80 overflow-y-auto max-h-[90%] bg-transparent backdrop-blur-xs">
 
             <Accordion type="single" collapsible defaultValue="" className="px-2">
 
