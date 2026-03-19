@@ -33,7 +33,7 @@ function FlightsPanelResultsInner() {
     } = useFlightsSearchFilter();
 
     const scrollParentRef = useRef<HTMLDivElement | null>(null);
-    const FLIGHT_ROW_HEIGHT_ESTIMATE_PX = 144;
+    const FLIGHT_ROW_HEIGHT_ESTIMATE_PX = 112;
 
     const rowVirtualizer = useVirtualizer({
         count: flights.length,

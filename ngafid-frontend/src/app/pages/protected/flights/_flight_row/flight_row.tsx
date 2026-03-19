@@ -205,7 +205,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
         }
 
         // return <div className="flex flex-col gap-2">
-        return <div className="grid grid-rows-2 text-nowrap min-w-64 gap-2 items-start">
+        return <div className="grid grid-rows-2 text-nowrap min-w-64 gap-11 items-start">
 
             {/* Date/Time Row */}
             <div className="flex gap-2 items-center flex-wrap">
@@ -379,7 +379,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
         const showSelected = isSelectedVisual;
         const isDisabled = isSelecting;
 
-        return <div className="grid row-span-1 grid-cols-1 min-w-32 gap-1 my-auto" data-fit>
+        return <div className="grid grid-cols-2 min-w-96 pr-64 gap-1 my-auto " data-fit>
 
             {/* Select Toggle Button */}
             <Tooltip disableHoverableContent>
@@ -455,15 +455,35 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipContent>
             </Tooltip>
 
+            {/* Download Button */}
+            <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="w-8 h-8" disabled>
+                        <Download size={16} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    Download
+                </TooltipContent>
+            </Tooltip>
+
+
         </div>
 
     }
 
+    /*
+        < FLIGHT ROW HEIGHT >
+
+        If you adjust the height of the flight row,
+        make sure to change the 'FLIGHT_ROW_HEIGHT_ESTIMATE_PX'
+        constant in 'flights_panel_results.tsx' as well.
+    */
     return <div className="
         w-full flex
         *:rounded-none
 
-        h-36
+        h-28
 
         text-xs
         *:@lg:*:text-sm
@@ -477,7 +497,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
         </FlightRowSection>
 
         <FlightRowSection className="@container group min-w-18 max-w-48">
-            <div className="max-h-36 overflow-y-auto scrollbar-hover">
+            <div className="max-h-28 overflow-y-auto scrollbar-hover">
                 {renderAirportsDetails()}
             </div>
         </FlightRowSection>
@@ -486,7 +506,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
             {renderTagsRows()}
         </FlightRowSection>
 
-        <FlightRowSection className="min-w-16 w-16 pl-4 pr-0">
+        <FlightRowSection className="@container min-w-32">
             {renderButtonsRow()}
         </FlightRowSection>
 
