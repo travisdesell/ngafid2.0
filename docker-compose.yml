@@ -1,4 +1,4 @@
-# Split this up into two separate groups since ngafid-kafka-topics needs these variables, but should not depend on
+# aSplit this up into two separate groups since ngafid-kafka-topics needs these variables, but should not depend on
 # itself.
 x-ngafid-service-common-base: &ngafid-service-common-base
   extra_hosts:
@@ -13,16 +13,19 @@ x-ngafid-service-common: &ngafid-service-common
       condition: service_completed_successfully
   volumes:
     # Mount the properties file and data directories
+    - /mnt/ngafid/temp:/mnt/ngafid/temp # Jetty temp directory:  upload chunks/files before final write to uploads/archive.
+    - /mnt/ngafid/uploads:/mnt/uploads
+    - /mnt/ngafid/archive:/mnt/archive
+    - /mnt/ngafid/terrain:/mnt/terrain
+    - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
+    - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
+
+
     - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
-    - ./data:/mnt/data
-    - ./data/uploads:/mnt/uploads
-    - ./data/archive:/mnt/archive
     - ./ngafid-static:/mnt/static
-    - ./data/terrain:/mnt/terrain
     - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
     # Email credentials: repo-root email_info.txt (line 1=SMTP user, line 2=password) is mounted at /etc/ngafid-email.conf in the container.
     - ./email_info.txt:/etc/ngafid-email.conf:ro
-    - /mnt/ngafid:/mnt/ngafid:ro   
 
 services:
   base:
