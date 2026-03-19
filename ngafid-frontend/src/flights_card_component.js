@@ -42,7 +42,8 @@ class FlightsCard extends React.Component {
                         flights.map((flightInfo, index) => {
                             if(flightInfo != null) {
                                 return (
-                                    <Flight 
+                                    <Flight
+                                        containerExpanded={this.props.containerExpanded}
                                         showPlot={() => {this.props.showPlot();}} 
                                         showMap={() => {this.props.showMap();}} 
                                         hideMap={() => {this.props.hideMap();}}
@@ -67,6 +68,7 @@ class FlightsCard extends React.Component {
                                         clearTags={this.props.clearTags}
                                         editTag={this.props.editTag}
                                         onAddFilter={this.props.onAddFilter}
+                                        onLabelingViewMode={this.props.onLabelingViewMode}
                                     />
                                 );
                             }
