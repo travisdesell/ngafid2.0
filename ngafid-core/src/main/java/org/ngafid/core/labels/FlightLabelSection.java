@@ -1,6 +1,12 @@
 package org.ngafid.core.labels;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -173,6 +179,14 @@ public class FlightLabelSection {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM flight_label_section WHERE id = ?")) {
             stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
+    }
+
+    public static void deleteByFlight(Connection connection, int flightId) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM flight_label_section WHERE flight_id = ?")) {
+            stmt.setInt(1, flightId);
             stmt.executeUpdate();
         }
     }

@@ -1766,11 +1766,22 @@ class Flight extends React.Component {
                 }
             },
             onClearAll: () => {
-                this.setState({ labelingClickSections: [], labelingSectionStart: null }, () => {
-                    this.updateLabelingMarkers();
-                    this.updateLabelingClickSectionsLayer();
-                    this.renderLabelingPopup();
-                    if (this.state.labelingViewMode === 'chart') this.updateLabelingChartShapes();
+                const flightIdDeleteAll = this.props.flightInfo.id;
+                $.ajax({
+                    type: 'DELETE',
+                    url: `/api/flight/${flightIdDeleteAll}/labels`,
+                    success: () => {
+                        this.setState({ labelingClickSections: [], labelingSectionStart: null }, () => {
+                            this.updateLabelingMarkers();
+                            this.updateLabelingClickSectionsLayer();
+                            this.renderLabelingPopup();
+                            if (this.state.labelingViewMode === 'chart')
+                                this.updateLabelingChartShapes();
+                        });
+                    },
+                    error: (jqXHR, textStatus, errorThrown) => {
+                        console.error("Error clearing all label sections", errorThrown);
+                    },
                 });
             },
             onClose: () => {

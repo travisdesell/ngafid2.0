@@ -66,6 +66,7 @@ object FlightRoutes : RouteProvider() {
                         get("csv", FlightRoutes::getFlightLabelsCsv, Role.LOGGED_IN)
                         post(FlightRoutes::postFlightLabel, Role.LOGGED_IN)
                         post("import", FlightRoutes::postFlightLabelsImport, Role.LOGGED_IN)
+                        delete(FlightRoutes::deleteAllFlightLabels, Role.LOGGED_IN)
                         path("{lid}") {
                             put(FlightRoutes::putFlightLabel, Role.LOGGED_IN)
                             delete(FlightRoutes::deleteFlightLabel, Role.LOGGED_IN)
@@ -413,6 +414,20 @@ object FlightRoutes : RouteProvider() {
                 throw NotFoundResponse("Label $labelId does not belong to flight $flightId.")
             }
             FlightLabelSection.delete(connection, labelId)
+            ctx.status(204)
+        }
+    }
+
+    fun deleteAllFlightLabels(ctx: Context) {
+        val user = SessionUtility.getUser(ctx)
+        val flightId = ctx.pathParam("fid").toInt()
+
+        Database.getConnection().use { connection ->
+            val flight = Flight.getFlight(connection, flightId)
+            if (flight == null || flight.fleetId != user.fleetId)
+                throw NotFoundResponse("Flight with id $flightId not found.")
+                
+            FlightLabelSection.deleteByFlight(connection, flightId)
             ctx.status(204)
         }
     }
