@@ -326,7 +326,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
 
     }
 
-    const renderButtonsRow = () => {
+    const renderButtonsGrid = () => {
 
         const flightInChartFlights = chartFlights.some((f: { id: number; }) => f.id === flight.id);
 
@@ -379,7 +379,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
         const showSelected = isSelectedVisual;
         const isDisabled = isSelecting;
 
-        return <div className="grid grid-cols-2 min-w-96 pr-64 gap-1 my-auto " data-fit>
+        return <div className="grid grid-cols-2 mx-auto gap-4" data-fit>
 
             {/* Select Toggle Button */}
             <Tooltip disableHoverableContent>
@@ -507,7 +507,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
         </FlightRowSection>
 
         <FlightRowSection className="@container min-w-32">
-            {renderButtonsRow()}
+            {renderButtonsGrid()}
         </FlightRowSection>
 
     </div>
