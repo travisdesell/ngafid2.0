@@ -23,13 +23,14 @@ import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
  * Extracts flight CSV files around maintenance events into before/during/after folders for analysis.
  * <p>
  * <b>Flow:</b> (1) Load maintenance records from CSV. (2) For each workorder, build a timeline of flights
- * in the window [open−10, close+10]. (3) Assign each flight to a phase (before/during/after) using
+ * in the window [open−10d, close+10d]. (3) Assign each flight to a phase (before/during/after) using
  * {@link #computeMaintenancePhase}: before = flight start &lt; date_time_opened; during = between open and close;
- * after = flight start &gt; date_time_closed. (4) Count up to 3 "before" and 3 "after" flights per workorder
+ * after = flight start &gt; date_time_closed. (4) Take up to 10 "before" and 10 "after" flights per workorder
  * (setFlightsToNextFlights). (5) Export only flights that pass filters (AGL, left ground, cruise altitude,
  * phase computation) to before/during/after CSVs. (6) Write manifest.json.
  * <p>
  * Modes: normal extraction (outputDir CSV [CSV ...]); --validate inputCsv (writes valid-/invalid- CSVs);
+ * --validate-orders inputCsv (flexible columns, checks flights in 10d window, writes valid-/invalid-);
  * --validate-verify inputCsv (checks valid CSV against DB).
  */
 public final class ExtractMaintenanceFlights {
@@ -46,6 +47,13 @@ public final class ExtractMaintenanceFlights {
     private static int extractedDuringSingleDayTotal = 0;
     private static int extractedAfterTotal = 0;
     private static final double CRUISE_ALTITUDE_AGL_FT = 600.0;
+
+    /** Days to look before maintenance open and after maintenance close. */
+    private static final int WINDOW_DAYS_BEFORE = 10;
+    private static final int WINDOW_DAYS_AFTER = 10;
+    /** Max flights to extract: before (closest to open) and after (closest to close). */
+    private static final int MAX_BEFORE_FLIGHTS = 10;
+    private static final int MAX_AFTER_FLIGHTS = 10;
 
     /** Log file for per-workorder time trace; all dates in GMT. */
     private static PrintWriter timeLogWriter = null;
@@ -131,6 +139,7 @@ public final class ExtractMaintenanceFlights {
         System.out.println("\n\n\n");
         System.out.println("Number of record lines: " + lineCount);
         System.out.println("Number of workorders: " + ALL_RECORDS.size());
+        System.out.flush();
         if (!ALL_RECORDS.isEmpty()) {
             System.out.println("earliest date: " + ALL_RECORDS.first().getOpenDate());
             System.out.println("latest date: " + ALL_RECORDS.last().getCloseDate());
@@ -337,6 +346,181 @@ public final class ExtractMaintenanceFlights {
 
         System.out.println("Validation: total=" + total + " valid=" + valid + " invalid=" + invalid +
                 " -> valid: " + validCsvPath + ", invalid: " + invalidCsvPath);
+    }
+
+    /**
+     * Validates maintenance orders from a CSV with flexible column names. Detects columns for
+     * workorder (WKO#, workorder), date opened (Date_Opened, date_time_opened), date closed
+     * (Date_Closed, date_time_closed), registration (Registration#, registration).
+     * Valid = tail exists in DB AND has flights before/during/after within 10-day window.
+     * Invalid = tail not in DB OR no flights in window.
+     * Writes valid-{basename}.csv and invalid-{basename}.csv in the same directory.
+     */
+    private static void validateMaintenanceOrders(Connection connection, String inputCsvPath)
+            throws IOException, SQLException {
+        File inputFile = new File(inputCsvPath);
+        String dir = inputFile.getParent();
+        String baseName = inputFile.getName();
+        String validCsvPath = (dir != null ? dir + File.separator : "") + "valid-" + baseName;
+        String invalidCsvPath = (dir != null ? dir + File.separator : "") + "invalid-" + baseName;
+
+        String headerRaw = null;
+        List<String> dataLines = new ArrayList<>();
+        int[] colIndices = null;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputCsvPath))) {
+            String line = reader.readLine();
+            if (line == null) {
+                System.err.println("Input file is empty.");
+                return;
+            }
+            headerRaw = line;
+            String[] headerParts = parseCsvLine(line);
+            colIndices = detectOrderColumns(headerParts);
+            if (colIndices == null) {
+                System.err.println("Could not detect required columns (workorder, date_opened, date_closed, registration). " +
+                        "Header: " + String.join(",", headerParts));
+                return;
+            }
+
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                dataLines.add(line);
+            }
+        }
+
+        Set<String> validKeys = new HashSet<>();
+        Set<String> invalidKeys = new HashSet<>();
+
+        for (String dataLine : dataLines) {
+            String[] parts = parseCsvLine(dataLine);
+            int maxIdx = Math.max(colIndices[0], Math.max(colIndices[1], Math.max(colIndices[2], colIndices[3])));
+            if (parts.length <= maxIdx) {
+                continue;
+            }
+            int workorder = parseIntOrZero(parts[colIndices[0]]);
+            String rawOpen = parts[colIndices[1]].trim();
+            String rawClose = parts[colIndices[2]].trim();
+            String registration = parts[colIndices[3]].trim();
+
+            String key = workorder + "|" + registration + "|" + rawOpen + "|" + rawClose;
+            if (validKeys.contains(key) || invalidKeys.contains(key)) {
+                continue;
+            }
+
+            LocalDate openDate;
+            LocalDate closeDate;
+            try {
+                openDate = parseDateTimeForOrders(rawOpen).toLocalDate();
+                closeDate = parseDateTimeForOrders(rawClose).toLocalDate();
+            } catch (Exception e) {
+                invalidKeys.add(key);
+                continue;
+            }
+
+            boolean tailExists = tailExistsInDb(connection, registration);
+            int flightCount = tailExists ? countFlightsInMaintenancePeriod(connection, registration, openDate, closeDate) : 0;
+            boolean hasFlights = flightCount > 0;
+
+            if (tailExists && hasFlights) {
+                validKeys.add(key);
+            } else {
+                invalidKeys.add(key);
+            }
+        }
+
+        Map<String, Boolean> keyToValid = new HashMap<>();
+        for (String k : validKeys) keyToValid.put(k, true);
+        for (String k : invalidKeys) keyToValid.put(k, false);
+
+        int validRows = 0;
+        int invalidRows = 0;
+        try (PrintWriter validWriter = new PrintWriter(new FileWriter(validCsvPath));
+             PrintWriter invalidWriter = new PrintWriter(new FileWriter(invalidCsvPath))) {
+
+            validWriter.println(headerRaw);
+            invalidWriter.println(headerRaw);
+
+            for (String dataLine : dataLines) {
+                String[] parts = parseCsvLine(dataLine);
+                int maxIdx = Math.max(colIndices[0], Math.max(colIndices[1], Math.max(colIndices[2], colIndices[3])));
+                if (parts.length <= maxIdx) {
+                    invalidWriter.println(dataLine);
+                    invalidRows++;
+                    continue;
+                }
+                int workorder = parseIntOrZero(parts[colIndices[0]]);
+                String rawOpen = parts[colIndices[1]].trim();
+                String rawClose = parts[colIndices[2]].trim();
+                String registration = parts[colIndices[3]].trim();
+                String key = workorder + "|" + registration + "|" + rawOpen + "|" + rawClose;
+
+                Boolean isValid = keyToValid.get(key);
+                if (isValid == null) {
+                    isValid = false;
+                }
+                if (isValid) {
+                    validWriter.println(dataLine);
+                    validRows++;
+                } else {
+                    invalidWriter.println(dataLine);
+                    invalidRows++;
+                }
+            }
+        }
+
+        System.out.println("Validation (orders): total=" + dataLines.size() + " valid=" + validRows + " invalid=" + invalidRows +
+                " (unique orders: " + validKeys.size() + " valid, " + invalidKeys.size() + " invalid)");
+        System.out.println("  valid: " + validCsvPath);
+        System.out.println("  invalid: " + invalidCsvPath);
+    }
+
+    private static String[] parseCsvLine(String line) {
+        return line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+    }
+
+    private static LocalDateTime parseDateTimeForOrders(String raw) {
+        String s = raw == null ? "" : raw.trim();
+        if (s.isEmpty()) throw new IllegalArgumentException("Empty date/time");
+        try {
+            return LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            try {
+                return LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            } catch (Exception e2) {
+                return LocalDate.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay();
+            }
+        }
+    }
+
+    private static int parseIntOrZero(String s) {
+        if (s == null || s.trim().isEmpty()) return 0;
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Returns [workorderIdx, dateOpenIdx, dateCloseIdx, registrationIdx] or null if not found. */
+    private static int[] detectOrderColumns(String[] headerParts) {
+        int wo = -1, open = -1, close = -1, reg = -1;
+        for (int i = 0; i < headerParts.length; i++) {
+            String h = headerParts[i].trim().toLowerCase().replaceAll("[^a-z0-9#]", "");
+            if (h.contains("wko") || h.equals("workorder")) {
+                wo = i;
+            } else if ((h.contains("date") && h.contains("open")) || h.contains("date_opened") || h.contains("dateopened")) {
+                open = i;
+            } else if ((h.contains("date") && h.contains("close")) || h.contains("date_closed") || h.contains("dateclosed")) {
+                close = i;
+            } else if (h.contains("registration") || h.equals("reg")) {
+                reg = i;
+            }
+        }
+        if (wo >= 0 && open >= 0 && close >= 0 && reg >= 0) {
+            return new int[]{wo, open, close, reg};
+        }
+        return null;
     }
 
     /**
@@ -582,6 +766,7 @@ public final class ExtractMaintenanceFlights {
             timeLog("[TIME] WO " + r.getWorkorderNumber());
             timeLog("[TIME]   Raw from CSV:              open  = \"" + r.getRawOpenDate() + "\"   close = \"" + r.getRawCloseDate() + "\"");
             timeLog("[TIME]   Maintenance record (GMT):  open  = " + openGmt + "   close = " + closeGmt);
+            timeLog("[TIME]   Raw flights in window (from DB): " + timeline.size());
             timeLog("[TIME]   Extracted flights (after filtering: AGL, cruise, phases):");
         }
 
@@ -639,7 +824,6 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is an error with the SQL query
      */
     private static void setFlightsToNextFlights(Connection connection, List<AircraftTimeline> timeline) throws SQLException {
-        int numberOfExtractions = 3;
         for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
             AircraftTimeline ac = timeline.get(currentAircraft);
 
@@ -661,7 +845,7 @@ public final class ExtractMaintenanceFlights {
 
                 int i = 1;
                 int flightCount = 0;
-                while ((currentAircraft - i) >= 0 && flightCount < numberOfExtractions) {
+                while ((currentAircraft - i) >= 0 && flightCount < MAX_BEFORE_FLIGHTS) {
                     AircraftTimeline a = timeline.get(currentAircraft - i);
                     if (a.getDaysToNext() == 0) {
                         // True during = both events set and same; reclassified first-day has only nextEvent
@@ -693,7 +877,7 @@ public final class ExtractMaintenanceFlights {
                 i = 1;
                 flightCount = 0;
 
-                while ((currentAircraft + i) < timeline.size() && flightCount < numberOfExtractions) {
+                while ((currentAircraft + i) < timeline.size() && flightCount < MAX_AFTER_FLIGHTS) {
                     AircraftTimeline a = timeline.get(currentAircraft + i);
                     if (a.getDaysSincePrevious() == 0) {
                         // True during = both events set and same; reclassified last-day has only previousEvent
@@ -734,7 +918,7 @@ public final class ExtractMaintenanceFlights {
                 // Find other flights with the same nextEvent and set their flightsToNext
                 MaintenanceRecord nextEvent = ac.getNextEvent();
                 int flightCount = 0;
-                for (int j = i; j >= 0 && flightCount < numberOfExtractions; j--) {
+                for (int j = i; j >= 0 && flightCount < MAX_BEFORE_FLIGHTS; j--) {
                     AircraftTimeline a = timeline.get(j);
                     if (a.getNextEvent() == nextEvent && a.getDaysToNext() > 0) {
                         if (!flightTookOff(connection, a.getFlightId())) {
@@ -754,7 +938,7 @@ public final class ExtractMaintenanceFlights {
                 // Find other flights with the same previousEvent and set their flightsSincePrevious
                 MaintenanceRecord prevEvent = ac.getPreviousEvent();
                 int flightCount = 0;
-                for (int j = i; j < timeline.size() && flightCount < numberOfExtractions; j++) {
+                for (int j = i; j < timeline.size() && flightCount < MAX_AFTER_FLIGHTS; j++) {
                     AircraftTimeline a = timeline.get(j);
                     if (a.getPreviousEvent() == prevEvent && a.getDaysSincePrevious() > 0) {
                         if (!flightTookOff(connection, a.getFlightId())) {
@@ -1034,11 +1218,11 @@ public final class ExtractMaintenanceFlights {
 
             // Extract flights if:
             // 1. During: flight between open and close inclusive (daysSincePrevious >= 0 AND daysToNext >= 0)
-            // 2. Before: one of 3 flights in [openDate-10, openDate) (flightsToNext 0-2)
-            // 3. After: one of 3 flights in (closeDate, closeDate+10] (flightsSincePrevious 0-2), unless nearby maintenance
+            // 2. Before: one of MAX_BEFORE_FLIGHTS closest to open (flightsToNext 0..N-1)
+            // 3. After: one of MAX_AFTER_FLIGHTS closest to close (flightsSincePrevious 0..N-1), unless nearby maintenance
             boolean isDuringMaintenance = ac.getDaysSincePrevious() >= 0 && ac.getDaysToNext() >= 0;
-            boolean isBeforeMaintenance = ac.getFlightsToNext() >= 0 && ac.getFlightsToNext() <= 2;
-            boolean isAfterMaintenance = ac.getFlightsSincePrevious() >= 0 && ac.getFlightsSincePrevious() <= 2;
+            boolean isBeforeMaintenance = ac.getFlightsToNext() >= 0 && ac.getFlightsToNext() < MAX_BEFORE_FLIGHTS;
+            boolean isAfterMaintenance = ac.getFlightsSincePrevious() >= 0 && ac.getFlightsSincePrevious() < MAX_AFTER_FLIGHTS;
             
             // Check if there's another maintenance event within 10 days after current event
             boolean hasNearbyNextMaintenance = false;
@@ -1473,6 +1657,7 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is an error with the SQL query
      */
     public static void main(String[] arguments) throws SQLException {
+        Runtime.getRuntime().addShutdownHook(new Thread(Database::closePool, "db-pool-shutdown"));
         Connection connection = Database.getConnection();
 
         // Run only validation: --validate <input_csv>
@@ -1481,6 +1666,21 @@ public final class ExtractMaintenanceFlights {
             String inputCsv = arguments[1];
             try {
                 validateMaintenanceRecords(connection, inputCsv);
+            } catch (IOException e) {
+                System.err.println("Validation failed: " + e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
+            return;
+        }
+
+        // Validate maintenance orders: --validate-orders <input_csv>
+        // Flexible column names (WKO#, Date_Opened, Date_Closed, Registration#). Valid = tail exists and
+        // has flights in 10-day window. Writes valid- and invalid- prefixed files.
+        if (arguments.length >= 2 && "--validate-orders".equals(arguments[0])) {
+            String inputCsv = arguments[1];
+            try {
+                validateMaintenanceOrders(connection, inputCsv);
             } catch (IOException e) {
                 System.err.println("Validation failed: " + e.getMessage());
                 e.printStackTrace();
@@ -1539,6 +1739,7 @@ public final class ExtractMaintenanceFlights {
         System.out.println("unique airframes: ");
         System.out.println("\t" + AIRFRAMES);
         System.out.println("Processing " + ALL_RECORDS.size() + " workorder(s)");
+        System.out.flush();
 
         try {
             // Write flight-sort log next to the CSV input (e.g. data/maintenance/) so it appears with extract.log
@@ -1563,8 +1764,8 @@ public final class ExtractMaintenanceFlights {
                 }
                 firstWorkorder = false;
 
-                LocalDate startDate = record.getOpenDate().minusDays(10);
-                LocalDate endDate = record.getCloseDate().plusDays(10);
+                LocalDate startDate = record.getOpenDate().minusDays(WINDOW_DAYS_BEFORE);
+                LocalDate endDate = record.getCloseDate().plusDays(WINDOW_DAYS_AFTER);
                 String tailNumber = record.getTailNumber();
                 String labelId = record.getLabelId();
 
@@ -1590,7 +1791,8 @@ public final class ExtractMaintenanceFlights {
                 extractedFlightsTotal += extracted;
 
                 System.out.println("  WO " + record.getWorkorderNumber() + " " + tailNumber + " [" + labelId + "] " +
-                        startDate + " to " + endDate + " -> " + extracted + " flight(s)");
+                        startDate + " to " + endDate + " -> " + extracted + " flight(s) (raw in window: " + timeline.size() + ")");
+                System.out.flush();
             }
 
             if (timeLogWriter != null) {
