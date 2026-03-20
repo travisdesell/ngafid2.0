@@ -195,6 +195,23 @@ public final class ExtractMaintenanceFlights {
      * @param tailNumber  the tail number
      * @param openDate    maintenance open date (UTC)
      * @param closeDate   maintenance close date (UTC)
+     * @return true if tail exists in tails table
+     * @throws SQLException if there is an error with the SQL query
+     */
+    private static boolean tailExistsInDb(Connection connection, String tailNumber) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT COUNT(*) FROM tails WHERE tail = ?")) {
+            ps.setString(1, tailNumber);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Counts flights overlapping the extended maintenance window (open-10 to close+10 days).
+     * Used for extraction timeline; validation uses tailExistsInDb instead.
+     *
      * @return number of flights in the extended window, or 0 if tail not found
      * @throws SQLException if there is an error with the SQL query
      */
@@ -242,10 +259,10 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Validates maintenance records by checking that each record has at least one flight
-     * in the extended window (10 days before open through 10 days after close). Writes valid rows to
-     * valid-{basename}.csv and invalid rows to invalid-{basename}.csv in the same directory
-     * as the input. Run this before extraction so only valid records are used.
+     * Validates maintenance records by checking that each record has the tail/registration
+     * in the tails table. Valid = tail exists in DB (we can extract before/after flights).
+     * Invalid = tail not in DB. Writes valid rows to valid-{basename}.csv and invalid rows
+     * to invalid-{basename}.csv in the same directory as the input.
      *
      * @param connection   the database connection
      * @param inputCsvPath path to the input maintenance CSV (e.g. test_maintenance.csv)
@@ -296,14 +313,13 @@ public final class ExtractMaintenanceFlights {
                 total++;
                 try {
                     MaintenanceRecord record = new MaintenanceRecord(line);
-                    int flightCount = countFlightsInMaintenancePeriod(connection,
-                            record.getTailNumber(), record.getOpenDate(), record.getCloseDate());
+                    boolean tailExists = tailExistsInDb(connection, record.getTailNumber());
                     if (total <= 5) {
                         System.err.println("[DEBUG] tail=" + record.getTailNumber()
                                 + " open=" + record.getOpenDate() + " close=" + record.getCloseDate()
-                                + " count=" + flightCount);
+                                + " tail_in_db=" + tailExists);
                     }
-                    if (flightCount > 0) {
+                    if (tailExists) {
                         validWriter.println(line);
                         valid++;
                     } else {
@@ -370,13 +386,12 @@ public final class ExtractMaintenanceFlights {
                     MaintenanceRecord record = new MaintenanceRecord(line);
                     String key = record.getWorkorderNumber() + "|" + record.getTailNumber() + "|"
                             + record.getOpenDate() + "|" + record.getCloseDate();
-                    int count = countFlightsInMaintenancePeriod(connection,
-                            record.getTailNumber(), record.getOpenDate(), record.getCloseDate());
+                    boolean tailExists = tailExistsInDb(connection, record.getTailNumber());
                     boolean inValid = validKeys.contains(key);
-                    if (inValid && count <= 0) {
-                        mismatches.add("WO " + record.getWorkorderNumber() + " in valid CSV but count=" + count + " (expected > 0)");
-                    } else if (!inValid && count > 0) {
-                        mismatches.add("WO " + record.getWorkorderNumber() + " excluded from valid CSV but count=" + count + " (expected 0)");
+                    if (inValid && !tailExists) {
+                        mismatches.add("WO " + record.getWorkorderNumber() + " in valid CSV but tail not in DB");
+                    } else if (!inValid && tailExists) {
+                        mismatches.add("WO " + record.getWorkorderNumber() + " excluded from valid CSV but tail exists in DB");
                     }
                     checked++;
                 } catch (Exception e) {
