@@ -1657,7 +1657,6 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is an error with the SQL query
      */
     public static void main(String[] arguments) throws SQLException {
-        Runtime.getRuntime().addShutdownHook(new Thread(Database::closePool, "db-pool-shutdown"));
         Connection connection = Database.getConnection();
 
         // Run only validation: --validate <input_csv>
