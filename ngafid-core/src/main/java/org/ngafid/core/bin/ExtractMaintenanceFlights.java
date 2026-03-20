@@ -205,6 +205,20 @@ public final class ExtractMaintenanceFlights {
         LocalDate windowEnd = closeDate.plusDays(10);
         String windowStartGmt = utcDateToGmtStartOfDay(windowStart);
         String windowEndGmt = utcDateToGmtEndOfDay(windowEnd);
+        boolean debug = Boolean.getBoolean("ngafid.validate.debug");
+
+        if (debug) {
+            int tailRows = 0;
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT COUNT(*) FROM tails WHERE tail = ?")) {
+                ps.setString(1, tailNumber);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) tailRows = rs.getInt(1);
+                }
+            }
+            System.err.println("[DEBUG TAIL] tail=" + tailNumber + " -> " + tailRows + " row(s) in tails");
+        }
+
         PreparedStatement stmt = connection.prepareStatement(
                 "SELECT COUNT(*) FROM flights f " +
                 "JOIN tails t ON f.fleet_id = t.fleet_id AND f.system_id = t.system_id " +
@@ -219,6 +233,11 @@ public final class ExtractMaintenanceFlights {
         }
         rs.close();
         stmt.close();
+
+        if (debug) {
+            System.err.println("[DEBUG TIME] window=" + windowStartGmt + " to " + windowEndGmt
+                    + " (open=" + openDate + " close=" + closeDate + ") -> " + count + " flight(s)");
+        }
         return count;
     }
 
@@ -279,6 +298,11 @@ public final class ExtractMaintenanceFlights {
                     MaintenanceRecord record = new MaintenanceRecord(line);
                     int flightCount = countFlightsInMaintenancePeriod(connection,
                             record.getTailNumber(), record.getOpenDate(), record.getCloseDate());
+                    if (total <= 5) {
+                        System.err.println("[DEBUG] tail=" + record.getTailNumber()
+                                + " open=" + record.getOpenDate() + " close=" + record.getCloseDate()
+                                + " count=" + flightCount);
+                    }
                     if (flightCount > 0) {
                         validWriter.println(line);
                         valid++;
