@@ -397,13 +397,15 @@ public final class ExtractMaintenanceFlights {
 
         while (tailSet.next()) {
             String systemId = tailSet.getString(1);
+            int fleetId = tailSet.getInt(2);
 
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT id, start_time, end_time, airframe_id FROM flights " +
-                            "WHERE system_id = ? AND start_time <= ? AND end_time >= ? ORDER BY start_time");
-            stmt.setString(1, systemId);
-            stmt.setString(2, windowEndGmt);
-            stmt.setString(3, windowStartGmt);
+                            "WHERE fleet_id = ? AND system_id = ? AND start_time <= ? AND end_time >= ? ORDER BY start_time");
+            stmt.setInt(1, fleetId);
+            stmt.setString(2, systemId);
+            stmt.setString(3, windowEndGmt);
+            stmt.setString(4, windowStartGmt);
 
             ResultSet resultSet = stmt.executeQuery();
             while (resultSet.next()) {
@@ -1531,10 +1533,8 @@ public final class ExtractMaintenanceFlights {
                 // Do not create them here so workorders with no extracted flights leave no empty structure.
 
                 PreparedStatement tailStmt =
-                        connection.prepareStatement("SELECT system_id FROM tails WHERE tail = ? and fleet_id = ?");
+                        connection.prepareStatement("SELECT system_id, fleet_id FROM tails WHERE tail = ?");
                 tailStmt.setString(1, tailNumber);
-                int fleetId = 1; // UND
-                tailStmt.setInt(2, fleetId);
 
                 ResultSet tailSet = tailStmt.executeQuery();
                 List<AircraftTimeline> timeline = buildTimeline(connection, tailSet, startDate, endDate);
