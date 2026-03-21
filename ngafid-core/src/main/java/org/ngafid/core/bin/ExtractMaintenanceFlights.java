@@ -349,12 +349,9 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Validates maintenance orders from a CSV with flexible column names. Detects columns for
-     * workorder (WKO#, workorder), date opened (Date_Opened, date_time_opened), date closed
-     * (Date_Closed, date_time_closed), registration (Registration#, registration).
-     * Valid = tail exists in DB AND has flights before/during/after within 10-day window.
-     * Invalid = tail not in DB OR no flights in window.
-     * Writes valid-{basename}.csv and invalid-{basename}.csv in the same directory.
+     * Validates maintenance orders from a CSV with flexible column names. Streams row-by-row:
+     * checks registration exists, then flights in 10-day window. Writes valid rows immediately.
+     * Logs each work order as it is processed.
      */
     private static void validateMaintenanceOrders(Connection connection, String inputCsvPath)
             throws IOException, SQLException {
@@ -364,91 +361,45 @@ public final class ExtractMaintenanceFlights {
         String validCsvPath = (dir != null ? dir + File.separator : "") + "valid-" + baseName;
         String invalidCsvPath = (dir != null ? dir + File.separator : "") + "invalid-" + baseName;
 
-        String headerRaw = null;
-        List<String> dataLines = new ArrayList<>();
-        int[] colIndices = null;
+        Map<String, Boolean> keyToValid = new HashMap<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputCsvPath))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputCsvPath));
+             PrintWriter validWriter = new PrintWriter(new FileWriter(validCsvPath));
+             PrintWriter invalidWriter = new PrintWriter(new FileWriter(invalidCsvPath))) {
+
             String line = reader.readLine();
             if (line == null) {
-                System.err.println("Input file is empty.");
+                System.out.println("Input file is empty.");
                 return;
             }
-            headerRaw = line;
+            String headerRaw = line;
             String[] headerParts = parseCsvLine(line);
-            colIndices = detectOrderColumns(headerParts);
+            int[] colIndices = detectOrderColumns(headerParts);
             if (colIndices == null) {
-                System.err.println("Could not detect required columns (workorder, date_opened, date_closed, registration). " +
-                        "Header: " + String.join(",", headerParts));
+                System.out.println("Could not detect required columns. Header: " + String.join(",", headerParts));
                 return;
             }
-
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
-                dataLines.add(line);
-            }
-        }
-
-        Set<String> validKeys = new HashSet<>();
-        Set<String> invalidKeys = new HashSet<>();
-
-        for (String dataLine : dataLines) {
-            String[] parts = parseCsvLine(dataLine);
-            int maxIdx = Math.max(colIndices[0], Math.max(colIndices[1], Math.max(colIndices[2], colIndices[3])));
-            if (parts.length <= maxIdx) {
-                continue;
-            }
-            int workorder = parseIntOrZero(parts[colIndices[0]]);
-            String rawOpen = parts[colIndices[1]].trim();
-            String rawClose = parts[colIndices[2]].trim();
-            String registration = parts[colIndices[3]].trim();
-
-            String key = workorder + "|" + registration + "|" + rawOpen + "|" + rawClose;
-            if (validKeys.contains(key) || invalidKeys.contains(key)) {
-                continue;
-            }
-
-            LocalDate openDate;
-            LocalDate closeDate;
-            try {
-                openDate = parseDateTimeForOrders(rawOpen).toLocalDate();
-                closeDate = parseDateTimeForOrders(rawClose).toLocalDate();
-            } catch (Exception e) {
-                invalidKeys.add(key);
-                continue;
-            }
-
-            boolean tailExists = tailExistsInDb(connection, registration);
-            int flightCount = tailExists ? countFlightsInMaintenancePeriod(connection, registration, openDate, closeDate) : 0;
-            boolean hasFlights = flightCount > 0;
-
-            if (tailExists && hasFlights) {
-                validKeys.add(key);
-            } else {
-                invalidKeys.add(key);
-            }
-        }
-
-        Map<String, Boolean> keyToValid = new HashMap<>();
-        for (String k : validKeys) keyToValid.put(k, true);
-        for (String k : invalidKeys) keyToValid.put(k, false);
-
-        int validRows = 0;
-        int invalidRows = 0;
-        try (PrintWriter validWriter = new PrintWriter(new FileWriter(validCsvPath));
-             PrintWriter invalidWriter = new PrintWriter(new FileWriter(invalidCsvPath))) {
 
             validWriter.println(headerRaw);
             invalidWriter.println(headerRaw);
 
-            for (String dataLine : dataLines) {
-                String[] parts = parseCsvLine(dataLine);
-                int maxIdx = Math.max(colIndices[0], Math.max(colIndices[1], Math.max(colIndices[2], colIndices[3])));
+            int maxIdx = Math.max(colIndices[0], Math.max(colIndices[1], Math.max(colIndices[2], colIndices[3])));
+            int rowNum = 0;
+            int validRows = 0;
+            int invalidRows = 0;
+
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                rowNum++;
+
+                String[] parts = parseCsvLine(line);
                 if (parts.length <= maxIdx) {
-                    invalidWriter.println(dataLine);
+                    invalidWriter.println(line);
                     invalidRows++;
+                    invalidWriter.flush();
                     continue;
                 }
+
                 int workorder = parseIntOrZero(parts[colIndices[0]]);
                 String rawOpen = parts[colIndices[1]].trim();
                 String rawClose = parts[colIndices[2]].trim();
@@ -457,22 +408,55 @@ public final class ExtractMaintenanceFlights {
 
                 Boolean isValid = keyToValid.get(key);
                 if (isValid == null) {
-                    isValid = false;
+                    // New work order: check DB and log
+                    try {
+                        LocalDate openDate = parseDateTimeForOrders(rawOpen).toLocalDate();
+                        LocalDate closeDate = parseDateTimeForOrders(rawClose).toLocalDate();
+                        boolean tailExists = tailExistsInDb(connection, registration);
+                        if (!tailExists) {
+                            logOrder(workorder, registration, "registration not in DB");
+                            isValid = false;
+                        } else {
+                            int flightCount = countFlightsInMaintenancePeriod(connection, registration, openDate, closeDate);
+                            if (flightCount == 0) {
+                                logOrder(workorder, registration, "no flights in 10-day window");
+                                isValid = false;
+                            } else {
+                                logOrder(workorder, registration, "valid, " + flightCount + " flight(s)");
+                                isValid = true;
+                            }
+                        }
+                        keyToValid.put(key, isValid);
+                    } catch (Exception e) {
+                        logOrder(workorder, registration, "parse error: " + e.getMessage());
+                        keyToValid.put(key, false);
+                        isValid = false;
+                    }
                 }
-                if (isValid) {
-                    validWriter.println(dataLine);
+
+                if (Boolean.TRUE.equals(isValid)) {
+                    validWriter.println(line);
                     validRows++;
+                    validWriter.flush();
                 } else {
-                    invalidWriter.println(dataLine);
+                    invalidWriter.println(line);
                     invalidRows++;
+                    if (invalidRows % 1000 == 0) {
+                        invalidWriter.flush();
+                    }
                 }
             }
-        }
 
-        System.out.println("Validation (orders): total=" + dataLines.size() + " valid=" + validRows + " invalid=" + invalidRows +
-                " (unique orders: " + validKeys.size() + " valid, " + invalidKeys.size() + " invalid)");
-        System.out.println("  valid: " + validCsvPath);
-        System.out.println("  invalid: " + invalidCsvPath);
+            System.out.println("Validation complete: total=" + rowNum + " valid=" + validRows + " invalid=" + invalidRows);
+            System.out.println("  valid: " + validCsvPath);
+            System.out.println("  invalid: " + invalidCsvPath);
+            System.out.flush();
+        }
+    }
+
+    private static void logOrder(int workorder, String registration, String message) {
+        System.out.println("  WO " + workorder + " " + registration + ": " + message);
+        System.out.flush();
     }
 
     private static String[] parseCsvLine(String line) {
