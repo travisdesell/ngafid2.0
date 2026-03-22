@@ -101,7 +101,17 @@ export default function FlightsPanelChartLabelCard({
 
     const labelImportInputRef = useRef<HTMLInputElement | null>(null);
     const [dragging, setDragging] = useState(false);
+    const [localPosition, setLocalPosition] = useState(position);
+    const localPositionRef = useRef(position);
     const dragStartRef = useRef<{ mouseX: number; mouseY: number; left: number; top: number } | null>(null);
+
+    useEffect(() => {
+        if (dragging)
+            return;
+
+        setLocalPosition(position);
+        localPositionRef.current = position;
+    }, [position, dragging]);
 
     useEffect(() => {
         if (!dragging)
@@ -115,13 +125,17 @@ export default function FlightsPanelChartLabelCard({
             const dx = e.clientX - start.mouseX;
             const dy = e.clientY - start.mouseY;
 
-            onPositionChange({
+            const nextPosition = {
                 left: Math.max(0, start.left + dx),
                 top: Math.max(0, start.top + dy),
-            });
+            };
+
+            localPositionRef.current = nextPosition;
+            setLocalPosition(nextPosition);
         };
 
         const handleMouseUp = () => {
+            onPositionChange(localPositionRef.current);
             setDragging(false);
             dragStartRef.current = null;
         };
@@ -153,8 +167,8 @@ export default function FlightsPanelChartLabelCard({
         dragStartRef.current = {
             mouseX: e.clientX,
             mouseY: e.clientY,
-            left: position.left,
-            top: position.top,
+            left: localPositionRef.current.left,
+            top: localPositionRef.current.top,
         };
     };
 
@@ -301,7 +315,7 @@ export default function FlightsPanelChartLabelCard({
         return (
             <Card
                 className="absolute w-2xl bg-background/75 backdrop-blur-xs border shadow-sm z-20"
-                style={{ left: position.left, top: position.top }}
+                style={{ left: localPosition.left, top: localPosition.top }}
             >
                 <CardHeader className="flex justify-between flex-row cursor-grab active:cursor-grabbing pb-4" onMouseDown={handleDragStart}>
 
