@@ -22,6 +22,27 @@ import { memo, useEffect, useState } from "react";
 const log = getLogger("FlightRow", "darkgray", "Component");
 
 
+export function renderDateTime(value: string|number, fallback: string) {
+
+    const date = new Date(value);
+
+    // Invalid date -> Fallback
+    if (isNaN(date.getTime()))
+        return <span className="opacity-50">{fallback}</span>;
+
+    const formattedDate = date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+    return <span className="text-nowrap">{formattedDate}</span>;
+
+}
+
+
 function FlightRowSection({children, className}: {children: React.ReactNode, className?: string}) {
 
     return <Card className={`
@@ -44,7 +65,14 @@ function FlightRowInner({ flight }: { flight: Flight }) {
 
     const { setModal } = useModal();
     const { updateFlightTags } = useFlightsSearchFilter();
-    const { chartFlights, setChartFlights, selectedIds } = useFlightsChart();
+    const {
+        chartFlights,
+        setChartFlights,
+        selectedIds,
+        labelingEnabledFlightIds,
+        labelSectionsByFlight,
+        setLabelingEnabledForFlight,
+    } = useFlightsChart();
     const [optimisticSelected, setOptimisticSelected] = useState<null | boolean>(null);
     const [isSelecting, setIsSelecting] = useState(false);
 
@@ -81,6 +109,8 @@ function FlightRowInner({ flight }: { flight: Flight }) {
             return <span className="opacity-50">{fallback}</span>;
 
         }
+
+        const labelCount = labelSectionsByFlight[flight.id]?.length ?? 0;
 
         return <div className="grid grid-cols-2 text-nowrap gap-2 gap-x-6 items-start">
 
@@ -141,6 +171,17 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipContent>
             </Tooltip>
 
+            {/* Label Count */}
+            <Tooltip disableHoverableContent>
+                <TooltipTrigger>
+                    <Dot size={16} className="inline" />
+                    {renderDetailItem(labelCount > 0 ? `${labelCount} Labels` : null, "No Labels")}
+                </TooltipTrigger>
+                <TooltipContent>
+                    Label Count
+                </TooltipContent>
+            </Tooltip>
+
         </div>
 
     }
@@ -163,27 +204,6 @@ function FlightRowInner({ flight }: { flight: Flight }) {
 
             // Fallback value
             return <span className="opacity-50">{fallback}</span>;
-
-        }
-
-
-        const renderDateTime = (value: string|number, fallback: string) => {
-
-            const date = new Date(value);
-
-            // Invalid date -> Fallback
-            if (isNaN(date.getTime()))
-                return <span className="opacity-50">{fallback}</span>;
-
-            const formattedDate = date.toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-            });
-
-            return <span className="text-nowrap">{formattedDate}</span>;
 
         }
 
@@ -330,6 +350,8 @@ function FlightRowInner({ flight }: { flight: Flight }) {
 
         const flightInChartFlights = chartFlights.some((f: { id: number; }) => f.id === flight.id);
 
+        const labelToolActiveForFlight = labelingEnabledFlightIds.includes(flight.id);
+
         const toggleFlightInChartFlights = async () => {
 
             // Already selecting, exit
@@ -379,6 +401,32 @@ function FlightRowInner({ flight }: { flight: Flight }) {
         const showSelected = isSelectedVisual;
         const isDisabled = isSelecting;
 
+        const handleLabelingToolClick = async () => {
+
+            // Deactivate labeling if this flight is already active.
+            if (labelToolActiveForFlight) {
+                setLabelingEnabledForFlight(flight.id, false);
+                return;
+            }
+
+            // Ensure the flight is selected so the chart can display and label its traces.
+            if (!flightInChartFlights) {
+                try {
+                    await addFlightToChart(flight, setChartFlights);
+                } catch (error: any) {
+                    setModal(ErrorModal, {
+                        title: "Error Opening Labeling Tool",
+                        message: `Could not load chart data for flight ${flight.id}.`,
+                        code: error?.toString?.() ?? String(error),
+                    });
+                    return;
+                }
+            }
+
+            setLabelingEnabledForFlight(flight.id, true);
+
+        };
+
         return <div className="grid grid-cols-2 mx-auto gap-4" data-fit>
 
             {/* Select Toggle Button */}
@@ -424,12 +472,30 @@ function FlightRowInner({ flight }: { flight: Flight }) {
             {/* Labeling Button */}
             <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="w-8 h-8">
-                        <MapPinned size={16} />
+                    <Button
+                        variant="ghost"
+                        className={`w-8 h-8 relative`}
+                        onClick={() => {
+                            void handleLabelingToolClick();
+                        }}
+                    >
+                        <Loader2
+                            size={16}
+                            className={`absolute animate-spin ${isSelecting ? "opacity-100" : "opacity-0"}`}
+                        />
+                        <MapPinned
+                            size={16}
+                            className={`absolute ${isSelecting ? 'opacity-0' : labelToolActiveForFlight ? "opacity-25" : ""}`}
+                        />
+                        <Check
+                            size={32}
+                            className={`absolute ${isSelecting ? 'opacity-0' : labelToolActiveForFlight ? "opacity-100" : "opacity-0"}`}
+                        />
+
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    Labeling Tool
+                    {labelToolActiveForFlight ? "Close Labeling Tool" : "Open Labeling Tool"}
                 </TooltipContent>
             </Tooltip>
 

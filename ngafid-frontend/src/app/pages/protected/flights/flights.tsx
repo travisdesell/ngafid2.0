@@ -686,6 +686,11 @@ export default function FlightsPage() {
             perFlightEvents: {},
         } satisfies EventSelectionState,
 
+        labelingEnabledFlightIds: [],
+        selectedLabelingParamByFlight: {},
+        pendingLabelStartXByFlight: {},
+        labelSectionsByFlight: {},
+
         selectedIds: new Set<number>(),
     });
     const chartStateRef = useRef(chartState);
@@ -858,6 +863,62 @@ export default function FlightsPage() {
 
     const inflightSeriesRef = useRef<Map<SeriesKey, Promise<TraceSeries>>>(new Map());
 
+    const setLabelingEnabledForFlight = useCallback((flightId: number, enabled: boolean) => {
+
+        setChartState((prev) => {
+
+            const nextEnabled = new Set(prev.labelingEnabledFlightIds);
+
+            if (enabled)
+                nextEnabled.add(flightId);
+            else
+                nextEnabled.delete(flightId);
+
+            return {
+                ...prev,
+                labelingEnabledFlightIds: Array.from(nextEnabled),
+            };
+
+        });
+
+    }, [setChartState]);
+
+    const setSelectedLabelingParam = useCallback((flightId: number, paramName: string) => {
+
+        setChartState((prev) => ({
+            ...prev,
+            selectedLabelingParamByFlight: {
+                ...prev.selectedLabelingParamByFlight,
+                [flightId]: paramName,
+            },
+        }));
+
+    }, [setChartState]);
+
+    const setPendingLabelStartX = useCallback((flightId: number, x: number | null) => {
+
+        setChartState((prev) => ({
+            ...prev,
+            pendingLabelStartXByFlight: {
+                ...prev.pendingLabelStartXByFlight,
+                [flightId]: x,
+            },
+        }));
+
+    }, [setChartState]);
+
+    const setFlightLabelSections = useCallback<FlightsChartContextValue["setFlightLabelSections"]>((flightId, sections) => {
+
+        setChartState((prev) => ({
+            ...prev,
+            labelSectionsByFlight: {
+                ...prev.labelSectionsByFlight,
+                [flightId]: sections,
+            },
+        }));
+
+    }, [setChartState]);
+
     const ensureSeries = useCallback<EnsureSeriesFn>(
         async (flightId: number, paramName: string) => {
             const key = makeSeriesKey(flightId, paramName);
@@ -1001,6 +1062,30 @@ export default function FlightsPage() {
                                 newPerFlightEvents[flightID] = events;
                         }
 
+                        const newSelectedLabelingParamByFlight: Record<number, string> = {};
+                        for (const [flightIDStr, paramName] of Object.entries(prevState.selectedLabelingParamByFlight)) {
+                            const flightID = Number(flightIDStr);
+                            if (remainingIDs.has(flightID))
+                                newSelectedLabelingParamByFlight[flightID] = paramName;
+                        }
+
+                        const newPendingLabelStartXByFlight: Record<number, number | null> = {};
+                        for (const [flightIDStr, startX] of Object.entries(prevState.pendingLabelStartXByFlight)) {
+                            const flightID = Number(flightIDStr);
+                            if (remainingIDs.has(flightID))
+                                newPendingLabelStartXByFlight[flightID] = startX;
+                        }
+
+                        const newLabelSectionsByFlight: FlightsChartState["labelSectionsByFlight"] = {};
+                        for (const [flightIDStr, sections] of Object.entries(prevState.labelSectionsByFlight)) {
+                            const flightID = Number(flightIDStr);
+                            if (remainingIDs.has(flightID))
+                                newLabelSectionsByFlight[flightID] = sections;
+                        }
+
+                        const newLabelingEnabledFlightIds = prevState.labelingEnabledFlightIds
+                            .filter((flightID) => remainingIDs.has(flightID));
+
                         return {
                             ...prevState,
                             chartFlights: next,
@@ -1012,6 +1097,10 @@ export default function FlightsPage() {
                                 ...prevState.eventSelection,
                                 perFlightEvents: newPerFlightEvents,
                             },
+                            labelingEnabledFlightIds: newLabelingEnabledFlightIds,
+                            selectedLabelingParamByFlight: newSelectedLabelingParamByFlight,
+                            pendingLabelStartXByFlight: newPendingLabelStartXByFlight,
+                            labelSectionsByFlight: newLabelSectionsByFlight,
                         };
 
                     });
@@ -1103,6 +1192,10 @@ export default function FlightsPage() {
         chartData: chartState.chartData,
         chartSelection: chartState.chartSelection,
         eventSelection: chartState.eventSelection,
+        labelingEnabledFlightIds: chartState.labelingEnabledFlightIds,
+        selectedLabelingParamByFlight: chartState.selectedLabelingParamByFlight,
+        pendingLabelStartXByFlight: chartState.pendingLabelStartXByFlight,
+        labelSectionsByFlight: chartState.labelSectionsByFlight,
         selectedIds,
         setChartFlights,
         ensureSeries,
@@ -1110,11 +1203,19 @@ export default function FlightsPage() {
         togglePerFlightParam,
         toggleUniversalEvent,
         togglePerFlightEvent,
+        setLabelingEnabledForFlight,
+        setSelectedLabelingParam,
+        setPendingLabelStartX,
+        setFlightLabelSections,
     }), [
         chartFlights,
         chartState.chartData,
         chartState.chartSelection,
         chartState.eventSelection,
+        chartState.labelingEnabledFlightIds,
+        chartState.selectedLabelingParamByFlight,
+        chartState.pendingLabelStartXByFlight,
+        chartState.labelSectionsByFlight,
         selectedIds,
         setChartFlights,
         ensureSeries,
@@ -1122,6 +1223,10 @@ export default function FlightsPage() {
         togglePerFlightParam,
         toggleUniversalEvent,
         togglePerFlightEvent,
+        setLabelingEnabledForFlight,
+        setSelectedLabelingParam,
+        setPendingLabelStartX,
+        setFlightLabelSections,
     ]);
 
 

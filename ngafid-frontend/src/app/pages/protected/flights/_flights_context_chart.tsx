@@ -13,8 +13,26 @@ export type FlightsChartState = {
 
     eventSelection: EventSelectionState;
 
+    labelingEnabledFlightIds: number[];
+    selectedLabelingParamByFlight: Record<number, string>;
+    pendingLabelStartXByFlight: Record<number, number | null>;
+    labelSectionsByFlight: Record<number, FlightLabelSection[]>;
+
     selectedIds: Set<number>;
 }
+
+export type FlightLabelSection = {
+    id: number | null;
+    startIndex: number;
+    endIndex: number;
+    startTime: number;
+    endTime: number;
+    startValue: number;
+    endValue: number;
+    labelText: string;
+    parameterNames: string[];
+    visibleOnChart?: boolean;
+};
 
 export type EnsureSeriesFn = (flightId: number, paramName: string) => Promise<TraceSeries>;
 
@@ -24,6 +42,10 @@ export interface FlightsChartContextValue extends FlightsChartState {
     togglePerFlightParam: (flightId: number, name: string) => void;
     toggleUniversalEvent: (name: string) => void;
     togglePerFlightEvent: (flightId: number, name: string) => void;
+    setLabelingEnabledForFlight: (flightId: number, enabled: boolean) => void;
+    setSelectedLabelingParam: (flightId: number, paramName: string) => void;
+    setPendingLabelStartX: (flightId: number, x: number | null) => void;
+    setFlightLabelSections: (flightId: number, sections: FlightLabelSection[]) => void;
     ensureSeries: EnsureSeriesFn;
 }
 

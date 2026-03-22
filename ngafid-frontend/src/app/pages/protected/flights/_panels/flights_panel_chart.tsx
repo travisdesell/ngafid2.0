@@ -2,7 +2,9 @@
 "use client";
 
 import { ChartsListModal } from "@/components/modals/charts_list_modal/charts_list_modal";
+import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import SuccessModal from "@/components/modals/success_modal";
 import Ping from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -18,14 +20,16 @@ import {
     ChartTooltipContent
 } from "@/components/ui/chart";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { fetchJson } from "@/fetchJson";
 import { useEffectPrev } from "@/lib/useEffectPrev";
 import { useFlightsChart } from "@/pages/protected/flights/_flights_context_chart";
+import FlightsPanelChartLabelCard from "@/pages/protected/flights/_panels/_chart/flights_panel_chart_label_card";
 import { Flight } from "@/pages/protected/flights/types";
 import { TraceSeries } from "@/pages/protected/flights/types_charts";
 import { AccordionItem } from "@radix-ui/react-accordion";
 import { ArrowBigUp, ArrowLeftToLine, Expand, Info, List, Mouse, MousePointerClick, NavigationOff, SquareChevronUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 const log = getLogger("FlightsPanelChart", "blue", "Component");
@@ -133,6 +137,13 @@ type ChartModel = {
         x2: number;
         color: string;
     }>;
+    labelOverlays: Array<{
+        id: string;
+        flightId: number;
+        x1: number;
+        x2: number;
+        color: string;
+    }>;
     xMin: number;
     xMax: number;
     yMin: number;
@@ -147,11 +158,62 @@ const buildEmptyChartModel = (loading: boolean): ChartModel => ({
     seriesKeys: [],
     seriesFlightIDByKey: {},
     eventOverlays: [],
+    labelOverlays: [],
     xMin: 0,
     xMax: 0,
     yMin: 0,
     yMax: 0,
 });
+
+type ApiFlightLabel = {
+    id: number;
+    startIndex: number;
+    endIndex: number;
+    startTime: number;
+    endTime: number;
+    startValue: number;
+    endValue: number;
+    labelText?: string;
+    parameterNames?: string[];
+    visibleOnChart?: boolean;
+};
+
+type LabelSection = {
+    id: number | null;
+    startIndex: number;
+    endIndex: number;
+    startTime: number;
+    endTime: number;
+    startValue: number;
+    endValue: number;
+    labelText: string;
+    parameterNames: string[];
+    visibleOnChart?: boolean;
+};
+
+const mapApiLabelToSection = (entry: ApiFlightLabel): LabelSection => ({
+    id: Number.isFinite(entry.id) ? entry.id : null,
+    startIndex: Number.isFinite(entry.startIndex) ? entry.startIndex : 0,
+    endIndex: Number.isFinite(entry.endIndex) ? entry.endIndex : 0,
+    startTime: Number(entry.startTime),
+    endTime: Number(entry.endTime),
+    startValue: Number(entry.startValue),
+    endValue: Number(entry.endValue),
+    labelText: String(entry.labelText ?? ""),
+    parameterNames: Array.isArray(entry.parameterNames) ? entry.parameterNames : [],
+    visibleOnChart: entry.visibleOnChart,
+});
+
+const toRelativeSeconds = (rawTime: number, flightStartMs: number): number => {
+    if (!Number.isFinite(rawTime))
+        return 0;
+
+    // Backend often stores unix seconds, but older entries can still be elapsed seconds.
+    if (rawTime >= 1e9)
+        return (rawTime * 1000 - flightStartMs) / 1000;
+
+    return rawTime;
+};
 
 const decimateSeries = (series: TraceSeries) => {
 
@@ -206,7 +268,14 @@ const decimateSeries = (series: TraceSeries) => {
 
 type AxisMeta = { ticks: number[]; dayBoundaryTimes: number[]; domainSpanMinutes: number; };
 
-type InteractiveChartProps = { chartModel: ChartModel; useAlignedStartTimes: boolean; theme: string | undefined; shiftHeld: boolean; ctrlHeld: boolean; };
+type InteractiveChartProps = {
+    chartModel: ChartModel;
+    useAlignedStartTimes: boolean;
+    theme: string | undefined;
+    shiftHeld: boolean;
+    ctrlHeld: boolean;
+    onChartXClick?: (xValue: number) => void;
+};
 
 type InteractiveChartHandle = { resetView: () => void; };
 
@@ -218,6 +287,7 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         theme,
         shiftHeld,
         ctrlHeld,
+        onChartXClick,
     },
     ref,
 ) {
@@ -561,6 +631,13 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                         right: 12,
                     }}
                     onMouseDown={handleChartMouseDown}
+                    onClick={(state: any) => {
+                        const numericX = Number(state?.activeLabel);
+                        if (!Number.isFinite(numericX))
+                            return;
+
+                        onChartXClick?.(numericX);
+                    }}
                     className={`${cursorClass}`}
                 >
                     <CartesianGrid />
@@ -710,6 +787,22 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                         ))
                     }
                     {
+                        chartModel.labelOverlays.map((overlay) => (
+                            <ReferenceArea
+                                key={overlay.id}
+                                x1={overlay.x1}
+                                x2={overlay.x2}
+                                y1={activeYDomain ? activeYDomain[0] : chartModel.yMin}
+                                y2={activeYDomain ? activeYDomain[1] : chartModel.yMax}
+                                ifOverflow="hidden"
+                                stroke={overlay.color}
+                                strokeOpacity={0.7}
+                                fill={overlay.color}
+                                fillOpacity={0.12}
+                            />
+                        ))
+                    }
+                    {
                         chartModel.seriesKeys.map((key) => (
                             <Line
                                 key={key}
@@ -765,6 +858,14 @@ export function FlightsPanelChart() {
         ensureSeries,
         toggleUniversalParam,
         togglePerFlightParam,
+        labelingEnabledFlightIds,
+        selectedLabelingParamByFlight,
+        pendingLabelStartXByFlight,
+        labelSectionsByFlight,
+        setLabelingEnabledForFlight,
+        setSelectedLabelingParam,
+        setPendingLabelStartX,
+        setFlightLabelSections,
     } = useFlightsChart();
 
     const { useHighContrastCharts, theme } = useTheme();
@@ -772,6 +873,8 @@ export function FlightsPanelChart() {
 
     const [gotChartFlightAdded, setGotChartFlightAdded] = useState(false);
     const [useAlignedStartTimes, setUseAlignedStartTimes] = useState(false);
+    const [activeLabelingCaptureFlightId, setActiveLabelingCaptureFlightId] = useState<number | null>(null);
+    const [labelingCardPositionByFlight, setLabelingCardPositionByFlight] = useState<Record<number, { left: number; top: number }>>({});
 
     const interactiveChartRef = useRef<InteractiveChartHandle | null>(null);
 
@@ -857,6 +960,247 @@ export function FlightsPanelChart() {
 
     }, [chartFlights]);
 
+    const labelingEnabledFlightIdSet = useMemo(
+        () => new Set(labelingEnabledFlightIds),
+        [labelingEnabledFlightIds],
+    );
+
+    const labelingEnabledFlights = useMemo(
+        () => chartFlights.filter((flight) => labelingEnabledFlightIdSet.has(flight.id)),
+        [chartFlights, labelingEnabledFlightIdSet],
+    );
+
+    useEffect(() => {
+
+        setLabelingCardPositionByFlight((prev) => {
+            const next = { ...prev };
+
+            labelingEnabledFlights.forEach((flight, index) => {
+                if (!next[flight.id]) {
+                    next[flight.id] = {
+                        left: 8 + (index * 28),
+                        top: 8 + (index * 28),
+                    };
+                }
+            });
+
+            return next;
+        });
+
+    }, [labelingEnabledFlights]);
+
+    const labelingParameterOptionsByFlight = useMemo(() => {
+        const optionsByFlight: Record<number, string[]> = {};
+
+        labelingEnabledFlights.forEach((flight) => {
+            optionsByFlight[flight.id] = [
+                ...(flight.commonTraceNames ?? []),
+                ...(flight.uncommonTraceNames ?? []),
+            ];
+        });
+
+        return optionsByFlight;
+    }, [labelingEnabledFlights]);
+
+    const loadLabelsForFlight = useCallback(async (flightId: number) => {
+        try {
+            const result = await fetchJson.get<ApiFlightLabel[]>(`/api/flight/${flightId}/labels`);
+            const mapped = (result ?? []).map(mapApiLabelToSection);
+            setFlightLabelSections(flightId, mapped);
+        } catch (error: any) {
+            setModal(ErrorModal, {
+                title: "Error Loading Labels",
+                message: `Failed to load labels for flight ${flightId}.`,
+                code: error?.toString?.() ?? String(error),
+            });
+        }
+    }, [setFlightLabelSections, setModal]);
+
+    useEffect(() => {
+
+        labelingEnabledFlightIds.forEach((flightId) => {
+            void loadLabelsForFlight(flightId);
+        });
+
+    }, [labelingEnabledFlightIds, loadLabelsForFlight]);
+
+    useEffect(() => {
+        if (activeLabelingCaptureFlightId === null)
+            return;
+
+        if (!labelingEnabledFlightIdSet.has(activeLabelingCaptureFlightId))
+            setActiveLabelingCaptureFlightId(null);
+    }, [activeLabelingCaptureFlightId, labelingEnabledFlightIdSet]);
+
+    useEffect(() => {
+
+        labelingEnabledFlightIds.forEach((flightId) => {
+            const selectedParam = selectedLabelingParamByFlight[flightId];
+            const options = labelingParameterOptionsByFlight[flightId] ?? [];
+
+            if (!selectedParam && options.length > 0)
+                setSelectedLabelingParam(flightId, options[0]!);
+        });
+
+    }, [labelingEnabledFlightIds, selectedLabelingParamByFlight, labelingParameterOptionsByFlight, setSelectedLabelingParam]);
+
+    const handleLabelingParameterChange = (flightId: number, paramName: string) => {
+        setSelectedLabelingParam(flightId, paramName);
+        setPendingLabelStartX(flightId, null);
+    };
+
+    const handleToggleRangeCapture = (flightId: number) => {
+        setActiveLabelingCaptureFlightId((prev) => {
+            const next = (prev === flightId) ? null : flightId;
+
+            if (next === null)
+                setPendingLabelStartX(flightId, null);
+
+            return next;
+        });
+    };
+
+    const handleCloseLabeling = (flightId: number) => {
+        setPendingLabelStartX(flightId, null);
+
+        if (activeLabelingCaptureFlightId === flightId)
+            setActiveLabelingCaptureFlightId(null);
+
+        setLabelingEnabledForFlight(flightId, false);
+    };
+
+    const handleImportCsv = (flightId: number, file: File) => {
+
+        void (async () => {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                await fetchJson.post(`/api/flight/${flightId}/labels/import`, formData);
+                await loadLabelsForFlight(flightId);
+                setModal(SuccessModal, {
+                    title: "Labels Imported",
+                    message: `Successfully imported labels for flight ${flightId}.`,
+                });
+            } catch (error: any) {
+                setModal(ErrorModal, {
+                    title: "Import Failed",
+                    message: `Could not import labels for flight ${flightId}.`,
+                    code: error?.toString?.() ?? String(error),
+                });
+            }
+        })();
+
+    };
+
+    const getSeriesForLabeling = async (flightId: number, paramName: string): Promise<TraceSeries | null> => {
+        const existing = chartData.seriesByFlight[flightId]?.[paramName];
+        if (existing)
+            return existing;
+
+        try {
+            return await ensureSeries(flightId, paramName);
+        } catch (error: any) {
+            setModal(ErrorModal, {
+                title: "Error Loading Labeling Parameter",
+                message: `Could not load ${paramName} for flight ${flightId}.`,
+                code: error?.toString?.() ?? String(error),
+            });
+            return null;
+        }
+    };
+
+    const findNearestSeriesIndex = (timestamps: number[], targetSeconds: number): number | null => {
+        if (timestamps.length === 0 || !Number.isFinite(targetSeconds))
+            return null;
+
+        let nearestIndex = 0;
+        let bestDistance = Number.POSITIVE_INFINITY;
+
+        for (let i = 0; i < timestamps.length; i++) {
+            const distance = Math.abs(timestamps[i]! - targetSeconds);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                nearestIndex = i;
+            }
+        }
+
+        return nearestIndex;
+    };
+
+    const handleLabelingChartClick = (xValue: number) => {
+
+        if (activeLabelingCaptureFlightId === null)
+            return;
+
+        const selectedParam = selectedLabelingParamByFlight[activeLabelingCaptureFlightId];
+        if (!selectedParam)
+            return;
+
+        void (async () => {
+
+            const series = await getSeriesForLabeling(activeLabelingCaptureFlightId, selectedParam);
+            if (!series)
+                return;
+
+            const flightStartMsMaybe = flightStartMsById.get(activeLabelingCaptureFlightId);
+            if (typeof flightStartMsMaybe !== "number" || Number.isNaN(flightStartMsMaybe))
+                return;
+            const flightStartMs = flightStartMsMaybe;
+
+            const clickedRelativeSeconds = useAlignedStartTimes
+                ? xValue
+                : (xValue - flightStartMs) / 1000;
+
+            const pendingStartX = pendingLabelStartXByFlight[activeLabelingCaptureFlightId] ?? null;
+
+            // First click marks the start of the new label section.
+            if (pendingStartX === null) {
+                setPendingLabelStartX(activeLabelingCaptureFlightId, clickedRelativeSeconds);
+                return;
+            }
+
+            const startIdxRaw = findNearestSeriesIndex(series.timestamps, pendingStartX);
+            const endIdxRaw = findNearestSeriesIndex(series.timestamps, clickedRelativeSeconds);
+
+            if (startIdxRaw === null || endIdxRaw === null)
+                return;
+
+            const startIndex = Math.min(startIdxRaw, endIdxRaw);
+            const endIndex = Math.max(startIdxRaw, endIdxRaw);
+
+            const startRelSeconds = series.timestamps[startIndex] ?? 0;
+            const endRelSeconds = series.timestamps[endIndex] ?? startRelSeconds;
+            const startValue = series.values[startIndex] ?? 0;
+            const endValue = series.values[endIndex] ?? startValue;
+
+            const payload = {
+                startIndex,
+                endIndex,
+                startTime: (flightStartMs + startRelSeconds * 1000) / 1000,
+                endTime: (flightStartMs + endRelSeconds * 1000) / 1000,
+                startValue,
+                endValue,
+                labelText: "",
+                parameterNames: [selectedParam],
+            };
+
+            try {
+                await fetchJson.post(`/api/flight/${activeLabelingCaptureFlightId}/labels`, payload);
+                setPendingLabelStartX(activeLabelingCaptureFlightId, null);
+                await loadLabelsForFlight(activeLabelingCaptureFlightId);
+            } catch (error: any) {
+                setPendingLabelStartX(activeLabelingCaptureFlightId, null);
+                setModal(ErrorModal, {
+                    title: "Error Saving Label Section",
+                    message: `Could not create label section for flight ${activeLabelingCaptureFlightId}.`,
+                    code: error?.toString?.() ?? String(error),
+                });
+            }
+
+        })();
+
+    };
 
     // Ensure series are loaded for all selected (flightId, paramName)
     useEffect(() => {
@@ -1321,6 +1665,58 @@ export function FlightsPanelChart() {
 
         eventOverlays.sort((a, b) => (a.x1 - b.x1) || (a.x2 - b.x2));
 
+        const labelOverlays: ChartModel["labelOverlays"] = [];
+
+        for (const flight of chartFlights) {
+
+            const sections = labelSectionsByFlight[flight.id] ?? [];
+            if (sections.length === 0)
+                continue;
+
+            const flightStartMsMaybe = flightStartMsById.get(flight.id);
+            if (typeof flightStartMsMaybe !== "number" || Number.isNaN(flightStartMsMaybe))
+                continue;
+            const flightStartMs = flightStartMsMaybe;
+
+            for (const section of sections) {
+
+                const startRelSeconds = toRelativeSeconds(Number(section.startTime), flightStartMs);
+                const endRelSeconds = toRelativeSeconds(Number(section.endTime), flightStartMs);
+
+                let x1 = useAlignedStartTimes
+                    ? startRelSeconds
+                    : (flightStartMs + startRelSeconds * 1000);
+
+                let x2 = useAlignedStartTimes
+                    ? endRelSeconds
+                    : (flightStartMs + endRelSeconds * 1000);
+
+                if (!Number.isFinite(x1) || !Number.isFinite(x2))
+                    continue;
+
+                if (x2 < x1) {
+                    const tmp = x1;
+                    x1 = x2;
+                    x2 = tmp;
+                }
+
+                if (x1 === x2)
+                    x2 = x1 + (useAlignedStartTimes ? 0.25 : 250);
+
+                labelOverlays.push({
+                    id: `label-${flight.id}-${section.id ?? `${section.startIndex}-${section.endIndex}`}`,
+                    flightId: flight.id,
+                    x1,
+                    x2,
+                    color: "var(--chart-5)",
+                });
+
+            }
+
+        }
+
+        labelOverlays.sort((a, b) => (a.x1 - b.x1) || (a.x2 - b.x2));
+
         log("Built chart config and base domains: ", {
             xMin,
             xMax,
@@ -1329,6 +1725,7 @@ export function FlightsPanelChart() {
             seriesCount: seriesKeys.length,
             pointCount: data.length,
             eventOverlayCount: eventOverlays.length,
+            labelOverlayCount: labelOverlays.length,
         });
 
         return {
@@ -1339,6 +1736,7 @@ export function FlightsPanelChart() {
             seriesKeys,
             seriesFlightIDByKey,
             eventOverlays,
+            labelOverlays,
             xMin,
             xMax,
             yMin,
@@ -1351,6 +1749,7 @@ export function FlightsPanelChart() {
         selectedParamsByFlight,
         selectedEventsByFlight,
         chartData.seriesByFlight,
+        labelSectionsByFlight,
         useHighContrastCharts,
         flightStartMsById,
         useAlignedStartTimes,
@@ -1749,6 +2148,7 @@ export function FlightsPanelChart() {
                             theme={theme}
                             shiftHeld={shiftHeld}
                             ctrlHeld={ctrlHeld}
+                            onChartXClick={handleLabelingChartClick}
                         />
                     )}
             </AnimatePresence>
@@ -1758,6 +2158,46 @@ export function FlightsPanelChart() {
                 (!noFlights)
                 &&
                 <>
+                    {/* Labeling Tool */}
+                    {
+                        labelingEnabledFlights.map((flight, index) => {
+
+                            const defaultPosition = {
+                                left: 8 + (index * 28),
+                                top: 8 + (index * 28),
+                            };
+                            const position = labelingCardPositionByFlight[flight.id] ?? defaultPosition;
+
+                            return (
+                                <FlightsPanelChartLabelCard
+                                    key={flight.id}
+                                    flightId={flight.id}
+                                    pendingStartX={pendingLabelStartXByFlight[flight.id] ?? null}
+                                    flightLabelSections={labelSectionsByFlight[flight.id] ?? []}
+                                    onFlightCsvDownload={() => {
+                                        window.location.href = `/api/flight/${flight.id}/labels/csv`;
+                                    }}
+                                    onFleetCsvDownload={() => {
+                                        window.location.href = "/api/fleet/labels/csv";
+                                    }}
+                                    onImportCsv={(file) => {
+                                        handleImportCsv(flight.id, file);
+                                    }}
+                                    onClose={() => {
+                                        handleCloseLabeling(flight.id);
+                                    }}
+                                    position={position}
+                                    onPositionChange={(nextPosition) => {
+                                        setLabelingCardPositionByFlight((prev) => ({
+                                            ...prev,
+                                            [flight.id]: nextPosition,
+                                        }));
+                                    }}
+                                />
+                            );
+                        })
+                    }
+
                     {/* Controls Guide */}
                     {renderChartInteractionControlsGuide()}
 
