@@ -1093,6 +1093,38 @@ export function FlightsPanelChart() {
 
     };
 
+    const handleRemoveLabelSection = (flightId: number, sectionIndex: number) => {
+
+        const currentSections = labelSectionsByFlight[flightId] ?? [];
+        const targetSection = currentSections[sectionIndex];
+
+        if (!targetSection)
+            return;
+
+        const nextSections = currentSections.filter((_, i) => i !== sectionIndex);
+        setFlightLabelSections(flightId, nextSections);
+
+        if (targetSection.id === null)
+            return;
+
+        const sectionId = targetSection.id;
+
+        void (async () => {
+            try {
+                await fetchJson.delete(`/api/flight/${flightId}/labels/${encodeURIComponent(sectionId)}`);
+                await loadLabelsForFlight(flightId);
+            } catch (error: any) {
+                await loadLabelsForFlight(flightId);
+                setModal(ErrorModal, {
+                    title: "Error Removing Label Section",
+                    message: `Could not remove label section for flight ${flightId}.`,
+                    code: error?.toString?.() ?? String(error),
+                });
+            }
+        })();
+
+    };
+
     const getSeriesForLabeling = async (flightId: number, paramName: string): Promise<TraceSeries | null> => {
         const existing = chartData.seriesByFlight[flightId]?.[paramName];
         if (existing)
@@ -2182,6 +2214,9 @@ export function FlightsPanelChart() {
                                     }}
                                     onImportCsv={(file) => {
                                         handleImportCsv(flight.id, file);
+                                    }}
+                                    onRemoveSection={(sectionIndex) => {
+                                        handleRemoveLabelSection(flight.id, sectionIndex);
                                     }}
                                     onClose={() => {
                                         handleCloseLabeling(flight.id);

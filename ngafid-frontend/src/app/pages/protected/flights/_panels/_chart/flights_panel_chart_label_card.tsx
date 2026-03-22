@@ -15,6 +15,7 @@ type Props = {
     onFlightCsvDownload: () => void;
     onFleetCsvDownload: () => void;
     onImportCsv: (file: File) => void;
+    onRemoveSection: (sectionIndex: number) => void;
     onClose: () => void;
     position: { left: number; top: number };
     onPositionChange: (next: { left: number; top: number }) => void;
@@ -94,6 +95,7 @@ export default function FlightsPanelChartLabelCard({
     onFlightCsvDownload,
     onFleetCsvDownload,
     onImportCsv,
+    onRemoveSection,
     onClose,
     position,
     onPositionChange,
@@ -174,6 +176,15 @@ export default function FlightsPanelChartLabelCard({
 
     const renderTable = () => {
 
+        // No Labels Yet
+        if (!flightLabelSections || flightLabelSections.length === 0) {
+
+            return <div className="p-4 text-center text-sm text-muted-foreground">
+                No labels for this flight exist yet.
+            </div>;
+
+        }
+
         return <table className="text-xs w-full">
             <thead>
                 <tr className="*:py-2 text-left *:pl-2">
@@ -243,12 +254,12 @@ export default function FlightsPanelChartLabelCard({
                                 {/* Remove Section Button */}
                                 <td className="align-middle text-center">
                                     <Button
-                                        variant="ghost"
+                                        variant="ghostDestructive"
                                         size="sm"
-                                        className="p-0 aspect-square opacity-50 cursor-not-allowed"
+                                        className="p-0 aspect-square"
                                         style={{ minWidth: 28 }}
-                                        title="Remove section (coming soon)"
-                                        disabled
+                                        title="Remove section"
+                                        onClick={() => onRemoveSection(i)}
                                     >
                                         <Trash />
                                     </Button>
