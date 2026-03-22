@@ -118,6 +118,7 @@ export default function FlightsPanelChartLabelCard({
     onPositionChange,
 }: Props) {
 
+    const cardRef = useRef<HTMLDivElement | null>(null);
     const labelImportInputRef = useRef<HTMLInputElement | null>(null);
     const [dragging, setDragging] = useState(false);
     const [localPosition, setLocalPosition] = useState(position);
@@ -144,9 +145,23 @@ export default function FlightsPanelChartLabelCard({
             const dx = e.clientX - start.mouseX;
             const dy = e.clientY - start.mouseY;
 
+            let nextLeft = Math.max(0, start.left + dx);
+            let nextTop = Math.max(0, start.top + dy);
+
+            const cardElement = cardRef.current;
+            const containerElement = cardElement?.parentElement;
+
+            if (cardElement && containerElement) {
+                const maxLeft = Math.max(0, containerElement.clientWidth - cardElement.offsetWidth);
+                const maxTop = Math.max(0, containerElement.clientHeight - cardElement.offsetHeight);
+
+                nextLeft = Math.min(nextLeft, maxLeft);
+                nextTop = Math.min(nextTop, maxTop);
+            }
+
             const nextPosition = {
-                left: Math.max(0, start.left + dx),
-                top: Math.max(0, start.top + dy),
+                left: nextLeft,
+                top: nextTop,
             };
 
             localPositionRef.current = nextPosition;
@@ -404,6 +419,7 @@ export default function FlightsPanelChartLabelCard({
 
         return (
             <Card
+                ref={cardRef}
                 className="absolute w-2xl bg-background/75 backdrop-blur-xs border shadow-sm z-20"
                 style={{ left: localPosition.left, top: localPosition.top }}
             >
