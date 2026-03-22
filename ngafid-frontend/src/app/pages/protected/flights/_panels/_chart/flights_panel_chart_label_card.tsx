@@ -1,11 +1,13 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/_chart/flights_panel_chart_label_card.tsx
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { renderDateTime } from "@/pages/protected/flights/_flight_row/flight_row";
 import { FlightLabelSection } from "@/pages/protected/flights/_flights_context_chart";
-import { Download, FileUp, MapPinned, Trash } from "lucide-react";
+import { Download, FileUp, MapPinned, Minus, Trash } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 type Props = {
@@ -16,10 +18,22 @@ type Props = {
     onFleetCsvDownload: () => void;
     onImportCsv: (file: File) => void;
     onRemoveSection: (sectionIndex: number) => void;
+    labelDefinitions: FleetLabelDefinition[];
+    onUpdateSectionLabel: (sectionIndex: number, labelText: string) => void;
+    onCreateLabelDefinition: (labelText: string) => Promise<boolean>;
     onClose: () => void;
     position: { left: number; top: number };
     onPositionChange: (next: { left: number; top: number }) => void;
 };
+
+type FleetLabelDefinition = {
+    id: number;
+    labelText: string;
+    displayOrder: number;
+};
+
+const ADD_NEW_LABEL_VALUE = "__add_new__";
+const NONE_LABEL_VALUE = "__none__";
 
 const LABELING_MARKER_COLORS = [
     "#e6194b", "#3cb44b", "#4363d8", "#f58231", "#911eb4", "#42d4f4", "#f032e6", "#bfef45",
@@ -96,6 +110,9 @@ export default function FlightsPanelChartLabelCard({
     onFleetCsvDownload,
     onImportCsv,
     onRemoveSection,
+    labelDefinitions,
+    onUpdateSectionLabel,
+    onCreateLabelDefinition,
     onClose,
     position,
     onPositionChange,
@@ -174,6 +191,24 @@ export default function FlightsPanelChartLabelCard({
         };
     };
 
+    const handleLabelSelectionChange = async (sectionIndex: number, nextValue: string) => {
+        if (nextValue !== ADD_NEW_LABEL_VALUE) {
+            onUpdateSectionLabel(sectionIndex, nextValue);
+            return;
+        }
+
+        const text = window.prompt("New label text (e.g. 40-my cluster name):");
+        if (text == null || String(text).trim() === "")
+            return;
+
+        const labelText = String(text).trim();
+        const created = await onCreateLabelDefinition(labelText);
+        if (!created)
+            return;
+
+        onUpdateSectionLabel(sectionIndex, labelText);
+    };
+
     const renderTable = () => {
 
         // No Labels Yet
@@ -189,13 +224,10 @@ export default function FlightsPanelChartLabelCard({
             <thead>
                 <tr className="*:py-2 text-left *:pl-2">
                     <th className="invisible">{/*Show*/}</th>
-                    {/* <th ></th> */}
                     <th >Time Range</th>
-                    {/* <th >End time</th> */}
                     <th >Value Range</th>
-                    {/* <th >Val end</th> */}
                     <th >Parameters</th>
-                    <th >Label</th>
+                    <th className="pl-6!">Label</th>
                     <th ></th>
                 </tr>
             </thead>
@@ -207,11 +239,11 @@ export default function FlightsPanelChartLabelCard({
                         return (
                             <tr
                                 key={`${flightId}-${section.id ?? i}`}
-                                className="*:select-auto! border-t *:px-2 *:py-1 *:min-w-12  *:pt-2"
+                                className="*:select-auto! border-t *:px-2 *:min-w-12 *:py-2"
                             >
 
                                 {/* Chart Visibility Toggle */}
-                                <td className="align-middle text-center min-w-0! pl-4! relative overflow-clip">
+                                <td className="text-center min-w-0! pl-4! pt-3! relative overflow-clip">
                                     <Checkbox
                                         checked={section.visibleOnChart !== false}
                                         disabled
@@ -237,18 +269,65 @@ export default function FlightsPanelChartLabelCard({
 
                                 {/* Start/End Values */}
                                 <td>
-                                    {showVal ? formatNumericValue(section.startValue) : "-"}
-                                    &nbsp;-&nbsp;
-                                    {showVal ? formatNumericValue(section.endValue) : "-"}
+                                    <div className="flex w-fit gap-2">
+                                        {showVal ? formatNumericValue(section.startValue) : "-"}
+                                        <Minus size={16} className="opacity-25"/>
+                                        {showVal ? formatNumericValue(section.endValue) : "-"}
+                                    </div>
                                 </td>
 
                                 {/* Parameter Names */}
-                                <td>{(section.parameterNames && section.parameterNames.length > 0) ? section.parameterNames.join(", ") : "-"}</td>
+                                <td>
+                                    {
+                                        (section.parameterNames && section.parameterNames.length > 0)
+                                            ? section.parameterNames.join(", ")
+                                            : "-"
+                                    }
+                                </td>
 
                                 {/* Label Selection */}
-                                <td style={{minWidth: 120 }}>
-                                    {section.labelText || "-"}
-
+                                <td className="align-middle py-0!">
+                                    <Select
+                                        value={section.labelText || NONE_LABEL_VALUE}
+                                        onValueChange={(value) => {
+                                            const normalized = (value === NONE_LABEL_VALUE) ? "" : value;
+                                            void handleLabelSelectionChange(i, normalized);
+                                        }}
+                                    >
+                                        <SelectTrigger
+                                            className={cn(
+                                                buttonVariants({ variant: "ghost" }),
+                                                "text-white w-42 text-xs border-none shadow-none"
+                                            )}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            title="Select label or add new"
+                                        >
+                                            <SelectValue placeholder="-" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectItem value={NONE_LABEL_VALUE}>-</SelectItem>
+                                                {
+                                                    labelDefinitions
+                                                        .slice()
+                                                        .sort((a, b) => (a.displayOrder - b.displayOrder) || a.labelText.localeCompare(b.labelText))
+                                                        .map((labelDef) => (
+                                                            <SelectItem key={labelDef.id} value={labelDef.labelText}>
+                                                                {labelDef.labelText}
+                                                            </SelectItem>
+                                                        ))
+                                                }
+                                                {
+                                                    section.labelText
+                                                        && !labelDefinitions.some((def) => def.labelText === section.labelText)
+                                                        && (
+                                                            <SelectItem value={section.labelText}>{section.labelText}</SelectItem>
+                                                        )
+                                                }
+                                                <SelectItem value={ADD_NEW_LABEL_VALUE}>+ Add new label...</SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
                                 </td>
 
                                 {/* Remove Section Button */}

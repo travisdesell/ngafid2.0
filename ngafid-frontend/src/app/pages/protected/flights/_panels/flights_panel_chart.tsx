@@ -191,6 +191,12 @@ type LabelSection = {
     visibleOnChart?: boolean;
 };
 
+type FleetLabelDefinition = {
+    id: number;
+    labelText: string;
+    displayOrder: number;
+};
+
 const mapApiLabelToSection = (entry: ApiFlightLabel): LabelSection => ({
     id: Number.isFinite(entry.id) ? entry.id : null,
     startIndex: Number.isFinite(entry.startIndex) ? entry.startIndex : 0,
@@ -875,6 +881,7 @@ export function FlightsPanelChart() {
     const [useAlignedStartTimes, setUseAlignedStartTimes] = useState(false);
     const [activeLabelingCaptureFlightId, setActiveLabelingCaptureFlightId] = useState<number | null>(null);
     const [labelingCardPositionByFlight, setLabelingCardPositionByFlight] = useState<Record<number, { left: number; top: number }>>({});
+    const [labelDefinitions, setLabelDefinitions] = useState<FleetLabelDefinition[]>([]);
 
     const interactiveChartRef = useRef<InteractiveChartHandle | null>(null);
 
@@ -1016,6 +1023,19 @@ export function FlightsPanelChart() {
         }
     }, [setFlightLabelSections, setModal]);
 
+    const loadLabelDefinitions = useCallback(async () => {
+        try {
+            const result = await fetchJson.get<FleetLabelDefinition[]>("/api/fleet/labels");
+            setLabelDefinitions(Array.isArray(result) ? result : []);
+        } catch (error: any) {
+            setModal(ErrorModal, {
+                title: "Error Loading Label Definitions",
+                message: "Failed to load fleet label definitions.",
+                code: error?.toString?.() ?? String(error),
+            });
+        }
+    }, [setModal]);
+
     useEffect(() => {
 
         labelingEnabledFlightIds.forEach((flightId) => {
@@ -1023,6 +1043,13 @@ export function FlightsPanelChart() {
         });
 
     }, [labelingEnabledFlightIds, loadLabelsForFlight]);
+
+    useEffect(() => {
+        if (labelingEnabledFlightIds.length === 0)
+            return;
+
+        void loadLabelDefinitions();
+    }, [labelingEnabledFlightIds, loadLabelDefinitions]);
 
     useEffect(() => {
         if (activeLabelingCaptureFlightId === null)
@@ -1123,6 +1150,55 @@ export function FlightsPanelChart() {
             }
         })();
 
+    };
+
+    const handleUpdateSectionLabel = (flightId: number, sectionIndex: number, labelText: string) => {
+
+        const currentSections = labelSectionsByFlight[flightId] ?? [];
+        const targetSection = currentSections[sectionIndex];
+        if (!targetSection)
+            return;
+
+        const nextSections = currentSections.map((section, i) => (
+            i === sectionIndex
+                ? { ...section, labelText }
+                : section
+        ));
+        setFlightLabelSections(flightId, nextSections);
+
+        if (targetSection.id === null)
+            return;
+
+        const sectionId = targetSection.id;
+
+        void (async () => {
+            try {
+                await fetchJson.put(`/api/flight/${flightId}/labels/${encodeURIComponent(sectionId)}`, { labelText });
+            } catch (error: any) {
+                await loadLabelsForFlight(flightId);
+                setModal(ErrorModal, {
+                    title: "Error Updating Label",
+                    message: `Could not update label for flight ${flightId}.`,
+                    code: error?.toString?.() ?? String(error),
+                });
+            }
+        })();
+
+    };
+
+    const handleCreateLabelDefinition = async (labelText: string): Promise<boolean> => {
+        try {
+            await fetchJson.post("/api/fleet/labels", { labelText });
+            await loadLabelDefinitions();
+            return true;
+        } catch (error: any) {
+            setModal(ErrorModal, {
+                title: "Error Adding Label",
+                message: "Could not add the new label definition.",
+                code: error?.toString?.() ?? String(error),
+            });
+            return false;
+        }
     };
 
     const getSeriesForLabeling = async (flightId: number, paramName: string): Promise<TraceSeries | null> => {
@@ -2218,6 +2294,11 @@ export function FlightsPanelChart() {
                                     onRemoveSection={(sectionIndex) => {
                                         handleRemoveLabelSection(flight.id, sectionIndex);
                                     }}
+                                    labelDefinitions={labelDefinitions}
+                                    onUpdateSectionLabel={(sectionIndex, labelText) => {
+                                        handleUpdateSectionLabel(flight.id, sectionIndex, labelText);
+                                    }}
+                                    onCreateLabelDefinition={handleCreateLabelDefinition}
                                     onClose={() => {
                                         handleCloseLabeling(flight.id);
                                     }}
