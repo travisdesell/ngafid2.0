@@ -223,7 +223,7 @@ export default function FlightsPanelChartLabelCard({
                                 {/* Label Selection */}
                                 <td style={{minWidth: 120 }}>
                                     {section.labelText || "-"}
-                                    
+
                                 </td>
 
                                 {/* Remove Section Button */}
@@ -300,7 +300,7 @@ export default function FlightsPanelChartLabelCard({
 
         return (
             <Card
-                className="absolute w-2xl bg-background/50 backdrop-blur-xs border shadow-sm z-20"
+                className="absolute w-2xl bg-background/75 backdrop-blur-xs border shadow-sm z-20"
                 style={{ left: position.left, top: position.top }}
             >
                 <CardHeader className="flex justify-between flex-row cursor-grab active:cursor-grabbing pb-4" onMouseDown={handleDragStart}>
@@ -327,7 +327,7 @@ export default function FlightsPanelChartLabelCard({
                     </Button>
                 </CardHeader>
 
-                <CardContent className="pb-4">
+                <CardContent className="pb-4 px-0 **:border-x-0">
 
                     <div className="overflow-auto max-h-85 border rounded-sm">
                         {renderTable()}
