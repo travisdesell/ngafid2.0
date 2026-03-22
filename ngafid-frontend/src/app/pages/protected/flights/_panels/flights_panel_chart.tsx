@@ -27,10 +27,10 @@ import FlightsPanelChartLabelCard from "@/pages/protected/flights/_panels/_chart
 import { Flight } from "@/pages/protected/flights/types";
 import { TraceSeries } from "@/pages/protected/flights/types_charts";
 import { AccordionItem } from "@radix-ui/react-accordion";
-import { ArrowBigUp, ArrowLeftToLine, Expand, Info, List, Mouse, MousePointerClick, NavigationOff, SquareChevronUp } from "lucide-react";
+import { ArrowBigUp, ArrowLeftToLine, Expand, Info, List, Mouse, MousePointerClick, NavigationOff, SquareActivity, SquareChevronUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 const log = getLogger("FlightsPanelChart", "blue", "Component");
 
@@ -44,6 +44,15 @@ type ActiveSeries = {
 };
 
 const MAX_POINTS_PER_SERIES = 1000;
+
+const LABELING_MARKER_COLORS = [
+    "#e6194b", "#3cb44b", "#4363d8", "#f58231", "#911eb4", "#42d4f4", "#f032e6", "#bfef45",
+    "#fabed4", "#469990", "#dcbeff", "#9a6324", "#fffac8", "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000075",
+];
+
+const getLabelMarkerColor = (sectionIndex: number): string => (
+    LABELING_MARKER_COLORS[Math.abs(sectionIndex) % LABELING_MARKER_COLORS.length] ?? "#e6194b"
+);
 
 const buildNonHighContrastColor = (flightSlotIndex: number, paramIndex: number): string => {
 
@@ -214,12 +223,52 @@ const toRelativeSeconds = (rawTime: number, flightStartMs: number): number => {
     if (!Number.isFinite(rawTime))
         return 0;
 
-    // Backend often stores unix seconds, but older entries can still be elapsed seconds.
+    // Absolute milliseconds timestamp
+    if (rawTime >= 1e12)
+        return (rawTime - flightStartMs) / 1000;
+
+    // Absolute seconds timestamp
     if (rawTime >= 1e9)
-        return (rawTime * 1000 - flightStartMs) / 1000;
+        return rawTime - (flightStartMs / 1000);
 
     return rawTime;
 };
+
+const normalizeTraceTimestampToRelativeSeconds = (rawTime: number, flightStartMs: number): number => {
+    if (!Number.isFinite(rawTime) || !Number.isFinite(flightStartMs))
+        return Number.NaN;
+
+    // Milliseconds since epoch
+    if (rawTime >= 1e12)
+        return (rawTime - flightStartMs) / 1000;
+
+    // Seconds since epoch
+    if (rawTime >= 1e9)
+        return rawTime - (flightStartMs / 1000);
+
+    // Already relative seconds
+    return rawTime;
+};
+
+const toAbsoluteSecondsFromTimestampCandidate = (timestampCandidate: number, flightStartMs: number): number => {
+    if (!Number.isFinite(timestampCandidate) || !Number.isFinite(flightStartMs))
+        return Number.NaN;
+
+    // Absolute milliseconds timestamp
+    if (timestampCandidate >= 1e12)
+        return timestampCandidate / 1000;
+
+    // Absolute seconds timestamp
+    if (timestampCandidate >= 1e9)
+        return timestampCandidate;
+
+    // Relative seconds timestamp
+    return (flightStartMs / 1000) + timestampCandidate;
+};
+
+const sortPair = (a: number, b: number): [number, number] => (
+    a <= b ? [a, b] : [b, a]
+);
 
 const decimateSeries = (series: TraceSeries) => {
 
@@ -276,11 +325,14 @@ type AxisMeta = { ticks: number[]; dayBoundaryTimes: number[]; domainSpanMinutes
 
 type InteractiveChartProps = {
     chartModel: ChartModel;
+    activeLabelingCaptureFlightId: number | null;
     useAlignedStartTimes: boolean;
     theme: string | undefined;
     shiftHeld: boolean;
     ctrlHeld: boolean;
+    altHeld: boolean;
     onChartXClick?: (xValue: number) => void;
+    pendingStartMarker?: { x: number; color: string } | null;
 };
 
 type InteractiveChartHandle = { resetView: () => void; };
@@ -289,14 +341,41 @@ type InteractiveChartHandle = { resetView: () => void; };
 const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProps>(function InteractiveChart(
     {
         chartModel,
+        activeLabelingCaptureFlightId,
         useAlignedStartTimes,
         theme,
         shiftHeld,
         ctrlHeld,
+        altHeld,
         onChartXClick,
+        pendingStartMarker,
     },
     ref,
 ) {
+
+    const extractChartXValue = (state: any): number | null => {
+
+        const fromActiveLabel = Number(state?.activeLabel);
+        if (Number.isFinite(fromActiveLabel))
+            return fromActiveLabel;
+
+        const fromActivePayload = Number(state?.activePayload?.[0]?.payload?.time);
+        if (Number.isFinite(fromActivePayload))
+            return fromActivePayload;
+
+        const tooltipIndexRaw = Number(state?.activeTooltipIndex);
+        if (Number.isFinite(tooltipIndexRaw)) {
+            const tooltipIndex = Math.floor(tooltipIndexRaw);
+            const point = chartModel.data[tooltipIndex] as Record<string, number | string> | undefined;
+            const fromTooltipIndex = Number(point?.time ?? Number.NaN);
+
+            if (Number.isFinite(fromTooltipIndex))
+                return fromTooltipIndex;
+        }
+
+        return null;
+
+    };
 
     // Early out if no data
     if (!chartModel.hasData) {
@@ -636,13 +715,71 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                         left: 12,
                         right: 12,
                     }}
-                    onMouseDown={handleChartMouseDown}
+                    onMouseDown={(state: any) => {
+                        const mouseButton = Number(state?.nativeEvent?.button);
+                        const altHeldFromEvent = !!state?.nativeEvent?.altKey;
+                        const altCaptureActive = mouseButton === 0 && (altHeldFromEvent || altHeld);
+
+                        // Alt+LMB is reserved for label range capture, so skip zoom/pan handling.
+                        if (altCaptureActive) {
+                            log("Alt label capture mousedown", {
+                                altHeldFromEvent,
+                                altHeldFromState: altHeld,
+                                activeLabel: state?.activeLabel,
+                                activeTooltipIndex: state?.activeTooltipIndex,
+                            });
+
+                            return;
+                        }
+
+                        handleChartMouseDown(state);
+                    }}
                     onClick={(state: any) => {
-                        const numericX = Number(state?.activeLabel);
-                        if (!Number.isFinite(numericX))
+                        const altHeldFromEvent = !!state?.nativeEvent?.altKey;
+                        const altCaptureActive = (altHeldFromEvent || altHeld);
+
+                        if (!altCaptureActive)
                             return;
 
-                        onChartXClick?.(numericX);
+                        const activePayload = Array.isArray(state?.activePayload) ? state.activePayload : [];
+                        const hasActiveFlightPayload = (
+                            activeLabelingCaptureFlightId !== null
+                            && activePayload.some((payloadItem: any) => {
+                                const dataKey = String(payloadItem?.dataKey ?? "");
+                                const payloadFlightId = chartModel.seriesFlightIDByKey[dataKey];
+                                const payloadValue = Number(payloadItem?.value);
+
+                                return payloadFlightId === activeLabelingCaptureFlightId && Number.isFinite(payloadValue);
+                            })
+                        );
+
+                        if (!hasActiveFlightPayload) {
+                            log.warn("Ignoring Alt label capture click outside active flight series", {
+                                activeLabelingCaptureFlightId,
+                                activePayloadKeys: activePayload.map((payloadItem: any) => String(payloadItem?.dataKey ?? "")),
+                            });
+                            return;
+                        }
+
+                        const xValue = extractChartXValue(state);
+
+                        log("Alt label capture click", {
+                            altHeldFromEvent,
+                            altHeldFromState: altHeld,
+                            activeLabel: state?.activeLabel,
+                            activeTooltipIndex: state?.activeTooltipIndex,
+                            resolvedX: xValue,
+                        });
+
+                        if (xValue === null) {
+                            log.warn("Alt label capture click had no resolvable x-value", {
+                                activeLabel: state?.activeLabel,
+                                activeTooltipIndex: state?.activeTooltipIndex,
+                            });
+                            return;
+                        }
+
+                        onChartXClick?.(xValue);
                     }}
                     className={`${cursorClass}`}
                 >
@@ -809,6 +946,19 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                         ))
                     }
                     {
+                        pendingStartMarker && Number.isFinite(pendingStartMarker.x)
+                            ? (
+                                <ReferenceLine
+                                    x={pendingStartMarker.x}
+                                    stroke={pendingStartMarker.color}
+                                    strokeWidth={2}
+                                    strokeDasharray="6 6"
+                                    ifOverflow="hidden"
+                                />
+                            )
+                            : null
+                    }
+                    {
                         chartModel.seriesKeys.map((key) => (
                             <Line
                                 key={key}
@@ -882,6 +1032,7 @@ export function FlightsPanelChart() {
     const [activeLabelingCaptureFlightId, setActiveLabelingCaptureFlightId] = useState<number | null>(null);
     const [labelingCardPositionByFlight, setLabelingCardPositionByFlight] = useState<Record<number, { left: number; top: number }>>({});
     const [labelDefinitions, setLabelDefinitions] = useState<FleetLabelDefinition[]>([]);
+    const labelingEnabledFlightIdsPrevRef = useRef<number[]>([]);
 
     const interactiveChartRef = useRef<InteractiveChartHandle | null>(null);
 
@@ -967,6 +1118,22 @@ export function FlightsPanelChart() {
 
     }, [chartFlights]);
 
+    const flightEndMsById = useMemo(() => {
+
+        const map = new Map<number, number>();
+
+        for (const f of chartFlights) {
+
+            const ms = new Date(f.endDateTime).getTime();
+            if (!Number.isNaN(ms))
+                map.set(f.id, ms);
+
+        }
+
+        return map;
+
+    }, [chartFlights]);
+
     const labelingEnabledFlightIdSet = useMemo(
         () => new Set(labelingEnabledFlightIds),
         [labelingEnabledFlightIds],
@@ -994,19 +1161,6 @@ export function FlightsPanelChart() {
             return next;
         });
 
-    }, [labelingEnabledFlights]);
-
-    const labelingParameterOptionsByFlight = useMemo(() => {
-        const optionsByFlight: Record<number, string[]> = {};
-
-        labelingEnabledFlights.forEach((flight) => {
-            optionsByFlight[flight.id] = [
-                ...(flight.commonTraceNames ?? []),
-                ...(flight.uncommonTraceNames ?? []),
-            ];
-        });
-
-        return optionsByFlight;
     }, [labelingEnabledFlights]);
 
     const loadLabelsForFlight = useCallback(async (flightId: number) => {
@@ -1052,24 +1206,60 @@ export function FlightsPanelChart() {
     }, [labelingEnabledFlightIds, loadLabelDefinitions]);
 
     useEffect(() => {
-        if (activeLabelingCaptureFlightId === null)
-            return;
+        const prevEnabled = labelingEnabledFlightIdsPrevRef.current;
 
-        if (!labelingEnabledFlightIdSet.has(activeLabelingCaptureFlightId))
-            setActiveLabelingCaptureFlightId(null);
-    }, [activeLabelingCaptureFlightId, labelingEnabledFlightIdSet]);
+        const newlyEnabled = labelingEnabledFlightIds.filter((flightId) => !prevEnabled.includes(flightId));
+        if (newlyEnabled.length > 0) {
+            setActiveLabelingCaptureFlightId(newlyEnabled[newlyEnabled.length - 1] ?? null);
+            labelingEnabledFlightIdsPrevRef.current = labelingEnabledFlightIds;
+            return;
+        }
+
+        setActiveLabelingCaptureFlightId((current) => {
+            if (current !== null && labelingEnabledFlightIdSet.has(current))
+                return current;
+
+            if (labelingEnabledFlightIds.length === 0)
+                return null;
+
+            return labelingEnabledFlightIds[labelingEnabledFlightIds.length - 1] ?? null;
+        });
+
+        labelingEnabledFlightIdsPrevRef.current = labelingEnabledFlightIds;
+    }, [labelingEnabledFlightIds, labelingEnabledFlightIdSet]);
 
     useEffect(() => {
 
         labelingEnabledFlightIds.forEach((flightId) => {
-            const selectedParam = selectedLabelingParamByFlight[flightId];
-            const options = labelingParameterOptionsByFlight[flightId] ?? [];
+            const selectedParam = selectedLabelingParamByFlight[flightId] ?? "";
+            const activeParams = selectedParamsByFlight[flightId] ?? [];
 
-            if (!selectedParam && options.length > 0)
-                setSelectedLabelingParam(flightId, options[0]!);
+            if (activeParams.length === 0) {
+                log("No active chart parameters for labeling-enabled flight", { flightId });
+                return;
+            }
+
+            // Keep labeling param aligned with currently active chart parameters.
+            if (!activeParams.includes(selectedParam)) {
+                const nextParam = activeParams[0]!;
+                log("Updated labeling parameter to first active chart parameter", {
+                    flightId,
+                    selectedParam,
+                    nextParam,
+                    activeParams,
+                });
+                setSelectedLabelingParam(flightId, nextParam);
+                setPendingLabelStartX(flightId, null);
+            }
         });
 
-    }, [labelingEnabledFlightIds, selectedLabelingParamByFlight, labelingParameterOptionsByFlight, setSelectedLabelingParam]);
+    }, [
+        labelingEnabledFlightIds,
+        selectedLabelingParamByFlight,
+        selectedParamsByFlight,
+        setSelectedLabelingParam,
+        setPendingLabelStartX,
+    ]);
 
     const handleLabelingParameterChange = (flightId: number, paramName: string) => {
         setSelectedLabelingParam(flightId, paramName);
@@ -1095,6 +1285,10 @@ export function FlightsPanelChart() {
 
         setLabelingEnabledForFlight(flightId, false);
     };
+
+    const setActiveLabelingFlightFromCard = useCallback((flightId: number) => {
+        setActiveLabelingCaptureFlightId((prev) => (prev === flightId ? prev : flightId));
+    }, []);
 
     const handleImportCsv = (flightId: number, file: File) => {
 
@@ -1173,12 +1367,53 @@ export function FlightsPanelChart() {
 
         void (async () => {
             try {
-                await fetchJson.put(`/api/flight/${flightId}/labels/${encodeURIComponent(sectionId)}`, { labelText });
+                await fetchJson.put(`/api/flight/${flightId}/labels/${encodeURIComponent(sectionId)}`, {
+                    labelText,
+                    visibleOnChart: targetSection.visibleOnChart !== false,
+                });
             } catch (error: any) {
                 await loadLabelsForFlight(flightId);
                 setModal(ErrorModal, {
                     title: "Error Updating Label",
                     message: `Could not update label for flight ${flightId}.`,
+                    code: error?.toString?.() ?? String(error),
+                });
+            }
+        })();
+
+    };
+
+    const handleToggleSectionVisibility = (flightId: number, sectionIndex: number, visibleOnChart: boolean) => {
+
+        const currentSections = labelSectionsByFlight[flightId] ?? [];
+        const targetSection = currentSections[sectionIndex];
+        if (!targetSection)
+            return;
+
+        const nextSections = currentSections.map((section, i) => (
+            i === sectionIndex
+                ? { ...section, visibleOnChart }
+                : section
+        ));
+
+        setFlightLabelSections(flightId, nextSections);
+
+        if (targetSection.id === null)
+            return;
+
+        const sectionId = targetSection.id;
+
+        void (async () => {
+            try {
+                await fetchJson.put(`/api/flight/${flightId}/labels/${encodeURIComponent(sectionId)}`, {
+                    labelText: targetSection.labelText,
+                    visibleOnChart,
+                });
+            } catch (error: any) {
+                await loadLabelsForFlight(flightId);
+                setModal(ErrorModal, {
+                    title: "Error Updating Section Visibility",
+                    message: `Could not update chart visibility for label section on flight ${flightId}.`,
                     code: error?.toString?.() ?? String(error),
                 });
             }
@@ -1236,25 +1471,165 @@ export function FlightsPanelChart() {
         return nearestIndex;
     };
 
+    const resolveSectionAbsoluteTimes = useCallback((flightId: number, section: LabelSection): [number, number] | null => {
+
+        const flightStartMs = flightStartMsById.get(flightId);
+        if (flightStartMs === undefined || Number.isNaN(flightStartMs))
+            return null;
+
+        const flightEndMs = flightEndMsById.get(flightId);
+        const flightStartSec = flightStartMs / 1000;
+        const flightEndSec = (flightEndMs !== undefined && !Number.isNaN(flightEndMs))
+            ? (flightEndMs / 1000)
+            : (flightStartSec + 8 * 3600);
+
+        const plausibleMin = flightStartSec - 3600;
+        const plausibleMax = flightEndSec + 3600;
+
+        const isPlausible = (t: number) => Number.isFinite(t) && t >= plausibleMin && t <= plausibleMax;
+
+        const sectionStartAbs = toAbsoluteSecondsFromTimestampCandidate(Number(section.startTime), flightStartMs);
+        const sectionEndAbs = toAbsoluteSecondsFromTimestampCandidate(Number(section.endTime), flightStartMs);
+
+        if (isPlausible(sectionStartAbs) && isPlausible(sectionEndAbs))
+            return sortPair(sectionStartAbs, sectionEndAbs);
+
+        const parameterCandidates = Array.isArray(section.parameterNames) ? section.parameterNames : [];
+
+        for (const paramName of parameterCandidates) {
+
+            const series = chartData.seriesByFlight[flightId]?.[paramName];
+            if (!series || !Array.isArray(series.timestamps) || series.timestamps.length === 0)
+                continue;
+
+            const startIndex = Math.max(0, Math.min(series.timestamps.length - 1, Number(section.startIndex)));
+            const endIndex = Math.max(0, Math.min(series.timestamps.length - 1, Number(section.endIndex)));
+
+            const startTsRaw = Number(series.timestamps[startIndex]);
+            const endTsRaw = Number(series.timestamps[endIndex]);
+
+            const startAbs = toAbsoluteSecondsFromTimestampCandidate(startTsRaw, flightStartMs);
+            const endAbs = toAbsoluteSecondsFromTimestampCandidate(endTsRaw, flightStartMs);
+
+            if (isPlausible(startAbs) && isPlausible(endAbs)) {
+                log("Corrected implausible section times using trace indices", {
+                    flightId,
+                    paramName,
+                    sectionId: section.id,
+                    startIndex,
+                    endIndex,
+                    correctedStartAbs: startAbs,
+                    correctedEndAbs: endAbs,
+                    originalStart: section.startTime,
+                    originalEnd: section.endTime,
+                });
+                return sortPair(startAbs, endAbs);
+            }
+
+        }
+
+        if (Number.isFinite(sectionStartAbs) && Number.isFinite(sectionEndAbs))
+            return sortPair(sectionStartAbs, sectionEndAbs);
+
+        return null;
+
+    }, [chartData.seriesByFlight, flightStartMsById, flightEndMsById]);
+
+    const labelSectionsForDisplayByFlight = useMemo(() => {
+        const out: Record<number, LabelSection[]> = {};
+
+        for (const flight of chartFlights) {
+            const sections = labelSectionsByFlight[flight.id] ?? [];
+
+            out[flight.id] = sections.map((section) => {
+                const resolvedTimes = resolveSectionAbsoluteTimes(flight.id, section);
+                if (!resolvedTimes)
+                    return section;
+
+                const [startAbs, endAbs] = resolvedTimes;
+
+                return {
+                    ...section,
+                    startTime: startAbs,
+                    endTime: endAbs,
+                };
+            });
+        }
+
+        return out;
+    }, [chartFlights, labelSectionsByFlight, resolveSectionAbsoluteTimes]);
+
     const handleLabelingChartClick = (xValue: number) => {
 
-        if (activeLabelingCaptureFlightId === null)
-            return;
+        log("handleLabelingChartClick invoked", {
+            xValue,
+            activeLabelingCaptureFlightId,
+            useAlignedStartTimes,
+        });
 
-        const selectedParam = selectedLabelingParamByFlight[activeLabelingCaptureFlightId];
-        if (!selectedParam)
+        if (activeLabelingCaptureFlightId === null) {
+            log.warn("Ignoring labeling click: no active labeling flight");
             return;
+        }
+
+        const selectedParam = selectedLabelingParamByFlight[activeLabelingCaptureFlightId] ?? "";
+        const activeParams = selectedParamsByFlight[activeLabelingCaptureFlightId] ?? [];
+
+        const effectiveParam = activeParams.includes(selectedParam)
+            ? selectedParam
+            : (activeParams[0] ?? "");
+
+        if (!effectiveParam) {
+            log.warn("Ignoring labeling click: no selected labeling parameter", {
+                flightId: activeLabelingCaptureFlightId,
+                selectedParam,
+                activeParams,
+            });
+            return;
+        }
+
+        if (effectiveParam !== selectedParam) {
+            log("Using fallback active chart parameter for labeling click", {
+                flightId: activeLabelingCaptureFlightId,
+                selectedParam,
+                effectiveParam,
+                activeParams,
+            });
+            setSelectedLabelingParam(activeLabelingCaptureFlightId, effectiveParam);
+        }
 
         void (async () => {
 
-            const series = await getSeriesForLabeling(activeLabelingCaptureFlightId, selectedParam);
-            if (!series)
+            const series = await getSeriesForLabeling(activeLabelingCaptureFlightId, effectiveParam);
+            if (!series) {
+                log.warn("Ignoring labeling click: missing trace series", {
+                    flightId: activeLabelingCaptureFlightId,
+                    selectedParam: effectiveParam,
+                });
                 return;
+            }
 
             const flightStartMsMaybe = flightStartMsById.get(activeLabelingCaptureFlightId);
-            if (typeof flightStartMsMaybe !== "number" || Number.isNaN(flightStartMsMaybe))
+            if (typeof flightStartMsMaybe !== "number" || Number.isNaN(flightStartMsMaybe)) {
+                log.warn("Ignoring labeling click: missing/invalid flightStartMs", {
+                    flightId: activeLabelingCaptureFlightId,
+                    flightStartMsMaybe,
+                });
                 return;
+            }
             const flightStartMs = flightStartMsMaybe;
+
+            const relativeSeriesTimestamps = series.timestamps.map((timestampRaw) => (
+                normalizeTraceTimestampToRelativeSeconds(timestampRaw, flightStartMs)
+            ));
+
+            if (relativeSeriesTimestamps.length === 0 || !relativeSeriesTimestamps.some((t) => Number.isFinite(t))) {
+                log.warn("Ignoring labeling click: no valid normalized timestamps for active series", {
+                    flightId: activeLabelingCaptureFlightId,
+                    selectedParam: effectiveParam,
+                });
+                return;
+            }
 
             const clickedRelativeSeconds = useAlignedStartTimes
                 ? xValue
@@ -1262,43 +1637,98 @@ export function FlightsPanelChart() {
 
             const pendingStartX = pendingLabelStartXByFlight[activeLabelingCaptureFlightId] ?? null;
 
+            log("Resolved labeling click values", {
+                flightId: activeLabelingCaptureFlightId,
+                selectedParam: effectiveParam,
+                clickedRelativeSeconds,
+                pendingStartX,
+            });
+
             // First click marks the start of the new label section.
             if (pendingStartX === null) {
                 setPendingLabelStartX(activeLabelingCaptureFlightId, clickedRelativeSeconds);
+                log("Stored pending label range start", {
+                    flightId: activeLabelingCaptureFlightId,
+                    pendingStartX: clickedRelativeSeconds,
+                });
                 return;
             }
 
-            const startIdxRaw = findNearestSeriesIndex(series.timestamps, pendingStartX);
-            const endIdxRaw = findNearestSeriesIndex(series.timestamps, clickedRelativeSeconds);
+            const startIdxRaw = findNearestSeriesIndex(relativeSeriesTimestamps, pendingStartX);
+            const endIdxRaw = findNearestSeriesIndex(relativeSeriesTimestamps, clickedRelativeSeconds);
 
-            if (startIdxRaw === null || endIdxRaw === null)
+            if (startIdxRaw === null || endIdxRaw === null) {
+                log.warn("Could not resolve nearest series indices for label range", {
+                    flightId: activeLabelingCaptureFlightId,
+                    pendingStartX,
+                    clickedRelativeSeconds,
+                });
                 return;
+            }
 
             const startIndex = Math.min(startIdxRaw, endIdxRaw);
             const endIndex = Math.max(startIdxRaw, endIdxRaw);
 
-            const startRelSeconds = series.timestamps[startIndex] ?? 0;
-            const endRelSeconds = series.timestamps[endIndex] ?? startRelSeconds;
-            const startValue = series.values[startIndex] ?? 0;
-            const endValue = series.values[endIndex] ?? startValue;
+            const startRelSeconds = relativeSeriesTimestamps[startIndex] ?? 0;
+            const endRelSeconds = relativeSeriesTimestamps[endIndex] ?? startRelSeconds;
+
+            const sectionParameterNames = Array.from(new Set(activeParams));
+            const isSingleParameterSection = (sectionParameterNames.length === 1);
+
+            const startValue = isSingleParameterSection ? (series.values[startIndex] ?? 0) : 0;
+            const endValue = isSingleParameterSection ? (series.values[endIndex] ?? startValue) : 0;
+
+            const startTimeSeconds = toAbsoluteSecondsFromTimestampCandidate(pendingStartX, flightStartMs);
+            const endTimeSeconds = toAbsoluteSecondsFromTimestampCandidate(clickedRelativeSeconds, flightStartMs);
+
+            if (!Number.isFinite(startTimeSeconds) || !Number.isFinite(endTimeSeconds)) {
+                log.warn("Could not compute absolute label section times", {
+                    flightId: activeLabelingCaptureFlightId,
+                    pendingStartX,
+                    clickedRelativeSeconds,
+                    startRelSeconds,
+                    endRelSeconds,
+                    flightStartMs,
+                });
+                setPendingLabelStartX(activeLabelingCaptureFlightId, null);
+                return;
+            }
+
+            const startTimeNormalized = Math.min(startTimeSeconds, endTimeSeconds);
+            const endTimeNormalized = Math.max(startTimeSeconds, endTimeSeconds);
 
             const payload = {
                 startIndex,
                 endIndex,
-                startTime: (flightStartMs + startRelSeconds * 1000) / 1000,
-                endTime: (flightStartMs + endRelSeconds * 1000) / 1000,
+                startTime: startTimeNormalized,
+                endTime: endTimeNormalized,
                 startValue,
                 endValue,
                 labelText: "",
-                parameterNames: [selectedParam],
+                parameterNames: sectionParameterNames,
+                visibleOnChart: true,
             };
+
+            log("Submitting label range payload", {
+                flightId: activeLabelingCaptureFlightId,
+                selectedParam: effectiveParam,
+                sectionParameterNames,
+                payload,
+            });
 
             try {
                 await fetchJson.post(`/api/flight/${activeLabelingCaptureFlightId}/labels`, payload);
                 setPendingLabelStartX(activeLabelingCaptureFlightId, null);
                 await loadLabelsForFlight(activeLabelingCaptureFlightId);
+                log("Label range saved successfully", {
+                    flightId: activeLabelingCaptureFlightId,
+                });
             } catch (error: any) {
                 setPendingLabelStartX(activeLabelingCaptureFlightId, null);
+                log.error("Error saving label range", {
+                    flightId: activeLabelingCaptureFlightId,
+                    error,
+                });
                 setModal(ErrorModal, {
                     title: "Error Saving Label Section",
                     message: `Could not create label section for flight ${activeLabelingCaptureFlightId}.`,
@@ -1424,7 +1854,20 @@ export function FlightsPanelChart() {
         // Decimate and collect union of times (absolute or relative)
         activeSeries.forEach(({ seriesKey, flight, series }) => {
 
-            const points = decimateSeries(series);
+            const pointsRaw = decimateSeries(series);
+
+            const startMSForFlight = flightStartMsById.get(flight.id);
+
+            // Invalid start time, skip this series
+            if (startMSForFlight === undefined || Number.isNaN(startMSForFlight))
+                return;
+
+            const points = pointsRaw
+                .map((point) => ({
+                    t: normalizeTraceTimestampToRelativeSeconds(point.t, startMSForFlight),
+                    v: point.v,
+                }))
+                .filter((point) => Number.isFinite(point.t) && Number.isFinite(point.v));
 
             // No points, skip
             if (points.length === 0)
@@ -1439,11 +1882,7 @@ export function FlightsPanelChart() {
 
             } else {
 
-                const startMS = flightStartMsById.get(flight.id);
-
-                // Invalid start time, skip this series
-                if (startMS === undefined || Number.isNaN(startMS))
-                    return;
+                const startMS = startMSForFlight;
 
                 preparedSeries.push({ seriesKey, startMS, points });
 
@@ -1627,7 +2066,14 @@ export function FlightsPanelChart() {
         const representativeTimestampsByFlight = new Map<number, number[]>();
         for (const entry of activeSeries) {
 
-            const candidate = entry.series.timestamps ?? [];
+            const flightStartMS = flightStartMsById.get(entry.flight.id);
+            if (flightStartMS === undefined || Number.isNaN(flightStartMS))
+                continue;
+
+            const candidate = (entry.series.timestamps ?? [])
+                .map((timestampRaw) => normalizeTraceTimestampToRelativeSeconds(timestampRaw, flightStartMS))
+                .filter((t) => Number.isFinite(t));
+
             if (candidate.length === 0)
                 continue;
 
@@ -1786,10 +2232,19 @@ export function FlightsPanelChart() {
                 continue;
             const flightStartMs = flightStartMsMaybe;
 
-            for (const section of sections) {
+            sections.forEach((section, sectionIndex) => {
 
-                const startRelSeconds = toRelativeSeconds(Number(section.startTime), flightStartMs);
-                const endRelSeconds = toRelativeSeconds(Number(section.endTime), flightStartMs);
+                if (section.visibleOnChart === false)
+                    return;
+
+                const resolvedTimes = resolveSectionAbsoluteTimes(flight.id, section);
+                if (!resolvedTimes)
+                    return;
+
+                const [startAbs, endAbs] = resolvedTimes;
+
+                const startRelSeconds = toRelativeSeconds(startAbs, flightStartMs);
+                const endRelSeconds = toRelativeSeconds(endAbs, flightStartMs);
 
                 let x1 = useAlignedStartTimes
                     ? startRelSeconds
@@ -1800,7 +2255,7 @@ export function FlightsPanelChart() {
                     : (flightStartMs + endRelSeconds * 1000);
 
                 if (!Number.isFinite(x1) || !Number.isFinite(x2))
-                    continue;
+                    return;
 
                 if (x2 < x1) {
                     const tmp = x1;
@@ -1816,10 +2271,10 @@ export function FlightsPanelChart() {
                     flightId: flight.id,
                     x1,
                     x2,
-                    color: "var(--chart-5)",
+                    color: getLabelMarkerColor(sectionIndex),
                 });
 
-            }
+            });
 
         }
 
@@ -1861,6 +2316,40 @@ export function FlightsPanelChart() {
         useHighContrastCharts,
         flightStartMsById,
         useAlignedStartTimes,
+        resolveSectionAbsoluteTimes,
+    ]);
+
+    const pendingStartMarker = useMemo(() => {
+        if (activeLabelingCaptureFlightId === null)
+            return null;
+
+        const pendingStartX = pendingLabelStartXByFlight[activeLabelingCaptureFlightId] ?? null;
+        if (pendingStartX === null || !Number.isFinite(pendingStartX))
+            return null;
+
+        const flightStartMsMaybe = flightStartMsById.get(activeLabelingCaptureFlightId);
+        if (typeof flightStartMsMaybe !== "number" || Number.isNaN(flightStartMsMaybe))
+            return null;
+
+        const x = useAlignedStartTimes
+            ? pendingStartX
+            : (flightStartMsMaybe + pendingStartX * 1000);
+
+        if (!Number.isFinite(x))
+            return null;
+
+        const nextSectionIndex = labelSectionsByFlight[activeLabelingCaptureFlightId]?.length ?? 0;
+
+        return {
+            x,
+            color: getLabelMarkerColor(nextSectionIndex),
+        };
+    }, [
+        activeLabelingCaptureFlightId,
+        pendingLabelStartXByFlight,
+        flightStartMsById,
+        useAlignedStartTimes,
+        labelSectionsByFlight,
     ]);
 
     const renderNoDataMessage = () => (
@@ -2031,6 +2520,7 @@ export function FlightsPanelChart() {
 
     const [shiftHeld, setShiftHeld] = useState(false);
     const [ctrlHeld, setCtrlHeld] = useState(false);
+    const [altHeld, setAltHeld] = useState(false);
     useEffect(() => {
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -2040,6 +2530,9 @@ export function FlightsPanelChart() {
 
             else if (e.key === "Shift" && !ctrlHeld)
                 setShiftHeld(true);
+
+            else if (e.key === "Alt")
+                setAltHeld(true);
             
         };
 
@@ -2050,6 +2543,9 @@ export function FlightsPanelChart() {
             
             if (e.key === "Control")
                 setCtrlHeld(false);
+
+            if (e.key === "Alt")
+                setAltHeld(false);
             
         };
 
@@ -2171,6 +2667,14 @@ export function FlightsPanelChart() {
                             <NavigationOff type="right-click" className="w-6 h-6" />,
                         )}
 
+                        {/* Label Range Input */}
+                        {renderControl(
+                            "Label Range",
+                            "Alt + left-click to select start/end points for the active labeling flight.",
+                            <MousePointerClick type="left-click" className="w-6 h-6" />,
+                            <SquareActivity className={`w-4 h-4 ${altHeld ? "opacity-100 scale-150!" : "opacity-50"} transition-transform duration-100`} />,
+                        )}
+
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -2252,11 +2756,14 @@ export function FlightsPanelChart() {
                         <InteractiveChart
                             ref={interactiveChartRef}
                             chartModel={chartModel}
+                            activeLabelingCaptureFlightId={activeLabelingCaptureFlightId}
                             useAlignedStartTimes={useAlignedStartTimes}
                             theme={theme}
                             shiftHeld={shiftHeld}
                             ctrlHeld={ctrlHeld}
+                            altHeld={altHeld}
                             onChartXClick={handleLabelingChartClick}
+                            pendingStartMarker={pendingStartMarker}
                         />
                     )}
             </AnimatePresence>
@@ -2278,10 +2785,11 @@ export function FlightsPanelChart() {
 
                             return (
                                 <FlightsPanelChartLabelCard
+                                    isActive={activeLabelingCaptureFlightId === flight.id}
                                     key={flight.id}
                                     flightId={flight.id}
                                     pendingStartX={pendingLabelStartXByFlight[flight.id] ?? null}
-                                    flightLabelSections={labelSectionsByFlight[flight.id] ?? []}
+                                    flightLabelSections={labelSectionsForDisplayByFlight[flight.id] ?? []}
                                     onFlightCsvDownload={() => {
                                         window.location.href = `/api/flight/${flight.id}/labels/csv`;
                                     }}
@@ -2298,9 +2806,15 @@ export function FlightsPanelChart() {
                                     onUpdateSectionLabel={(sectionIndex, labelText) => {
                                         handleUpdateSectionLabel(flight.id, sectionIndex, labelText);
                                     }}
+                                    onToggleSectionVisibility={(sectionIndex, visibleOnChart) => {
+                                        handleToggleSectionVisibility(flight.id, sectionIndex, visibleOnChart);
+                                    }}
                                     onCreateLabelDefinition={handleCreateLabelDefinition}
                                     onClose={() => {
                                         handleCloseLabeling(flight.id);
+                                    }}
+                                    onActivate={() => {
+                                        setActiveLabelingFlightFromCard(flight.id);
                                     }}
                                     position={position}
                                     onPositionChange={(nextPosition) => {

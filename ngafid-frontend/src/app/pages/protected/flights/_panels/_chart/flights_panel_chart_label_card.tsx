@@ -11,6 +11,7 @@ import { Download, FileUp, MapPinned, Minus, Trash } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 type Props = {
+    isActive: boolean;
     flightId: number;
     pendingStartX: number | null;
     flightLabelSections: FlightLabelSection[];
@@ -20,8 +21,10 @@ type Props = {
     onRemoveSection: (sectionIndex: number) => void;
     labelDefinitions: FleetLabelDefinition[];
     onUpdateSectionLabel: (sectionIndex: number, labelText: string) => void;
+    onToggleSectionVisibility: (sectionIndex: number, visibleOnChart: boolean) => void;
     onCreateLabelDefinition: (labelText: string) => Promise<boolean>;
     onClose: () => void;
+    onActivate: () => void;
     position: { left: number; top: number };
     onPositionChange: (next: { left: number; top: number }) => void;
 };
@@ -102,7 +105,21 @@ const formatNumericValue = (value: number): string => {
 
 };
 
+const normalizeDateTimeValueForDisplay = (value: number | string): number | string => {
+
+    if (typeof value !== "number" || !Number.isFinite(value))
+        return value;
+
+    // API label timestamps are unix seconds; Date expects milliseconds.
+    if (value >= 1e9 && value < 1e12)
+        return value * 1000;
+
+    return value;
+
+};
+
 export default function FlightsPanelChartLabelCard({
+    isActive,
     flightId,
     pendingStartX,
     flightLabelSections,
@@ -112,8 +129,10 @@ export default function FlightsPanelChartLabelCard({
     onRemoveSection,
     labelDefinitions,
     onUpdateSectionLabel,
+    onToggleSectionVisibility,
     onCreateLabelDefinition,
     onClose,
+    onActivate,
     position,
     onPositionChange,
 }: Props) {
@@ -197,6 +216,7 @@ export default function FlightsPanelChartLabelCard({
         if (e.button !== 0)
             return;
 
+        onActivate();
         setDragging(true);
         dragStartRef.current = {
             mouseX: e.clientX,
@@ -261,9 +281,12 @@ export default function FlightsPanelChartLabelCard({
                                 <td className="text-center min-w-0! pl-4! pt-3! relative overflow-clip">
                                     <Checkbox
                                         checked={section.visibleOnChart !== false}
-                                        disabled
+                                        onCheckedChange={(checked) => {
+                                            onToggleSectionVisibility(i, checked === true);
+                                        }}
                                         title={section.visibleOnChart !== false ? "Visible on chart" : "Hidden on chart"}
                                         className="m-0 p-0"
+                                        onClick={(e) => e.stopPropagation()}
                                     />
 
                                     {/* Label Marker */}
@@ -278,8 +301,8 @@ export default function FlightsPanelChartLabelCard({
 
                                 {/* Start/End Date & Time */}
                                 <td className="align-middle *:text-nowrap">
-                                    <div>{renderDateTime(section.startTime, "N/A")}</div>
-                                    <div>{renderDateTime(section.endTime, "N/A")}</div>
+                                    <div>{renderDateTime(normalizeDateTimeValueForDisplay(section.startTime), "N/A")}</div>
+                                    <div>{renderDateTime(normalizeDateTimeValueForDisplay(section.endTime), "N/A")}</div>
                                 </td>
 
                                 {/* Start/End Values */}
@@ -420,8 +443,9 @@ export default function FlightsPanelChartLabelCard({
         return (
             <Card
                 ref={cardRef}
-                className="absolute w-2xl bg-background/75 backdrop-blur-xs border shadow-sm z-20"
+                className={`absolute w-2xl bg-background/75 backdrop-blur-xs border shadow-sm ${isActive ? "z-20 drop-shadow-md" : "z-10 opacity-50"}`}
                 style={{ left: localPosition.left, top: localPosition.top }}
+                onMouseDown={onActivate}
             >
                 <CardHeader className="flex justify-between flex-row cursor-grab active:cursor-grabbing pb-4" onMouseDown={handleDragStart}>
 

@@ -236,9 +236,7 @@ export function FlightsSelectedModalFlights({ chartFlights, setChartFlights, eve
                         </div>
 
                         <div
-                          onFocusCapture={(e) => {
-    e.stopPropagation();
-  }}
+                            onFocusCapture={(e) => { e.stopPropagation(); }}
                         >
                             <Tooltip disableHoverableContent>
                                 <DropdownMenu>
