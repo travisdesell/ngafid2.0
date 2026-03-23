@@ -299,7 +299,7 @@ public final class FlightPhaseProcessor {
         int takeoffEnd = markTaxiAndTakeoff(phases, altAgl, groundSpeed, rpm, numRows);
         int climbEnd = markClimb(phases, altAgl, groundSpeed, takeoffEnd, numRows);
         markCruise(phases, altAgl, climbEnd, numRows);
-        markDescentAndLanding(phases, altAgl, numRows);
+        markDescentAndLanding(phases, altAgl, groundSpeed, numRows);
         markGround(phases, altAgl, groundSpeed, numRows);
 
         return new FlightPhaseData(phases, numRows);
@@ -362,8 +362,9 @@ public final class FlightPhaseProcessor {
         }
     }
 
-    /** DESCENT: 100–600 ft descending or &gt;200 ft with drop &gt;10 ft. LANDING: &lt;100 ft and descending. Single pass. */
-    private static void markDescentAndLanding(List<FlightPhase> phases, DoubleTimeSeries altAgl, int numRows) {
+    /** DESCENT: 100–600 ft descending or &gt;200 ft with drop &gt;10 ft. LANDING: &lt;100 ft and descending, with speed &gt; taxi (excludes ground taxi with AGL noise). Single pass. */
+    private static void markDescentAndLanding(List<FlightPhase> phases, DoubleTimeSeries altAgl,
+                                              DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 1; i < numRows; i++) {
             if (phases.get(i) == FlightPhase.TAKEOFF) continue;
             if (phases.get(i) != FlightPhase.UNKNOWN) continue;
@@ -372,7 +373,11 @@ public final class FlightPhaseProcessor {
             if (Double.isNaN(alt) || Double.isNaN(prevAlt)) continue;
             double altChange = alt - prevAlt;
 
-            if (alt < LANDING_ALT_FT && alt > GROUND_ALT_FT && alt < prevAlt) {
+            // Only mark LANDING when ground speed indicates actual approach/rollout (>= taxi threshold).
+            // Low speed (< 8 kts) = taxiing or stopped; AGL noise can show "descent" when on ground.
+            double gs = (groundSpeed != null && i < groundSpeed.size()) ? groundSpeed.get(i) : Double.NaN;
+            boolean hasLandingSpeed = Double.isNaN(gs) || gs >= TAXI_SPEED_MAX_KTS;
+            if (alt < LANDING_ALT_FT && alt > GROUND_ALT_FT && alt < prevAlt && hasLandingSpeed) {
                 phases.set(i, FlightPhase.LANDING);
             } else if (alt < CRUISE_ALT_FT && alt >= LANDING_ALT_FT && (altChange < -DESCENT_ALT_CHANGE_FT || phases.get(i - 1) == FlightPhase.DESCENT)) {
                 phases.set(i, FlightPhase.DESCENT);
@@ -382,14 +387,15 @@ public final class FlightPhaseProcessor {
         }
     }
 
-    /** GROUND: AGL ≤ 5 ft and speed = 0. */
+    /** GROUND: AGL ≤ 5 ft and speed ≤ 5 kts (stationary or very slow). */
     private static void markGround(List<FlightPhase> phases, DoubleTimeSeries altAgl,
                                    DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 0; i < numRows; i++) {
             if (phases.get(i) == FlightPhase.TAKEOFF) continue;
             if (phases.get(i) != FlightPhase.UNKNOWN) continue;
-            if (!Double.isNaN(altAgl.get(i)) && !Double.isNaN(groundSpeed.get(i))
-                    && altAgl.get(i) <= GROUND_ALT_FT && groundSpeed.get(i) == GROUND_SPEED_STATIONARY_KTS) {
+            double gs = (groundSpeed != null && i < groundSpeed.size()) ? groundSpeed.get(i) : Double.NaN;
+            if (!Double.isNaN(altAgl.get(i)) && !Double.isNaN(gs)
+                    && altAgl.get(i) <= GROUND_ALT_FT && gs <= GROUND_SPEED_STATIONARY_KTS) {
                 phases.set(i, FlightPhase.GROUND);
             }
         }
