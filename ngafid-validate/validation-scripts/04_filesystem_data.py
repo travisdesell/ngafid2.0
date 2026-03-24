@@ -143,15 +143,39 @@ def _check_free_space(validator, category, path: Path, label: str):
         validator._fail(
             category,
             f"{label} free space",
-            f"low disk space at {path}: {usage.free} bytes free",
+            f"low disk space at {path}: {_format_bytes(usage.free)} free ({usage.free} bytes)",
             f"free up space or increase storage (minimum threshold: {min_free_bytes} bytes)",
         )
     else:
+        wsl_note = ""
+        if _is_wsl_environment():
+            wsl_note = " (WSL-reported filesystem capacity; may differ from Windows host free-space view)"
+
         validator._pass(
             category,
             f"{label} free space",
-            f"{usage.free} bytes free",
+            f"{_format_bytes(usage.free)} free ({usage.free} bytes) out of {_format_bytes(usage.total)} total{wsl_note}",
         )
+
+
+def _format_bytes(num_bytes):
+    if num_bytes < 1024:
+        return f"{num_bytes} B"
+
+    units = ["KiB", "MiB", "GiB", "TiB", "PiB"]
+    value = float(num_bytes)
+    for unit in units:
+        value /= 1024.0
+        if value < 1024.0:
+            return f"{value:.2f} {unit}"
+    return f"{value:.2f} EiB"
+
+
+def _is_wsl_environment():
+    try:
+        return "microsoft" in Path("/proc/version").read_text(encoding="utf-8").lower()
+    except OSError:
+        return False
 
 
 def _check_csv_integrity(validator, category, file_path: Path, label: str, min_rows: int):
