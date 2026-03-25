@@ -28,4 +28,5 @@ ngafid-email.conf
 ngafid.properties
 .vscode/
 *.log
+!validationlog_EXAMPLE.log
 ngafid-www/src/test/kotlin/org/ngafid/www/.env
