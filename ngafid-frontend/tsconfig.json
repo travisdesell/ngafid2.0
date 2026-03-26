@@ -1,5 +1,8 @@
 {
     "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
         "jsx": "react-jsx",
         "resolveJsonModule": true,
         "isolatedModules": true,
