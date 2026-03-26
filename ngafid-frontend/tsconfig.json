@@ -1,25 +1,19 @@
 {
     "compilerOptions": {
-        "esModuleInterop": true,
-        "target": "ES2024",
-        "module": "ESNext",
         "jsx": "react-jsx",
-        "strict": true,
-        "moduleResolution": "Bundler",
         "resolveJsonModule": true,
         "isolatedModules": true,
         "skipLibCheck": true,
-        "allowJs": true,
+        "allowJs": false,
         "checkJs": false,
         "noEmit": true,
-        "allowSyntheticDefaultImports": true,
-        "baseUrl": ".",
         "lib": ["DOM", "WebWorker", "ESNext"],
         "paths": {
-            "@/*": ["src/app/*"],
-            "@": ["src/app"]
+            "@/*": ["./src/app/*"],
+            "@": ["./src/app"]
         },
-        "types": ["vite/client"]
+        "types": ["vite/client"],
+        "rootDir": "./src"
     },
     "include": [
         "src/**/*",
