@@ -36,19 +36,42 @@ class LoginModal extends React.Component {
 
     }
 
+    componentDidMount() {
+        $("#login-modal").on("hidden.bs.modal", () => {
+            this.clearFields();
+        });
+    }
+
+    componentWillUnmount() {
+        $("#login-modal").off("hidden.bs.modal");
+    }
+
     handleKeyDown(e) {
-        e.preventDefault();
-        if (e.keyCode == 13) {
-            $("#loginSubmitButton").click();
+        if (e.key === "Enter") {
+            e.preventDefault();
+            this.submitLogin();
         }
     }
 
     show() {
 
         //Reset to initial state
-        this.setState({...loginModalstateDefault});
-
+        this.clearFields();
         $("#login-modal").modal('show');
+        setTimeout(() => {
+            this.validateEmail();
+            this.validatePassword();
+        }, 100);
+    }
+
+    hide() {
+        $("#login-modal").modal("hide");
+    }
+
+    clearFields() {
+        $("#loginEmail").val("");
+        $("#loginPassword").val("");
+        this.setState({ ...loginModalstateDefault });
     }
 
     submitLogin() {
@@ -58,19 +81,31 @@ class LoginModal extends React.Component {
             return;
         }
 
-        let valid = true;
-        for (const property in this.state.valid) {
-            console.log(property);
+        this.validateEmail();
+        this.validatePassword();
 
-            if (property == false) {
-                valid = false;
-                break;
-            }
-        }
+        const currentEmail = ($("#loginEmail").val() || "").trim();
+        const currentPassword = ($("#loginPassword").val() || "");
 
-        //Got validation error, exit
-        if (!valid)
+        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+        const valid =
+            currentEmail.length > 0 &&
+            re.test(currentEmail.toLowerCase()) &&
+            currentPassword.length > 0;
+
+        if (!valid) {
+            this.setState({
+                valid: {
+                    ...this.state.valid,
+                    email: re.test(currentEmail.toLowerCase()),
+                    emailEmpty: currentEmail.length === 0,
+                    passwordEmpty: currentPassword.length === 0,
+                    errorMessage: false
+                }
+            });
             return;
+        }
 
         console.log("Submitting login!");
 
@@ -78,13 +113,11 @@ class LoginModal extends React.Component {
         // Set submitting state to prevent duplicates
         this.setState({ isSubmitting: true });
 
-        $("#login-modal").modal('hide');
-
         $("#loading").show();
 
         const submissionData = {
-            email: this.state.requires2FA ? this.state.storedEmail : $("#loginEmail").val(),
-            password: this.state.requires2FA ? this.state.storedPassword : $("#loginPassword").val()
+            email: this.state.requires2FA ? this.state.storedEmail : currentEmail,
+            password: this.state.requires2FA ? this.state.storedPassword : currentPassword
         };
 
         //2FA code is required...
@@ -134,8 +167,8 @@ class LoginModal extends React.Component {
                     console.log("2FA code required");
                     this.setState({ 
                         requires2FA: true,
-                        storedEmail: $("#loginEmail").val(),
-                        storedPassword: $("#loginPassword").val()
+                        storedEmail: currentEmail,
+                        storedPassword: currentPassword
                     }, ()=> {
                         $("#2fa-modal-content").show();
                         $("#login-modal").modal('show');
@@ -202,11 +235,6 @@ class LoginModal extends React.Component {
 
         const email = $("#loginEmail").val();
         console.log("Validating Email: ", email);
-
-        if (!email) {
-            console.error("Email is null or undefined! Unable to validate.");
-            return;
-        }
 
         const newValid = {
             ...this.state.valid,
@@ -323,10 +351,12 @@ class LoginModal extends React.Component {
                                 </div>
                                 <div className="p-2 flex-fill">
                                     <input type="email" className="form-control" id="loginEmail"
-                                           aria-describedby="emailHelp" placeholder="Enter email (required)" required={true}
+                                           aria-describedby="emailHelp" placeholder="Enter email (required)" autoComplete="email" required={true}
                                            onChange={() => {
                                                this.validateEmail();
-                                           }}/>
+                                           }}
+                                           onInput={() => this.validateEmail()}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -342,7 +372,9 @@ class LoginModal extends React.Component {
                                         this.handleKeyDown(e);
                                     }} onChange={() => {
                                         this.validatePassword();
-                                    }}/>
+                                    }}
+                                           onInput={() => this.validatePassword()}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -563,6 +595,6 @@ export function showLoginModal() {
 export function hideLoginModal() {
 
     if (loginModalRef.current)
-        $("#login-modal").modal('hide');
+        loginModalRef.current.hide();
 
 }
