@@ -31,3 +31,4 @@ ngafid.properties
 log
 ngafid-www/src/test/kotlin/org/ngafid/www/.env
 *.tif
+**IGNORE**
