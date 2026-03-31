@@ -28,4 +28,6 @@ ngafid-email.conf
 ngafid.properties
 .vscode/
 *.log
+log
 ngafid-www/src/test/kotlin/org/ngafid/www/.env
+*.tif
