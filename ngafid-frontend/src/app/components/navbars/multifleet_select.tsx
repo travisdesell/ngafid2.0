@@ -95,7 +95,7 @@ export default function MultifleetSelect() {
 
         return <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
+                <Button variant="ghost" className="-mr-3 -ml-3">
                     <UsersRound />
                     <span>{userFleetCurrent?.name ?? "(No Fleet!)"}</span>
                     <ChevronDown />

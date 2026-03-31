@@ -1301,7 +1301,7 @@ export default function FlightsPage() {
 
         <Tooltip>
             <TooltipTrigger asChild>
-                <Button variant="outline" onClick={() => toggleMethod(!isActive)} className={`relative ${buttonClass} w-9`}>
+                <Button variant="ghost" onClick={() => toggleMethod(!isActive)} className={`relative ${buttonClass} w-9`}>
                     <Icon className={`${isActive ? 'opacity-100' : 'opacity-25'}`} />
                     {
                         (!isActive)
@@ -1388,7 +1388,7 @@ export default function FlightsPage() {
                         <List />
                         <span>
                             {chartFlights.length}&nbsp;
-                            <span className="@max-3xl:hidden!">Selected</span>
+                            {/* <span className="@max-3xl:hidden!">Selected</span> */}
                         </span>
 
                         {/* {gotChartFlightAdded && <Ping />} */}

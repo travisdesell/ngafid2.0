@@ -48,22 +48,56 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
         return (
             <nav
                 id='navbar'
-                className="shrink-0 navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-sidebar @container/navbar"
+                className="flex items-center justify-between p-2 pl-10 pr-4 bg-sidebar @container/navbar relative overflow-clip border-b"
             >
 
                 {/* Left Elements */}
-                <div className="flex flex-row items-center justify-end gap-16">
+                <div className="flex items-center gap-14 *:z-10 relative">
+
+                    {/* Background Shape (Edge) */}
+                    <div className="
+                        absolute left-0 right-0
+                        aspect-square scale-138 -mr-2
+                        bg-neutral-300 dark:bg-neutral-700
+                        z-2
+                        rotate-45 transform -translate-x-1/2
+                    ">
+                    </div>
+
+                    {/* Background Shape */}
+                    <div className="
+                        absolute left-0 right-0
+                        aspect-square scale-138
+                        bg-neutral-200 dark:bg-neutral-800
+                        z-5
+                        rotate-45 transform -translate-x-1/2
+                    ">
+                    </div>
 
                     {/* Navbar Brand & Home Link */}
-                    <Link className="font-semibold text-xl" to={ROUTE_DEFAULT_LOGGED_IN}>
+                    <Link className="font-semibold text-xl hover:underline decoration-dotted decoration-ring" to={ROUTE_DEFAULT_LOGGED_IN}>
                         NGAFID
                     </Link>
 
                     {/* Multifleet Select */}
                     <MultifleetSelect />
 
+                    {/* Action Button */}
+                    <div className="flex items-center ml-auto gap-8">
+
+                        {/* Notifications */}
+                        <Notifications />
+
+                        {/* Command Menu */}
+                        <CommandMenu />
+
+                        {/* Dark Mode Toggle Button */}
+                        <DarkModeToggle />
+
+                    </div>
+
                     {/* Child Elements */}
-                    <div className="flex flex-row items-center justify-end gap-2">
+                    <div className="flex items-center gap-2">
                         {
                             extraItems.map((child, index) => {
 
@@ -90,7 +124,7 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                 </div>
 
                 {/* Right Elements */}
-                <div className="flex flex-row items-center justify-end gap-8">
+                <div className="flex items-center gap-8">
 
                     {/* Summary */}
                     <Button asChild variant="ghost" className={buttonLinkClass}>
@@ -259,14 +293,6 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {/* Command Menu */}
-                    <CommandMenu />
-
-                    {/* Notifications */}
-                    <Notifications />
-
-                    {/* Dark Mode Toggle Button */}
-                    <DarkModeToggle />
                 </div>
 
             </nav>
