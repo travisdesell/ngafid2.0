@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#   ./run/sectest                     # uses default .env in sectest dir
+SECTEST_DIR="ngafid-www/src/test/security-test"
+
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "Usage: ./run/sectest [ENV_FILE]"
+    echo ""
+    echo "  ENV_FILE   Path to .env file (default: ${SECTEST_DIR}/.env)"
+    echo ""
+    echo "Examples:"
+    echo "  ./run/sectest                          # default .env"
+    echo "  ./run/sectest .env.staging              # custom env file"
+    echo "  ./run/sectest /absolute/path/to/.env    # absolute path"
+    echo ""
+    echo "To create a template .env file:"
+    echo "  cp ${SECTEST_DIR}/.env.template ${SECTEST_DIR}/.env"
+    echo "  # then edit .env with your values"
+    exit 0
+fi
+ENV_FILE="${1:-${SECTEST_DIR}/.env}"
+if [[ ! "$ENV_FILE" = /* ]]; then
+    ENV_FILE="$(pwd)/${ENV_FILE}"
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+    echo "Error: .env file not found at ${ENV_FILE}"
+    echo ""
+    echo "Create one from the template:"
+    echo "  cp ${SECTEST_DIR}/.env.template ${SECTEST_DIR}/.env"
+    echo ""
+    echo "Or run with --help for usage info."
+    exit 1
+fi
+
+echo "=== NGAFID SQL Injection Security Test ==="
+echo "Using env file: ${ENV_FILE}"
+echo ""
+
+cd "${SECTEST_DIR}" && ./gradlew test -Denv.file="${ENV_FILE}"
