@@ -144,6 +144,7 @@ class Authenticator(private val driver: WebDriver) {
             } catch (_: Exception) {
                 println("WARNING: URL does not contain '${config.successUrlContains}' after login")
                 println("Current URL: ${driver.currentUrl}")
+                return false
             }
         } else {
             Thread.sleep(2000)
