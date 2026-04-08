@@ -7,14 +7,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 /**
- * Handles authentication/login before scanning protected pages.
- *
- * Supports two login flows:
- * 1. Direct login page: navigate to URL, fill fields, submit
- * 2. Modal-based login: navigate to URL, click a trigger (link/button) to open a modal,
- *    fill fields inside the modal, submit, wait for modal to close
- *
- * Credentials can come from system properties, env vars, or a .env file.
+ * handles authentication/login before scanning protected pages
+ * login flow: 
+ * navigate to URL, click a trigger (link/button) to open a modal,
+ * fill fields inside the modal, submit, wait for modal to close
+ * credentials can come from system properties, env vars, or a .env file.
  */
 class Authenticator(private val driver: WebDriver) {
     data class LoginConfig(
