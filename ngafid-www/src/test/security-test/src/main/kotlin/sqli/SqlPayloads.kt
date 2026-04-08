@@ -55,11 +55,13 @@ object SqlPayloads {
 
     /** Stacked query payloads */
     val stacked = listOf(
-        "'; DROP TABLE test--",
         "'; SELECT 1--",
+    )
+    /** for test mode only, works on localhost **/
+    val stackedDestructive = listOf(
+        "'; DROP TABLE test--",
         "1; DROP TABLE test--",
     )
-
     /** Numeric injection payloads */
     val numeric = listOf(
         "1 OR 1=1",
@@ -67,8 +69,18 @@ object SqlPayloads {
         "1' OR '1'='1",
     )
 
-    /** All payloads combined */
-    val all: List<String> = tautology + union + errorBased + timeBased + booleanBased + stacked + numeric
+    /** All payloads combined - test and non test*/
+    val isTestMode: Boolean
+        get() {
+            val mode = System.getProperty("test.mode")?.takeIf { it.isNotBlank() }
+                ?: System.getenv("TEST_MODE")?.takeIf { it.isNotBlank() }
+            return mode.equals("true", ignoreCase = true)
+        }
+    val all: List<String>
+        get() {
+            val base = tautology + union + errorBased + timeBased + booleanBased + stacked + numeric
+            return if (isTestMode) base + stackedDestructive else base
+        }
 
     /** SQL error patterns that indicate a potential vulnerability */
     val errorPatterns = listOf(
