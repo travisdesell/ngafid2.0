@@ -1,6 +1,6 @@
 import 'bootstrap';
 
-import React, {createRef} from "react";
+import React, { createRef } from "react";
 import { createRoot } from 'react-dom/client';
 import { showErrorModal } from './error_modal.js';
 import $ from 'jquery';
@@ -27,6 +27,7 @@ const loginModalstateDefault = {
     setupStep: 'authenticator',
 };
 
+const EMAIL_REGEX = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
 class LoginModal extends React.Component {
     constructor(props) {
@@ -55,13 +56,15 @@ class LoginModal extends React.Component {
 
     show() {
 
-        //Reset to initial state
+        const INPUT_FIELD_RESET_DELAY_MS = 100;
+
+        // Reset to initial state
         this.clearFields();
         $("#login-modal").modal('show');
         setTimeout(() => {
             this.validateEmail();
             this.validatePassword();
-        }, 100);
+        }, INPUT_FIELD_RESET_DELAY_MS);
     }
 
     hide() {
@@ -87,18 +90,16 @@ class LoginModal extends React.Component {
         const currentEmail = ($("#loginEmail").val() || "").trim();
         const currentPassword = ($("#loginPassword").val() || "");
 
-        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
         const valid =
             currentEmail.length > 0 &&
-            re.test(currentEmail.toLowerCase()) &&
+            EMAIL_REGEX.test(currentEmail.toLowerCase()) &&
             currentPassword.length > 0;
 
         if (!valid) {
             this.setState({
                 valid: {
                     ...this.state.valid,
-                    email: re.test(currentEmail.toLowerCase()),
+                    email: EMAIL_REGEX.test(currentEmail.toLowerCase()),
                     emailEmpty: currentEmail.length === 0,
                     passwordEmpty: currentPassword.length === 0,
                     errorMessage: false
@@ -120,7 +121,7 @@ class LoginModal extends React.Component {
             password: this.state.requires2FA ? this.state.storedPassword : currentPassword
         };
 
-        //2FA code is required...
+        // 2FA code is required...
         if (this.state.requires2FA) {
 
             const code = (this.state.totpCode || "").trim();
@@ -165,11 +166,11 @@ class LoginModal extends React.Component {
 
                 if (response.message === "2FA_CODE_REQUIRED") {
                     console.log("2FA code required");
-                    this.setState({ 
+                    this.setState({
                         requires2FA: true,
                         storedEmail: currentEmail,
                         storedPassword: currentPassword
-                    }, ()=> {
+                    }, () => {
                         $("#2fa-modal-content").show();
                         $("#login-modal").modal('show');
                     });
@@ -194,16 +195,21 @@ class LoginModal extends React.Component {
                     return false;
                 }
 
+                // Waiting/Denied, redirect to the waiting page
                 if (response.waiting || response.denied) {
-                    //redirect to the waiting page
+
                     window.location.replace("/protected/waiting");
                     return;
+
+                // Logged in, redirect to the base page (which will redirect to either welcome, waiting or the page before login)
                 } else if (response.loggedIn) {
-                    //redirect to the base page (which will redirect to either welcome, waiting or the page before login)
+
                     window.location.replace("/");
                     return;
+
+                // Otherwise, handle unexpected response
                 } else {
-                    // Handle unexpected response
+                    
                     console.log("Unexpected response:", response);
                     this.setState(prevState => ({
                         valid: {
@@ -231,14 +237,13 @@ class LoginModal extends React.Component {
     }
 
     validateEmail() {
-        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
         const email = $("#loginEmail").val();
         console.log("Validating Email: ", email);
 
         const newValid = {
             ...this.state.valid,
-            email: re.test(String(email).toLowerCase()),
+            email: EMAIL_REGEX.test(String(email).toLowerCase()),
             emailEmpty: email.length == 0,
             errorMessage: false
         };
@@ -259,7 +264,7 @@ class LoginModal extends React.Component {
             return;
         }
 
-        //reset the error message from the server as the user has modified the email/password
+        // Reset the error message from the server as the user has modified the email/password
         const newValid = {
             ...this.state.valid,
             passwordEmpty: (password.length == 0),
@@ -276,7 +281,7 @@ class LoginModal extends React.Component {
         if (this.state.requires2FA) {
             return this.render2FAInput();
         }
-        
+
         if (this.state.setup2FA) {
             return this.render2FASetup();
         }
@@ -309,8 +314,8 @@ class LoginModal extends React.Component {
         let validationHidden = true;
 
 
+        // Show error messages from the server first
         if (this.state.valid.errorMessage) {
-            //show error messages from the server first
             validationMessage = this.state.errorMessage;
             validationHidden = false;
         } else if (this.state.valid.emailEmpty) {
@@ -328,7 +333,7 @@ class LoginModal extends React.Component {
 
         const submitDisabled = !validationHidden;
 
-        console.log(`rendering login modal with validation message: '${  validationMessage  }' and validation visible: ${  validationHidden}`);
+        console.log(`rendering login modal with validation message: '${validationMessage}' and validation visible: ${validationHidden}`);
 
 
         return (
@@ -344,36 +349,44 @@ class LoginModal extends React.Component {
 
                     <div id='login-modal-body' className='modal-body'>
 
+                        {/* Email Input */}
                         <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
                                 <div className="p-2" style={formHeaderStyle}>
                                     <label htmlFor="loginEmail" style={labelStyle}>Email Address</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="email" className="form-control" id="loginEmail"
-                                           aria-describedby="emailHelp" placeholder="Enter email (required)" autoComplete="email" required={true}
-                                           onChange={() => {
-                                               this.validateEmail();
-                                           }}
-                                           onInput={() => this.validateEmail()}
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        id="loginEmail"
+                                        aria-describedby="emailHelp"
+                                        placeholder="Enter email (required)"
+                                        autoComplete="email"
+                                        required={true}
+                                        onChange={() => this.validateEmail()}
+                                        onInput={() => this.validateEmail()}
                                     />
                                 </div>
                             </div>
                         </div>
 
+                        {/* Password Input */}
                         <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
                                 <div className="p-2" style={formHeaderStyle}>
                                     <label htmlFor="loginPassword" style={labelStyle}>Password</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="loginPassword"
-                                           placeholder="Password (required)" required={true} onKeyUp={(e) => {
-                                        this.handleKeyDown(e);
-                                    }} onChange={() => {
-                                        this.validatePassword();
-                                    }}
-                                           onInput={() => this.validatePassword()}
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        id="loginPassword"
+                                        placeholder="Password (required)"
+                                        required={true}
+                                        onKeyUp={(e) => this.handleKeyDown(e)}
+                                        onChange={() => this.validatePassword()}
+                                        onInput={() => this.validatePassword()}
                                     />
                                 </div>
                             </div>
@@ -517,7 +530,7 @@ class LoginModal extends React.Component {
                     <small className="text-muted mt-2 d-block text-center">
                         Supported apps: Google Authenticator, Microsoft Authenticator, Authy, 1Password, etc.
                     </small>
-                    
+
                     {/* Code Input Mode Toggle */}
                     <div className="flex items-center justify-center">
                         {toggleLink}
@@ -583,7 +596,7 @@ class LoginModal extends React.Component {
 
 const container = document.querySelector("#login-modal-content");
 const root = createRoot(container);
-root.render(<LoginModal ref={loginModalRef}/>);
+root.render(<LoginModal ref={loginModalRef} />);
 
 export function showLoginModal() {
 
