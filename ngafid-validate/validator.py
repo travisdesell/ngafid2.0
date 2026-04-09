@@ -289,6 +289,10 @@ class Validator:
     def _print_summary(self) -> int:
         log_lines: List[str] = []
 
+        # Add human-readable date to the top of the log
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_lines.append(f"Validation run at: {timestamp}")
+
         for result in self.results:
             status = "PASS" if result.ok else "FAIL"
             line = f"[{status}] {result.category}: {result.name} - {result.detail}"
