@@ -30,5 +30,8 @@ ngafid.properties
 *.log
 log
 ngafid-www/src/test/kotlin/org/ngafid/www/.env
+ngafid-www/src/test/security-test/.env
+ngafid-www/src/test/security-test/.gradle/
+ngafid-www/src/test/security-test/build/
 *.tif
 **IGNORE**
