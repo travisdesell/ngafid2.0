@@ -4,12 +4,10 @@
 .vscode/
 
 
-# Symlink to where data is actually located:
-data
-
-
-# Data stored in the repository for local development:
+# Data stored in the repository (for local development):
 data/*
+# INCLUDE Symlink to where data is actually located:
+!data
 
 
 # File/data backups:
