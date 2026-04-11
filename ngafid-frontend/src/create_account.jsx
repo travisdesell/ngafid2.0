@@ -248,7 +248,7 @@ class CreateAccountCard extends React.Component {
 
     validateFirstName() {
 
-        const firstName = this.firstNameInput.current.value;
+        const firstName = $("#createFirstName").val();
         this.setState({
             valid: {
                 ...this.state.valid,
@@ -260,7 +260,7 @@ class CreateAccountCard extends React.Component {
 
     validateLastName() {
 
-        const lastName = this.lastNameInput.current.value;
+        const lastName = $("#createLastName").val();
         this.setState({
             valid: {
                 ...this.state.valid,
@@ -272,7 +272,7 @@ class CreateAccountCard extends React.Component {
 
     validateCountry() {
 
-        const country = this.countrySelect.current.value;
+        const country = $("#countrySelect").val();
         this.setState({
             valid: {
                 ...this.state.valid,
@@ -284,7 +284,7 @@ class CreateAccountCard extends React.Component {
 
     validateState() {
 
-        const state = this.stateSelect.current.value;
+        const state = $("#stateSelect").val();
         this.setState({
             valid: {
                 ...this.state.valid,
@@ -296,7 +296,7 @@ class CreateAccountCard extends React.Component {
 
     validateCity() {
 
-        const city = this.cityInput.current.value;
+        const city = $("#createCity").val();
         this.setState({
             valid: {
                 ...this.state.valid,
@@ -308,7 +308,7 @@ class CreateAccountCard extends React.Component {
 
     validateAddress() {
 
-        const address = this.addressInput.current.value;
+        const address = $("#createAddress").val();
         this.setState({
             valid: {
                 ...this.state.valid,
@@ -320,7 +320,7 @@ class CreateAccountCard extends React.Component {
 
     validatePhone() {
 
-        const phone = this.phoneNumberInput.current.value;
+        const phone = $("#createPhoneNumber").val();
         console.log("Phone: '", phone, "'");
 
         let phoneValid;
@@ -346,7 +346,7 @@ class CreateAccountCard extends React.Component {
 
     validateZip() {
 
-        const zip = this.zipCodeInput.current.value;
+        const zip = $("#createZipCode").val();
         console.log("Zip Code: '", zip, "'");
 
         let zipValid;

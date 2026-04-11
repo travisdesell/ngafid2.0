@@ -210,11 +210,19 @@ object UserRoutes : RouteProvider() {
             val recipient: MutableList<String> = ArrayList<String>()
             recipient.add(inviteEmail)
 
-            val encodedFleetName = URLEncoder.encode(fleetName, java.nio.charset.StandardCharsets.UTF_8)
-            val formattedInviteLink =
-                "https://ngafid.org/create_account?fleet_name=$encodedFleetName&email=$inviteEmail"
-            val body =
-                "<html><body><p>Hi,<p><br><p>A account creation invitation was sent to your account for fleet: $fleetName<p><p>Please click the link below to create an account.<p><p> <a href=$formattedInviteLink>Create Account</a></p><br></body></html>"
+            val inviteeHasAccount = Database.getConnection().use { connection ->
+                User.exists(connection, inviteEmail)
+            }
+
+            val body = if (inviteeHasAccount) {
+                val preferencesLink = "https://ngafid.org/protected/preferences"
+                "<html><body><p>Hi,<p><br><p>You have been invited to join fleet: $fleetName<p><p>Your email is already associated with an NGAFID account. Please click the link below, sign in, and accept the fleet invite from your Preferences page.<p><p><a href=$preferencesLink>Open Preferences</a></p><br></body></html>"
+            } else {
+                val encodedFleetName = URLEncoder.encode(fleetName, java.nio.charset.StandardCharsets.UTF_8)
+                val formattedInviteLink =
+                    "https://ngafid.org/create_account?fleet_name=$encodedFleetName&email=$inviteEmail"
+                "<html><body><p>Hi,<p><br><p>An account creation invitation was sent to your account for fleet: $fleetName<p><p>Please click the link below to create an account.<p><p><a href=$formattedInviteLink>Create Account</a></p><br></body></html>"
+            }
 
             val bccRecipients: List<String> = ArrayList<String>()
             SendEmail.sendEmail(

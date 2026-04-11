@@ -1,14 +1,12 @@
 import 'bootstrap';
 
-import React, {createRef} from "react";
+import 'bootstrap'; // ok (brings all components)
+import $ from 'jquery';
+import React, { createRef } from "react";
 import { createRoot } from 'react-dom/client';
 import { showErrorModal } from './error_modal';
-import 'bootstrap';             // ok (brings all components)
-import { Modal } from 'bootstrap'; // add this import
-import $ from 'jquery';
 window.$ = window.jQuery = $;
 
-import { homeNavbar } from './home_navbar';
 
 
 
@@ -30,6 +28,7 @@ const loginModalstateDefault = {
     setupStep: 'authenticator',
 };
 
+const EMAIL_REGEX = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
 class LoginModal extends React.Component {
     constructor(props) {
@@ -39,17 +38,44 @@ class LoginModal extends React.Component {
 
     }
 
+    componentDidMount() {
+        $("#login-modal").on("hidden.bs.modal", () => {
+            this.clearFields();
+        });
+    }
+
+    componentWillUnmount() {
+        $("#login-modal").off("hidden.bs.modal");
+    }
+
     handleKeyDown(e) {
-        e.preventDefault();
-        if (e.keyCode == 13) {
-            $("#loginSubmitButton").click();
+        if (e.key === "Enter") {
+            e.preventDefault();
+            this.submitLogin();
         }
     }
 
     show() {
-        this.validateEmail();
-        this.validatePassword();
-        getLoginModal().show();
+
+        const INPUT_FIELD_RESET_DELAY_MS = 100;
+
+        // Reset to initial state
+        this.clearFields();
+        $("#login-modal").modal('show');
+        setTimeout(() => {
+            this.validateEmail();
+            this.validatePassword();
+        }, INPUT_FIELD_RESET_DELAY_MS);
+    }
+
+    hide() {
+        $("#login-modal").modal("hide");
+    }
+
+    clearFields() {
+        $("#loginEmail").val("");
+        $("#loginPassword").val("");
+        this.setState({ ...loginModalstateDefault });
     }
 
     submitLogin() {
@@ -59,32 +85,44 @@ class LoginModal extends React.Component {
             return;
         }
 
-        let valid = true;
-        for (const property in this.state.valid) {
-            console.log(property);
+        this.validateEmail();
+        this.validatePassword();
 
-            if (property == false) {
-                valid = false;
-                break;
-            }
-        }
+        const currentEmail = ($("#loginEmail").val() || "").trim();
+        const currentPassword = ($("#loginPassword").val() || "");
 
-        //Got validation error, exit
-        if (!valid)
+        const valid =
+            currentEmail.length > 0 &&
+            EMAIL_REGEX.test(currentEmail.toLowerCase()) &&
+            currentPassword.length > 0;
+
+        if (!valid) {
+            this.setState({
+                valid: {
+                    ...this.state.valid,
+                    email: EMAIL_REGEX.test(currentEmail.toLowerCase()),
+                    emailEmpty: currentEmail.length === 0,
+                    passwordEmpty: currentPassword.length === 0,
+                    errorMessage: false
+                }
+            });
             return;
+        }
 
         console.log("Submitting login!");
 
-        // $("#login-modal").modal('hide');
-        hideLoginModal();
+
+        // Set submitting state to prevent duplicates
+        this.setState({ isSubmitting: true });
+
         $("#loading").show();
 
         const submissionData = {
-            email: this.state.requires2FA ? this.state.storedEmail : $("#loginEmail").val(),
-            password: this.state.requires2FA ? this.state.storedPassword : $("#loginPassword").val()
+            email: this.state.requires2FA ? this.state.storedEmail : currentEmail,
+            password: this.state.requires2FA ? this.state.storedPassword : currentPassword
         };
 
-        //2FA code is required...
+        // 2FA code is required...
         if (this.state.requires2FA) {
 
             const code = (this.state.totpCode || "").trim();
@@ -129,11 +167,11 @@ class LoginModal extends React.Component {
 
                 if (response.message === "2FA_CODE_REQUIRED") {
                     console.log("2FA code required");
-                    this.setState({ 
+                    this.setState({
                         requires2FA: true,
-                        storedEmail: $("#loginEmail").val(),
-                        storedPassword: $("#loginPassword").val()
-                    }, ()=> {
+                        storedEmail: currentEmail,
+                        storedPassword: currentPassword
+                    }, () => {
                         $("#2fa-modal-content").show();
                         $("#login-modal").modal('show');
                     });
@@ -158,15 +196,21 @@ class LoginModal extends React.Component {
                     return false;
                 }
 
+                // Waiting/Denied, redirect to the waiting page
                 if (response.waiting || response.denied) {
-                    //redirect to the waiting page
+
                     window.location.replace("/protected/waiting");
-                } else {
-                    //redirect to the base page (which will redirect to either summary, waiting or the page before login)
+                    return;
+
+                // Logged in, redirect to the base page (which will redirect to either welcome, waiting or the page before login)
+                } else if (response.loggedIn) {
+
                     window.location.replace("/");
                     return;
+
+                // Otherwise, handle unexpected response
                 } else {
-                    // Handle unexpected response
+                    
                     console.log("Unexpected response:", response);
                     this.setState(prevState => ({
                         valid: {
@@ -194,19 +238,13 @@ class LoginModal extends React.Component {
     }
 
     validateEmail() {
-        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; //eslint-disable-line no-useless-escape
 
         const email = $("#loginEmail").val();
         console.log("Validating Email: ", email);
 
-        if (!email) {
-            console.error("Email is null or undefined! Unable to validate.");
-            return;
-        }
-
         const newValid = {
             ...this.state.valid,
-            email: re.test(String(email).toLowerCase()),
+            email: EMAIL_REGEX.test(String(email).toLowerCase()),
             emailEmpty: email.length == 0,
             errorMessage: false
         };
@@ -227,7 +265,7 @@ class LoginModal extends React.Component {
             return;
         }
 
-        //reset the error message from the server as the user has modified the email/password
+        // Reset the error message from the server as the user has modified the email/password
         const newValid = {
             ...this.state.valid,
             passwordEmpty: (password.length == 0),
@@ -244,7 +282,7 @@ class LoginModal extends React.Component {
         if (this.state.requires2FA) {
             return this.render2FAInput();
         }
-        
+
         if (this.state.setup2FA) {
             return this.render2FASetup();
         }
@@ -277,8 +315,8 @@ class LoginModal extends React.Component {
         let validationHidden = true;
 
 
+        // Show error messages from the server first
         if (this.state.valid.errorMessage) {
-            //show error messages from the server first
             validationMessage = this.state.errorMessage;
             validationHidden = false;
         } else if (this.state.valid.emailEmpty) {
@@ -296,7 +334,7 @@ class LoginModal extends React.Component {
 
         const submitDisabled = !validationHidden;
 
-        console.log(`rendering login modal with validation message: '${  validationMessage  }' and validation visible: ${  validationHidden}`);
+        console.log(`rendering login modal with validation message: '${validationMessage}' and validation visible: ${validationHidden}`);
 
 
         return (
@@ -312,33 +350,45 @@ class LoginModal extends React.Component {
 
                     <div id='login-modal-body' className='modal-body'>
 
+                        {/* Email Input */}
                         <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
                                 <div className="p-2" style={formHeaderStyle}>
                                     <label htmlFor="loginEmail" style={labelStyle}>Email Address</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="email" className="form-control" id="loginEmail"
-                                           aria-describedby="emailHelp" placeholder="Enter email (required)" required={true}
-                                           onChange={() => {
-                                               this.validateEmail();
-                                           }}/>
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        id="loginEmail"
+                                        aria-describedby="emailHelp"
+                                        placeholder="Enter email (required)"
+                                        autoComplete="email"
+                                        required={true}
+                                        onChange={() => this.validateEmail()}
+                                        onInput={() => this.validateEmail()}
+                                    />
                                 </div>
                             </div>
                         </div>
 
+                        {/* Password Input */}
                         <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
                                 <div className="p-2" style={formHeaderStyle}>
                                     <label htmlFor="loginPassword" style={labelStyle}>Password</label>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <input type="password" className="form-control" id="loginPassword"
-                                           placeholder="Password (required)" required={true} onKeyUp={(e) => {
-                                        this.handleKeyDown(e);
-                                    }} onChange={() => {
-                                        this.validatePassword();
-                                    }}/>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        id="loginPassword"
+                                        placeholder="Password (required)"
+                                        required={true}
+                                        onKeyUp={(e) => this.handleKeyDown(e)}
+                                        onChange={() => this.validatePassword()}
+                                        onInput={() => this.validatePassword()}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -378,21 +428,176 @@ class LoginModal extends React.Component {
             </form>
         );
     }
+
+    render2FAInput() {
+
+        console.log("Rendering 2FA input step...");
+
+        const isBackupInput = (this.state.setupStep === 'backup');
+
+        const toggleLinkMessage = isBackupInput ? "Use authenticator app instead" : "Use backup code instead";
+        const toggleLink = (
+            <small className="text-muted">
+                <a
+                    href="#"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        this.setState({
+                            setupStep: isBackupInput ? 'authenticator' : 'backup',
+                            totpCode: ""
+                        });
+                    }}
+                >
+                    {toggleLinkMessage}
+                </a>
+            </small>
+        );
+
+        const errorMessage = (
+            this.state.valid.errorMessage && (
+                <div className="alert alert-danger" role="alert">
+                    {this.state.errorMessage}
+                </div>
+            )
+        );
+
+        const formInputLength = (isBackupInput ? 8 : 6);
+
+        const prompt = (this.state.setupStep === 'backup')
+            ? "Enter your 8-digit backup code:"
+            : "Enter the 6-digit code from your authenticator app:";
+
+        return (
+            <div
+                className='modal-content'
+                id='2fa-modal-content'
+            >
+
+                {/* Modal Header */}
+                <div className='modal-header'>
+
+                    {/* Modal Title */}
+                    <h5 className='modal-title'>Two-Factor Authentication</h5>
+
+                    {/* Close Button */}
+                    <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
+                        <span aria-hidden='true'>&times;</span>
+                    </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className='modal-body'>
+
+                    {/* Shield Icon */}
+                    <div className="text-center mb-3 w-full">
+                        <i className="fa fa-shield fa-3x text-primary"></i>
+                    </div>
+
+                    {/* Error Message */}
+                    {errorMessage}
+
+                    {/* Enter Code Prompt */}
+                    <p className="text-center">
+                        {prompt}
+                    </p>
+
+                    {/* Single-use Warning */}
+                    {
+                        (isBackupInput)
+                        &&
+                        <div className="font-bold text-xs my-2 text-center">
+                            Backup codes are single-use!
+                        </div>
+                    }
+
+                    {/* Code Input Field */}
+                    <input
+                        type="text"
+                        className="form-control text-center"
+                        placeholder={"0".repeat(formInputLength)}
+                        maxLength={formInputLength}
+                        value={this.state.totpCode}
+                        onChange={(e) => this.setState({ totpCode: e.target.value })}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter' && this.state.totpCode.length === formInputLength) {
+                                this.submitLogin();
+                            }
+                        }}
+                        style={{ fontSize: '18px', letterSpacing: '2px' }}
+                        autoFocus
+                    />
+
+                    {/* Supported Apps */}
+                    <small className="text-muted mt-2 d-block text-center">
+                        Supported apps: Google Authenticator, Microsoft Authenticator, Authy, 1Password, etc.
+                    </small>
+
+                    {/* Code Input Mode Toggle */}
+                    <div className="flex items-center justify-center">
+                        {toggleLink}
+                    </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className='modal-footer'>
+
+                    {/* Verify Button */}
+                    <button
+                        className='btn btn-primary'
+                        onClick={() => this.submitLogin()}
+                        disabled={this.state.totpCode.length !== formInputLength}
+                    >
+                        Verify
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    render2FASetup() {
+        return (
+            <div className='modal-content'>
+                <div className='modal-header'>
+                    <h5 className='modal-title'>Set Up Two-Factor Authentication</h5>
+                    <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
+                        <span aria-hidden='true'>&times;</span>
+                    </button>
+                </div>
+
+                <div className='modal-body'>
+                    <div className="text-center mb-3">
+                        <i className="fas fa-shield-alt fa-3x text-warning"></i>
+                    </div>
+                    <div className="alert alert-info">
+                        <h6><i className="fas fa-info-circle"></i> Two-Factor Authentication Required</h6>
+                        <p className="mb-0">Your account requires two-factor authentication for enhanced security. Please set it up now to continue.</p>
+                    </div>
+                    <p className="text-center">You&apos;ll be redirected to the security settings page where you can:</p>
+                    <ul className="list-unstyled">
+                        <li><i className="fas fa-check text-success"></i> Scan a QR code with your authenticator app</li>
+                        <li><i className="fas fa-check text-success"></i> Verify the setup with a 6-digit code</li>
+                        <li><i className="fas fa-check text-success"></i> Save backup codes for emergency access</li>
+                    </ul>
+                </div>
+
+                <div className='modal-footer'>
+                    <button className='btn btn-primary' onClick={() => this.initiate2FASetup()}>
+                        <i className="fas fa-shield-alt"></i> Set Up 2FA
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    initiate2FASetup() {
+        // Redirect to the 2FA settings page for setup
+        window.location.href = "/two-factor-settings";
+    }
 }
 
-// const container = document.querySelector("#login-modal-content");
-// const root = createRoot(container);
-// root.render(<LoginModal ref={loginModalRef}/>);
-
-function getLoginModal() {
-
-    const modalElement = document.getElementById('login-modal');
-    if (!modalElement)
-        throw new Error('Login Modal not found!');
-
-    return Modal.getOrCreateInstance(modalElement);
-
-}
+const container = document.querySelector("#login-modal-content");
+const root = createRoot(container);
+root.render(<LoginModal ref={loginModalRef} />);
 
 export function showLoginModal() {
 
@@ -404,6 +609,6 @@ export function showLoginModal() {
 export function hideLoginModal() {
 
     if (loginModalRef.current)
-        getLoginModal().hide();
+        loginModalRef.current.hide();
 
 }
