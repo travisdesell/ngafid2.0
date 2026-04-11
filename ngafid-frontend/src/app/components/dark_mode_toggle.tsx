@@ -15,6 +15,7 @@ import PingHalfRight from './pings/ping_half_right';
 import { useAuth } from './providers/auth_provider';
 import { Checkbox } from './ui/checkbox';
 import { Separator } from './ui/separator';
+import { Button } from '@/components/ui/button';
 
 
 export function DarkModeToggle() {
@@ -71,9 +72,10 @@ export function DarkModeToggle() {
             <ContextMenuTrigger>
                 <Tooltip>
                     <TooltipTrigger asChild>
-
-                        <button
-                            className="cursor-pointer flex relative"
+                        <Button
+                            type="button"
+                            variant="ghostMono"
+                            className="h-8 p-1! aspect-square **:w-full! **:h-full! inline-flex items-center cursor-pointer"
                             onClick={toggleThemeManual}
                         >
 
@@ -103,7 +105,7 @@ export function DarkModeToggle() {
                                     }
                                 </>
                             }
-                        </button>
+                        </Button>
 
                     </TooltipTrigger>
 

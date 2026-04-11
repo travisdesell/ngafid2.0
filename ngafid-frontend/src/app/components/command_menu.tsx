@@ -1,6 +1,7 @@
 import CommandModal from "@/components/modals/command_modal/command_modal";
 import { useModal } from "@/components/modals/modal_context";
 import { usePlatform } from "@/components/providers/platform_provider";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LucideCommand } from "lucide-react";
 import React, { useEffect } from "react";
@@ -74,15 +75,21 @@ function CommandMenu() {
     return (
         <Tooltip disableHoverableContent>
             <TooltipTrigger asChild>
-                <button type="button" className="h-6 inline-flex items-center cursor-pointer" onClick={()=>setOpen(true)}>
+                <Button
+                    type="button"
+                    variant="ghostMono"
+                    className="h-8 p-1! aspect-square **:w-full! **:h-full! inline-flex items-center cursor-pointer"
+                    onClick={()=>setOpen(true)}
+                >
                     <LucideCommand />
-                </button>
+                </Button>
             </TooltipTrigger>
             <TooltipContent leftAction="Open" keyboardAction={hotkey} >
                 Action Menu
             </TooltipContent>
         </Tooltip>
     );
+
 }
 
 export default CommandMenu;

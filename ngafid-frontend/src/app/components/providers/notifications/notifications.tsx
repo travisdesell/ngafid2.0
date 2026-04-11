@@ -4,6 +4,8 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia } from "@/co
 import { Bell, BellOff } from "lucide-react";
 import { NGAFIDNotification } from "./notifications_data/types";
 import { useNotifications } from "./notifications_provider";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Notifications() {
 
@@ -43,10 +45,23 @@ export default function Notifications() {
 
     const render = () => (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <button className="cursor-pointer flex relative">
-                    <Bell />
-                </button>
+            <DropdownMenuTrigger>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="ghostMono"
+                            className="h-8 p-1! aspect-square **:w-full! **:h-full! inline-flex items-center cursor-pointer"
+                        >
+                            <Bell />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                        leftAction="Open"
+                    >
+                        Notifications
+                    </TooltipContent>
+                </Tooltip>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="from-muted to-background min-h-[400px] max-h-[400px] min-w-[275px] mr-4 bg-linear-to-b from-30% overflow-y-auto">
                 {
