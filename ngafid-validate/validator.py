@@ -33,7 +33,6 @@ REQUIRED_TOPICS = [
 
 REQUIRED_PROP_KEYS = [
     "ngafid.repo.path",
-    "ngafid.data.folder",
     "ngafid.upload.dir",
     "ngafid.archive.dir",
     "ngafid.terrain.dir",

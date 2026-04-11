@@ -50,7 +50,6 @@ def run_check(validator):
     _validate_docker_paths(validator, category, props)
     _validate_runtime_contract_files(validator, category)
     _validate_bootstrap_server_format(validator, category)
-    _validate_path_relationships(validator, category)
     _validate_db_engine_flag(validator, category)
     _validate_email_config(validator, category)
 
@@ -162,7 +161,6 @@ def _validate_docker_paths(validator, category, props):
 
     docker_path_keys = [
         "ngafid.docker.repo.path",
-        "ngafid.docker.data.folder",
         "ngafid.docker.upload.dir",
         "ngafid.docker.archive.dir",
         "ngafid.docker.terrain.dir",
@@ -245,36 +243,6 @@ def _validate_bootstrap_server_format(validator, category):
             category,
             "kafka bootstrap format",
             f"validated endpoints: {', '.join(endpoints)}",
-        )
-
-
-def _validate_path_relationships(validator, category):
-    data_folder = validator._effective_property("ngafid.data.folder")
-    upload_dir = validator._effective_property("ngafid.upload.dir")
-    archive_dir = validator._effective_property("ngafid.archive.dir")
-    terrain_dir = validator._effective_property("ngafid.terrain.dir")
-
-    if not data_folder or not upload_dir or not archive_dir or not terrain_dir:
-        return
-
-    normalized_data = data_folder.rstrip("/") + "/"
-    outside = []
-    for label, path in (("upload", upload_dir), ("archive", archive_dir), ("terrain", terrain_dir)):
-        normalized_path = path.rstrip("/") + "/"
-        if not normalized_path.startswith(normalized_data):
-            outside.append(f"{label}={path}")
-
-    if outside:
-        validator._pass(
-            category,
-            "data path hierarchy",
-            f"using split-path layout outside ngafid.data.folder ({data_folder}): {', '.join(outside)}",
-        )
-    else:
-        validator._pass(
-            category,
-            "data path hierarchy",
-            "upload/archive/terrain paths align with ngafid.data.folder",
         )
 
 
