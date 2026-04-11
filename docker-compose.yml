@@ -22,8 +22,8 @@ x-ngafid-service-common: &ngafid-service-common
     - /mnt/ngafid/uploads:/mnt/uploads
     - /mnt/ngafid/archive:/mnt/archive
     - /mnt/ngafid/terrain:/mnt/terrain
-    - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
-    - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
+    - /mnt/ngafid/airports:/mnt/data/airports:ro
+    - /mnt/ngafid/runways:/mnt/data/runways:ro
 
     - ./ngafid-static:/mnt/static
 
@@ -70,15 +70,19 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./:/workspace:ro
+      - ./ngafid-validate/validation-results:/validator/validation-results
+
       - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
       - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
       - ./email_info.txt:/etc/ngafid-email.conf:ro
-      - ./ngafid-validate/validation-results:/validator/validation-results
-      - ./data:/mnt/data
-      - ./data/uploads:/mnt/uploads
-      - ./data/archive:/mnt/archive
+
       - ./ngafid-static:/mnt/static
-      - ./data/terrain:/mnt/terrain
+      
+      - /mnt/ngafid/uploads:/mnt/uploads
+      - /mnt/ngafid/archive:/mnt/archive
+      - /mnt/ngafid/terrain:/mnt/terrain
+      - /mnt/ngafid/airports:/mnt/data/airports:ro
+      - /mnt/ngafid/runways:/mnt/data/runways:ro
     <<: *ngafid-service-common-base
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
