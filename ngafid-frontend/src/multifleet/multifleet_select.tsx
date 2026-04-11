@@ -2,12 +2,13 @@
 import React from "react";
 
 import { showErrorModal } from "../error_modal";
+import { showAjaxErrorModal } from "../extract_ajax_error_message";
 import type { accessType, MultifleetSelectWithAccess } from "../types";
-
-
-
-import '../index.css';          //<-- include Tailwind
 import { showConfirmModal } from "../confirm_modal";
+import '../index.css'; //<-- include Tailwind
+import { InfoHint } from "../info_hint";
+
+const FLEET_NAME_LENGTH_LIMIT = 256;
 
 
 function leaveSelectedFleet() {
@@ -22,8 +23,8 @@ function leaveSelectedFleet() {
             window.location.reload();
         },
         error: (jqXHR, textStatus, errorThrown) => {
+            showAjaxErrorModal(jqXHR, errorThrown, "Error Leaving Selected Fleet");
             console.error("Error leaving the selected fleet:", errorThrown);
-            showErrorModal("Error Leaving Selected Fleet", errorThrown);
         }
     });
 
@@ -116,6 +117,41 @@ type MultifleetSelectProps = {
 export function MultifleetSelect({ fleetsWithAccess, fleetSelected, updateSelectedFleet }: MultifleetSelectProps) {
 
     console.log("Rendering MultifleetSelect with fleets:", fleetsWithAccess);
+    const [newFleetName, setNewFleetName] = React.useState("");
+    const [isCreatingFleet, setIsCreatingFleet] = React.useState(false);
+
+    const trimmedFleetName = newFleetName.trim();
+    const fleetNameRegex = /^[a-zA-Z0-9 @#$%^&*()_+!.,/\\]+$/;
+    const isFleetNameValid =
+        (trimmedFleetName.length > 0)
+        && (trimmedFleetName.length < FLEET_NAME_LENGTH_LIMIT)
+        && fleetNameRegex.test(trimmedFleetName);
+
+    const createFleet = () => {
+
+        // Prevent multiple submissions or invalid fleet names
+        if (isCreatingFleet || !isFleetNameValid)
+            return;
+
+        setIsCreatingFleet(true);
+
+        $.ajax({
+            type: 'POST',
+            url: '/api/user/create-fleet',
+            async: true,
+            data: { fleetName: trimmedFleetName },
+            success: (response) => {
+                console.log("Successfully created and selected new fleet:", response);
+                window.location.reload();
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                showAjaxErrorModal(jqXHR, errorThrown, "Error Creating Fleet");
+                console.error("Error creating new fleet:", errorThrown);
+                setIsCreatingFleet(false);
+            }
+        });
+    };
+
     const fleetsWithAccessCount = fleetsWithAccess.length;
 
     //No fleets to select from, something is wrong
@@ -125,9 +161,6 @@ export function MultifleetSelect({ fleetsWithAccess, fleetSelected, updateSelect
         return null;
     }
 
-    //No (other) fleets to select from, show nothing
-    if (fleetsWithAccessCount === 1)
-        return null;
 
     //Check if the user is a manager of the selected fleet
     const selectedFleetAccess = fleetsWithAccess.find(fleet => fleet.fleetId === fleetSelected);
@@ -185,6 +218,52 @@ export function MultifleetSelect({ fleetsWithAccess, fleetSelected, updateSelect
                                     updateSelectedFleet={updateSelectedFleet}
                                 />
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Card Footer Area */}
+                    <div className="card-footer">
+                        <div className="flex flex-col gap-2">
+
+                            {/* Mass-Toggle Instruction */}
+                            <InfoHint message={"Created fleets cannot be deleted. Fleets cannot be left unless another valid fleet is available, and another user can manage it."} />
+
+                            <label className="mb-1 font-weight-bold" htmlFor="new-fleet-name-input">
+                                Create New Fleet
+                            </label>
+
+                            <div className="flex gap-2 items-center w-full">
+
+                                {/* Fleet Name Input */}
+                                <input
+                                    id="new-fleet-name-input"
+                                    className="form-control"
+                                    type="text"
+                                    placeholder="Enter fleet name"
+                                    value={newFleetName}
+                                    maxLength={FLEET_NAME_LENGTH_LIMIT}
+                                    onChange={(event) => setNewFleetName(event.target.value)}
+                                />
+
+                                {/* Create Button */}
+                                <button
+                                    className={`btn btn-success ${(!isFleetNameValid || isCreatingFleet) ? 'button-disabled' : ''}`}
+                                    disabled={!isFleetNameValid || isCreatingFleet}
+                                    onClick={createFleet}
+                                >
+                                    <i className="fa fa-plus mr-2" />
+                                    {isCreatingFleet ? "Creating..." : "Create Fleet"}
+                                </button>
+                            </div>
+
+                            {/* Bad Fleet Name Warning */}
+                            {
+                                (trimmedFleetName.length > 0 && !isFleetNameValid)
+                                &&
+                                <small className="text-danger d-block mt-1">
+                                    Fleet name must be 1-{FLEET_NAME_LENGTH_LIMIT} characters and may only include letters, numbers, spaces, and @#$%^&*()_+!/\\.,
+                                </small>
+                            }
                         </div>
                     </div>
                 </div>

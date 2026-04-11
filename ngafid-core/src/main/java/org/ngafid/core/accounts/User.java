@@ -86,9 +86,7 @@ public final class User implements Serializable {
         this.aggregateView = aggregateView;
         this.passwordToken = "";
 
-        this.fleet = Fleet.get(connection, fleetId);
-        this.fleetAccess = FleetAccess.get(connection, id, fleetId);
-        this.fleetSelected = fleetSelected;
+        setSelectedFleetId(connection, fleetSelected);
 
         LOG.log(
                 Level.INFO,
@@ -1221,6 +1219,9 @@ public final class User implements Serializable {
 
         // give use manager access of this fleet
         user.fleetAccess = FleetAccess.create(connection, user.getId(), user.fleet.getId(), FleetAccess.MANAGER);
+
+        // set the user's selected fleet to this new fleet
+        user.setSelectedFleetId(connection, user.fleet.getId());
 
         return user;
     }

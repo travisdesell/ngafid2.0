@@ -8,6 +8,7 @@ import io.javalin.http.pathParamAsClass
 import io.javalin.openapi.*
 import org.ngafid.core.Database
 import org.ngafid.core.accounts.EmailType
+import org.ngafid.core.accounts.AccountException
 import org.ngafid.core.accounts.Fleet
 import org.ngafid.core.accounts.FleetAccess
 import org.ngafid.core.accounts.FleetAccessNamed
@@ -59,6 +60,7 @@ object UserRoutes : RouteProvider() {
                 }
 
                 get("fleet-access", UserRoutes::getUserFullFleetAccess, Role.LOGGED_IN)
+                post("create-fleet", UserRoutes::postUserCreateFleet, Role.LOGGED_IN)
                 put("select-fleet", UserRoutes::putUserFleetSelected, Role.LOGGED_IN)
                 put("leave-fleet", UserRoutes::putUserLeaveCurrentFleet, Role.LOGGED_IN)
 
@@ -71,6 +73,64 @@ object UserRoutes : RouteProvider() {
 
             }
         }
+    }
+
+    fun postUserCreateFleet(ctx: Context) {
+
+        val user = SessionUtility.getUser(ctx)
+        val fleetName = ctx.formParam("fleetName")?.trim()
+
+        // Fleet name cannot be empty or null
+        if (fleetName.isNullOrEmpty()) {
+            ctx.status(400)
+            ctx.json(ErrorResponse("Invalid Fleet Name", "Fleet name cannot be empty."))
+            return
+        }
+
+        val FLEET_NAME_LENGTH_LIMIT = 256
+
+        val validFleetNameRegex = Regex("^[\\@\\#\\$\\%\\^\\&\\*\\(\\)\\_\\+\\!\\/\\\\\\.\\,a-zA-Z0-9 ]+$")
+        if (fleetName.length >= FLEET_NAME_LENGTH_LIMIT || !validFleetNameRegex.matches(fleetName)) {
+            ctx.status(400)
+            ctx.json(
+                ErrorResponse(
+                    "Invalid Fleet Name",
+                    "Fleet name must be 1-${FLEET_NAME_LENGTH_LIMIT} characters and may only include letters, numbers, spaces, and @#$%^&*()_+!/\\.,"
+                )
+            )
+            return
+        }
+
+        Database.getConnection().use { connection ->
+            val previousAutoCommit = connection.autoCommit
+
+            try {
+                connection.autoCommit = false
+
+                // Create the fleet
+                val fleet = Fleet.create(connection, fleetName)
+                FleetAccess.create(connection, user.id, fleet.id, FleetAccess.MANAGER)
+
+                // Set the user's selected fleet to the newly created fleet
+                user.setSelectedFleetId(connection, fleet.id)
+
+                connection.commit()
+                ctx.status(201)
+                ctx.json(fleet)
+            } catch (e: AccountException) {
+                connection.rollback()
+                ctx.status(400)
+                ctx.json(ErrorResponse(e))
+            } catch (e: SQLException) {
+                connection.rollback()
+                LOG.severe("Error creating fleet '${fleetName}' for user ${user.id}: ${e.message}")
+                ctx.status(500)
+                ctx.json(ErrorResponse("Fleet Creation Error", e.message ?: "Unknown database error."))
+            } finally {
+                connection.autoCommit = previousAutoCommit
+            }
+        }
+        
     }
 
     fun putUserFleetSelected(ctx: Context) {
@@ -115,7 +175,7 @@ object UserRoutes : RouteProvider() {
         } catch (e: SQLException) {
             LOG.severe("Error when user ${user.getId()} attempted to leave fleet ${user.getFleetId()}: ${e.message}")
             ctx.status(500)
-            ctx.result("Error when attempting to leave fleet.")
+            ctx.result("Error when attempting to leave fleet: ${e.message}")
             return
         }
 
