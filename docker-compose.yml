@@ -19,11 +19,11 @@ x-ngafid-service-common: &ngafid-service-common
 
     - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
 
-    - /mnt/ngafid/uploads:/mnt/uploads
-    - /mnt/ngafid/archive:/mnt/archive
-    - /mnt/ngafid/terrain:/mnt/terrain
-    - /mnt/ngafid/airports:/mnt/data/airports:ro
-    - /mnt/ngafid/runways:/mnt/data/runways:ro
+    - /mnt/ngafid/uploads:/mnt/ngafid/uploads
+    - /mnt/ngafid/archive:/mnt/ngafid/archive
+    - /mnt/ngafid/terrain:/mnt/ngafid/terrain
+    - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
+    - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
 
     - ./ngafid-static:/mnt/static
 
@@ -78,11 +78,11 @@ services:
 
       - ./ngafid-static:/mnt/static
       
-      - /mnt/ngafid/uploads:/mnt/uploads
-      - /mnt/ngafid/archive:/mnt/archive
-      - /mnt/ngafid/terrain:/mnt/terrain
-      - /mnt/ngafid/airports:/mnt/data/airports:ro
-      - /mnt/ngafid/runways:/mnt/data/runways:ro
+      - /mnt/ngafid/uploads:/mnt/ngafid/uploads
+      - /mnt/ngafid/archive:/mnt/ngafid/archive
+      - /mnt/ngafid/terrain:/mnt/ngafid/terrain
+      - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
+      - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
     <<: *ngafid-service-common-base
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
