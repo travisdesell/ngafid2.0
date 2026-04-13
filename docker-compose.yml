@@ -11,21 +11,21 @@ x-ngafid-service-common: &ngafid-service-common
       condition: service_started
     ngafid-kafka-topics:
       condition: service_completed_successfully
+    ngafid-validate:
+      condition: service_completed_successfully
   volumes:
     # Mount the properties file and data directories
     - /mnt/ngafid/temp:/mnt/ngafid/temp # Jetty temp directory:  upload chunks/files before final write to uploads/archive.
-    
-    - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
-    
-    - /mnt/ngafid/uploads:/mnt/uploads
-    - /mnt/ngafid/archive:/mnt/archive
-    - /mnt/ngafid/terrain:/mnt/terrain
+
+    - ./ngafid.properties:/app/ngafid.properties:ro
+
+    - /mnt/ngafid/uploads:/mnt/ngafid/uploads
+    - /mnt/ngafid/archive:/mnt/ngafid/archive
+    - /mnt/ngafid/terrain:/mnt/ngafid/terrain
     - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
     - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
 
     - ./ngafid-static:/mnt/static
-
-    
 
     - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
     # Email credentials: repo-root email_info.txt (line 1=SMTP user, line 2=password) is mounted at /etc/ngafid-email.conf in the container.
@@ -55,6 +55,35 @@ services:
     depends_on:
       kafka:
         condition: service_started
+
+  # One-shot preflight validator. Must succeed before long-running application services start.
+  ngafid-validate:
+    build:
+      context: .
+      dockerfile: ngafid-validate/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_started
+      kafka:
+        condition: service_started
+      ngafid-kafka-topics:
+        condition: service_completed_successfully
+    volumes:
+      - ./:/workspace:ro
+      - ./ngafid-validate/validation-results:/validator/validation-results
+
+      - ./ngafid.properties:/app/ngafid.properties:ro
+      - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
+      - ./email_info.txt:/etc/ngafid-email.conf:ro
+
+      - ./ngafid-static:/mnt/static
+      
+      - /mnt/ngafid/uploads:/mnt/ngafid/uploads
+      - /mnt/ngafid/archive:/mnt/ngafid/archive
+      - /mnt/ngafid/terrain:/mnt/ngafid/terrain
+      - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
+      - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
+    <<: *ngafid-service-common-base
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
   ngafid-email-consumer:

@@ -121,7 +121,7 @@ export function MultifleetSelect({ fleetsWithAccess, fleetSelected, updateSelect
     const [isCreatingFleet, setIsCreatingFleet] = React.useState(false);
 
     const trimmedFleetName = newFleetName.trim();
-    const fleetNameRegex = /^[a-zA-Z0-9 @#$%^&*()_+!.,/\\]+$/;
+    const fleetNameRegex = /^[a-zA-Z0-9 @#$%^&*()_+!.,/\\'-]+$/;
     const isFleetNameValid =
         (trimmedFleetName.length > 0)
         && (trimmedFleetName.length < FLEET_NAME_LENGTH_LIMIT)
@@ -261,7 +261,7 @@ export function MultifleetSelect({ fleetsWithAccess, fleetSelected, updateSelect
                                 (trimmedFleetName.length > 0 && !isFleetNameValid)
                                 &&
                                 <small className="text-danger d-block mt-1">
-                                    Fleet name must be 1-{FLEET_NAME_LENGTH_LIMIT} characters and may only include letters, numbers, spaces, and @#$%^&*()_+!/\\.,
+                                    Fleet name must be 1-{FLEET_NAME_LENGTH_LIMIT} characters and may only include letters, numbers, spaces, and {`@#$%^&*()_+!/\\.,'-`}
                                 </small>
                             }
                         </div>

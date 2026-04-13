@@ -1,37 +1,71 @@
+# IDE and OS generated files:
 .DS_Store
 .idea
-target/*
-src/main/resources/public/js/*
-.cache-loader/*
-init_env.sh
-db/db_info.php
-db/db_info
-email_info.txt
+.vscode/
+
+
+# Data stored in the repository (for local development):
 data/*
-fleets
-temp
-ngafid-db/src/liquibase.properties
-ngafid-core/target/*
-ngafid-www/target/*
-ngafid-data-processor/target/*
+# INCLUDE Symlink to where data is actually located:
+!data
+
+
+# File/data backups:
+backups/*
+
+
+# Front-end stuff:
+.cache-loader/*
+src/main/resources/public/js/*
 ngafid-frontend/node_modules
-ngafid-static/js/*
-ngafid-chart-processor/charts/*
-ngafid-db/target/*
-ngafid-airsync/target
-ngafid-chart-processor/temp
 ngafid-frontend/.webpack_cache/*
+ngafid-static/js/*
+
+
+# Java build artifacts:
+*/target/*
+
+
+# Generated charts:
+ngafid-chart-processor/charts/*
+ngafid-chart-processor/temp
+
+
+# Chart processor raw images:
+*.tif
+
+
+# Database files/configuration:
+ngafid-db/src/liquibase.properties
+ngafid-db/src/liquibase.docker.properties
+
+
+# Environment variable files:
+ngafid.properties
 .env
 .env.host
-ngafid-db/src/liquibase.docker.properties
+
+
+# Email configuration files:
 ngafid-email.conf
-ngafid.properties
-.vscode/
+email_info.txt
+
+
+# Log files:
 *.log
 log
+<<<<<<< HEAD
 ngafid-www/src/test/kotlin/org/ngafid/www/.env
 ngafid-www/src/test/security-test/.env
 ngafid-www/src/test/security-test/.gradle/
 ngafid-www/src/test/security-test/build/
 *.tif
 **IGNORE**
+=======
+# INCLUDE example log file for validation logs:
+!validationlog_EXAMPLE.log
+
+
+# All files/folders containing 'IGNORE' in their name:
+**IGNORE**
+>>>>>>> aidan_cu/ngafid-validate_march2026

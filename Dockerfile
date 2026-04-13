@@ -1,7 +1,7 @@
 FROM eclipse-temurin:25
 
 # Copy configuration files 
-COPY ngafid-core/src/main/resources/ngafid.properties /app/ngafid.properties
+COPY ngafid.properties /app/ngafid.properties
 COPY resources/log.properties /etc/log.properties
 
 # Copy data files

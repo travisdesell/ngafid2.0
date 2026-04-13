@@ -114,10 +114,10 @@ $NGAFID_DATA_FOLDER
 
 All configuration is now handled through a single properties file that works for both local development and Docker environments.
 
-Copy the template properties file and customize it for your environment:
+Create a root `ngafid.properties` file and customize it for your environment.
 
 ```shell
-cp ngafid-core/src/main/resources/ngafid.template.properties ngafid-core/src/main/resources/ngafid.properties
+touch ngafid.properties
 ```
 
 Edit `ngafid.properties` and configure the following values (look for ⚠️ markers in the file):
@@ -222,6 +222,16 @@ must run the following commands in-order:
 ~/ngafid2.0 $ docker compose build base # create base image
 ~/ngafid2.0 $ docker compose build
 ```
+
+You can use the following command to launch all services in the background:
+
+```shell
+~/ngafid2.0 $ docker compose up -d
+```
+
+<span style="opacity:0.50">
+🛈 Upon launching all services, a validation step will take place to test environment variables, database connections, Kafka connections, etc. If any tests fail, <b>Docker will not allow the remaining services to start</b>. Log files for all passing and failing validation steps are saved in the <code>ngafid-validate/ngafid-results</code> directory.
+</span>
 
 ## 9. Workflow
 
