@@ -1,0 +1,100 @@
+    
+    (2026/03/25)
+
+    This is an *example* validation log demonstrating the
+    output format and content of a successful validation
+    run. Similar logs are automatically created every time
+    the validation phase runs when the Docker Compose
+    environment is started.
+
+    Some items will (obviously) differ depending on the
+    environment and configuration being used.
+
+[PASS] COMPOSE: ngafid properties mount - /app/ngafid.properties exists and is readable
+[PASS] COMPOSE: db config mount - /etc/ngafid-db.conf exists and is readable
+[PASS] COMPOSE: workspace root mount - /workspace/docker-compose.yml exists and is readable
+[PASS] COMPOSE: host alias - host.docker.internal resolves
+[PASS] COMPOSE: compose validator service - ngafid-validate service is defined
+[PASS] COMPOSE: compose validator gating - shared service dependency includes ngafid-validate completion gate
+[PASS] COMPOSE: workspace logging.properties - /workspace/logging.properties exists and is readable
+[PASS] COMPOSE: workspace log.properties - /workspace/resources/log.properties exists and is readable
+[PASS] CONFIG: properties parse - ngafid.properties loaded
+[PASS] CONFIG: required key ngafid.repo.path - present
+[PASS] CONFIG: required key ngafid.data.folder - present
+[PASS] CONFIG: required key ngafid.upload.dir - present
+[PASS] CONFIG: required key ngafid.archive.dir - present
+[PASS] CONFIG: required key ngafid.terrain.dir - present
+[PASS] CONFIG: required key ngafid.db.info - present
+[PASS] CONFIG: required key ngafid.docker.db.info - present
+[PASS] CONFIG: required key ngafid.kafka.bootstrap.servers - present
+[PASS] CONFIG: required key ngafid.docker.kafka.bootstrap.servers - present
+[PASS] CONFIG: required key ngafid.port - present
+[PASS] CONFIG: azure maps key placeholder - value is not default placeholder
+[PASS] CONFIG: web port bounds - ngafid.port=8181
+[PASS] CONFIG: parallelism bounds - ngafid.parallelism=4
+[PASS] CONFIG: parallelism cpu alignment - parallelism 4 <= CPU count 4
+[PASS] CONFIG: terrain cache bounds - ngafid.max.terrain.cache.size=0
+[PASS] CONFIG: db pool bounds - min_idle=1, max_pool=32
+[PASS] CONFIG: db max lifetime - ngafid.db.max.lifetime=60000
+[PASS] CONFIG: docker path consistency - all ngafid.docker.* path properties are absolute
+[PASS] CONFIG: db info file - /etc/ngafid-db.conf exists and is readable
+[PASS] CONFIG: kafka bootstrap format - validated endpoints: kafka:9093
+[PASS] CONFIG: data path hierarchy - using split-path layout outside ngafid.data.folder (/mnt/data): upload=/mnt/uploads, archive=/mnt/archive, terrain=/mnt/terrain
+[PASS] CONFIG: database engine flag - MySQL mode is active
+[PASS] BUILD: artifact ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar - present
+[PASS] BUILD: artifact ngafid-www/target/ngafid-www-1.0-SNAPSHOT-jar-with-dependencies.jar - present
+[PASS] BUILD: artifact ngafid-data-processor/target/ngafid-data-processor-1.0-SNAPSHOT-jar-with-dependencies.jar - present
+[PASS] FS: upload dir - /mnt/uploads is read/write accessible
+[PASS] FS: upload dir free space - 872.10 GiB free (936410238976 bytes) out of 1006.85 GiB total (WSL-reported filesystem capacity; may differ from Windows host free-space view)
+[PASS] FS: archive dir - /mnt/archive is read/write accessible
+[PASS] FS: archive dir free space - 872.10 GiB free (936410238976 bytes) out of 1006.85 GiB total (WSL-reported filesystem capacity; may differ from Windows host free-space view)
+[PASS] FS: terrain dir - /mnt/terrain is read accessible
+[PASS] FS: terrain tiles - /mnt/terrain has 122 subdirectories
+[PASS] FS: terrain tile naming - terrain tile directory names match expected pattern
+[PASS] FS: airports csv - /mnt/data/airports/airports_parsed.csv exists and is readable
+[PASS] FS: airports csv integrity - parsed 100 sample rows successfully
+[PASS] FS: runways csv - /mnt/data/runways/runways_parsed.csv exists and is readable
+[PASS] FS: runways csv integrity - parsed 100 sample rows successfully
+[PASS] DB: mysql connection - connected to host.docker.internal:3306/ngafid
+[PASS] DB: mysql version - 8.0.45-0ubuntu0.22.04.1
+[PASS] DB: mysql version floor - MySQL major version is compatible
+[PASS] DB: database charset - utf8mb4
+[PASS] DB: schema tables - required core schema tables exist
+[PASS] DB: critical tables - critical runtime tables are present
+[PASS] DB: materialized view tables - materialized view tables are present
+[PASS] DB: critical column structure - required columns exist on core tables
+[PASS] DB: liquibase changelog entries - databasechangelog row count=103
+[PASS] DB: event definitions seed data - fleet_id=0 count=74
+[PASS] DB: airframe types seed data - airframe_types count=4
+[PASS] DB: event metadata keys seed data - event_metadata_keys count=2
+[PASS] DB: transaction rollback - write/rollback probe succeeded
+[PASS] KAFKA: broker connection - connected to kafka:9093
+[PASS] KAFKA: required topics - all required topics are present
+[PASS] KAFKA: heartbeat topic - heartbeat topic present: docker-status-heartbeat
+[PASS] KAFKA: cluster controller - controller not reported by client metadata; skipping strict controller validation
+[PASS] KAFKA: topic partitions email-retry - partition count=6
+[PASS] KAFKA: topic replication email-retry - replication factor=1
+[PASS] KAFKA: topic partitions email - partition count=6
+[PASS] KAFKA: topic replication email - replication factor=1
+[PASS] KAFKA: topic partitions event - partition count=6
+[PASS] KAFKA: topic replication event - replication factor=1
+[PASS] KAFKA: topic partitions event-retry - partition count=6
+[PASS] KAFKA: topic replication event-retry - replication factor=1
+[PASS] KAFKA: topic partitions event-dlq - partition count=6
+[PASS] KAFKA: topic replication event-dlq - replication factor=1
+[PASS] KAFKA: topic partitions upload-retry - partition count=6
+[PASS] KAFKA: topic replication upload-retry - replication factor=1
+[PASS] KAFKA: topic partitions upload - partition count=6
+[PASS] KAFKA: topic replication upload - replication factor=1
+[PASS] KAFKA: topic partitions email-dlq - partition count=6
+[PASS] KAFKA: topic replication email-dlq - replication factor=1
+[PASS] KAFKA: topic partitions upload-dlq - partition count=6
+[PASS] KAFKA: topic replication upload-dlq - replication factor=1
+[PASS] OPTIONAL: email checks - skipped because email is disabled
+[PASS] OPTIONAL: chart url - skipped because ngafid.chart.tile.base.url is not set
+[PASS] FS: static dir - /mnt/static is read accessible
+[PASS] FS: static asset files - asset counts look healthy (js=261, css=32, html=36)
+[PASS] FS: template dir - /mnt/static/templates is read accessible
+[PASS] FS: template files - template count=36
+
+Validation succeeded: all required checks passed.
