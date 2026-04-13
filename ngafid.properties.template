@@ -7,8 +7,9 @@
 # EMAIL SETTINGS
 # =============================================================================
 ngafid.docker.email.info=/etc/ngafid-email.conf
-ngafid.docker.admin.emails=rk8318@rit.edu
-ngafid.docker.email.enabled=true
+ngafid.docker.admin.emails=email1;email2;email3
+ngafid.docker.email.enabled=false
+# on the VM change this to true and add users who will receive emails.
 
 # =============================================================================
 # EXTERNAL SERVICES
