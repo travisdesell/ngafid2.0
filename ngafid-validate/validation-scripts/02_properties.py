@@ -264,45 +264,33 @@ def _validate_email_config(validator, category):
     if not email_enabled:
         return
 
-    smtp_host = validator._effective_property("ngafid.smtp.host") or ""
-    smtp_user = validator._effective_property("ngafid.smtp.username") or ""
-    smtp_password = validator._effective_property("ngafid.smtp.password") or ""
-    smtp_from = validator._effective_property("ngafid.smtp.from") or ""
-    smtp_port_value = validator._effective_property("ngafid.smtp.port") or ""
     admin_emails = validator._effective_property("ngafid.admin.emails") or ""
+    email_info_file = validator._effective_property("ngafid.email.info")
 
-    missing = []
-    if not smtp_host.strip():
-        missing.append("ngafid.smtp.host")
-    if not smtp_user.strip():
-        missing.append("ngafid.smtp.username")
-    if not smtp_password.strip():
-        missing.append("ngafid.smtp.password")
-    if not smtp_from.strip():
-        missing.append("ngafid.smtp.from")
     if not admin_emails.strip():
-        missing.append("ngafid.admin.emails")
-
-    if missing:
         validator._fail(
             category,
-            "email required fields",
-            f"email enabled but missing values: {', '.join(missing)}",
-            "set required ngafid.smtp.* and ngafid.admin.emails fields",
+            "admin email values",
+            "email enabled but ngafid.admin.emails is empty",
+            "set ngafid.admin.emails/ngafid.docker.admin.emails to at least one address",
         )
     else:
-        validator._pass(category, "email required fields", "email configuration fields are present")
+        validator._pass(category, "admin email values", "admin email values are present")
 
-    smtp_port = _parse_int(smtp_port_value)
-    if smtp_port is None or smtp_port < 1 or smtp_port > 65535:
+    if not email_info_file:
         validator._fail(
             category,
-            "smtp port bounds",
-            f"invalid smtp port '{smtp_port_value}'",
-            "set ngafid.smtp.port to an integer in range 1-65535",
+            "email info file property",
+            "could not resolve effective ngafid.email.info",
+            "set ngafid.email.info/ngafid.docker.email.info to a readable file path",
         )
     else:
-        validator._pass(category, "smtp port bounds", f"ngafid.smtp.port={smtp_port}")
+        validator._check_file_readable(
+            category,
+            "email info file",
+            email_info_file,
+            "ensure email info file exists and is mounted into runtime",
+        )
 
     email_pattern = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     invalid_admin = [email for email in [e.strip() for e in admin_emails.split(";")] if email and not email_pattern.match(email)]
