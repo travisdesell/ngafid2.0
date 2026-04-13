@@ -97,7 +97,7 @@ Validation should be grouped into these categories.
 ### 1) Container and Compose Preconditions
 
 - Confirm required Compose mounts exist and are readable:
-  - `./ngafid-core/src/main/resources/ngafid.properties` -> `/app/ngafid.properties`
+  - `./ngafid.properties` -> `/app/ngafid.properties`
   - `./ngafid-db/src/liquibase.docker.properties` -> `/etc/ngafid-db.conf`
   - `./email_info.txt` -> `/etc/ngafid-email.conf`
   - Static assets mount (`./ngafid-static` in the default dev compose file)
@@ -137,7 +137,7 @@ Validate required files exist and contain expected key settings.
 
 Required files:
 
-- `ngafid-core/src/main/resources/ngafid.properties`
+- `ngafid.properties`
 - `ngafid-db/src/liquibase.docker.properties`
 - `logging.properties`
 - `email_info.txt` (required only when email is enabled)
@@ -161,8 +161,7 @@ Fail conditions:
 
 Source of truth:
 
-- `ngafid-core/src/main/resources/ngafid.template.properties`
-- `ngafid-core/src/main/resources/ngafid.properties`
+- `ngafid.properties`
 
 ### 4) Filesystem and Data Validation
 
@@ -254,7 +253,7 @@ Chart service enabled checks:
 
 Source of truth:
 
-- `ngafid-core/src/main/resources/ngafid.properties`
+- `ngafid.properties`
 - `ngafid-chart-processor/README.md`
 
 ## Fail-Loud Behavior
@@ -313,7 +312,7 @@ Symptoms:
 
 Fix:
 
-1. Copy template: `cp ngafid-core/src/main/resources/ngafid.template.properties ngafid-core/src/main/resources/ngafid.properties`
+1. Ensure `ngafid.properties` exists at repository root.
 2. Fill required local/docker values.
 
 ### Wrong DB host in Docker config

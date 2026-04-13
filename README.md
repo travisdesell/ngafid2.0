@@ -114,10 +114,10 @@ $NGAFID_DATA_FOLDER
 
 All configuration is now handled through a single properties file that works for both local development and Docker environments.
 
-Copy the template properties file and customize it for your environment:
+Create a root `ngafid.properties` file and customize it for your environment.
 
 ```shell
-cp ngafid-core/src/main/resources/ngafid.template.properties ngafid-core/src/main/resources/ngafid.properties
+touch ngafid.properties
 ```
 
 Edit `ngafid.properties` and configure the following values (look for ⚠️ markers in the file):

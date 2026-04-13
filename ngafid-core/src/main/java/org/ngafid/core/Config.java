@@ -2,6 +2,7 @@ package org.ngafid.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileInputStream;
 import java.util.Properties;
 
 public final class Config {
@@ -66,9 +67,21 @@ public final class Config {
     private Config() {}
 
     private static void loadProperties() {
-        // Check for custom properties file first (system property)
+        // Check for explicit properties path first (system property)
         String customPropertiesFile = System.getProperty("ngafid.config.file");
         if (customPropertiesFile != null) {
+            java.io.File explicitConfig = new java.io.File(customPropertiesFile);
+            if (explicitConfig.exists()) {
+                try (InputStream input = new FileInputStream(explicitConfig)) {
+                    PROPERTIES.load(input);
+                    System.out.println("Loaded configuration from " + explicitConfig.getAbsolutePath());
+                    resolveVariableSubstitutions();
+                    return;
+                } catch (IOException e) {
+                    System.err.println("Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
+                }
+            }
+
             try (InputStream input = Config.class.getClassLoader().getResourceAsStream(customPropertiesFile)) {
                 if (input != null) {
                     PROPERTIES.load(input);
@@ -86,7 +99,7 @@ public final class Config {
         if (IS_DOCKER_ENVIRONMENT) {
             java.io.File dockerConfig = new java.io.File("/app/ngafid.properties");
             if (dockerConfig.exists()) {
-                try (InputStream input = new java.io.FileInputStream(dockerConfig)) {
+                try (InputStream input = new FileInputStream(dockerConfig)) {
                     PROPERTIES.load(input);
                     System.out.println("Loaded configuration from " + dockerConfig.getAbsolutePath());
                     resolveVariableSubstitutions();
@@ -95,6 +108,19 @@ public final class Config {
                     System.err.println(
                             "Error loading Docker config file " + dockerConfig + ": " + e.getMessage());
                 }
+            }
+        }
+
+        // In non-Docker environments, prefer repository-root ngafid.properties.
+        java.io.File repoRootConfig = new java.io.File("ngafid.properties");
+        if (repoRootConfig.exists()) {
+            try (InputStream input = new FileInputStream(repoRootConfig)) {
+                PROPERTIES.load(input);
+                System.out.println("Loaded configuration from " + repoRootConfig.getAbsolutePath());
+                resolveVariableSubstitutions();
+                return;
+            } catch (IOException e) {
+                System.err.println("Error loading root config file " + repoRootConfig + ": " + e.getMessage());
             }
         }
 
