@@ -17,7 +17,7 @@ x-ngafid-service-common: &ngafid-service-common
     # Mount the properties file and data directories
     - /mnt/ngafid/temp:/mnt/ngafid/temp # Jetty temp directory:  upload chunks/files before final write to uploads/archive.
 
-    - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
+    - ./ngafid.properties:/app/ngafid.properties:ro
 
     - /mnt/ngafid/uploads:/mnt/ngafid/uploads
     - /mnt/ngafid/archive:/mnt/ngafid/archive
@@ -72,7 +72,7 @@ services:
       - ./:/workspace:ro
       - ./ngafid-validate/validation-results:/validator/validation-results
 
-      - ./ngafid-core/src/main/resources/ngafid.properties:/app/ngafid.properties:ro
+      - ./ngafid.properties:/app/ngafid.properties:ro
       - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
       - ./email_info.txt:/etc/ngafid-email.conf:ro
 
