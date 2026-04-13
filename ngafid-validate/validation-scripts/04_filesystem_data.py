@@ -108,15 +108,22 @@ def _check_terrain_tiles(validator, terrain_dir: Path):
         f"{terrain_dir} has {len(children)} subdirectories",
     )
 
-    pattern = re.compile(r"^[A-Z]\d{2}$")
-    invalid_names = [p.name for p in children if not pattern.match(p.name)]
+    # Accept both legacy one-digit and canonical two-digit tile identifiers.
+    # Also allow the optional "extra" folder used in some deployments.
+    pattern = re.compile(r"^[A-Z]\d{1,2}$")
+    allowed_non_tile_dirs = {"extra"}
+    invalid_names = [
+        p.name
+        for p in children
+        if p.name not in allowed_non_tile_dirs and not pattern.match(p.name)
+    ]
     if invalid_names:
         preview = ", ".join(invalid_names[:5])
         validator._fail(
             category,
             "terrain tile naming",
             f"unexpected terrain directory names found: {preview}",
-            "ensure terrain tiles use expected naming like H11, I10, J17",
+            "ensure terrain directories use expected naming like H11/I10 (or allowed extras such as 'extra')",
         )
     else:
         validator._pass(
