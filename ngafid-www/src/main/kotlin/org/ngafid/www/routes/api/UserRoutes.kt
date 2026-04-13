@@ -89,7 +89,7 @@ object UserRoutes : RouteProvider() {
 
         val FLEET_NAME_LENGTH_LIMIT = 256
 
-        val validFleetNameRegex = Regex("^[\\@\\#\\$\\%\\^\\&\\*\\(\\)\\_\\+\\!\\/\\\\\\.\\,a-zA-Z0-9 ]+$")
+        val validFleetNameRegex = Regex("^[a-zA-Z0-9 @#$%^&*()_+!.,/\\\\'-]+$")
         if (fleetName.length >= FLEET_NAME_LENGTH_LIMIT || !validFleetNameRegex.matches(fleetName)) {
             ctx.status(400)
             ctx.json(
