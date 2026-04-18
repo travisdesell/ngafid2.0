@@ -134,7 +134,6 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
 
                     {/* Open Page - Events - Trends */}
                     <CommandModalContentItem
-                        disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Trends Page"
                         command={()=>navigate("/protected/trends")}
@@ -144,7 +143,6 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
 
                     {/* Open Page - Events - Severities */}
                     <CommandModalContentItem
-                        disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Severities Page"
                         command={()=>navigate("/protected/severities")}
