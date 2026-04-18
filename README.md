@@ -355,7 +355,7 @@ WHERE fleet_id = <fleet_id>;
 
 The daemon will detect this within 30 seconds and start syncing. After processing, it will reset override to 0.
 
-### Using Upload Helper to Re-enqueue Uploads
+## Using Upload Helper to Re-enqueue Uploads
 
 The run/upload_helper script can manually add uploads to the Kafka processing queue. This is useful when uploads are stuck in UPLOADED status but not being processed.
 
@@ -375,6 +375,80 @@ Re-enqueue uploads from a file
 
 ```
 run/upload_helper -F <file_path>
+
+```
+For Docker enviroment, use docker specific commands
+
+Re-enqueue specific uploads
+```
+docker compose exec -T ngafid-upload-consumer \
+  java -cp /opt/ngafid-core/ngafid-core.jar:/app org.ngafid.core.bin.UploadHelper \
+  -u <id1> <id2>
+```
+
+
+Re-enqueue all uploads for a fleet
+
+```
+docker compose exec -T ngafid-upload-consumer \
+  java -cp /opt/ngafid-core/ngafid-core.jar:/app org.ngafid.core.bin.UploadHelper \
+  -f <fleet_id>
+```
+
+Re-enqueue by query (most useful)
+```
+docker compose exec -T ngafid-upload-consumer \
+  java -cp /opt/ngafid-core/ngafid-core.jar:/app org.ngafid.core.bin.UploadHelper \
+  -u -q "fleet_id = 1 AND status = 'UPLOADED'"
+```
+Stop the upload consumer
+
+```
+docker compose stop ngafid-upload-consumer
+```
+
+Drain the upload pipeline by deleting/recreating topics: upload, upload-retry, and upload-dlq.
+Effectively clears all queued upload jobs not yet processed.
+Useful before re-enqueueing a clean batch (for example only UPLOADED records).
+Warning: this is destructive for queued messages in those topics; only run when you intentionally want to discard current upload backlog.
+
+```
+docker compose run --rm ngafid-kafka-topics \
+  java -cp /opt/ngafid-core/ngafid-core.jar:/app org.ngafid.core.kafka.Topic \
+  drain upload upload-retry upload-dlq
+```
+
+Start consumer again
+```
+docker compose up -d ngafid-upload-consumer
+```
+Start consumer specifying the nubmer of consumers (6 max)
+```
+docker compose up -d --scale ngafid-upload-consumer=6 ngafid-upload-consumer
+```
+
+Confirm process
+```
+docker compose ps | grep ngafid-upload-consumer
+```
+
+Watch Logs
+
+Live logs for upload consumers
+```
+docker compose logs -f --since=10m ngafid-upload-consumer
+```
+Useful variants
+
+Include timestamps
+```
+docker compose logs -f --since=10m --timestamps ngafid-upload-consumer
+```
+
+
+Specific container
+```
+docker logs -f --since=10m ngafid20-ngafid-upload-consumer-1
 ```
 
 ### Client's steps to setup AirSync (provide new clients with the instructions below)

@@ -85,28 +85,44 @@ class LoginModal extends React.Component {
             return;
         }
 
-        this.validateEmail();
-        this.validatePassword();
-
         const currentEmail = ($("#loginEmail").val() || "").trim();
         const currentPassword = ($("#loginPassword").val() || "");
+        if (!this.state.requires2FA) {
+            this.validateEmail();
+            this.validatePassword();
 
-        const valid =
-            currentEmail.length > 0 &&
-            EMAIL_REGEX.test(currentEmail.toLowerCase()) &&
-            currentPassword.length > 0;
+            const valid =
+                currentEmail.length > 0 &&
+                EMAIL_REGEX.test(currentEmail.toLowerCase()) &&
+                currentPassword.length > 0;
 
-        if (!valid) {
-            this.setState({
-                valid: {
-                    ...this.state.valid,
-                    email: EMAIL_REGEX.test(currentEmail.toLowerCase()),
-                    emailEmpty: currentEmail.length === 0,
-                    passwordEmpty: currentPassword.length === 0,
-                    errorMessage: false
-                }
-            });
-            return;
+            if (!valid) {
+                this.setState({
+                    valid: {
+                        ...this.state.valid,
+                        email: EMAIL_REGEX.test(currentEmail.toLowerCase()),
+                        emailEmpty: currentEmail.length === 0,
+                        passwordEmpty: currentPassword.length === 0,
+                        errorMessage: false
+                    }
+                });
+                return;
+            }
+        } else {
+            const expectedCodeLength = this.state.setupStep === 'backup' ? 8 : 6;
+            const code = (this.state.totpCode || "").trim();
+            const hasStoredCreds = this.state.storedEmail.length > 0 && this.state.storedPassword.length > 0;
+
+            if (!hasStoredCreds || code.length !== expectedCodeLength) {
+                this.setState(prevState => ({
+                    valid: {
+                        ...prevState.valid,
+                        errorMessage: true
+                    },
+                    errorMessage: "Please enter a valid verification code."
+                }));
+                return;
+            }
         }
 
         console.log("Submitting login!");
@@ -239,13 +255,13 @@ class LoginModal extends React.Component {
 
     validateEmail() {
 
-        const email = $("#loginEmail").val();
+        const email = (($("#loginEmail").val() || "").toString()).trim();
         console.log("Validating Email: ", email);
 
         const newValid = {
             ...this.state.valid,
             email: EMAIL_REGEX.test(String(email).toLowerCase()),
-            emailEmpty: email.length == 0,
+            emailEmpty: email.length === 0,
             errorMessage: false
         };
 
@@ -257,18 +273,13 @@ class LoginModal extends React.Component {
 
     validatePassword() {
 
-        const password = $("#loginPassword").val();
+        const password = ($("#loginPassword").val() || "").toString();
         console.log("Validating Password...");
-
-        if (!password) {
-            console.error("Password is null or undefined! Unable to validate.");
-            return;
-        }
 
         // Reset the error message from the server as the user has modified the email/password
         const newValid = {
             ...this.state.valid,
-            passwordEmpty: (password.length == 0),
+            passwordEmpty: password.length === 0,
             errorMessage: false
         };
 
