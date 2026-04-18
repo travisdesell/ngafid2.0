@@ -56,6 +56,12 @@ import org.ngafid.www.routes.api.FlightRoutes;
 import org.ngafid.www.routes.api.TagRoutes;
 import org.ngafid.www.routes.api.UploadRoutes;
 import org.ngafid.www.routes.api.UserRoutes;
+import io.javalin.http.NotFoundResponse;
+import io.javalin.http.Context;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
@@ -80,7 +86,9 @@ public class JavalinWebServer extends WebServer {
 
             config.bundledPlugins.enableRouteOverview("/api");
 
-            // (kt) Bind all routes
+            config.staticFiles.add(staticFilesLocation, Location.EXTERNAL);
+            config.spaRoot.addFile("/", staticFilesLocation + "/index.html", Location.EXTERNAL);
+
             AirportRoutes.INSTANCE.bind(config);
             AircraftRoutes.INSTANCE.bind(config);
             AirSyncRoutes.INSTANCE.bind(config);
@@ -96,6 +104,9 @@ public class JavalinWebServer extends WebServer {
 
             configureSwagger(config);
         });
+
+        StatusJavalinRoutes.bindRoutes(app);
+        
     }
 
     private void configureSwagger(JavalinConfig config) {
@@ -140,25 +151,13 @@ public class JavalinWebServer extends WebServer {
     }
 
     @Override
-    protected void configureHttps() {}
+    protected void configureRoutes() {
+        // No legacy page routes
+        // SPA fallback is configured in preInitialize()
+    }
 
     @Override
-    protected void configureRoutes() {
-        AccountJavalinRoutes.bindRoutes(app);
-        AircraftFleetTailsJavalinRoutes.bindRoutes(app);
-        AirsyncJavalinRoutes.bindRoutes(app);
-        AnalysisJavalinRoutes.bindRoutes(app);
-        DataJavalinRoutes.bindRoutes(app);
-        DoubleSeriesJavalinRoutes.bindRoutes(app);
-        EventJavalinRoutes.bindRoutes(app);
-        FlightsJavalinRoutes.bindRoutes(app);
-        ImportUploadJavalinRoutes.bindRoutes(app);
-
-        StartPageJavalinRoutes.bindRoutes(app);
-        StatisticsJavalinRoutes.bindRoutes(app);
-        StatusJavalinRoutes.bindRoutes(app);
-        BugReportJavalinRoutes.bindRoutes(app);
-    }
+    protected void configureHttps() {}
 
     @Override
     protected void configureThreads() {
@@ -167,7 +166,7 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureStaticFilesLocation() {
-        app.unsafeConfig().staticFiles.add(staticFilesLocation, Location.EXTERNAL);
+        // Handled in preInitialize()
     }
 
     @Override
@@ -216,42 +215,6 @@ public class JavalinWebServer extends WebServer {
             }
         });
 
-        app.before("/protected/*", ctx -> {
-            LOG.info(() -> "Protected URI: " + ctx.path());
-
-            User user = ctx.sessionAttribute("user");
-            String previousURI = ctx.sessionAttribute("previous_uri");
-
-            if (user == null) {
-                if (ctx.queryString() != null) {
-                    ctx.sessionAttribute("previous_uri", ctx.url() + "?" + ctx.queryString());
-                } else {
-                    ctx.sessionAttribute("previous_uri", ctx.url());
-                }
-
-                ctx.redirect("/access_denied");
-                // Note 401 status is not set since it is non-standard to redirect and Javalin won't render the page
-            } else if (!ctx.path().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
-                ctx.redirect("/protected/waiting");
-            } else if (previousURI != null) {
-                ctx.redirect(previousURI);
-                ctx.sessionAttribute("previous_uri", null);
-            }
-        });
-
-        // To redirect users to the summary page.
-        app.before("/", ctx -> {
-            User user = ctx.sessionAttribute("user");
-            if (user != null) {
-                String previousURI = ctx.sessionAttribute("previous_uri");
-                if (previousURI != null) {
-                    ctx.redirect(previousURI);
-                    ctx.sessionAttribute("previous_uri", null);
-                } else {
-                    ctx.redirect("/protected/summary");
-                }
-            }
-        });
     }
 
     @Override
