@@ -19,11 +19,18 @@ backups/*
 src/main/resources/public/js/*
 ngafid-frontend/node_modules
 ngafid-frontend/.webpack_cache/*
-ngafid-static/js/*
+ngafid-static/*
 
 
 # Java build artifacts:
 */target/*
+
+
+# (Security) Test files:
+ngafid-www/src/test/kotlin/org/ngafid/www/.env
+ngafid-www/src/test/security-test/.env
+ngafid-www/src/test/security-test/.gradle/
+ngafid-www/src/test/security-test/build/
 
 
 # Generated charts:
@@ -54,18 +61,11 @@ email_info.txt
 # Log files:
 *.log
 log
-<<<<<<< HEAD
-ngafid-www/src/test/kotlin/org/ngafid/www/.env
-ngafid-www/src/test/security-test/.env
-ngafid-www/src/test/security-test/.gradle/
-ngafid-www/src/test/security-test/build/
-*.tif
-**IGNORE**
-=======
+
+
 # INCLUDE example log file for validation logs:
 !validationlog_EXAMPLE.log
 
 
 # All files/folders containing 'IGNORE' in their name:
 **IGNORE**
->>>>>>> aidan_cu/ngafid-validate_march2026
