@@ -31,7 +31,7 @@ const log = getLogger("Main", "white", "Main");
 
 // Verify that Tailwind was imported correctly
 const tailwindLoaded = !!document.querySelector('style[data-vite-dev-id*="src/app/index.css"]')
-log("Tailwind CSS loaded:", tailwindLoaded);
+log("Tailwind CSS loaded (dev):", tailwindLoaded);
 
 
 
@@ -261,7 +261,7 @@ type ProviderEntry<P = any> =
     [React.ComponentType<React.PropsWithChildren<P>>, P];
 
 const providerTree: ProviderEntry[] = [
-    [ThemeProvider, { defaultTheme: "dark", storageKey: "theme" }],
+    [ThemeProvider, { defaultTheme: "system", storageKey: "theme" }],
     [PlatformProvider, {}],
     [TooltipProvider, { delayDuration: 0, skipDelayDuration: 0 }],
     [ModalProvider, {}],
