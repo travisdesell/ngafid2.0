@@ -161,7 +161,7 @@ const renderDescriptionWithCode = (description: string): ReactNode[] => {
 		nodes.push(
 			<code
 				key={`event-description-code-${keyIndex++}`}
-				className="rounded bg-background px-1 py-0.5 font-mono"
+				className="rounded bg-sidebar px-1 py-0.5 font-mono"
 			>
 				{codeBuffer}
 			</code>
