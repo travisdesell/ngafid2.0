@@ -35,7 +35,6 @@ export default function WelcomeNavbar() {
             <nav
                 id='navbar'
                 className="flex items-center justify-between p-2 pl-10 pr-4 bg-sidebar @container/navbar relative overflow-clip border-b"
-                // style={{zIndex: "999", opacity: "1.0"}}
             >
 
                 {/* Left Elements */}
