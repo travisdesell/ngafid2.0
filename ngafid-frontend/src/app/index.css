@@ -1,8 +1,10 @@
 /* ngafid-frontend/src/app/index.css */
 
-@plugin "tailwindcss-animate";
 @import "tailwindcss";
 @import "tw-animate-css";
+
+@plugin "tailwindcss-animate";
+@plugin "tailwind-scrollbar";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -38,6 +40,18 @@
 
 
     /* Scrollbar Styling */
+    :root {
+        --scrollbar-track: var(--sidebar);
+        --scrollbar-thumb: color-mix(in oklab, var(--foreground) 22%, transparent);
+        --scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 34%, transparent);
+    }
+
+    .dark {
+        --scrollbar-track: var(--sidebar);
+        --scrollbar-thumb: color-mix(in oklab, var(--foreground) 26%, transparent);
+        --scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 40%, transparent);
+    }
+
     .scrollbar-hover {
 
         /*
@@ -66,9 +80,41 @@
 
     .group:hover .scrollbar-hover::-webkit-scrollbar {
 
-        width: 8px;
-        height: 8px;
+        width: 12px;
+        height: 12px;
         
+    }
+
+    .scrollbar-hover {
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    * {
+        @apply scrollbar-track-sidebar!;
+        @apply scrollbar-thumb-muted-foreground!;
+    }
+
+    .page-content::-webkit-scrollbar,
+    .scrollbar-hover::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    .page-content::-webkit-scrollbar-track,
+    .scrollbar-hover::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+    }
+
+    .page-content::-webkit-scrollbar-thumb,
+    .scrollbar-hover::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 9999px;
+        border: 2px solid var(--scrollbar-track);
+    }
+
+    .page-content::-webkit-scrollbar-thumb:hover,
+    .scrollbar-hover::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover);
     }
 
 }
