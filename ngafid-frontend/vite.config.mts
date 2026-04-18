@@ -12,6 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(__dirname, '../ngafid-static');
 const assetsDir = 'js';
 
+
 export default defineConfig((env: ConfigEnv): UserConfig => {
 
     const { mode } = env;
@@ -41,6 +42,9 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
             assetsDir,
             emptyOutDir: false, // <-- Keep any existing static files
             sourcemap: true,
+            watch: {
+                exclude: ['../ngafid-static/**', 'node_modules/**'],
+            },
             rollupOptions: {
                 input: {
                     app: resolve(__dirname, 'index.html'),
@@ -68,13 +72,7 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
                 // Keep any large libraries (e.g., Cesium) out of the bundle entirely:
                 external: ['cesium'],
             },
-            watch: {
-                exclude: [
-                    path.resolve(__dirname, '../ngafid-static') + '/**',
-                    path.resolve(__dirname, '../ngafid-static/cesium') + '/**',
-                ]
-            },
-            target: 'es2022',
+            target: 'es2024',
         },
 
         define: {
@@ -99,7 +97,12 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
             host: '0.0.0.0',
             port: 5173,
             strictPort: true,
-            proxy: { '/api': { target: 'http://localhost:8181', changeOrigin: true }}
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:8181',
+                    changeOrigin: true
+                },
+            },
         }
 
     }
