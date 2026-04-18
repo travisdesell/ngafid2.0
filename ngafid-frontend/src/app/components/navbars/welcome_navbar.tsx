@@ -34,17 +34,52 @@ export default function WelcomeNavbar() {
         return (
             <nav
                 id='navbar'
-                className="navbar navbar-expand-lg navbar-light flex! flex-row! items-center justify-between! p-2 px-4 bg-sidebar"
-                style={{zIndex: "999", opacity: "1.0"}}
+                className="flex items-center justify-between p-2 pl-10 pr-4 bg-sidebar @container/navbar relative overflow-clip border-b"
+                // style={{zIndex: "999", opacity: "1.0"}}
             >
 
                 {/* Left Elements */}
-                <div>
-                    
-                    {/* Navbar Brand & Home Link */}
-                    <Link className="font-semibold text-xl" to="/">
-                        NGAFID
-                    </Link>
+                <div className="relative inline-block overflow-visible">
+
+                    {/* Background Shape (Edge) */}
+                    <div className="
+                        pointer-events-none
+                        absolute left-0 top-1/2
+                        w-[calc(100%*1.41421356+0.75rem)] aspect-square
+                        -translate-x-1/2 -translate-y-1/2
+                        rotate-45
+                        bg-neutral-300 dark:bg-neutral-700
+                        z-2
+                    ">
+                    </div>
+
+                    {/* Background Shape */}
+                    <div className="
+                        pointer-events-none
+                        absolute left-0 top-1/2
+                        w-[calc(100%*1.41421356)] aspect-square
+                        -translate-x-1/2 -translate-y-1/2
+                        rotate-45
+                        bg-neutral-200 dark:bg-neutral-800
+                        z-5
+                    ">
+                    </div>
+
+                    {/* Left Elements Content */}
+                    <div className="relative z-10 inline-flex items-center gap-14 pr-10">
+
+                        {/* Navbar Brand & Home Link */}
+                        <Link className="font-semibold text-xl hover:underline decoration-dotted decoration-ring" to="/">
+                            NGAFID
+                        </Link>
+
+                        {/* Dark Mode Toggle Button */}
+                        <div className="ml-2">
+                            <DarkModeToggle/>
+                        </div>
+
+                    </div>
+
                     
                 </div>
 
@@ -63,10 +98,6 @@ export default function WelcomeNavbar() {
                         Register
                     </Button>
 
-                    {/* Dark Mode Toggle Button */}
-                    <div className="ml-2">
-                        <DarkModeToggle/>
-                    </div>
                 </div>
 
             </nav>

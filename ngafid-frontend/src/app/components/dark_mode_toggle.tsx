@@ -70,20 +70,21 @@ export function DarkModeToggle() {
             }}
         >
             <ContextMenuTrigger>
-                <Tooltip>
+                <Tooltip disableHoverableContent>
                     <TooltipTrigger asChild>
+                        {/* <> */}
                         <Button
                             type="button"
                             variant="ghostMono"
-                            className="h-8 p-1! aspect-square **:w-full! **:h-full! inline-flex items-center cursor-pointer"
+                            className="h-8 p-1! aspect-square w-full inline-flex items-center cursor-pointer relative"
                             onClick={toggleThemeManual}
                         >
 
                             {/* Theme Toggle Icon */}
                             {
                                 (isDarkTheme)
-                                    ? <Sun />
-                                    : <Moon />
+                                    ? <Sun className='w-full! h-full!' />
+                                    : <Moon className='w-full! h-full!' />
                             }
 
                             {
@@ -106,6 +107,7 @@ export function DarkModeToggle() {
                                 </>
                             }
                         </Button>
+                        {/* </> */}
 
                     </TooltipTrigger>
 
@@ -121,7 +123,7 @@ export function DarkModeToggle() {
             {
                 isLoggedIn()
                 &&
-                <ContextMenuContent className="p-0! min-w-[260px]">
+                <ContextMenuContent className="p-0! min-w-65">
                     
                     {/* Toggle Theme */}
                     <ContextMenuItem className="p-3" onClick={toggleThemeManual}>

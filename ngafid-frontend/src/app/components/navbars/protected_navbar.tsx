@@ -52,73 +52,86 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
             >
 
                 {/* Left Elements */}
-                <div className="flex items-center gap-14 *:z-10 relative">
+                <div className="relative inline-block overflow-visible">
 
                     {/* Background Shape (Edge) */}
                     <div className="
-                        absolute left-0 right-0
-                        aspect-square scale-138 -mr-2
+                        pointer-events-none
+                        absolute left-0 top-1/2
+                        w-[calc(100%*1.41421356+0.75rem)] aspect-square
+                        -translate-x-1/2 -translate-y-1/2
+                        rotate-45
                         bg-neutral-300 dark:bg-neutral-700
                         z-2
-                        rotate-45 transform -translate-x-1/2
                     ">
                     </div>
 
                     {/* Background Shape */}
                     <div className="
-                        absolute left-0 right-0
-                        aspect-square scale-138
+                        pointer-events-none
+                        absolute left-0 top-1/2
+                        w-[calc(100%*1.41421356)] aspect-square
+                        -translate-x-1/2 -translate-y-1/2
+                        rotate-45
                         bg-neutral-200 dark:bg-neutral-800
                         z-5
-                        rotate-45 transform -translate-x-1/2
                     ">
                     </div>
 
-                    {/* Navbar Brand & Home Link */}
-                    <Link className="font-semibold text-xl hover:underline decoration-dotted decoration-ring" to={ROUTE_DEFAULT_LOGGED_IN}>
-                        NGAFID
-                    </Link>
+                    {/* Left Elements Content */}
+                    <div className="relative z-10 inline-flex items-center gap-14 pr-10">
 
-                    {/* Multifleet Select */}
-                    <MultifleetSelect />
+                        {/* Navbar Brand & Home Link */}
+                        <Link className="font-semibold text-xl hover:underline decoration-dotted decoration-ring" to={ROUTE_DEFAULT_LOGGED_IN}>
+                            NGAFID
+                        </Link>
 
-                    {/* Action Button */}
-                    <div className="flex items-center ml-auto gap-8">
+                        {/* Multifleet Select */}
+                        <MultifleetSelect />
 
-                        {/* Notifications */}
-                        <Notifications />
+                        {/* Action Button */}
+                        <div className="flex items-center gap-8">
 
-                        {/* Command Menu */}
-                        <CommandMenu />
+                            {/* Notifications */}
+                            <Notifications />
 
-                        {/* Dark Mode Toggle Button */}
-                        <DarkModeToggle />
+                            {/* Command Menu */}
+                            <CommandMenu />
 
-                    </div>
+                            {/* Dark Mode Toggle Button */}
+                            <DarkModeToggle />
 
-                    {/* Child Elements */}
-                    <div className="flex items-center gap-2">
+                        </div>
+
+                        {/* Child Elements */}
                         {
-                            extraItems.map((child, index) => {
+                            (extraItems.length > 0)
+                            &&
+                            <div className="flex items-center gap-2">
+                                {
+                                    extraItems.map((child, index) => {
 
-                                const key = (React.isValidElement(child) && child.key != null)
-                                    ? child.key
-                                    : `navbar-child-${index}`;
+                                        const key = (React.isValidElement(child) && child.key != null)
+                                            ? child.key
+                                            : `navbar-child-${index}`;
 
-                                return (
-                                    <motion.div
-                                        className="gap-2"
-                                        key={key}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.5, delay: 0.05 * index }}
-                                    >
-                                        {child}
-                                    </motion.div>
-                                );
+                                        return (
+                                            <motion.div
+                                                className="gap-2"
+                                                key={key}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ duration: 0.5, delay: 0.05 * index }}
+                                            >
+                                                {child}
+                                            </motion.div>
+                                        );
 
-                            })
+                                    })
+                                }
+                            </div>
                         }
+
                     </div>
 
                 </div>

@@ -6,6 +6,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 
 export default function ProtectedLayout() {
+
     return (
         <NavbarSlotProvider>
             <div className="flex flex-col h-dvh min-h-0 overflow-hidden">
@@ -18,4 +19,5 @@ export default function ProtectedLayout() {
             </div>
         </NavbarSlotProvider>
     );
+    
 }

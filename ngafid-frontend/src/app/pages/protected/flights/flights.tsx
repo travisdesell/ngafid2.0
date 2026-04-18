@@ -1301,7 +1301,7 @@ export default function FlightsPage() {
 
         <Tooltip>
             <TooltipTrigger asChild>
-                <Button variant="ghost" onClick={() => toggleMethod(!isActive)} className={`relative ${buttonClass} w-9`}>
+                <Button variant="ghostMono" onClick={() => toggleMethod(!isActive)} className={`relative ${buttonClass} w-9`}>
                     <Icon className={`${isActive ? 'opacity-100' : 'opacity-25'}`} />
                     {
                         (!isActive)
@@ -1380,10 +1380,10 @@ export default function FlightsPage() {
                 <TooltipTrigger asChild>
                     <Button
                         id="expand-chart-items-button"
-                        variant="ghost"
+                        variant="ghostMono"
                         onClick={expandSelectedFlightsModal}
-                        className={`p-2 ${noChartFlightsSelected ? "opacity-0 pointer-events-none" : "opacity-100"} transition-opacity`}
-                        inert={noChartFlightsSelected ? true : false}
+                        className={`p-2 transition-opacity tabular-nums`}
+                        // inert={noChartFlightsSelected ? true : false}
                     >
                         <List />
                         <span>

@@ -46,7 +46,7 @@ export default function Notifications() {
     const render = () => (
         <DropdownMenu>
             <DropdownMenuTrigger>
-                <Tooltip>
+                <Tooltip disableHoverableContent>
                     <TooltipTrigger asChild>
                         <Button
                             type="button"
