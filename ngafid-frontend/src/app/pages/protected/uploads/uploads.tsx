@@ -55,6 +55,43 @@ function bytesToKB(num: number) {
     return (num / 1000).toFixed(2);
 }
 
+function getUploadsPagePath(currentPage: number) {
+    return `/protected/uploads/${currentPage + 1}`;
+}
+
+function getUploadsPageFromPath() {
+
+    const match = window.location.pathname.match(/^\/protected\/uploads\/(\d+)$/);
+
+    // No specified page, default to page 0 (first page)
+    if (!match)
+        return 0;
+
+    const publicPage = Number(match[1]);
+
+    // Page is not a valid number, default to page 0 (first page)
+    if (!Number.isInteger(publicPage) || publicPage < 1)
+        return 0;
+
+    // Convert from 1-indexed public page to 0-indexed internal page
+    return publicPage - 1;
+
+}
+
+function syncUploadsPageUrl(currentPage: number) {
+
+    if (window.history && window.history.replaceState) {
+
+        const nextPath = getUploadsPagePath(currentPage);
+
+        // Target path is different than current path, update the URL to match the current page
+        if (window.location.pathname !== nextPath)
+            window.history.replaceState({}, "", nextPath);
+
+    }
+
+}
+
 function statusBadgeVariant(status: UploadStatus): { label: string; variant: BadgeVariant } {
     switch (status) {
         case "HASHING":
@@ -332,12 +369,11 @@ export default function UploadsPage() {
 
     // Active uploads
     const [uploads, setUploads] = useState<UploadInfo[]>([]);
-    const [uploadsPage, setUploadsPage] = useState(0);
+    const [uploadsPage, setUploadsPage] = useState(() => getUploadsPageFromPath());
     const [uploadsPages, setUploadsPages] = useState(0);
 
     // Imported uploads
     const [imports, setImports] = useState<ImportsPageItem[]>([]);
-    const [importsPage, setImportsPage] = useState(0);
     const [importsPages, setImportsPages] = useState(0);
 
     // Pending (client-side) uploads that are currently hashing/uploading
@@ -390,12 +426,22 @@ export default function UploadsPage() {
 
         setUploads(filtered);
         setUploadsPages(uploadsListResponse.numberPages ?? 0);
+
+        const maybeCurrentPage = (uploadsListResponse as { currentPage?: unknown }).currentPage;
+        const responseCurrentPage = (Number.isInteger(maybeCurrentPage) && Number(maybeCurrentPage) >= 0)
+            ? Number(maybeCurrentPage)
+            : page;
+
+        // Backend may clamp requested page; keep local state/URL in sync with response.
+        if (responseCurrentPage !== page)
+            setUploadsPage(responseCurrentPage);
+
         return true;
         
     }, [uploadsPage]);
 
 
-    const loadImports = useCallback(async (page = importsPage, pageSize = 10, silent = false) => {
+    const loadImports = useCallback(async (page = uploadsPage, pageSize = 10, silent = false) => {
 
         const params = new URLSearchParams({
             currentPage: String(page),
@@ -415,7 +461,7 @@ export default function UploadsPage() {
         setImportsPages(importsListResponse.numberPages ?? 0);
         return true;
 
-    }, [importsPage]);
+    }, [uploadsPage]);
 
 
     useEffect(() => {
@@ -443,6 +489,13 @@ export default function UploadsPage() {
     
     useEffect(() => {
 
+        // Keep the URL page segment in sync with the active uploads page.
+        syncUploadsPageUrl(uploadsPage);
+
+    }, [uploadsPage]);
+
+    useEffect(() => {
+
         /*
             Reload the uploads list
             when the page changes.
@@ -461,7 +514,7 @@ export default function UploadsPage() {
 
         loadImports();
 
-    }, [importsPage, loadImports]);
+    }, [uploadsPage, loadImports]);
 
     useEffect(() => {
 
@@ -555,7 +608,7 @@ export default function UploadsPage() {
             try {
                 const [uploadsOK, importsOK] = await Promise.all([
                     loadUploads(uploadsPage, UPLOAD_IMPORT_LOAD_COUNT, true),
-                    loadImports(importsPage, UPLOAD_IMPORT_LOAD_COUNT, true)
+                    loadImports(uploadsPage, UPLOAD_IMPORT_LOAD_COUNT, true)
                 ]);
 
                 // Both uploads and imports loaded successfully, reset failure count
@@ -587,7 +640,7 @@ export default function UploadsPage() {
                 window.clearTimeout(timeoutId);
         };
 
-    }, [loadUploads, loadImports, uploadsPage, importsPage, busy, pending, uploads]);
+    }, [loadUploads, loadImports, uploadsPage, busy, pending, uploads]);
 
 
 

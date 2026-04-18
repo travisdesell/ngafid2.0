@@ -62,11 +62,13 @@ export type UploadErrorsPayload = {
 export type UploadListResponse = {
     uploads: UploadInfo[];
     numberPages: number;
+    currentPage: number;
 };
 
 export type ImportsListResponse = {
     imports: ImportsPageItem[];
     numberPages: number;
+    currentPage: number;
 };
 
 export type APIError = { errorTitle?: string; errorMessage?: string };
