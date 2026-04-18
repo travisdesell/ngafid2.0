@@ -6,9 +6,5 @@ export default {
     content: [
         'index.html',
         "./src/**/*.{html,js,jsx,ts,tsx}",
-        './src/app/**/*.{html,js,jsx,ts,tsx}',
-        "../ngafid-static/**/*.html",
-        "../ngafid-static/**/*.css",
-        "./@/components/**/*.{ts,tsx}",
     ],
 };
