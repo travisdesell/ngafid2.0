@@ -13,7 +13,8 @@ export function CheckboxStatic({ checked, className }: CheckboxStaticProps) {
         <span
             aria-hidden="true"
             className={cn(
-                "h-4 w-4 shrink-0 rounded-sm border border-primary shadow",
+                "hover:bg-accent group-hover:bg-accent transition-[background-color]",
+                "h-5 w-5 shrink-0 rounded-sm border-1 border-primary shadow",
                 "flex items-center justify-center",
                 checked && "bg-primary text-primary-foreground",
                 className,
@@ -22,7 +23,7 @@ export function CheckboxStatic({ checked, className }: CheckboxStaticProps) {
             {
                 (checked)
                 &&
-                <Check className="h-4 w-4" />
+                <Check className="h-3 w-4" />
             }
         </span>
     )
