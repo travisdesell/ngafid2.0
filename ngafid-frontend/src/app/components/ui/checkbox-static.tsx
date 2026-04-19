@@ -7,6 +7,13 @@ type CheckboxStaticProps = {
     className?: string
 }
 
+/*
+    Used when the 'checked' state depends on some
+    external condition.
+
+    This component itself is non-interactive.
+*/
+
 export function CheckboxStatic({ checked, className }: CheckboxStaticProps) {
 
     return (
@@ -14,7 +21,7 @@ export function CheckboxStatic({ checked, className }: CheckboxStaticProps) {
             aria-hidden="true"
             className={cn(
                 "hover:bg-accent group-hover:bg-accent transition-[background-color]",
-                "h-5 w-5 shrink-0 rounded-sm border-1 border-primary shadow",
+                "h-5 w-5 shrink-0 rounded-sm border border-primary shadow",
                 "flex items-center justify-center",
                 checked && "bg-primary text-primary-foreground",
                 className,
