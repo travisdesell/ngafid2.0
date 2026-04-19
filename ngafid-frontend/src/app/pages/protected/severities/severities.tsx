@@ -826,7 +826,7 @@ export default function SeveritiesPage() {
                 </TimeHeader>
 
                 <div className="flex w-full flex-1 min-h-0 gap-2">
-                    <Card className="card-glossy *:text-nowrap flex flex-col min-w-lg min-h-0">
+                    <Card className="card-glossy *:text-nowrap flex flex-col w-lg min-h-0">
                         <CardHeader className="w-full">
                             <CardTitle className="flex items-center gap-2 justify-between">
                                 Event Selection
@@ -836,17 +836,6 @@ export default function SeveritiesPage() {
                         </CardHeader>
 
                         <CardContent className="flex flex-col gap-2 overflow-y-auto min-h-0 flex-1 relative">
-                            {/* {
-                                (!hasApplied)
-                                &&
-                                <PanelAlert title="Apply Filters" description="Choose date range and click Apply to load event availability." />
-                            } */}
-
-                            {
-                                (loading && !hasSelectedData)
-                                &&
-                                <PanelAlert title="Loading Severities..." description="Fetching event severity data." />
-                            }
 
                             {
                                 eventNames.map((eventName) => {

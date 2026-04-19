@@ -747,22 +747,16 @@ export default function TrendsPage() {
                 <div className="flex w-full flex-1 min-h-0 gap-2">
 
                     {/* Event & Airframe Selection */}
-                    <Card className="card-glossy *:text-nowrap flex flex-col min-w-lg min-h-0">
+                    <Card className="card-glossy *:text-nowrap flex flex-col min-w-lg! w-lg! max-w-lg! min-h-0">
                         <CardHeader className="w-full">
                             <CardTitle className="flex items-center gap-2 justify-between">
                                 Event Selection
                                 {renderDateRangeMonthly()}
                             </CardTitle>
-                            <CardDescription>Choose events to display in both charts.</CardDescription>
+                            <CardDescription>Select events to display in both trends charts.</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex flex-col gap-2 overflow-y-auto min-h-0 flex-1 relative">
 
-                            {/* Events Loading Message */}
-                            {
-                                (loading && !selectedHasData)
-                                &&
-                                <PanelAlert title="Loading Trends..." description="Fetching monthly event data." />
-                            }
+                        <CardContent className="flex flex-col gap-2 overflow-y-auto min-h-0 flex-1 relative">
 
                             {/* Event Checklist */}
                             {
@@ -809,33 +803,36 @@ export default function TrendsPage() {
                             }
                         </CardContent>
 
-                        {/* Airframe Type */}
                         <CardFooter className="flex flex-col justify-start items-start gap-4 mt-auto">
                             <Separator />
-                            <Label className="">Airframe Type</Label>
-                            <Select
-                                value={airframeIDSelected.toString()}
-                                onValueChange={(value) => {
-                                    const id = parseInt(value, 10);
-                                    setAirframeIDSelected(id);
 
-                                    const selected = airframes.find((af) => af.id === id);
-                                    setAirframeNameSelected(selected?.name ?? ALL_AIRFRAMES_NAME);
-                                }}
-                            >
-                                <Button asChild variant="outline">
-                                    <SelectTrigger className="w-55">
-                                        <SelectValue placeholder="Select Airframe" />
-                                    </SelectTrigger>
-                                </Button>
-                                <SelectContent>
-                                    {airframes.map((af) => (
-                                        <SelectItem key={af.id} value={af.id.toString()}>
-                                            {af.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {/* Airframe Type Selection */}
+                            <div className="flex flex-col gap-2">
+                                <Label className="">Airframe Type</Label>
+                                <Select
+                                    value={airframeIDSelected.toString()}
+                                    onValueChange={(value) => {
+                                        const id = parseInt(value, 10);
+                                        setAirframeIDSelected(id);
+
+                                        const selected = airframes.find((af) => af.id === id);
+                                        setAirframeNameSelected(selected?.name ?? ALL_AIRFRAMES_NAME);
+                                    }}
+                                >
+                                    <Button asChild variant="outline">
+                                        <SelectTrigger className="w-55">
+                                            <SelectValue placeholder="Select Airframe" />
+                                        </SelectTrigger>
+                                    </Button>
+                                    <SelectContent>
+                                        {airframes.map((af) => (
+                                            <SelectItem key={af.id} value={af.id.toString()}>
+                                                {af.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </CardFooter>
 
                     </Card>
