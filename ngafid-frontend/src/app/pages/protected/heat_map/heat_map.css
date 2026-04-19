@@ -1,0 +1,15 @@
+@reference "tailwindcss";
+
+/* Move OpenLayers zoom controls to bottom left */
+.ol-zoom {
+  @apply top-auto bottom-2;
+}
+
+
+.mode-toggle-button {
+    @apply cursor-pointer;
+
+    @apply rounded-sm;
+    @apply p-1;
+    @apply transition;
+}
