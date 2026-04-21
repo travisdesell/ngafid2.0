@@ -13,12 +13,8 @@ export default function Background() {
         rendering the background image based on that.
     */
 
-    const { theme, useBackgroundImage } = useTheme();
-    const isDarkMode = (theme === 'dark');
-
-    // Not using background image, render nothing
-    if (!useBackgroundImage)
-        return null;
+    const { theme, invertBackgroundImage } = useTheme();
+    const isDarkMode = (theme === 'dark') !== invertBackgroundImage;
 
     // Otherwise, render background images
     return (
