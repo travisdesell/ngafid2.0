@@ -9,6 +9,7 @@ type PanelAlertProps = {
     title: string;
     description: string[]|string;
     isCritical?: boolean;
+    isMap?: boolean;
 }
 
 export default function PanelAlert(props: PanelAlertProps) {
@@ -20,13 +21,16 @@ export default function PanelAlert(props: PanelAlertProps) {
         Automatic text wrapping is disabled for the description.
     */
 
-    const { title, description, isCritical=false } = props;
+    const { title, description, isCritical=false, isMap=false } = props;
 
     return <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className={`absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] w-fit mx-auto space-x-8 drop-shadow-md flex items-center *:text-nowrap `}
+        className={`
+            absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] w-fit mx-auto space-x-8 drop-shadow-md flex items-center *:text-nowrap
+            ${isMap ? 'text-black pointer-events-none' : ''}
+        `}
     >
         {
             (isCritical)
