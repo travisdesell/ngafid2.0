@@ -138,7 +138,7 @@ const dimIfEmpty = (baseClassName: string, isEmpty: boolean): string =>
 		? `${baseClassName} text-foreground/55`
 		: baseClassName;
 
-const renderDescriptionWithCode = (description: string): ReactNode[] => {
+export const renderDescriptionWithCode = (description: string): ReactNode[] => {
 	const nodes: ReactNode[] = [];
 	let keyIndex = 0;
 

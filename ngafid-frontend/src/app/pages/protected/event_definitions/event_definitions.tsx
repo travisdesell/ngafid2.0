@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { fetchJson } from "@/fetchJson";
 import { Loader2 } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { EventDefinitions } from "src/types";
 
 
 const log = getLogger("EventDefinitions", "black", "Page");
@@ -24,6 +23,8 @@ type RowSpecific = {
     airframe: string;
     description: string;
 };
+
+type EventDefinitions = Record<string, Record<string, string>>;
 
 const ANY_KEYS = new Set(["Any", "Any Airframe"]);
 const PADDING_TOP_GROUP = "64px";
@@ -85,6 +86,182 @@ const Highlight = ({ text, query }: { text: string; query: string }) => {
 
     // Output all parts
     return <>{parts}</>;
+
+};
+
+
+const renderDescriptionWithCodeAndHighlight = (description: string, query: string): ReactNode[] => {
+
+    type Segment = {
+        text: string;
+        inCode: boolean;
+    };
+
+    const segments: Segment[] = [];
+    let plainTextBuffer = "";
+    let codeBuffer = "";
+    let depth = 0;
+
+    const flushPlainText = () => {
+
+        if (plainTextBuffer.length === 0)
+            return;
+
+        segments.push({ text: plainTextBuffer, inCode: false });
+        plainTextBuffer = "";
+
+    };
+
+    const flushCode = () => {
+
+        if (codeBuffer.length === 0)
+            return;
+
+        segments.push({ text: codeBuffer, inCode: true });
+        codeBuffer = "";
+
+    };
+
+    for (const char of description) {
+
+        if (char === "(") {
+
+            if (depth === 0)
+                flushPlainText();
+
+            depth += 1;
+            codeBuffer += char;
+            continue;
+
+        }
+
+        if (char === ")" && depth > 0) {
+
+            codeBuffer += char;
+            depth -= 1;
+
+            if (depth === 0)
+                flushCode();
+
+            continue;
+
+        }
+
+        if (depth > 0)
+            codeBuffer += char;
+        else
+            plainTextBuffer += char;
+
+    }
+
+    // Unbalanced opening parenthesis: fall back to plain text rendering for remainder.
+    if (depth > 0)
+        plainTextBuffer += codeBuffer;
+
+    flushPlainText();
+
+    const chars: { char: string; inCode: boolean }[] = [];
+    for (const segment of segments) {
+        for (const char of segment.text)
+            chars.push({ char, inCode: segment.inCode });
+    }
+
+    const trimmed = query.trim();
+    const highlighted = Array(chars.length).fill(false);
+
+    if (trimmed.length > 0) {
+
+        const lowerDescription = description.toLowerCase();
+        const lowerQuery = trimmed.toLowerCase();
+
+        let searchStart = 0;
+        while (true) {
+
+            const matchIndex = lowerDescription.indexOf(lowerQuery, searchStart);
+
+            if (matchIndex === -1)
+                break;
+
+            for (let i = matchIndex; i < (matchIndex + trimmed.length) && i < highlighted.length; i += 1)
+                highlighted[i] = true;
+
+            searchStart = (matchIndex + trimmed.length);
+
+        }
+
+    }
+
+    const nodes: ReactNode[] = [];
+    let keyIndex = 0;
+
+    const renderTextWithHighlight = (text: string, startIndex: number): ReactNode[] => {
+
+        const output: ReactNode[] = [];
+        let buffer = "";
+        let bufferHighlighted = false;
+
+        const flushBuffer = () => {
+
+            if (buffer.length === 0)
+                return;
+
+            if (bufferHighlighted) {
+                output.push(
+                    <mark key={`event-description-inline-${keyIndex++}`} className="dark:bg-yellow-500">
+                        {buffer}
+                    </mark>
+                );
+            }
+            else {
+                output.push(buffer);
+            }
+
+            buffer = "";
+
+        };
+
+        for (let offset = 0; offset < text.length; offset += 1) {
+
+            const charIndex = (startIndex + offset);
+            const isHighlighted = highlighted[charIndex];
+
+            if (buffer.length === 0)
+                bufferHighlighted = isHighlighted;
+            else if (bufferHighlighted !== isHighlighted) {
+                flushBuffer();
+                bufferHighlighted = isHighlighted;
+            }
+
+            buffer += text[offset];
+
+        }
+
+        flushBuffer();
+        return output;
+
+    };
+
+    let cursor = 0;
+    for (const segment of segments) {
+
+        const inner = renderTextWithHighlight(segment.text, cursor);
+
+        if (segment.inCode) {
+            nodes.push(
+                <code key={`event-description-chunk-${keyIndex++}`} className="rounded bg-sidebar px-1 py-0.5 font-mono">
+                    {inner}
+                </code>
+            );
+        }
+        else {
+            nodes.push(...inner);
+        }
+
+        cursor += segment.text.length;
+
+    }
+
+    return nodes;
 
 };
 
@@ -360,7 +537,7 @@ export default function EventDefinitionsPage() {
 
                                                         {/* Event Description */}
                                                         <TableCell className="font-normal">
-                                                            <Highlight text={row.description} query={filterText} />
+                                                            {renderDescriptionWithCodeAndHighlight(row.description, filterText)}
                                                         </TableCell>
 
                                                     </TableRow>
@@ -414,7 +591,7 @@ export default function EventDefinitionsPage() {
 
                                                             {/* Event Description */}
                                                             <TableCell style={{ paddingTop }} className="font-normal">
-                                                                <Highlight text={row.description} query={filterText} />
+                                                                {renderDescriptionWithCodeAndHighlight(row.description, filterText)}
                                                             </TableCell>
 
                                                         </TableRow>
