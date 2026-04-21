@@ -106,6 +106,11 @@ public class JavalinWebServer extends WebServer {
         });
 
         StatusJavalinRoutes.bindRoutes(app);
+
+        // Transitional support for Heat Map data endpoints (WIP)
+        app.post("/protected/heatmap_points_batch", AnalysisJavalinRoutes::postHeatmapPointsBatch);
+        app.get("/protected/proximity_events_in_box", AnalysisJavalinRoutes::getProximityEventsInBox);
+        app.get("/protected/event_columns_values", AnalysisJavalinRoutes::getEventColumnsValues);
         
     }
 
