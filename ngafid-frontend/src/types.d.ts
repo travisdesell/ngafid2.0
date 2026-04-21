@@ -77,4 +77,11 @@ declare global {
     const airframes: AirframeNameID[];
     const tagNames: string[];
     const eventNames: string[];
+
+    interface Window {
+        __APP_CONFIG__?: {
+            azureMapsKey?: string;
+        }
+    }
+
 }
