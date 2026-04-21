@@ -1,5 +1,4 @@
 // ngafid-frontend/src/app/pages/protected/heatmap/heat_map.tsx
-import { NavbarExtras } from "@/components/navbars/navbar_slot";
 import PanelAlert from "@/components/panel_alert";
 import { ALL_AIRFRAMES_ID, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -7,10 +6,11 @@ import { usePlatform } from "@/components/providers/platform_provider";
 import TimeHeader from "@/components/providers/time_header/time_header";
 import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { fetchJson } from "@/fetchJson";
@@ -26,6 +26,7 @@ import Feature from "ol/Feature";
 import OlMap from "ol/Map";
 import View from "ol/View";
 import { platformModifierKeyOnly } from "ol/events/condition";
+import LineString from "ol/geom/LineString";
 import Point from "ol/geom/Point";
 import Polygon from "ol/geom/Polygon";
 import DragBox from "ol/interaction/DragBox";
@@ -42,8 +43,6 @@ import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./heat_map.css";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 
 const log = getLogger("HeatMap", "black", "Page");
 
@@ -52,6 +51,12 @@ const MARKER_VISIBILITY_ZOOM_THRESHOLD = 15;
 const BATCH_SIZE = 1000;
 
 const PROXIMITY_DEFINITION_IDS = new Set<number>([-1, -2, -3]);
+
+type RgbColor = {
+    r: number;
+    g: number;
+    b: number;
+};
 
 const ALL_EVENT_NAMES = [
     "ANY Event",
@@ -201,6 +206,18 @@ type MarkerEvent = {
     longitude: number;
 };
 
+type PopupEventSummary = {
+    eventId: number;
+    eventDefinitionId: number;
+    eventType: string;
+    time: string;
+    flightId: number;
+    otherFlightId: number | null;
+    severity: number;
+    flightAirframe: string;
+    otherFlightAirframe: string;
+};
+
 type PopupData = {
     time: string;
     latitude: number;
@@ -214,6 +231,7 @@ type PopupData = {
     eventId: number | null;
     eventType: string;
     eventTypes: string[];
+    eventSummaries: PopupEventSummary[];
     columnValues?: Record<string, string | number | null>;
 };
 
@@ -254,11 +272,113 @@ type BatchResponse = {
     results?: BatchResultRow[];
 };
 
-const MARKER_STYLE = new Style({
-    image: new CircleStyle({
-        radius: 4,
-        fill: new Fill({ color: "#228be6" }),
-        stroke: new Stroke({ color: "rgba(0, 0, 0, 0.5)", width: 1.2 }),
+const MARKER_STYLE_CACHE = new Map<number, Style>();
+const CONNECTOR_SEGMENT_STYLE_CACHE = new Map<string, Style>();
+
+function hslToRgb(hue: number, saturation: number, lightness: number): RgbColor {
+    const h = ((hue % 360) + 360) % 360;
+    const s = Math.max(0, Math.min(1, saturation));
+    const l = Math.max(0, Math.min(1, lightness));
+
+    const chroma = (1 - Math.abs((2 * l) - 1)) * s;
+    const segment = h / 60;
+    const x = chroma * (1 - Math.abs((segment % 2) - 1));
+
+    let rPrime = 0;
+    let gPrime = 0;
+    let bPrime = 0;
+
+    if (segment >= 0 && segment < 1) {
+        rPrime = chroma;
+        gPrime = x;
+    } else if (segment >= 1 && segment < 2) {
+        rPrime = x;
+        gPrime = chroma;
+    } else if (segment >= 2 && segment < 3) {
+        gPrime = chroma;
+        bPrime = x;
+    } else if (segment >= 3 && segment < 4) {
+        gPrime = x;
+        bPrime = chroma;
+    } else if (segment >= 4 && segment < 5) {
+        rPrime = x;
+        bPrime = chroma;
+    } else {
+        rPrime = chroma;
+        bPrime = x;
+    }
+
+    const match = l - (chroma / 2);
+    return {
+        r: Math.round((rPrime + match) * 255),
+        g: Math.round((gPrime + match) * 255),
+        b: Math.round((bPrime + match) * 255),
+    };
+}
+
+function getFlightColorRgb(flightId: number): RgbColor {
+    const normalized = Math.abs(Math.trunc(flightId)) || 1;
+    const hue = (normalized * 137.508) % 360;
+    return hslToRgb(hue, 0.78, 0.48);
+}
+
+function toRgba(color: RgbColor, alpha: number): string {
+    const a = Math.max(0, Math.min(1, alpha));
+    return `rgba(${color.r}, ${color.g}, ${color.b}, ${a})`;
+}
+
+function interpolateRgb(start: RgbColor, end: RgbColor, ratio: number): RgbColor {
+    const t = Math.max(0, Math.min(1, ratio));
+    return {
+        r: Math.round(start.r + ((end.r - start.r) * t)),
+        g: Math.round(start.g + ((end.g - start.g) * t)),
+        b: Math.round(start.b + ((end.b - start.b) * t)),
+    };
+}
+
+function lerp(start: number, end: number, ratio: number): number {
+    return start + ((end - start) * ratio);
+}
+
+function getMarkerStyleForFlight(flightId: number): Style {
+    const normalized = Math.abs(Math.trunc(flightId)) || 1;
+    const cached = MARKER_STYLE_CACHE.get(normalized);
+    if (cached)
+        return cached;
+
+    const color = getFlightColorRgb(normalized);
+    const style = new Style({
+        image: new CircleStyle({
+            radius: 4,
+            fill: new Fill({ color: toRgba(color, 0.95) }),
+            stroke: new Stroke({ color: "rgba(0, 0, 0, 0.65)", width: 1.2 }),
+        }),
+    });
+
+    MARKER_STYLE_CACHE.set(normalized, style);
+    return style;
+}
+
+function getConnectorSegmentStyle(color: string): Style {
+    const cached = CONNECTOR_SEGMENT_STYLE_CACHE.get(color);
+    if (cached)
+        return cached;
+
+    const style = new Style({
+        stroke: new Stroke({
+            color,
+            width: 1.5,
+        }),
+    });
+
+    CONNECTOR_SEGMENT_STYLE_CACHE.set(color, style);
+    return style;
+}
+
+const PROXIMITY_CONNECTOR_STYLE = new Style({
+    stroke: new Stroke({
+        color: "rgba(34, 139, 230, 0.35)",
+        width: 1.4,
     }),
 });
 
@@ -481,6 +601,71 @@ function parseBatchResults(response: BatchResponse): Array<{ eventId: number; fl
         .filter((row): row is { eventId: number; flightId: number; points: HeatPoint[] } => row !== null);
 }
 
+function toTimestampMillis(value: string): number | null {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildProximityPointPairs(mainPoints: HeatPoint[], otherPoints: HeatPoint[]): Array<{ mainPoint: HeatPoint; otherPoint: HeatPoint }> {
+    if (mainPoints.length === 0 || otherPoints.length === 0)
+        return [];
+
+    const pairs: Array<{ mainPoint: HeatPoint; otherPoint: HeatPoint }> = [];
+    const otherByTimestamp = new Map<string, HeatPoint[]>();
+    const unmatchedOther = new Set<HeatPoint>(otherPoints);
+
+    for (const otherPoint of otherPoints) {
+        const queue = otherByTimestamp.get(otherPoint.timestamp) ?? [];
+        queue.push(otherPoint);
+        otherByTimestamp.set(otherPoint.timestamp, queue);
+    }
+
+    for (const mainPoint of mainPoints) {
+        const exactTimestampQueue = otherByTimestamp.get(mainPoint.timestamp);
+
+        let matchedOther: HeatPoint | undefined;
+
+        if (exactTimestampQueue && exactTimestampQueue.length > 0) {
+            matchedOther = exactTimestampQueue.shift();
+        }
+
+        if (!matchedOther && unmatchedOther.size > 0) {
+            const mainMillis = toTimestampMillis(mainPoint.timestamp);
+
+            if (mainMillis !== null) {
+                let nearestOther: HeatPoint | null = null;
+                let nearestDelta = Number.POSITIVE_INFINITY;
+
+                for (const candidateOther of unmatchedOther) {
+                    const otherMillis = toTimestampMillis(candidateOther.timestamp);
+                    if (otherMillis === null)
+                        continue;
+
+                    const delta = Math.abs(mainMillis - otherMillis);
+                    if (delta < nearestDelta) {
+                        nearestDelta = delta;
+                        nearestOther = candidateOther;
+                    }
+                }
+
+                if (nearestOther)
+                    matchedOther = nearestOther;
+            }
+
+            if (!matchedOther)
+                matchedOther = unmatchedOther.values().next().value as HeatPoint | undefined;
+        }
+
+        if (!matchedOther)
+            continue;
+
+        unmatchedOther.delete(matchedOther);
+        pairs.push({ mainPoint, otherPoint: matchedOther });
+    }
+
+    return pairs;
+}
+
 function hasAreaSelected(boxCoords: BoxCoords): boolean {
     const values = [boxCoords.minLat, boxCoords.maxLat, boxCoords.minLon, boxCoords.maxLon];
     if (values.some((v) => !v || Number.isNaN(Number(v))))
@@ -547,6 +732,8 @@ export default function HeatMapPage() {
     const heatmapLayerOtherRef = useRef<Heatmap | null>(null);
     const markerLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
     const markerSourceRef = useRef<VectorSource | null>(null);
+    const connectorLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
+    const connectorSourceRef = useRef<VectorSource | null>(null);
     const gridLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
     const gridSourceRef = useRef<VectorSource | null>(null);
 
@@ -606,6 +793,7 @@ export default function HeatMapPage() {
         heatmapLayerMainRef.current?.getSource()?.clear();
         heatmapLayerOtherRef.current?.getSource()?.clear();
         markerSourceRef.current?.clear();
+        connectorSourceRef.current?.clear();
 
         const gridSource = gridSourceRef.current;
         if (gridSource) {
@@ -616,6 +804,7 @@ export default function HeatMapPage() {
 
         heatmapLayerMainRef.current?.setVisible(false);
         heatmapLayerOtherRef.current?.setVisible(false);
+        connectorLayerRef.current?.setVisible(false);
         gridLayerRef.current?.setVisible(false);
 
         setOpenPopups([]);
@@ -647,9 +836,11 @@ export default function HeatMapPage() {
         const heatmapLayerMain = heatmapLayerMainRef.current;
         const heatmapLayerOther = heatmapLayerOtherRef.current;
         const markerSource = markerSourceRef.current;
+        const connectorSource = connectorSourceRef.current;
+        const connectorLayer = connectorLayerRef.current;
         const gridSource = gridSourceRef.current;
 
-        if (!map || !heatmapLayerMain || !heatmapLayerOther || !markerSource || !gridSource)
+        if (!map || !heatmapLayerMain || !heatmapLayerOther || !markerSource || !connectorSource || !connectorLayer || !gridSource)
             return;
 
         const sourceMain = heatmapLayerMain.getSource();
@@ -660,10 +851,12 @@ export default function HeatMapPage() {
         sourceMain.clear();
         sourceOther.clear();
         markerSource.clear();
+        connectorSource.clear();
         gridSource.clear();
 
         const coordinateRegistry = new Map<string, { coord: number[]; events: MarkerEvent[] }>();
         const allPointsForGrid: Array<{ latitude: number; longitude: number }> = [];
+        const connectorFeatures: Feature<LineString>[] = [];
 
         let hasSecondaryPoints = false;
 
@@ -718,15 +911,74 @@ export default function HeatMapPage() {
                 coordinateRegistry.set(coordKey, groupAtCoord);
                 allPointsForGrid.push({ latitude: point.latitude, longitude: point.longitude });
             }
+
+            // Draw connector lines for proximity pairs shown on map.
+            if (PROXIMITY_DEFINITION_IDS.has(eventGroup.eventDefinitionId) && eventGroup.otherFlightPoints.length > 0) {
+                const pointPairs = buildProximityPointPairs(eventGroup.mainFlightPoints, eventGroup.otherFlightPoints);
+                const mainFlightColor = getFlightColorRgb(eventGroup.mainFlightId);
+                const otherFlightColor = getFlightColorRgb(eventGroup.otherFlightId ?? eventGroup.mainFlightId);
+                const gradientSegments = 8;
+
+                for (const pointPair of pointPairs) {
+                    const mainCoord = fromLonLat([pointPair.mainPoint.longitude + 0.0001, pointPair.mainPoint.latitude + 0.0001]);
+                    const otherCoord = fromLonLat([pointPair.otherPoint.longitude + 0.0001, pointPair.otherPoint.latitude + 0.0001]);
+
+                    for (let segmentIndex = 0; segmentIndex < gradientSegments; segmentIndex += 1) {
+                        const t0 = segmentIndex / gradientSegments;
+                        const t1 = (segmentIndex + 1) / gradientSegments;
+                        const tm = (t0 + t1) / 2;
+
+                        const segmentStart: [number, number] = [
+                            lerp(mainCoord[0], otherCoord[0], t0),
+                            lerp(mainCoord[1], otherCoord[1], t0),
+                        ];
+                        const segmentEnd: [number, number] = [
+                            lerp(mainCoord[0], otherCoord[0], t1),
+                            lerp(mainCoord[1], otherCoord[1], t1),
+                        ];
+
+                        const mixedColor = interpolateRgb(mainFlightColor, otherFlightColor, tm);
+                        const connectorColor = toRgba(mixedColor, 0.62);
+
+                        const connectorSegment = new Feature({
+                            geometry: new LineString([segmentStart, segmentEnd]),
+                        });
+                        connectorSegment.setStyle(getConnectorSegmentStyle(connectorColor));
+                        connectorFeatures.push(connectorSegment);
+                    }
+                }
+            }
         }
+
+        connectorSource.addFeatures(connectorFeatures);
+
+        const zoom = map.getView().getZoom() ?? 0;
+        const detailsVisible = zoom >= MARKER_VISIBILITY_ZOOM_THRESHOLD;
+        connectorLayer.setVisible(detailsVisible && connectorFeatures.length > 0);
 
         for (const [coordKey, grouped] of coordinateRegistry.entries()) {
             const first = grouped.events[0];
+
+            const flightCounts = new Map<number, number>();
+            for (const markerEvent of grouped.events) {
+                const flightId = markerEvent.flightId;
+                flightCounts.set(flightId, (flightCounts.get(flightId) ?? 0) + 1);
+            }
+
+            let markerFlightId = first.flightId;
+            let markerFlightCount = -1;
+            for (const [flightId, count] of flightCounts.entries()) {
+                if (count > markerFlightCount) {
+                    markerFlightId = flightId;
+                    markerFlightCount = count;
+                }
+            }
+
             const marker = new Feature({ geometry: new Point(grouped.coord) });
-            marker.setStyle(MARKER_STYLE);
             marker.setProperties({
                 isMarker: true,
                 coordKey,
+                markerFlightId,
                 events: grouped.events,
                 eventId: first.eventId,
                 eventDefinitionId: first.eventDefinitionId,
@@ -1030,6 +1282,7 @@ export default function HeatMapPage() {
         const heatSourceMain = new VectorSource();
         const heatSourceOther = new VectorSource();
         const markerSource = new VectorSource();
+        const connectorSource = new VectorSource();
         const gridSource = new VectorSource({ useSpatialIndex: false });
         const selectionSource = new VectorSource();
 
@@ -1066,12 +1319,19 @@ export default function HeatMapPage() {
         const markerLayer = new VectorLayer({
             source: markerSource,
             style: (feature) => (
-                feature.get("isMarker") ? MARKER_STYLE : undefined
+                feature.get("isMarker") ? getMarkerStyleForFlight(toNumber(feature.get("markerFlightId")) ?? 1) : undefined
             ),
             zIndex: 1001,
         });
         markerLayer.set("interactive", true);
         markerLayer.setVisible(false);
+
+        const connectorLayer = new VectorLayer({
+            source: connectorSource,
+            style: PROXIMITY_CONNECTOR_STYLE,
+            zIndex: 1000,
+        });
+        connectorLayer.setVisible(false);
 
         const gridLayer = new VectorLayer({
             source: gridSource,
@@ -1095,7 +1355,7 @@ export default function HeatMapPage() {
 
         const map = new OlMap({
             target: mapContainerRef.current,
-            layers: [...tileLayers, heatmapMain, heatmapOther, markerLayer, gridLayer, selectionLayer],
+            layers: [...tileLayers, heatmapMain, heatmapOther, connectorLayer, markerLayer, gridLayer, selectionLayer],
             view: new View({
                 center: fromLonLat([-95, 40]),
                 zoom: 4,
@@ -1168,6 +1428,18 @@ export default function HeatMapPage() {
                         ? Array.from(new Set(markerEvents.map((eventItem) => getEventTypeName(eventItem.eventDefinitionId))))
                         : [getEventTypeName(toNumber(feature.get("eventDefinitionId")) ?? 0)];
 
+                    const eventSummaries: PopupEventSummary[] = markerEvents.map((eventItem) => ({
+                        eventId: eventItem.eventId,
+                        eventDefinitionId: eventItem.eventDefinitionId,
+                        eventType: getEventTypeName(eventItem.eventDefinitionId),
+                        time: normalizeTimestamp(eventItem.time),
+                        flightId: eventItem.flightId,
+                        otherFlightId: eventItem.otherFlightId,
+                        severity: eventItem.severity,
+                        flightAirframe: eventItem.flightAirframe,
+                        otherFlightAirframe: eventItem.otherFlightAirframe,
+                    }));
+
                     const popupData: PopupData = {
                         time: normalizeTimestamp(timeRaw),
                         latitude,
@@ -1181,6 +1453,7 @@ export default function HeatMapPage() {
                         eventId: toNumber(feature.get("eventId")) ?? null,
                         eventType: eventTypes.length === 1 ? eventTypes[0] : `${eventTypes.length} Events`,
                         eventTypes,
+                        eventSummaries,
                     };
 
                     const pixel = map.getPixelFromCoordinate(coord);
@@ -1225,7 +1498,9 @@ export default function HeatMapPage() {
             if (zoom === undefined)
                 return;
 
-            markerLayer.setVisible(zoom >= MARKER_VISIBILITY_ZOOM_THRESHOLD);
+            const detailsVisible = zoom >= MARKER_VISIBILITY_ZOOM_THRESHOLD;
+            markerLayer.setVisible(detailsVisible);
+            connectorLayer.setVisible(detailsVisible && connectorSource.getFeatures().length > 0);
         });
 
         mapRef.current = map;
@@ -1233,6 +1508,8 @@ export default function HeatMapPage() {
         heatmapLayerOtherRef.current = heatmapOther;
         markerLayerRef.current = markerLayer;
         markerSourceRef.current = markerSource;
+        connectorLayerRef.current = connectorLayer;
+        connectorSourceRef.current = connectorSource;
         gridLayerRef.current = gridLayer;
         gridSourceRef.current = gridSource;
         selectionLayerRef.current = selectionLayer;
@@ -1247,6 +1524,8 @@ export default function HeatMapPage() {
             heatmapLayerOtherRef.current = null;
             markerLayerRef.current = null;
             markerSourceRef.current = null;
+            connectorLayerRef.current = null;
+            connectorSourceRef.current = null;
             gridLayerRef.current = null;
             gridSourceRef.current = null;
             selectionLayerRef.current = null;
@@ -1771,6 +2050,38 @@ export default function HeatMapPage() {
                                                     {
                                                         popup.data.eventTypes.length > 1
                                                         && <div className="italic text-muted-foreground">{popup.data.eventTypes.join(", ")}</div>
+                                                    }
+
+                                                    {
+                                                        popup.data.eventSummaries.length > 1
+                                                        && (
+                                                            <>
+                                                                <div className="rounded border bg-muted/40 p-2 space-y-1">
+                                                                    <div><strong>Stacked Events At This Point:</strong> {popup.data.eventSummaries.length}</div>
+                                                                    <div className="text-muted-foreground">This marker contains multiple co-located events.</div>
+                                                                </div>
+                                                                <Separator className="my-2" />
+                                                                <div className="font-semibold">Events In This Marker</div>
+                                                                {
+                                                                    popup.data.eventSummaries.map((summary, index) => (
+                                                                        <div
+                                                                            key={`${popup.id}-summary-${summary.eventId}-${summary.flightId}-${index}`}
+                                                                            className="rounded border p-2 space-y-0.5"
+                                                                        >
+                                                                            <div><strong>Type:</strong> {summary.eventType}</div>
+                                                                            <div><strong>Event ID:</strong> {summary.eventId}</div>
+                                                                            <div><strong>Time:</strong> {summary.time}</div>
+                                                                            <div><strong>Flight:</strong> {summary.flightId} ({summary.flightAirframe || "N/A"})</div>
+                                                                            {
+                                                                                summary.otherFlightId
+                                                                                && <div><strong>Other Flight:</strong> {summary.otherFlightId} ({summary.otherFlightAirframe || "N/A"})</div>
+                                                                            }
+                                                                            <div><strong>Severity:</strong> {summary.severity.toFixed(2)}</div>
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                            </>
+                                                        )
                                                     }
 
                                                     <div className="text-muted-foreground">{popup.data.time}</div>
