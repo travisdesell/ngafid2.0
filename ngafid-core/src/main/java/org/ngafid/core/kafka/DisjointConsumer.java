@@ -75,10 +75,10 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
             if (retry) {
                 if (record.topic().equals(getTopicName())) {
                     LOG.info("Processing failed... adding to retry queue '" + getRetryTopicName() + "'");
-                    producer.send(new ProducerRecord<>(getRetryTopicName(), record.value()));
+                    producer.send(new ProducerRecord<>(getRetryTopicName(), record.key(), record.value()));
                 } else if (record.topic().equals(getRetryTopicName())) {
                     LOG.info("Processing failed... adding to DLQ '" + getDLTTopicName() + "'");
-                    producer.send(new ProducerRecord<>(getDLTTopicName(), record.value()));
+                    producer.send(new ProducerRecord<>(getDLTTopicName(), record.key(), record.value()));
                 }
             }
         }

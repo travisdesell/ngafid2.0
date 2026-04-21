@@ -154,7 +154,9 @@ public final class Upload {
                 if (producer == null)
                     producer = new KafkaProducer<>(Configuration.getUploadProperties());
 
-                producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), id));
+                // Key upload id so the default partitioner spreads messages across topic partitions
+                // (null-key produces can skew onto one partition and under-use parallel consumers).
+                producer.send(new ProducerRecord<>(Topic.UPLOAD.toString(), String.valueOf(id), id));
                 producer.flush();
                 producer.close();
                 producer = null;
