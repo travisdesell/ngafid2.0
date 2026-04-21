@@ -16,7 +16,7 @@ type ThemeProviderState = {
     theme: Theme
     setTheme: (theme: Theme) => void,
     useHighContrastCharts: boolean, setUseHighContrastCharts: (useHighContrast: boolean) => void,
-    useBackgroundImage: boolean, setUseBackgroundImage: (useBackgroundImage: boolean) => void,
+    invertBackgroundImage: boolean, setInvertBackgroundImage: (invertBackgroundImage: boolean) => void,
     useNavbarPageNames: boolean, setUseNavbarPageNames: (useNavbarPageNames: boolean) => void,
 }
 
@@ -24,7 +24,7 @@ const initialState: ThemeProviderState = {
     theme: "system",
     setTheme: () => null,
     useHighContrastCharts: false, setUseHighContrastCharts: () => null,
-    useBackgroundImage: true, setUseBackgroundImage: () => null,
+    invertBackgroundImage: true, setInvertBackgroundImage: () => null,
     useNavbarPageNames: true, setUseNavbarPageNames: () => null,
 }
 
@@ -40,7 +40,7 @@ export function ThemeProvider({
     const themeDefault = (localStorage.getItem(storageKey) as Theme) || defaultTheme;
     const [theme, setTheme] = useState<Theme>(themeDefault);
     const [useHighContrastCharts, setUseHighContrastCharts] = useState<boolean>(false);
-    const [useBackgroundImage, setUseBackgroundImage] = useState<boolean>(true);
+    const [invertBackgroundImage, setInvertBackgroundImage] = useState<boolean>(false);
     const [useNavbarPageNames, setUseNavbarPageNames] = useState<boolean>(true);
 
     useEffect(() => {
@@ -72,7 +72,7 @@ export function ThemeProvider({
             setTheme(theme)
         },
         useHighContrastCharts, setUseHighContrastCharts,
-        useBackgroundImage, setUseBackgroundImage,
+        invertBackgroundImage, setInvertBackgroundImage,
         useNavbarPageNames, setUseNavbarPageNames,
     };
 

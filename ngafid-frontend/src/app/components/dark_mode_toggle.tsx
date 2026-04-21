@@ -27,7 +27,7 @@ export function DarkModeToggle() {
     const {
         theme, setTheme,
         useHighContrastCharts, setUseHighContrastCharts,
-        useBackgroundImage, setUseBackgroundImage,
+        invertBackgroundImage, setInvertBackgroundImage,
         useNavbarPageNames, setUseNavbarPageNames,
     } = useTheme();
     const isDarkTheme = (theme === "dark");
@@ -147,11 +147,11 @@ export function DarkModeToggle() {
                     {/* Toggle Background Image */}
                     <ContextMenuItem
                         className="p-3"
-                        onClick={() => setUseBackgroundImage(!useBackgroundImage)}
+                        onClick={() => setInvertBackgroundImage(!invertBackgroundImage)}
                     >
-                        Use Background Image
+                        Invert Background Image
                         <Checkbox
-                            checked={useBackgroundImage}
+                            checked={invertBackgroundImage}
                             className="ml-auto pointer-events-none"
                         />
                     </ContextMenuItem>
