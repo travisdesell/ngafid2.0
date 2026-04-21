@@ -1,7 +1,7 @@
 // ngafid-frontend/vite.config.mts
+import babel from '@rolldown/plugin-babel';
 import tailwind from '@tailwindcss/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
-import babel from '@rolldown/plugin-babel';
 import path, { resolve } from 'path';
 import externalGlobals from 'rollup-plugin-external-globals';
 import { fileURLToPath } from 'url';
@@ -98,6 +98,11 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
             port: 5173,
             strictPort: true,
             proxy: {
+                '/api/protected': {
+                    target: 'http://localhost:8181',
+                    changeOrigin: true,
+                    rewrite: (urlPath) => urlPath.replace(/^\/api/, ''),
+                },
                 '/api': {
                     target: 'http://localhost:8181',
                     changeOrigin: true
