@@ -12,7 +12,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
-import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
 public class StatusJavalinRoutes {
@@ -254,23 +253,8 @@ public class StatusJavalinRoutes {
 
     }
 
-    /**
-     * Fetches status page
-     *
-     * @param ctx the Javalin context
-     */
-    private static void getStatus(Context ctx) {
-        final String templateFile = "status_page.html";
-
-        Map<String, Object> scopes = Map.of("navbar_js", Navbar.getJavascript(ctx));
-
-        ctx.header("Content-Type", "text/html; charset=UTF-8");
-        ctx.render(templateFile, scopes);
-    }
-
     public static void bindRoutes(io.javalin.Javalin app) {
         // These are non-privileged routes.
         app.get("/api/status/{service-name}", StatusJavalinRoutes::getServiceStatus);
-        app.get("/status", StatusJavalinRoutes::getStatus);
     }
 }

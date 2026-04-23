@@ -1,11 +1,12 @@
 // ngafid-frontend/src/app/pages/protected/heatmap/heat_map.tsx
+import ErrorModal from "@/components/modals/error_modal";
+import { useModal } from "@/components/modals/modal_context";
 import PanelAlert from "@/components/panel_alert";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
 import { usePlatform } from "@/components/providers/platform_provider";
 import TimeHeader from "@/components/providers/time_header/time_header";
 import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,12 +16,11 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { fetchJson } from "@/fetchJson";
 import {
-    AlertCircle,
     Flame,
     Grid2X2,
     Move,
     Plane,
-    X,
+    X
 } from "lucide-react";
 import Feature from "ol/Feature";
 import OlMap from "ol/Map";
@@ -43,8 +43,6 @@ import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./heat_map.css";
-import { useModal } from "@/components/modals/modal_context";
-import ErrorModal from "@/components/modals/error_modal";
 
 const log = getLogger("HeatMap", "black", "Page");
 
@@ -274,6 +272,18 @@ type BatchResponse = {
     results?: BatchResultRow[];
 };
 
+type HeatMapConfigResponse = {
+    azureMapsKey?: unknown;
+    chartTileBaseUrl?: unknown;
+};
+
+type HeatMapConfig = {
+    azureMapsKey: string | undefined;
+    chartTileBaseUrl: string;
+};
+
+const DEFAULT_CHART_TILE_BASE_URL = "http://localhost:8187";
+
 const MARKER_STYLE_CACHE = new Map<number, Style>();
 const CONNECTOR_SEGMENT_STYLE_CACHE = new Map<string, Style>();
 
@@ -384,25 +394,23 @@ const PROXIMITY_CONNECTOR_STYLE = new Style({
     }),
 });
 
-function getAzureMapsKey(): string | undefined {
-    const value = (window as unknown as { azureMapsKey?: unknown }).azureMapsKey;
+function normalizeOptionalString(value: unknown): string | undefined {
     if (typeof value !== "string")
         return undefined;
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function getChartTileBase(): string {
-    const value = (window as unknown as { chartTileBaseUrl?: unknown }).chartTileBaseUrl;
+function normalizeChartTileBase(value: unknown): string {
     if (typeof value !== "string")
-        return "http://localhost:8187";
+        return DEFAULT_CHART_TILE_BASE_URL;
     const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : "http://localhost:8187";
+    return trimmed.length > 0 ? trimmed.replace(/\/+$/, "") : DEFAULT_CHART_TILE_BASE_URL;
 }
 
-function buildMapLayerOptions(): MapLayerOption[] {
-    const azureMapsKey = getAzureMapsKey();
-    const chartTileBase = getChartTileBase();
+function buildMapLayerOptions(mapConfig: HeatMapConfig): MapLayerOption[] {
+    const azureMapsKey = mapConfig.azureMapsKey;
+    const chartTileBase = mapConfig.chartTileBaseUrl;
     const fallbackRoadUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
     const fallbackAerialUrl = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
@@ -691,7 +699,15 @@ export default function HeatMapPage() {
         setAirframeNameSelected,
     } = useAirframes();
     const { setModal } = useModal();
-    const mapLayerOptions = useMemo(() => buildMapLayerOptions(), []);
+    const [mapConfig, setMapConfig] = useState<HeatMapConfig>({
+        azureMapsKey: undefined,
+        chartTileBaseUrl: DEFAULT_CHART_TILE_BASE_URL,
+    });
+    const [mapConfigLoaded, setMapConfigLoaded] = useState(false);
+    const mapLayerOptions = useMemo(
+        () => buildMapLayerOptions(mapConfig),
+        [mapConfig.azureMapsKey, mapConfig.chartTileBaseUrl],
+    );
 
     const [mapStyle, setMapStyle] = useState<MapStyleName>("Road");
     const [loading, setLoading] = useState(false);
@@ -755,6 +771,31 @@ export default function HeatMapPage() {
 
     useEffect(() => {
         document.title = "NGAFID — Heat Map";
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        void (async () => {
+            try {
+                const response = await fetchJson.get<unknown>("/api/heatmap/config").catch(() => null);
+                if (cancelled || !response || typeof response !== "object")
+                    return;
+
+                const config = response as HeatMapConfigResponse;
+                setMapConfig({
+                    azureMapsKey: normalizeOptionalString(config.azureMapsKey),
+                    chartTileBaseUrl: normalizeChartTileBase(config.chartTileBaseUrl),
+                });
+            } finally {
+                if (!cancelled)
+                    setMapConfigLoaded(true);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const availableAirframes = useMemo(() => (
@@ -1135,7 +1176,7 @@ export default function HeatMapPage() {
             timestamp,
         });
 
-        const response = await fetchJson.get<unknown>(`/api/protected/event_columns_values?${params.toString()}`).catch(() => null);
+        const response = await fetchJson.get<unknown>(`/api/heatmap/event-columns?${params.toString()}`).catch(() => null);
         if (!response || typeof response !== "object")
             return null;
 
@@ -1257,7 +1298,7 @@ export default function HeatMapPage() {
     }, [handlePopupMouseMove, handlePopupMouseUp]);
 
     useEffect(() => {
-        if (!mapContainerRef.current || mapRef.current)
+        if (!mapConfigLoaded || !mapContainerRef.current || mapRef.current)
             return;
 
         const tileLayers: TileLayer<XYZ>[] = [];
@@ -1534,7 +1575,7 @@ export default function HeatMapPage() {
             selectionFeatureRef.current = null;
             tileLayersByStyleRef.current.clear();
         };
-    }, [applyMapStyle, fetchAndAttachPopupColumns, mapLayerOptions, mapStyle, recalculateDistances]);
+    }, [applyMapStyle, fetchAndAttachPopupColumns, mapConfigLoaded, mapLayerOptions, mapStyle, recalculateDistances]);
 
     useEffect(() => {
         applyMapStyle(mapStyle);
@@ -1590,7 +1631,7 @@ export default function HeatMapPage() {
         if (airframeIDSelected !== ALL_AIRFRAMES_ID)
             params.set("airframe", airframeNameSelected);
 
-        const response = await fetchJson.get<unknown>(`/api/protected/proximity_events_in_box?${params.toString()}`);
+        const response = await fetchJson.get<unknown>(`/api/heatmap/events?${params.toString()}`);
         const rows = Array.isArray(response) ? response : [];
 
         return rows
@@ -1604,7 +1645,7 @@ export default function HeatMapPage() {
             batches.push(eventIds.slice(index, index + BATCH_SIZE));
 
         const responses = await Promise.all(
-            batches.map((batch) => fetchJson.post<BatchResponse>("/api/protected/heatmap_points_batch", { event_ids: batch })),
+            batches.map((batch) => fetchJson.post<BatchResponse>("/api/heatmap/points/batch", { event_ids: batch })),
         );
 
         const rows: Array<{ eventId: number; flightId: number; points: HeatPoint[] }> = [];

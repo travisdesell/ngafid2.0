@@ -2,9 +2,6 @@ package org.ngafid.core.flights.export;
 
 import static org.ngafid.core.flights.export.XPlaneParameters.*;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -171,39 +168,42 @@ public abstract class XPlaneExport {
      * @return an instance of a {@link StringWriter} that contains the export in the
      * respective *.fdr format
      */
-    private StringWriter export() {
-        HashMap<String, Object> scopes = new HashMap<String, Object>();
+    private StringWriter export() throws UnsupportedOperationException {
 
-        scopes.put(ENDL, POSIX_ENDL);
-        scopes.put(TAIL, TAIL.toUpperCase() + "," + flight.getTailNumber() + ",");
-        scopes.put(ACFT, ACFT.toUpperCase() + "," + this.aircraftPath);
-        scopes.put(TIME, TIME.toUpperCase() + "," + this.getTime() + ",");
-        scopes.put(DATE, DATE.toUpperCase() + "," + this.getDate() + ",");
-        // This causes more problems
-        // scopes.put(CALI, CALI.toUpperCase() + "," + this.getGPSCalibration() + ",");
+        throw new UnsupportedOperationException("Depreceated Mustache stuff.");
 
-        this.writeEvents(scopes);
+        // HashMap<String, Object> scopes = new HashMap<>();
 
-        StringBuffer sb = new StringBuffer();
-        this.writeFlightData(sb, scopes);
+        // scopes.put(ENDL, POSIX_ENDL);
+        // scopes.put(TAIL, TAIL.toUpperCase() + "," + flight.getTailNumber() + ",");
+        // scopes.put(ACFT, ACFT.toUpperCase() + "," + this.aircraftPath);
+        // scopes.put(TIME, TIME.toUpperCase() + "," + this.getTime() + ",");
+        // scopes.put(DATE, DATE.toUpperCase() + "," + this.getDate() + ",");
+        // // This causes more problems
+        // // scopes.put(CALI, CALI.toUpperCase() + "," + this.getGPSCalibration() + ",");
 
-        String templateFile = "template.fdr";
+        // this.writeEvents(scopes);
 
-        MustacheFactory mf = new DefaultMustacheFactory();
-        Mustache mustache = mf.compile(templateFile);
+        // StringBuffer sb = new StringBuffer();
+        // this.writeFlightData(sb, scopes);
 
-        scopes.put(DATA, sb.toString());
-        scopes.put(COMM, COMM.toUpperCase() + ",Flight " + flight.getId() + ",");
+        // String templateFile = "template.fdr";
 
-        StringWriter stringOut = new StringWriter();
+        // // MustacheFactory mf = new DefaultMustacheFactory();
+        // // Mustache mustache = mf.compile(templateFile);
 
-        try {
-            mustache.execute(new PrintWriter(stringOut), scopes).flush();
-        } catch (IOException e) {
-            stringOut.write(e.toString());
-        }
+        // scopes.put(DATA, sb.toString());
+        // scopes.put(COMM, COMM.toUpperCase() + ",Flight " + flight.getId() + ",");
 
-        return stringOut;
+        // StringWriter stringOut = new StringWriter();
+
+        // // try {
+        // //     mustache.execute(new PrintWriter(stringOut), scopes).flush();
+        // // } catch (IOException e) {
+        // //     stringOut.write(e.toString());
+        // // }
+
+        // return stringOut;
     }
 
     /**

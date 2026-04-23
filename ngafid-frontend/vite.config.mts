@@ -98,11 +98,6 @@ export default defineConfig((env: ConfigEnv): UserConfig => {
             port: 5173,
             strictPort: true,
             proxy: {
-                '/api/protected': {
-                    target: 'http://localhost:8181',
-                    changeOrigin: true,
-                    rewrite: (urlPath) => urlPath.replace(/^\/api/, ''),
-                },
                 '/api': {
                     target: 'http://localhost:8181',
                     changeOrigin: true

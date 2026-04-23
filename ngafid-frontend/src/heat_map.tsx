@@ -12,7 +12,7 @@
 // =======================
 // SECTION: Imports
 // =======================
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import SignedInNavbar from "./signed_in_navbar";
 import { TimeHeader } from "./time_header.js";
@@ -20,24 +20,22 @@ import { TimeHeader } from "./time_header.js";
 // OpenLayers imports
 import Map from 'ol/Map';
 import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
-import XYZ from 'ol/source/XYZ';
-import DragBox from 'ol/interaction/DragBox';
 import { platformModifierKeyOnly } from 'ol/events/condition';
-import { fromLonLat, toLonLat, getTransform } from 'ol/proj';
+import DragBox from 'ol/interaction/DragBox';
+import TileLayer from 'ol/layer/Tile';
 import 'ol/ol.css';
+import { fromLonLat, getTransform, toLonLat } from 'ol/proj';
+import XYZ from 'ol/source/XYZ';
 
 // Vector and styling imports
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import Polygon from 'ol/geom/Polygon';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import Feature from 'ol/Feature';
-import Polygon from 'ol/geom/Polygon';
-import Point from 'ol/geom/Point';
-import Style from 'ol/style/Style';
 import Fill from 'ol/style/Fill';
 import Icon from 'ol/style/Icon';
-import Circle from 'ol/style/Circle';
-import Stroke from 'ol/style/Stroke';
+import Style from 'ol/style/Style';
 
 // Heatmap and WebGL imports
 import Heatmap from 'ol/layer/Heatmap';
@@ -1939,7 +1937,7 @@ const HeatMapPage: React.FC = () => {
         minSeverity: number;
         maxSeverity: number;
     }) => {
-        let url = `/protected/proximity_events_in_box?`;
+        let url = `/api/heatmap/events?`;
         if (filters.airframe) url += `airframe=${encodeURIComponent(filters.airframe)}&`;
         url += `event_definition_ids=${filters.eventDefinitionIds.join(",")}&` +
             `start_date=${filters.startDate}&end_date=${filters.endDate}&` +
@@ -2005,7 +2003,7 @@ const HeatMapPage: React.FC = () => {
             }
 
             const batchPromises = batches.map((batchIds) =>
-                fetch('/protected/heatmap_points_batch', {
+                fetch('/api/heatmap/points/batch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     credentials: 'include',
@@ -2280,7 +2278,7 @@ const HeatMapPage: React.FC = () => {
      */
     const fetchEventColumnsValues = async (eventId: number, flightId: number, timestamp: string, popupId?: string) => {
         try {
-            const response = await fetch(`/protected/event_columns_values?event_id=${eventId}&flight_id=${flightId}&timestamp=${encodeURIComponent(timestamp)}`, {
+            const response = await fetch(`/api/heatmap/event-columns?event_id=${eventId}&flight_id=${flightId}&timestamp=${encodeURIComponent(timestamp)}`, {
                 credentials: 'include',
                 headers: { 'Accept': 'application/json' }
             });

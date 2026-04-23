@@ -1,16 +1,15 @@
 package org.ngafid.www.routes;
 
-import static java.util.Map.of;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.Gson;
-
-import io.javalin.Javalin;
-import io.javalin.http.Context;
-
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import static java.util.Map.of;
+import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.ngafid.core.Config;
@@ -21,13 +20,24 @@ import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.RateOfClosure;
-import org.ngafid.core.flights.*;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.Itinerary;
+import org.ngafid.core.flights.Parameters;
+import org.ngafid.core.flights.StringTimeSeries;
+import org.ngafid.core.flights.TurnToFinal;
 import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+
+import io.javalin.Javalin;
+import io.javalin.http.Context;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
@@ -990,16 +1000,6 @@ public class AnalysisJavalinRoutes {
         // app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
 
         app.get("/protected/trends", AnalysisJavalinRoutes::getTrends);
-        app.get("/protected/heat_map", AnalysisJavalinRoutes::getHeatMap);
-        app.get(
-                "/protected/heatmap_points_for_event_and_flight",
-                AnalysisJavalinRoutes::getHeatmapPointsForEventAndFlight);
-        app.get("/protected/heatmap_points_for_flight", AnalysisJavalinRoutes::getHeatmapPointsForFlight);
-        app.post("/protected/heatmap_points_batch", AnalysisJavalinRoutes::postHeatmapPointsBatch);
-        app.get("/protected/heatmap_points", AnalysisJavalinRoutes::getHeatmapPoints);
-        app.get("/protected/proximity_events_in_box", AnalysisJavalinRoutes::getProximityEventsInBox);
-        app.get("/protected/event_columns_values", AnalysisJavalinRoutes::getEventColumnsValues);
-        app.get("/protected/test_event_definition", AnalysisJavalinRoutes::testEventDefinition);
 
         // app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
 
