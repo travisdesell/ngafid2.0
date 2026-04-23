@@ -4,12 +4,15 @@ import static java.util.Map.of;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
+
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
+
 import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
@@ -23,6 +26,8 @@ import org.ngafid.core.heatmap.HeatmapPointsProcessor;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
+
+import com.google.gson.JsonSyntaxException;
 
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
@@ -305,7 +310,7 @@ public class AnalysisJavalinRoutes {
     }
 
     public static void getSeverities(Context ctx) {
-        final String templateFile = "severities.html";
+        
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -320,16 +325,15 @@ public class AnalysisJavalinRoutes {
             scopes.put("fleet_info_js", fleetInfo);
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
-            ctx.render(templateFile, scopes);
 
         } catch (Exception e) {
-            LOG.severe(e.toString());
+            LOG.severe(() -> "Error fetching severities: " + e.getMessage());
             ctx.json(new ErrorResponse(e)).status(500);
         }
     }
 
     public static void getTurnToFinal(Context ctx) {
-        final String templateFile = "ttf.html";
+        
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -345,7 +349,7 @@ public class AnalysisJavalinRoutes {
             addAzureMapsKeyToScopes(scopes);
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
-            ctx.render(templateFile, scopes);
+            
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
@@ -389,7 +393,7 @@ public class AnalysisJavalinRoutes {
                 }
             }
         } catch (Exception e) {
-            LOG.warning("TTF fetch failed: " + e.getMessage());
+            LOG.warning(() -> "TTF fetch failed: " + e.getMessage());
             ctx.json(new ErrorResponse(e)).status(500);
             return;
         }
@@ -417,7 +421,7 @@ public class AnalysisJavalinRoutes {
     }
 
     public static void getTrends(Context ctx) {
-        final String templateFile = "trends.html";
+        
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -432,7 +436,7 @@ public class AnalysisJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", fleetInfo);
             ctx.header("Content-Type", "text/html; charset=UTF-8");
-            ctx.render(templateFile, scopes);
+            
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
@@ -440,7 +444,7 @@ public class AnalysisJavalinRoutes {
     }
 
     public static void getHeatMap(Context ctx) {
-        final String templateFile = "heat_map.html";
+        
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
         Map<String, Object> scopes = new HashMap<>();
@@ -459,7 +463,7 @@ public class AnalysisJavalinRoutes {
         addAzureMapsKeyToScopes(scopes);
 
         ctx.header("Content-Type", "text/html; charset=UTF-8");
-        ctx.render(templateFile, scopes);
+        
     }
 
     public static void getHeatmapPointsForEventAndFlight(Context ctx) {
@@ -473,7 +477,7 @@ public class AnalysisJavalinRoutes {
             String flightIdParam = ctx.queryParam("flight_id");
 
             if (eventIdParam == null || flightIdParam == null) {
-                LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
+                LOG.severe(() -> "Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
                 ctx.status(400).result("Missing required parameters: event_id and flight_id");
                 return;
             }
@@ -481,16 +485,16 @@ public class AnalysisJavalinRoutes {
             int eventId = Integer.parseInt(eventIdParam);
             int flightId = Integer.parseInt(flightIdParam);
 
-            LOG.info("Fetching proximity points for event_id=" + eventId + ", flight_id=" + flightId);
+            LOG.info(() -> "Fetching proximity points for event_id=" + eventId + ", flight_id=" + flightId);
 
             Map<String, Object> result =
                     org.ngafid.core.heatmap.HeatmapPointsProcessor.getCoordinates(eventId, flightId);
             ctx.json(result);
         } catch (NumberFormatException e) {
-            LOG.severe("Invalid number format: " + e.getMessage());
+            LOG.severe(() -> "Invalid number format: " + e.getMessage());
             ctx.status(400).result("Invalid number format for event_id or flight_id");
         } catch (Exception e) {
-            LOG.severe("Error fetching proximity points: " + e.getMessage());
+            LOG.severe(() -> "Error fetching proximity points: " + e.getMessage());
             e.printStackTrace();
             ctx.status(500).result("Internal server error: " + e.getMessage());
         }
@@ -507,7 +511,7 @@ public class AnalysisJavalinRoutes {
             String flightIdParam = ctx.queryParam("flight_id");
 
             if (eventIdParam == null || flightIdParam == null) {
-                LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
+                LOG.severe(() -> "Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam);
                 ctx.status(400).result("Missing required parameters: event_id and flight_id");
                 return;
             }
@@ -515,16 +519,16 @@ public class AnalysisJavalinRoutes {
             int eventId = Integer.parseInt(eventIdParam);
             int flightId = Integer.parseInt(flightIdParam);
 
-            LOG.info("Fetching heatmap points for event_id=" + eventId + ", flight_id=" + flightId);
+            LOG.info(() -> "Fetching heatmap points for event_id=" + eventId + ", flight_id=" + flightId);
 
             Map<String, Object> result =
                     org.ngafid.core.heatmap.HeatmapPointsProcessor.getCoordinates(eventId, flightId);
             ctx.json(result);
         } catch (NumberFormatException e) {
-            LOG.severe("Invalid number format: " + e.getMessage());
+            LOG.severe(() -> "Invalid number format: " + e.getMessage());
             ctx.status(400).result("Invalid number format for event_id or flight_id");
         } catch (Exception e) {
-            LOG.severe("Error fetching heatmap points: " + e.getMessage());
+            LOG.severe(() -> "Error fetching heatmap points: " + e.getMessage());
             e.printStackTrace();
             ctx.status(500).result("Internal server error: " + e.getMessage());
         }
@@ -565,8 +569,8 @@ public class AnalysisJavalinRoutes {
             }
             List<Map<String, Object>> results = HeatmapPointsProcessor.getCoordinatesForEventIds(eventIds);
             ctx.json(Map.of("results", results));
-        } catch (Exception e) {
-            LOG.severe("Error in postHeatmapPointsBatch: " + e.getMessage());
+        } catch (JsonSyntaxException e) {
+            LOG.severe(() -> "Error in postHeatmapPointsBatch: " + e.getMessage());
             e.printStackTrace();
             ctx.status(500).result("Internal server error: " + e.getMessage());
         }
@@ -585,7 +589,7 @@ public class AnalysisJavalinRoutes {
             result.put("points", new ArrayList<>());
             ctx.json(result);
         } catch (Exception e) {
-            LOG.severe("Error fetching heatmap points: " + e.getMessage());
+            LOG.severe(() -> "Error fetching heatmap points: " + e.getMessage());
             e.printStackTrace();
             ctx.status(500).result("Internal server error: " + e.getMessage());
         }
@@ -638,8 +642,8 @@ public class AnalysisJavalinRoutes {
                     maxSeverity);
             ctx.json(events);
         } catch (SQLException e) {
-            LOG.severe(e.toString());
-            ctx.status(500).result(e.toString());
+            LOG.severe(() -> "Error fetching proximity events: " + e.getMessage());
+            ctx.status(500).result("Internal server error: " + e.getMessage());
         }
     }
 
@@ -670,8 +674,8 @@ public class AnalysisJavalinRoutes {
                 return;
             }
 
-            Map<String, Object> scopes = new HashMap<String, Object>();
-            Map<String, Object> flights = new HashMap<String, Object>();
+            Map<String, Object> scopes = new HashMap<>();
+            Map<String, Object> flights = new HashMap<>();
 
             for (String flightIdNew : flightIdsAll) {
                 final Flight incomingFlight =
@@ -848,11 +852,6 @@ public class AnalysisJavalinRoutes {
 
             addAzureMapsKeyToScopes(scopes);
 
-            // This is for webpage section
-            final String templateFile = "ngafid_cesium.html";
-            ctx.header("Content-Type", "text/html; charset=UTF-8");
-            ctx.render(templateFile, scopes);
-
         } catch (Exception e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e)).status(500);
@@ -883,7 +882,7 @@ public class AnalysisJavalinRoutes {
                 ctx.result("User did not have access to this flight.");
             }
 
-            LOG.info("getting metrics for flight #" + flightId + " at index " + timeIndex);
+            LOG.info(() -> "Getting metrics for flight #" + flightId + " at index " + timeIndex);
 
             final UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
             List<String> metrics = userPreferences.getFlightMetrics();
@@ -937,7 +936,7 @@ public class AnalysisJavalinRoutes {
             String timestampParam = ctx.queryParam("timestamp");
 
             if (eventIdParam == null || flightIdParam == null || timestampParam == null) {
-                LOG.severe("Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam
+                LOG.severe(() -> "Missing parameters: event_id=" + eventIdParam + ", flight_id=" + flightIdParam
                         + ", timestamp=" + timestampParam);
                 ctx.status(400).result("Missing required parameters: event_id, flight_id, and timestamp");
                 return;
@@ -946,17 +945,17 @@ public class AnalysisJavalinRoutes {
             int eventId = Integer.parseInt(eventIdParam);
             int flightId = Integer.parseInt(flightIdParam);
 
-            LOG.info("Fetching event columns values for event_id=" + eventId + ", flight_id=" + flightId
+            LOG.info(() -> "Fetching event columns values for event_id=" + eventId + ", flight_id=" + flightId
                     + ", timestamp=" + timestampParam);
 
             Map<String, Object> result = org.ngafid.core.heatmap.HeatmapPointsProcessor.getEventColumnsValues(
                     eventId, flightId, timestampParam);
             ctx.json(result);
         } catch (NumberFormatException e) {
-            LOG.severe("Invalid number format: " + e.getMessage());
+            LOG.severe(() -> "Invalid number format: " + e.getMessage());
             ctx.status(400).result("Invalid number format for event_id or flight_id");
         } catch (Exception e) {
-            LOG.severe("Error fetching event columns values: " + e.getMessage());
+            LOG.severe(() -> "Error fetching event columns values: " + e.getMessage());
             e.printStackTrace();
             ctx.status(500).result("Internal server error: " + e.getMessage());
         }

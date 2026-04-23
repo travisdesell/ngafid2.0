@@ -1,7 +1,6 @@
 // ngafid-www/src/main/kotlin/org/ngafid/www/routes/api/CesiumRoutes.kt
 package org.ngafid.www.routes.api
 
-import com.github.mustachejava.DefaultMustacheFactory
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig

@@ -50,12 +50,10 @@ ngafid.docker.runways.file=/mnt/ngafid/runways/runways_parsed.csv
 # =============================================================================
 ngafid.port=8181
 ngafid.static.dir=ngafid-static
-ngafid.mustache.template.dir=${ngafid.static.dir}/templates
 ngafid.disable.persistent.sessions=false
 
 # Docker static directory
 ngafid.docker.static.dir=/mnt/static
-ngafid.docker.mustache.template.dir=/mnt/static/templates
 
 # =============================================================================
 # DATABASE CONFIGURATION

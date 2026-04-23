@@ -25,7 +25,6 @@ public final class Config {
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String NGAFID_STATIC_DIR;
     public static final String NGAFID_TERRAIN_DIR;
-    public static final String MUSTACHE_TEMPLATE_DIR;
     public static final String AIRPORTS_FILE;
     public static final String RUNWAYS_FILE;
     public static final String KAFKA_CONFIG_FILE;
@@ -57,7 +56,6 @@ public final class Config {
         NGAFID_ARCHIVE_DIR = getStringProperty("ngafid.archive.dir");
         NGAFID_STATIC_DIR = getStringProperty("ngafid.static.dir");
         NGAFID_TERRAIN_DIR = getStringProperty("ngafid.terrain.dir");
-        MUSTACHE_TEMPLATE_DIR = NGAFID_STATIC_DIR + "/templates";
         NGAFID_DB_INFO = getStringProperty("ngafid.db.info");
         KAFKA_CONFIG_FILE = getStringProperty("ngafid.kafka.config.file");
         EMAIL_INFO_FILE = getStringProperty("ngafid.email.info");

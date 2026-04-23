@@ -80,7 +80,6 @@ public class JavalinWebServer extends WebServer {
     @Override
     protected void preInitialize() {
         app = Javalin.create(config -> {
-            config.fileRenderer(new MustacheHandler());
 
             config.jsonMapper(new JavalinGson(WebServer.GSON, false));
 

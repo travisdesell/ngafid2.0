@@ -19,7 +19,6 @@ import org.ngafid.core.accounts.Fleet;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.accounts.UserPreferences;
 import org.ngafid.www.ErrorResponse;
-import org.ngafid.www.MustacheHandler;
 import org.ngafid.www.Navbar;
 
 public class AccountJavalinRoutes {
@@ -270,7 +269,6 @@ public class AccountJavalinRoutes {
             fleetnamesJavascript.append("];");
 
             scopes.put("fleetnames_js", fleetnamesJavascript);
-            MustacheHandler.handle(templateFile, scopes);
 
             ctx.header("Content-Type", "text/html; charset=UTF-8");
             ctx.render(templateFile, scopes);
