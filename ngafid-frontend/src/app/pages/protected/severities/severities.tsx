@@ -227,34 +227,34 @@ const MarkerShapeIcon = ({ shape, color }: { shape: (typeof MARKER_SHAPES)[numbe
     const fillStyle = { fill: color, stroke: "rgba(0, 0, 0, 0.55)", strokeWidth: 0.8 } as const;
 
     switch (shape) {
-    case "circle":
-        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><circle cx="8" cy="8" r="4.4" {...fillStyle} /></svg>;
-    case "square":
-        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><rect x="3.2" y="3.2" width="9.6" height="9.6" {...fillStyle} /></svg>;
-    case "cross":
-        return (
-            <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
-                <path d="M6.2 2.5h3.6v3.7h3.7v3.6H9.8v3.7H6.2V9.8H2.5V6.2h3.7z" {...fillStyle} />
-            </svg>
-        );
-    case "triangle":
-        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><polygon points="8,2.2 13.6,13.2 2.4,13.2" {...fillStyle} /></svg>;
-    case "diamond":
-        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><polygon points="8,1.8 14.2,8 8,14.2 1.8,8" {...fillStyle} /></svg>;
-    case "star":
-        return (
-            <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
-                <polygon points="8,1.8 9.9,6 14.4,6 10.8,8.8 12.2,13.1 8,10.5 3.8,13.1 5.2,8.8 1.6,6 6.1,6" {...fillStyle} />
-            </svg>
-        );
-    case "wye":
-        return (
-            <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
-                <path d="M8 8 4 3.2M8 8 12 3.2M8 8v5.2" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-        );
-    default:
-        return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><circle cx="8" cy="8" r="4.4" {...fillStyle} /></svg>;
+        case "circle":
+            return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><circle cx="8" cy="8" r="4.4" {...fillStyle} /></svg>;
+        case "square":
+            return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><rect x="3.2" y="3.2" width="9.6" height="9.6" {...fillStyle} /></svg>;
+        case "cross":
+            return (
+                <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
+                    <path d="M6.2 2.5h3.6v3.7h3.7v3.6H9.8v3.7H6.2V9.8H2.5V6.2h3.7z" {...fillStyle} />
+                </svg>
+            );
+        case "triangle":
+            return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><polygon points="8,2.2 13.6,13.2 2.4,13.2" {...fillStyle} /></svg>;
+        case "diamond":
+            return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><polygon points="8,1.8 14.2,8 8,14.2 1.8,8" {...fillStyle} /></svg>;
+        case "star":
+            return (
+                <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
+                    <polygon points="8,1.8 9.9,6 14.4,6 10.8,8.8 12.2,13.1 8,10.5 3.8,13.1 5.2,8.8 1.6,6 6.1,6" {...fillStyle} />
+                </svg>
+            );
+        case "wye":
+            return (
+                <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0">
+                    <path d="M8 8 4 3.2M8 8 12 3.2M8 8v5.2" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+            );
+        default:
+            return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><circle cx="8" cy="8" r="4.4" {...fillStyle} /></svg>;
     }
 };
 
@@ -750,8 +750,8 @@ export default function SeveritiesPage() {
 
         const primaryFlightId = String(point.flightId);
         const secondaryFlightId = (point.eventDefinitionId === -1) && point.otherFlightId && (String(point.otherFlightId).length > 0)
-                ? String(point.otherFlightId)
-                : null;
+            ? String(point.otherFlightId)
+            : null;
 
         const params = new URLSearchParams();
         if (secondaryFlightId)
@@ -914,92 +914,92 @@ export default function SeveritiesPage() {
                                                             accessibilityLayer
                                                             onClick={handleChartClick}
                                                         >
-                                                        <CartesianGrid vertical={false} />
-                                                        <XAxis
-                                                            type="number"
-                                                            dataKey="x"
-                                                            domain={chartModel.xDomain}
-                                                            tickLine={false}
-                                                            axisLine={false}
-                                                            tickMargin={8}
-                                                            tickFormatter={(value) => formatMonthTick(Number(value))}
-                                                        />
-                                                        <YAxis
-                                                            type="number"
-                                                            dataKey="y"
-                                                            domain={chartModel.yDomain}
-                                                            tickLine={false}
-                                                            axisLine={false}
-                                                            tickMargin={8}
-                                                            tickFormatter={(value) => formatSeverityTick(Number(value))}
-                                                        />
-                                                        <ChartTooltip
-                                                            content={(
-                                                                <ChartTooltipContent
-                                                                    hideLabel
-                                                                    formatter={(_, name, item) => {
+                                                            <CartesianGrid vertical={false} />
+                                                            <XAxis
+                                                                type="number"
+                                                                dataKey="x"
+                                                                domain={chartModel.xDomain}
+                                                                tickLine={false}
+                                                                axisLine={false}
+                                                                tickMargin={8}
+                                                                tickFormatter={(value) => formatMonthTick(Number(value))}
+                                                            />
+                                                            <YAxis
+                                                                type="number"
+                                                                dataKey="y"
+                                                                domain={chartModel.yDomain}
+                                                                tickLine={false}
+                                                                axisLine={false}
+                                                                tickMargin={8}
+                                                                tickFormatter={(value) => formatSeverityTick(Number(value))}
+                                                            />
+                                                            <ChartTooltip
+                                                                content={(
+                                                                    <ChartTooltipContent
+                                                                        hideLabel
+                                                                        formatter={(_, name, item) => {
 
-                                                                        // Scatter payload includes both x and y rows; only render once for y.
-                                                                        if (item?.dataKey !== "y")
-                                                                            return null;
+                                                                            // Scatter payload includes both x and y rows; only render once for y.
+                                                                            if (item?.dataKey !== "y")
+                                                                                return null;
 
-                                                                        const point = item.payload as SeverityPoint;
-                                                                        const seriesMatch = chartModel.series.find(
-                                                                            (series) => series.eventName === point.eventName && series.airframeName === point.airframeName,
-                                                                        );
+                                                                            const point = item.payload as SeverityPoint;
+                                                                            const seriesMatch = chartModel.series.find(
+                                                                                (series) => series.eventName === point.eventName && series.airframeName === point.airframeName,
+                                                                            );
 
-                                                                        const symbol = seriesMatch?.symbol ?? "circle";
-                                                                        const symbolColor = seriesMatch
-                                                                            ? String(chartModel.chartConfig[seriesMatch.seriesKey]?.color ?? item?.color ?? "currentColor")
-                                                                            : String(item?.color ?? "currentColor");
+                                                                            const symbol = seriesMatch?.symbol ?? "circle";
+                                                                            const symbolColor = seriesMatch
+                                                                                ? String(chartModel.chartConfig[seriesMatch.seriesKey]?.color ?? item?.color ?? "currentColor")
+                                                                                : String(item?.color ?? "currentColor");
 
-                                                                        const otherFlightID = (point.otherFlightId?.length ?? 0) > 0 && (point.otherFlightId !== "null")
-                                                                            ? point.otherFlightId
-                                                                            : null;
+                                                                            const otherFlightID = (point.otherFlightId?.length ?? 0) > 0 && (point.otherFlightId !== "null")
+                                                                                ? point.otherFlightId
+                                                                                : null;
 
-                                                                        return (
-                                                                            <div className="grid w-full gap-2 text-xs text-muted-foreground">
-                                                                                <div className="flex items-center gap-1.5 font-mono font-medium tabular-nums text-foreground">
-                                                                                    <MarkerShapeIcon shape={symbol} color={symbolColor} />
-                                                                                    <span>{`Severity: ${point.severity.toFixed(2)}`}</span>
+                                                                            return (
+                                                                                <div className="grid w-full gap-2 text-xs text-muted-foreground">
+                                                                                    <div className="flex items-center gap-1.5 font-mono font-medium tabular-nums text-foreground">
+                                                                                        <MarkerShapeIcon shape={symbol} color={symbolColor} />
+                                                                                        <span>{`Severity: ${point.severity.toFixed(2)}`}</span>
+                                                                                    </div>
+                                                                                    <hr />
+                                                                                    <div>{`Flight ID: ${point.flightId} ${(otherFlightID && Number(otherFlightID) > 0) ? `(Other ID: ${otherFlightID})` : ""}`}</div>
+                                                                                    <div>{`System ID: ${point.systemId}`}</div>
+                                                                                    <div>{`Tail: ${point.tail?.length > 0 ? point.tail : "N/A"}`}</div>
+                                                                                    <hr />
+                                                                                    <div>{`Tag: ${point.tagName || "N/A"}`}</div>
+                                                                                    <hr />
+                                                                                    <div>{`Event Start: ${point.startTime}`}</div>
+                                                                                    <div>{`Event End: ${point.endTime}`}</div>
                                                                                 </div>
-                                                                                <hr />
-                                                                                <div>{`Flight ID: ${point.flightId} ${(otherFlightID && Number(otherFlightID) > 0) ? `(Other ID: ${otherFlightID})` : ""}`}</div>
-                                                                                <div>{`System ID: ${point.systemId}`}</div>
-                                                                                <div>{`Tail: ${point.tail?.length > 0 ? point.tail : "N/A"}`}</div>
-                                                                                <hr />
-                                                                                <div>{`Tag: ${point.tagName || "N/A"}`}</div>
-                                                                                <hr />
-                                                                                <div>{`Event Start: ${point.startTime}`}</div>
-                                                                                <div>{`Event End: ${point.endTime}`}</div>
-                                                                            </div>
-                                                                        );
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        />
-                                                        <ChartLegend
-                                                            className="flex-col items-start ml-8"
-                                                            content={(props) => renderSeveritiesLegendContent(chartModel.chartConfig, chartModel.symbolsBySeries, props.payload as LegendItem[])}
-                                                            layout="vertical"
-                                                            verticalAlign="top"
-                                                            align="right"
-                                                        />
-                                                        {
-                                                            chartModel.series.map((series) => (
-                                                                <Scatter
-                                                                    key={series.seriesKey}
-                                                                    data={series.data}
-                                                                    name={series.seriesKey}
-                                                                    shape={series.symbol as never}
-                                                                    fill={`var(--color-${series.seriesKey})`}
-                                                                    stroke={`rgb(0.0,0.0,0.0)`}
-                                                                    fillOpacity={series.isAny ? 0 : 0.92}
-                                                                    strokeOpacity={series.isAny ? 0.9 : 0.5}
-                                                                    strokeWidth={series.isAny ? 1.8 : 1.2}
-                                                                />
-                                                            ))
-                                                        }
+                                                                            );
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            />
+                                                            <ChartLegend
+                                                                className="flex-col items-start ml-8"
+                                                                content={(props) => renderSeveritiesLegendContent(chartModel.chartConfig, chartModel.symbolsBySeries, props.payload as LegendItem[])}
+                                                                layout="vertical"
+                                                                verticalAlign="top"
+                                                                align="right"
+                                                            />
+                                                            {
+                                                                chartModel.series.map((series) => (
+                                                                    <Scatter
+                                                                        key={series.seriesKey}
+                                                                        data={series.data}
+                                                                        name={series.seriesKey}
+                                                                        shape={series.symbol as never}
+                                                                        fill={`var(--color-${series.seriesKey})`}
+                                                                        stroke={`rgb(0.0,0.0,0.0)`}
+                                                                        fillOpacity={series.isAny ? 0 : 0.92}
+                                                                        strokeOpacity={series.isAny ? 0.9 : 0.5}
+                                                                        strokeWidth={series.isAny ? 1.8 : 1.2}
+                                                                    />
+                                                                ))
+                                                            }
                                                         </ScatterChart>
                                                     </ChartContainer>
                                                 </div>
