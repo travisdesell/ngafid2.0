@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/pages/protected/heatmap/heat_map.tsx
 import PanelAlert from "@/components/panel_alert";
-import { ALL_AIRFRAMES_ID, useAirframes } from "@/components/providers/airframes_provider";
+import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
 import { usePlatform } from "@/components/providers/platform_provider";
 import TimeHeader from "@/components/providers/time_header/time_header";
@@ -43,6 +43,8 @@ import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./heat_map.css";
+import { useModal } from "@/components/modals/modal_context";
+import ErrorModal from "@/components/modals/error_modal";
 
 const log = getLogger("HeatMap", "black", "Page");
 
@@ -688,12 +690,11 @@ export default function HeatMapPage() {
         airframeNameSelected,
         setAirframeNameSelected,
     } = useAirframes();
-
+    const { setModal } = useModal();
     const mapLayerOptions = useMemo(() => buildMapLayerOptions(), []);
 
     const [mapStyle, setMapStyle] = useState<MapStyleName>("Road");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const [eventChecked, setEventChecked] = useState<Record<string, boolean>>(() => {
         const initial: Record<string, boolean> = {};
@@ -1670,39 +1671,61 @@ export default function HeatMapPage() {
     }, []);
 
     const handleApply = useCallback(async () => {
-        setError(null);
+
         setLoading(true);
 
         clearMapLayers();
         setEventPointGroups([]);
 
         try {
+
             const selectedEventNames = getSelectedEventNames();
+
+            // No event names selected -> Error
             if (selectedEventNames.length === 0) {
-                setError("No events selected. Select at least one event.");
+                setModal(ErrorModal, {
+                    title: "No Events Selected",
+                    message: "Please select at least one event type to display on the heat map.",
+                });
                 setLoading(false);
                 return;
+
             }
 
+            // No region selected -> Error
             if (!hasAreaSelected(boxCoords)) {
-                setError("No area selected. Use Ctrl/Cmd + drag on the map to choose a region.");
+                
+                setModal(ErrorModal, {
+                    title: "No Area Selected",
+                    message: "Please select an area on the map by holding Ctrl (or Cmd on Mac) and dragging to create a selection box.",
+                });
                 setLoading(false);
                 return;
+
             }
 
             const definitionIds = selectedEventNames
                 .flatMap((eventName) => EVENT_NAME_TO_DEFINITION_IDS[eventName] ?? [])
                 .filter((id): id is number => Number.isFinite(id));
 
+            // No valid event definition IDs found for selected event names -> Error
             if (definitionIds.length === 0) {
-                setError("No valid event definition IDs selected.");
+                setModal(ErrorModal, {
+                    title: "No Valid Events Selected",
+                    message: "Please select at least one valid event type to display on the heat map.",
+                });
                 setLoading(false);
                 return;
             }
 
             const events = await fetchEvents(definitionIds);
+
+            // No events found for selected constraints -> Error
             if (events.length === 0) {
-                setError("No events found with the selected constraints.");
+                setModal(ErrorModal, {
+                    title: "No Events Found",
+                    message: "No events found with the selected constraints.",
+                });
                 setLoading(false);
                 return;
             }
@@ -1719,13 +1742,19 @@ export default function HeatMapPage() {
                 selectionFeatureRef.current = null;
             }
         } catch (applyError) {
+
             log.error("Failed to apply Heat Map filters:", applyError);
-            setError(String(applyError));
+            setModal(ErrorModal, {
+                title: "Error Applying Filters",
+                message: "An error occurred while applying the heat map filters.",
+            });
             setEventPointGroups([]);
             setEventStatistics({ totalEvents: 0, eventsByType: {} });
+
         } finally {
             setLoading(false);
         }
+
     }, [boxCoords, calculateEventStatistics, clearMapLayers, convertRowsToGroups, fetchEvents, fetchPointsByEventId, getSelectedEventNames, renderEventGroups, showGrid]);
 
     const closePopup = useCallback((popupId: string) => {
@@ -1763,32 +1792,39 @@ export default function HeatMapPage() {
 
                 {/* Time Header */}
                 <TimeHeader onApply={handleApply} dependencies={dependencies}>
-                    <div className="flex flex-col gap-2 min-w-55">
-                        <Label className="text-sm text-muted-foreground">Airframe</Label>
-                        <select
-                            className="h-9 rounded-md border bg-background px-2 text-sm"
-                            value={airframeIDSelected}
-                            onChange={(event) => {
-                                const nextId = Number(event.target.value);
-                                const found = availableAirframes.find((airframe) => airframe.id === nextId);
-                                if (!found)
-                                    return;
 
-                                setAirframeIDSelected(found.id);
-                                setAirframeNameSelected(found.name);
+                    {/* Airframe Type Selection */}
+                    <div className="flex flex-col gap-2">
+                        <Label>Airframe Type</Label>
+                        <Select
+                            value={airframeIDSelected.toString()}
+                            onValueChange={(value) => {
+                                const id = parseInt(value, 10);
+                                setAirframeIDSelected(id);
+
+                                const selected = availableAirframes.find((airframe) => airframe.id === id);
+                                setAirframeNameSelected(selected?.name ?? ALL_AIRFRAMES_NAME);
                             }}
                         >
-                            {
-                                availableAirframes.map((airframe) => (
-                                    <option key={airframe.id} value={airframe.id}>{airframe.name}</option>
-                                ))
-                            }
-                        </select>
+                            <Button asChild variant="outline">
+                                <SelectTrigger className="w-55">
+                                    <SelectValue placeholder="Select Airframe" />
+                                </SelectTrigger>
+                            </Button>
+                            <SelectContent>
+                                {availableAirframes.map((airframe) => (
+                                    <SelectItem key={airframe.id} value={airframe.id.toString()}>
+                                        {airframe.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
+                    {/* Selected Bounds */}
                     <div className="flex flex-col gap-2 min-w-65">
-                        <Label className="text-sm text-muted-foreground">Selected Bounds</Label>
-                        <div className="text-xs grid grid-cols-2 gap-x-2 gap-y-1 text-muted-foreground">
+                        <Label className="text-sm">Selected Bounds</Label>
+                        <div className="text-xs grid grid-cols-2 gap-x-2 gap-y-1">
                             <span>Min Lat: {boxCoords.minLat || "--"}</span>
                             <span>Max Lat: {boxCoords.maxLat || "--"}</span>
                             <span>Min Lon: {boxCoords.minLon || "--"}</span>
@@ -1796,11 +1832,12 @@ export default function HeatMapPage() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 min-w-70">
-                        <Label className="text-sm text-muted-foreground">Severity Range</Label>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {/* Severity Range */}
+                    <div className="flex flex-col gap-2 w-70">
+                        <Label className="text-sm">Severity Range</Label>
+                        <div className="flex items-center justify-between gap-2 text-xs w-full">
                             <span>{displayMinSeverity}</span>
-                            <Separator className="w-8" />
+                            <hr className="bg-muted w-full"/>
                             <span>{displayMaxSeverity}</span>
                         </div>
                         <Slider
@@ -1818,18 +1855,6 @@ export default function HeatMapPage() {
                         />
                     </div>
                 </TimeHeader>
-
-                {/* Error Message */}
-                {
-                    (error)
-                    && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Heat Map Error</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )
-                }
 
                 {/* Main Content */}
                 <div className="flex w-full flex-1 min-h-0 gap-2">
@@ -1992,7 +2017,7 @@ export default function HeatMapPage() {
                             }
 
                             {
-                                (!loading && !error && !heatmapDataLoaded)
+                                (!loading && !heatmapDataLoaded)
                                 && (
                                     <PanelAlert
                                         isMap

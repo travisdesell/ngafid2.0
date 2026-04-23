@@ -106,11 +106,7 @@ public class JavalinWebServer extends WebServer {
         });
 
         StatusJavalinRoutes.bindRoutes(app);
-
-        // Transitional support for Heat Map data endpoints (WIP)
-        app.post("/protected/heatmap_points_batch", AnalysisJavalinRoutes::postHeatmapPointsBatch);
-        app.get("/protected/proximity_events_in_box", AnalysisJavalinRoutes::getProximityEventsInBox);
-        app.get("/protected/event_columns_values", AnalysisJavalinRoutes::getEventColumnsValues);
+        AnalysisJavalinRoutes.bindRoutes(app);
         
     }
 
@@ -146,7 +142,7 @@ public class JavalinWebServer extends WebServer {
         super.configureLogging();
 
         app.unsafeConfig().requestLogger.http((ctx, ms) -> {
-            LOG.info(ctx.method() + " " + ctx.path() + " took " + ms + "ms");
+            LOG.info(() -> ctx.method() + " " + ctx.path() + " took " + ms + "ms");
         });
     }
 
@@ -226,7 +222,7 @@ public class JavalinWebServer extends WebServer {
     protected void configureExceptions() {
         // will only execute of a more specific handler is not found
         app.exception(Exception.class, (e, ctx) -> {
-            LOG.info("Encountered exception: " + e.getMessage());
+            LOG.info(() -> "Encountered exception: " + e.getMessage());
             e.printStackTrace();
             ctx.json(new ErrorResponse(e));
             ctx.status(500);
