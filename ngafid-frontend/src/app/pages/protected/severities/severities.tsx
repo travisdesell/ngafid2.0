@@ -758,7 +758,7 @@ export default function SeveritiesPage() {
             params.append("flight_id", secondaryFlightId);
         params.append("flight_id", primaryFlightId);
 
-        window.open(`/protected/flight?${params.toString()}`, "_blank", "noopener");
+        window.open(`/protected/flights?${params.toString()}`, "_blank", "noopener");
     };
 
     const anyEventDisabled = !hasApplied || nonAnyEventNames.every((name) => eventsEmpty[name] ?? true);

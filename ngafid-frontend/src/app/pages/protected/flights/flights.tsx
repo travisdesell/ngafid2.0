@@ -222,8 +222,53 @@ export default function FlightsPage() {
     function parseFilterFromURL(): { filter?: Filter; outcome: "ok" | "error" | "none" } {
 
         try {
+
             const params = new URLSearchParams(window.location.search);
 
+            /*
+                1.
+                Attempt to parse provided Flight IDs first (e.g., 'http://.../protected/flights?flight_id=1337&flight_id=7331')
+            */
+            const flightIdParams = params.getAll("flight_id");
+            if (flightIdParams && flightIdParams.length > 0) {
+
+                const rules: FilterRule[] = flightIdParams.map((id) => ({
+                    id: SPECIAL_FILTER_GROUP_ID,
+                    name: "Flight ID",
+                    conditions: [
+                        {
+                            type: "select",
+                            name: "condition",
+                            options: ["="],
+                            value: "=",
+                        } as FilterCondition,
+                        {
+                            type: "number",
+                            name: "number",
+                            value: id,
+                        } as FilterCondition,
+                    ],
+                }));
+
+                const filterFromIDs: Filter = {
+                    id: newID(),
+                    operator: "AND",
+                    groups: [{
+                        id: SPECIAL_FILTER_GROUP_ID,
+                        operator: "OR",
+                        rules,
+                        groups: [],
+                    }]
+                };
+
+                return { filter: filterFromIDs, outcome: "ok" };
+
+            }
+
+            /*
+                2.
+                Attempt to parse encoded filter from URL parameter 'f' (e.g., 'http://.../protected/flights?f=XYZABC123...').
+            */
             const filterURLParam = params.get("f");
 
             // No filter param -> Nothing to do
@@ -276,15 +321,19 @@ export default function FlightsPage() {
         }
 
         if (outcome === "ok") {
+
             setModal(SuccessModal, {
                 title: "Filter Loaded from URL",
                 message: "Successfully loaded filter from URL parameter.",
             });
+
         } else if (outcome === "error") {
+
             setModal(ErrorModal, {
                 title: "Error Loading Filter from URL",
                 message: "There was an error loading the filter from the URL. An empty filter has been loaded instead.",
             });
+
         }
         
     }, []);
