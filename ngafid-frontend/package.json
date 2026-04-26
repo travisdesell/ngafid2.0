@@ -73,6 +73,7 @@
         "@radix-ui/react-tooltip": "^1.2.8",
         "@tailwindcss/postcss": "^4.1.13",
         "@tanstack/react-virtual": "^3.13.13",
+        "@uidotdev/usehooks": "^2.4.1",
         "@uiw/react-color-colorful": "^2.9.0",
         "assert": "^2.1.0",
         "autoprefixer": "^10.4.21",
