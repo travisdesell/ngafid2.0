@@ -16,13 +16,31 @@ import {
 } from "@/components/ui/chart";
 import { useTheme } from "@/components/providers/theme-provider";
 
-const chartData = [
-    { fleet: "selected_range", events: 42902, fill: "var(--color-selected_range)" },
-    { fleet: "all_time", events: 2148524, fill: "var(--color-all_time)" },
-];
+// const chartData = [
+//     { fleet: "selected_range", events: 42902, fill: "var(--color-selected_range)" },
+//     { fleet: "all_time", events: 2148524, fill: "var(--color-all_time)" },
+// ];
+
+type DataItem = {
+    label: string;
+    count: number;
+    fill: string;
+}
+
+type ChartSummaryEventTotalsProps = {
+    selectedPercentage: number;
+    data: [DataItem, DataItem];
+}
 
 
-export function ChartSummaryEventTotals() {
+export function ChartSummaryEventTotals(props : ChartSummaryEventTotalsProps) {
+
+    const { selectedPercentage } = props;
+    const chartData = props.data.map(item => ({
+        fleet: item.label,
+        events: item.count,
+        fill: item.fill,
+    }));
 
     const { useHighContrastCharts } = useTheme();
 
@@ -34,7 +52,7 @@ export function ChartSummaryEventTotals() {
             color: allTimeColor,
         },
         selected_range: {
-            label: "Selected Range",
+            label: `Selected Range (${selectedPercentage.toFixed(1)}%)`,
             color: selectedRangeColor,
         },
     } satisfies ChartConfig;

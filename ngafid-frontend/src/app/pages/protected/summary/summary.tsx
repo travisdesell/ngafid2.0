@@ -62,20 +62,25 @@ export default function SummaryPage() {
     const [uploadStatistics, setUploadStatistics] = useState<UploadStatistics | null>(null);
     const [flightImportStatistics, setFlightImportStatistics] = useState<FlightImportStatistics | null>(null);
     const [eventCountsByAirframe, setEventCountsByAirframe] = useState<AirframeEventCounts[]>([]);
+    const [eventTotalsSelectedRange, setEventTotalsSelectedRange] = useState<number>(0);
+    const [eventTotalsAllTime, setEventTotalsAllTime] = useState<number>(0);
 
     const fetchAllSummaryData = () => {
 
-        //Fetch airframe flight hours / flight count
+        // Fetch airframe flight hours / flight count
         fetchFlightHoursByAirframe();
 
-        //Fetch upload statistics
+        // Fetch upload statistics
         fetchUploadStatistics();
 
-        //Fetch flight import statistics
+        // Fetch flight import statistics
         fetchFlightImportStatistics();
 
-        //Fetch event counts by airframe
+        // Fetch event counts by airframe
         fetchEventCountsByAirframe();
+
+        // Fetch event totals (time ranges and fleets)
+        fetchEventTotals();
 
     }
 
@@ -243,6 +248,49 @@ export default function SummaryPage() {
 
     }
 
+    const fetchEventTotals = async () => {
+
+        /*
+            First Ranges:
+            - Selected Time Range
+            - All Time
+        */
+        log("Fetching event totals (time ranges)...");
+        const params = new URLSearchParams({
+            startDate: endpointStartDate,
+            endDate: endpointEndDate,
+            airframeID: airframeIDSelected.toString()
+        });
+
+        const selectedRangeCountPromise = fetchJson.get<number>(
+            "/api/event/count",
+            {params}
+        ).catch((error) => {
+            setModal(ErrorModal, { title: "Error fetching event totals for selected range", message: error.toString() });
+            return 0;
+        });
+
+        const allTimeCountPromise = fetchJson.get<number>(
+            "/api/event/count",
+        ).catch((error) => {
+            setModal(ErrorModal, { title: "Error fetching all-time event totals", message: error.toString() });
+            return 0;
+        });
+
+        const [selectedRangeCount, allTimeCount] = await Promise.all([selectedRangeCountPromise, allTimeCountPromise]);
+        log("Fetched event totals:", { selectedRangeCount, allTimeCount });
+
+        setEventTotalsSelectedRange(selectedRangeCount ?? 0);
+        setEventTotalsAllTime(allTimeCount ?? 0);
+
+        /*
+            Second Ranges:
+            - This Fleet (All time)
+            - All Fleets (All time)
+        */
+        log("Fetching event totals (fleets)...");
+
+    }
 
     const renderSummaryBadge = (icon: React.ReactNode, label: string, value: string | number, color?: string) => (
 
@@ -464,11 +512,11 @@ export default function SummaryPage() {
 
                                 <CardHeader>
                                     <CardTitle className="flex justify-between">
-                                        Event Totals (WIP)
+                                        Event Totals
                                         {renderDateRangeMonthly()}
                                     </CardTitle>
                                     <CardDescription>
-                                        Total event count for this fleet.
+                                        Total event counts for this time range/fleet versus all time/all fleets.
                                     </CardDescription>
                         
                                 </CardHeader>
@@ -476,7 +524,20 @@ export default function SummaryPage() {
                                 <CardContent className="flex">
 
                                     {/* Event Totals Chart */}
-                                    <ChartSummaryEventTotals />
+                                    <ChartSummaryEventTotals
+                                        selectedPercentage={(eventTotalsAllTime > 0) ? (eventTotalsSelectedRange / eventTotalsAllTime) * 100 : 0}
+                                        data={[
+                                        {
+                                            label: "selected_range",
+                                            count: eventTotalsSelectedRange,
+                                            fill: "var(--color-selected_range)"
+                                        },
+                                        {
+                                            label: "all_time",
+                                            count: (eventTotalsAllTime - eventTotalsSelectedRange),
+                                            fill: "var(--color-all_time)"
+                                        }
+                                    ]} />
 
                                     {/* Event Totals Chart (ALT) */}
                                     <ChartSummaryEventTotalsCopy />
