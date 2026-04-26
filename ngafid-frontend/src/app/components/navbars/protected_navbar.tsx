@@ -259,12 +259,12 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             <DropdownMenuSeparator />
 
                             {/* Fleet Management */}
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem asChild disabled>
                                 <Link to="/protected/manage_fleet">
                                     Manage Fleet
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem asChild disabled>
                                 <Link to="/protected/system_ids">
                                     Manage Tail Numbers
                                 </Link>
@@ -272,12 +272,12 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
 
                             {/* Account Management */}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem asChild disabled>
                                 <Link to="/protected/preferences">
                                     My Preferences
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem asChild disabled>
                                 <Link to="/protected/update_profile">
                                     Update Profile
                                 </Link>
