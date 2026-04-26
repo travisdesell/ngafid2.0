@@ -1152,8 +1152,8 @@ export function FlightsPanelChart() {
             labelingEnabledFlights.forEach((flight, index) => {
                 if (!next[flight.id]) {
                     next[flight.id] = {
-                        left: 8 + (index * 28),
-                        top: 8 + (index * 28),
+                        left: 64 + (index * 32),
+                        top: 256 + (index * 32),
                     };
                 }
             });
@@ -2778,8 +2778,8 @@ export function FlightsPanelChart() {
                         labelingEnabledFlights.map((flight, index) => {
 
                             const defaultPosition = {
-                                left: 8 + (index * 28),
-                                top: 8 + (index * 28),
+                                left: 64 + (index * 32),
+                                top: 256 + (index * 32),
                             };
                             const position = labelingCardPositionByFlight[flight.id] ?? defaultPosition;
 

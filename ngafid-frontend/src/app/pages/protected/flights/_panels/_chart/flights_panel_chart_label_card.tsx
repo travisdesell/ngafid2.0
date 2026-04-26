@@ -1,5 +1,6 @@
 // ngafid-frontend/src/app/pages/protected/flights/_panels/_chart/flights_panel_chart_label_card.tsx
 
+import { ColorPicker } from "@/components/color_picker";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,32 +67,6 @@ const formatElapsed = (secondsRaw: number): string => {
         return `${m}:${String(s).padStart(2, "0")}`;
 
     return `${s}s`;
-};
-
-const formatSectionDateTime = (rawTime: number): { datePart: string; timePart: string; } => {
-
-    // Invalid number, display as empty
-    if (!Number.isFinite(rawTime))
-        return { datePart: "-", timePart: "" };
-
-    // Unix timestamp seconds
-    const EPOCH_THRESHOLD = 1e9;
-    if (rawTime >= EPOCH_THRESHOLD) {
-
-        const out = formatDateLocal(new Date(rawTime * 1000));
-        const splitAt = out.indexOf(" ");
-        if (splitAt > 0) {
-            return {
-                datePart: out.slice(0, splitAt),
-                timePart: out.slice(splitAt + 1),
-            };
-        }
-        return { datePart: out, timePart: "" };
-
-    }
-
-    return { datePart: formatElapsed(rawTime), timePart: "" };
-
 };
 
 const formatNumericValue = (value: number): string => {
@@ -289,14 +264,13 @@ export default function FlightsPanelChartLabelCard({
                                         onClick={(e) => e.stopPropagation()}
                                     />
 
-                                    {/* Label Marker */}
-                                    <span
-                                        className="absolute -left-2 -top-2 h-4 aspect-square rounded-none rotate-45 border border-background opacity-75"
-                                        style={{
-                                            background: LABELING_MARKER_COLORS[i % LABELING_MARKER_COLORS.length],
-                                        }}
-                                        title={`Section ${i + 1}`}
+                                    {/* Label Marker / Color Picker */}
+                                    <ColorPicker
+                                        value={LABELING_MARKER_COLORS[i % LABELING_MARKER_COLORS.length]}
+                                        onChange={() => { }}
+                                        className="absolute -left-5 -top-5.25 rotate-45"
                                     />
+
                                 </td>
 
                                 {/* Start/End Date & Time */}
