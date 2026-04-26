@@ -23,7 +23,7 @@ type CommandModalContentProps = {
 export default function CommandModalContent({ submitCommand, inputRef }: CommandModalContentProps) {
 
     const { pageCommands } = useCommands();
-    const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts, useBackgroundImage, setUseBackgroundImage, useNavbarPageNames, setUseNavbarPageNames } = useTheme();
+    const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts, invertBackgroundImage, setInvertBackgroundImage, useNavbarPageNames, setUseNavbarPageNames } = useTheme();
     const { setModal } = useModal();
     const { user, attemptLogOut } = useAuth();
     const [previousCommandData, setPreviousCommandData] = useState<null|CommandData>(null);
@@ -260,20 +260,20 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         toggleState={useHighContrastCharts}
                     />
 
-                    {/* Toggle Background Image */}
+                    {/* Invert Background Image */}
                     <CommandModalContentItem
                         submitCommand={submitCommand}
-                        name="Toggle Background Image"
-                        command={() => setUseBackgroundImage(!useBackgroundImage)}
+                        name="Invert Background Image"
+                        command={() => setInvertBackgroundImage(!invertBackgroundImage)}
                         Icon={Image}
                         hotkey="Ctrl+Alt+B"
-                        toggleState={useBackgroundImage}
+                        toggleState={invertBackgroundImage}
                     />
 
                     {/* Toggle Navbar Page Names */}
                     <CommandModalContentItem
                         submitCommand={submitCommand}
-                        name="Toggle Navbar Page Names"
+                        name="Navbar Page Names"
                         command={() => setUseNavbarPageNames(!useNavbarPageNames)}
                         Icon={Menu}
                         hotkey="Ctrl+Alt+N"

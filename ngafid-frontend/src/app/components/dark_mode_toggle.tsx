@@ -144,12 +144,12 @@ export function DarkModeToggle() {
                     </ContextMenuItem>
                     <Separator />
 
-                    {/* Toggle Background Image */}
+                    {/* Toggle Invert Background Image */}
                     <ContextMenuItem
                         className="p-3"
                         onClick={() => setInvertBackgroundImage(!invertBackgroundImage)}
                     >
-                        Invert Background Image
+                        Toggle Invert Background Image
                         <Checkbox
                             checked={invertBackgroundImage}
                             className="ml-auto pointer-events-none"
