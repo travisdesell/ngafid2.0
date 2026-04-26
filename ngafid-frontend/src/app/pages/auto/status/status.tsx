@@ -54,7 +54,6 @@ type StatusResponse = {
 const STATUS_DEFAULT = StatusName.UNKNOWN;
 const STATUS_DEFAULT_MESSAGE = "No message available...";
 
-const STATUS_NAMES_LIST_KAFKA = ["flight-processing", "event-processing", "kafka", "chart-service"] as const;
 const STATUS_NAMES_LIST_DATABASE = ["database"] as const;
 const STATUS_NAMES_LIST_DOCKER = ["ngafid-email-consumer", "ngafid-event-consumer", "ngafid-event-observer", "ngafid-upload-consumer"] as const;
 
@@ -132,22 +131,12 @@ export default function Status() {
     const { setModal } = useModal();
 
     
-    const [kafkaEntries, setKafkaEntries] = React.useState<StatusEntry[]>(
-        () => STATUS_NAMES_LIST_KAFKA.map((name) => makeEntry(name))
-    );
     const [databaseEntries, setDatabaseEntries] = React.useState<StatusEntry[]>(
         () => STATUS_NAMES_LIST_DATABASE.map((name) => makeEntry(name))
     );
     const [dockerEntries, setDockerEntries] = React.useState<StatusEntry[]>(
         () => STATUS_NAMES_LIST_DOCKER.map((name) => makeEntry(name, (displayName) => displayName.replace(/^Ngafid/i, "")))
     );
-
-    const kafkaEntriesOKCount = kafkaEntries.filter((entry) => entry.status.name === StatusName.OK).length;
-    const allKafkaEntriesOK = (kafkaEntriesOKCount === kafkaEntries.length);
-    const allKafkaEntriesUnchecked = (kafkaEntries.every((entry) => entry.status.name === StatusName.UNCHECKED));
-    const kafkaEntriesStatusColor = (allKafkaEntriesOK)
-        ? PingColor.GREEN
-        : (allKafkaEntriesUnchecked ? PingColor.NEUTRAL : (kafkaEntriesOKCount > 0 ? PingColor.AMBER : PingColor.RED));
 
     const databaseEntriesOKCount = databaseEntries.filter((entry) => entry.status.name === StatusName.OK).length;
     const allDatabaseEntriesOK = (databaseEntriesOKCount === databaseEntries.length);
@@ -257,9 +246,6 @@ export default function Status() {
                     setDockerEntries((prev) =>
                         prev.map((e) => (e.name === entry.name ? entry : e))
                     );
-                    setKafkaEntries((prev) =>
-                        prev.map((e) => (e.name === entry.name ? entry : e))
-                    );
 
                 }
                 // animateMessage(entryOut, animationDelay);
@@ -273,16 +259,14 @@ export default function Status() {
 
         };
 
-        // Fetch both Kafka and Docker statuses in parallel
+        // Fetch both Database & Docker statuses in parallel
         (async () => {
             try {
-                const [kafka, database, docker] = await Promise.all([
-                    fetchStatuses(STATUS_NAMES_LIST_KAFKA),
+                const [database, docker] = await Promise.all([
                     fetchStatuses(STATUS_NAMES_LIST_DATABASE),
                     fetchStatuses(STATUS_NAMES_LIST_DOCKER),
                 ]);
                 if (!abort.signal.aborted) {
-                    setKafkaEntries(kafka);
                     setDatabaseEntries(database);
                     setDockerEntries(docker);
                 }
@@ -299,32 +283,6 @@ export default function Status() {
         <div className="page-container">
 
             <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full max-w-7xl min-h-screen py-8">
-
-                {/* Kafka Services */}
-                <Card className="relative card-glossy h-80 w-full self-center my-auto">
-
-                    <Ping color={kafkaEntriesStatusColor} />
-
-                    <CardHeader>
-                        <CardTitle>Kafka Services</CardTitle>
-                        <CardDescription>Displays the status of all back-end Kafka services.</CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="overflow-y-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[256px]">Service</TableHead>
-                                    <TableHead className="w-[256px]">Status</TableHead>
-                                    <TableHead>Message</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <StatusEntries entries={kafkaEntries} />
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
 
                 {/* Database Services */}
                 <Card className="relative card-glossy h-64 w-full self-center my-auto">
