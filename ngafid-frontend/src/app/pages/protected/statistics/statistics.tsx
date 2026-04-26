@@ -343,7 +343,7 @@ function AirframeStatisticsCard({ airframeId, airframeName }: AirframeStatistics
 					<div className="flex flex-col gap-1">
 						<CardTitle className="text-xl">{airframeName} Event Statistics</CardTitle>
 						<CardDescription>
-							Expand to view per-event monthly statistics for your fleet versus other fleets.
+							Expand to view per-event monthly statistics for this fleet versus other fleets.
 						</CardDescription>
 					</div>
 					<Button
@@ -429,7 +429,7 @@ function AirframeStatisticsCard({ airframeId, airframeName }: AirframeStatistics
 												<TableRow>
 													<TableHead rowSpan={2} className="whitespace-nowrap">Period</TableHead>
 													<TableHead colSpan={4} className="text-center border-r border-border pr-6">
-														Your Fleet
+														This Fleet
 													</TableHead>
 													<TableHead colSpan={4} className="text-center">
 														Other Fleets

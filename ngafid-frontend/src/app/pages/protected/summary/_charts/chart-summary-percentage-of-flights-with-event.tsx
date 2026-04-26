@@ -38,7 +38,7 @@ type PercentageChartDatum = {
 };
 
 const SERIES_LABELS: Record<string, string> = {
-    fleetPercent: "Your Fleet",
+    fleetPercent: "This Fleet",
     aggregatePercent: "All Fleets",
 };
 
@@ -113,7 +113,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
 
     const chartConfig = {
         fleetPercent: {
-            label: "Your Fleet",
+            label: "This Fleet",
             color: useHighContrastCharts ? "var(--chart-hc-1)" : "var(--chart-1)",
         },
         aggregatePercent: {
@@ -147,7 +147,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
                     {renderDateRangeMonthly()}
                 </CardTitle>
                 <CardDescription>
-                    Percentage of flights with at least one event for your fleet versus all fleets, grouped by event type.
+                    Percentage of flights with at least one event for this fleet versus all fleets, grouped by event type.
                 </CardDescription>
             </CardHeader>
 

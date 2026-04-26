@@ -428,7 +428,7 @@ export default function TrendsPage() {
             if (!isAggregatePage) {
                 const fleetKey = `pct_fleet_${eventName}`.replace(/[^a-zA-Z0-9_]+/g, "_");
                 percentConfig[fleetKey] = {
-                    label: `${eventName} - Your Fleet`,
+                    label: `${eventName} - This Fleet`,
                     color: colorTokenName(percentSeriesIndex),
                 };
                 percentSeriesIndex += 1;
@@ -570,7 +570,7 @@ export default function TrendsPage() {
                     {
                         isAggregatePage
                             ? "Monthly percentage of flights with selected events across all fleets."
-                            : "Monthly percentage of flights with selected events for your fleet vs all other fleets."
+                            : "Monthly percentage of flights with selected events for this fleet vs all other fleets."
                     }
                 </CardDescription>
             </CardHeader>
@@ -657,7 +657,7 @@ export default function TrendsPage() {
                     {
                         isAggregatePage
                             ? "Monthly count of selected events across all fleets."
-                            : "Monthly count of selected events for your fleet vs all other fleets."
+                            : "Monthly count of selected events for this fleet vs all other fleets."
                     }
                 </CardDescription>
             </CardHeader>

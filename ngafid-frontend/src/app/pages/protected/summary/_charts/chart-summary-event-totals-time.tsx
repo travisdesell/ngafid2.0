@@ -1,8 +1,9 @@
-// ngafid-frontend/src/app/pages/summary/charts/chart-summary-event-totals.tsx
+// ngafid-frontend/src/app/pages/summary/charts/chart-summary-event-totals-time.tsx
 "use client"
 
-import { Legend, Pie, PieChart } from "recharts";
+import { Pie, PieChart } from "recharts";
 
+import { useTheme } from "@/components/providers/theme-provider";
 import {
     CardContent,
 } from "@/components/ui/card";
@@ -14,12 +15,6 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
-import { useTheme } from "@/components/providers/theme-provider";
-
-// const chartData = [
-//     { fleet: "selected_range", events: 42902, fill: "var(--color-selected_range)" },
-//     { fleet: "all_time", events: 2148524, fill: "var(--color-all_time)" },
-// ];
 
 type DataItem = {
     label: string;
@@ -27,13 +22,13 @@ type DataItem = {
     fill: string;
 }
 
-type ChartSummaryEventTotalsProps = {
+type ChartSummaryEventTotalsTimeProps = {
     selectedPercentage: number;
     data: [DataItem, DataItem];
 }
 
 
-export function ChartSummaryEventTotals(props : ChartSummaryEventTotalsProps) {
+export function ChartSummaryEventTotalsTime(props : ChartSummaryEventTotalsTimeProps) {
 
     const { selectedPercentage } = props;
     const chartData = props.data.map(item => ({
@@ -47,8 +42,8 @@ export function ChartSummaryEventTotals(props : ChartSummaryEventTotalsProps) {
     const allTimeColor = useHighContrastCharts ? "var(--chart-hc-1)" : "var(--chart-1)";
     const selectedRangeColor = useHighContrastCharts ? "var(--chart-hc-2)" : "var(--chart-2)";
     const chartConfig = {
-        all_time: {
-            label: "All Time",
+        'all_time': {
+            label: "All Time (Unselected)",
             color: allTimeColor,
         },
         selected_range: {
