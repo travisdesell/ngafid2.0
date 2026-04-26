@@ -261,7 +261,7 @@ type ProviderEntry<P = any> =
     [React.ComponentType<React.PropsWithChildren<P>>, P];
 
 const providerTree: ProviderEntry[] = [
-    [ThemeProvider, { defaultTheme: "system", storageKey: "theme" }],
+    [ThemeProvider, { defaultTheme: "system" }],
     [PlatformProvider, {}],
     [TooltipProvider, { delayDuration: 0, skipDelayDuration: 0 }],
     [ModalProvider, {}],

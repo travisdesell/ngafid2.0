@@ -149,7 +149,7 @@ export function DarkModeToggle() {
                         className="p-3"
                         onClick={() => setInvertBackgroundImage(!invertBackgroundImage)}
                     >
-                        Toggle Invert Background Image
+                        Invert Background Image
                         <Checkbox
                             checked={invertBackgroundImage}
                             className="ml-auto pointer-events-none"

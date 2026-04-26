@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/components/providers/theme-provider.tsx
 import { getLogger } from "@/components/providers/logger";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useLocalStorage } from "@uidotdev/usehooks";
 
 const log = getLogger("ThemeProvider", "fuchsia", "Provider");
 
@@ -33,15 +34,13 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 export function ThemeProvider({
     children,
     defaultTheme = "system",
-    storageKey = "vite-ui-theme",
     ...props
 }: ThemeProviderProps) {
 
-    const themeDefault = (localStorage.getItem(storageKey) as Theme) || defaultTheme;
-    const [theme, setTheme] = useState<Theme>(themeDefault);
-    const [useHighContrastCharts, setUseHighContrastCharts] = useState<boolean>(false);
-    const [invertBackgroundImage, setInvertBackgroundImage] = useState<boolean>(false);
-    const [useNavbarPageNames, setUseNavbarPageNames] = useState<boolean>(true);
+    const [theme, setTheme] = useLocalStorage<Theme>("ngafid-theme", defaultTheme);
+    const [useHighContrastCharts, setUseHighContrastCharts] = useLocalStorage<boolean>("ngafid-use-high-contrast-charts", false);
+    const [invertBackgroundImage, setInvertBackgroundImage] = useLocalStorage<boolean>("ngafid-invert-background-image", true);
+    const [useNavbarPageNames, setUseNavbarPageNames] = useLocalStorage<boolean>("ngafid-use-navbar-page-names", true);
 
     useEffect(() => {
 
@@ -67,10 +66,7 @@ export function ThemeProvider({
 
     const value = {
         theme,
-        setTheme: (theme: Theme) => {
-            localStorage.setItem(storageKey, theme)
-            setTheme(theme)
-        },
+        setTheme,
         useHighContrastCharts, setUseHighContrastCharts,
         invertBackgroundImage, setInvertBackgroundImage,
         useNavbarPageNames, setUseNavbarPageNames,
