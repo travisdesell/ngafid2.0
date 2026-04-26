@@ -701,11 +701,13 @@ export default function RegisterModal({ setModal }: ModalProps) {
                                                 (fleetList.length > 0)
                                                 ?
                                                 <>
-                                                <Label htmlFor="fleetTarget">Fleet Target</Label>
+                                                    <Label htmlFor="fleetTarget">Fleet Target</Label>
                                                     <Select onValueChange={(value) => setSelectedFleetName(value)} value={selectedFleetName} disabled={fleetList.length === 0}>
-                                                        <SelectTrigger id="fleetTarget" className="w-full">
-                                                            <SelectValue className="text-muted-foreground" placeholder="Select a fleet (required)" />
-                                                        </SelectTrigger>
+                                                        <Button asChild variant="outline" className="w-full max-w-full overflow-hidden">
+                                                            <SelectTrigger id="fleetTarget" className="w-full text-ellipsis">
+                                                                <SelectValue placeholder="Select a fleet" />
+                                                            </SelectTrigger>
+                                                        </Button>
                                                         <SelectContent className="max-h-[300px] overflow-y-auto">
                                                             {
                                                                 (fleetList.length === 0)
