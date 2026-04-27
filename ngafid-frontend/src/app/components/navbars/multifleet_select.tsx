@@ -95,9 +95,11 @@ export default function MultifleetSelect() {
 
         return <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghostMono" className="-mr-3 -ml-3">
+                <Button variant="ghostMono" className="-mr-3 -ml-3 w-full max-w-[192px] overflow-hidden **:text-ellipsis!">
                     <UsersRound />
-                    <span>{userFleetCurrent?.name ?? "(No Fleet!)"}</span>
+                    <div className="w-full text-ellipsis overflow-hidden">
+                        <span className="w-full">{userFleetCurrent?.name ?? "(No Fleet!)"}</span>
+                    </div>
                     <ChevronDown />
                 </Button>
             </DropdownMenuTrigger>
