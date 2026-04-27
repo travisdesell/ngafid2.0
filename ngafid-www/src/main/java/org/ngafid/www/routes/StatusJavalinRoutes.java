@@ -2,6 +2,8 @@ package org.ngafid.www.routes;
 
 import io.javalin.http.Context;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +13,7 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ngafid.core.Database;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.www.WebServer;
 
@@ -199,6 +202,41 @@ public class StatusJavalinRoutes {
     private static void getServiceStatus(Context ctx) {
 
         String requested = ctx.pathParam("service-name");
+
+        // Checking database status...
+        if ("database".equalsIgnoreCase(requested)) {
+
+            try (Connection connection = Database.getConnection()) {
+
+                final int DB_CONNECTION_TIMEOUT_S = 2;
+
+                // Connection is null, throw exception
+                if (connection == null)
+                    throw new SQLException("Failed to obtain database connection");
+
+                // Connection is invalid, throw exception
+                if (connection.isValid(DB_CONNECTION_TIMEOUT_S))
+                    throw new SQLException("Database connection is not valid");
+                
+                // Connection is valid
+                ServiceStatusResult result = new ServiceStatusResult( ServiceStatus.OK, "Database connection is healthy.");
+                SERVICE_STATUS_CACHE.put("database", new ImmutablePair<>(result, System.nanoTime()));
+                ctx.json(result);
+                return;
+
+            } catch (SQLException e) {
+
+                ServiceStatusResult result = new ServiceStatusResult(
+                    ServiceStatus.ERROR,
+                    "Database connection failed: " + e.getMessage()
+                );
+                SERVICE_STATUS_CACHE.put("database", new ImmutablePair<>(result, System.nanoTime()));
+                ctx.json(result);
+                return;
+
+            }
+
+        }
 
         // Resolve docker logical name first
         String dockerLogical = resolveDockerLogicalService(requested);

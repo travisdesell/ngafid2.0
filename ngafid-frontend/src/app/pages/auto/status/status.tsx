@@ -156,7 +156,10 @@ export default function Status() {
         
         const abort = new AbortController();
 
-        const fetchStatuses = async (names: readonly string[]) => {
+        const fetchStatuses = async (
+            names: readonly string[],
+            updateEntries: React.Dispatch<React.SetStateAction<StatusEntry[]>>,
+        ) => {
 
             log(`Fetching statuses for: `, names);
 
@@ -233,23 +236,27 @@ export default function Status() {
 
                 const ANIMATION_DELAY_BASE = 400;
                 const animationDelay = (ANIMATION_DELAY_BASE + i * 100); //<-- Stagger animations
-                const animateMessage = (entry: StatusEntry, delay: number=0) => {
+                const animateMessage = (
+                    entry: StatusEntry,
+                    updateEntries: React.Dispatch<React.SetStateAction<StatusEntry[]>>,
+                    delay: number = 0,
+                ) => {
 
                     const MESSAGE_ANIMATION_RATE_MS = 10;
 
                     if (entry.messageDisplay.length === entry.message.length)
                         return;
 
-                    setTimeout(animateMessage, MESSAGE_ANIMATION_RATE_MS+delay, entry);
+                    setTimeout(animateMessage, MESSAGE_ANIMATION_RATE_MS + delay, entry, updateEntries);
 
                     entry.messageDisplay = entry.message.slice(0, entry.messageDisplay.length + 1);
-                    setDockerEntries((prev) =>
+                    updateEntries((prev) =>
                         prev.map((e) => (e.name === entry.name ? entry : e))
                     );
 
                 }
                 // animateMessage(entryOut, animationDelay);
-                setTimeout(animateMessage, animationDelay, entryOut);
+                setTimeout(animateMessage, animationDelay, entryOut, updateEntries);
 
                 return entryOut;
 
@@ -263,8 +270,8 @@ export default function Status() {
         (async () => {
             try {
                 const [database, docker] = await Promise.all([
-                    fetchStatuses(STATUS_NAMES_LIST_DATABASE),
-                    fetchStatuses(STATUS_NAMES_LIST_DOCKER),
+                    fetchStatuses(STATUS_NAMES_LIST_DATABASE, setDatabaseEntries),
+                    fetchStatuses(STATUS_NAMES_LIST_DOCKER, setDockerEntries),
                 ]);
                 if (!abort.signal.aborted) {
                     setDatabaseEntries(database);
