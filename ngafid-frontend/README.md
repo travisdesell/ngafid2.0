@@ -44,6 +44,14 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
     pnpm watch
 ```
 
+
+<div style="opacity:0.50">
+<br>
+🛈 If you run into issues building the site on the beta server, nuking the existing ngafid-static folder may solve the problem.
+<br>
+<br>
+</div>
+
 * Run this command to preview the build:
 
 ```
@@ -51,8 +59,10 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
 ```
 
 <span style="opacity:0.50">
-🛈 Some performance-intensive features (e.g., interactive charts/graphs) might be easier to work with when using the build preview, but don't avoid
-trying to do any optimization passes because of this (...or else ಠಠ).
+<br>
+🛈 Some performance-intensive features (e.g., interactive charts/graphs) might be easier to work with when using the build preview, but don't avoid trying to do any optimization passes because of this (...or else ಠಠ).
+<br>
+<br>
 </span>
 
 ---
