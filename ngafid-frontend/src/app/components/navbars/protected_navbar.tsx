@@ -18,7 +18,7 @@ import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
 import { ROUTE_DEFAULT_LOGGED_IN } from "@/lib/route_utils";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import BugReportModal from "../modals/bug_report_modal";
 import Notifications from "../providers/notifications/notifications";
 import MultifleetSelect from "@/components/navbars/multifleet_select";
@@ -32,10 +32,56 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
     const { useNavbarPageNames } = useTheme();
     const { extras } = useNavbarSlot();
 
+
     const extraItems = React.useMemo(
         () => React.Children.toArray(extras).filter(Boolean),
         [extras]
     );
+
+
+    const leftContentRef = React.useRef<HTMLDivElement | null>(null);
+    const [leftContentWidth, setLeftContentWidth] = React.useState(0);
+
+    React.useLayoutEffect(() => {
+
+        const element = leftContentRef.current;
+
+        // Left content element is missing, exit
+        if (!element)
+            return;
+
+        const resizeObserver = new ResizeObserver(([entry]) => {
+            setLeftContentWidth(entry.contentRect.width);
+        });
+
+        resizeObserver.observe(element);
+        setLeftContentWidth(element.getBoundingClientRect().width);
+
+        return () => resizeObserver.disconnect();
+
+    }, []);
+
+    const rawShapeWidth = useMotionValue(0);
+    const rawShapeEdgeWidth = useMotionValue(0);
+
+    const shapeWidth = useSpring(rawShapeWidth, {
+        stiffness: 350,
+        damping: 35,
+    });
+
+    const shapeEdgeWidth = useSpring(rawShapeEdgeWidth, {
+        stiffness: 350,
+        damping: 35,
+    });
+
+    const BG_SHAPE_PADDING = 48;
+    const BG_SHAPE_EDGE_SIZE = 12;
+    const SQRT_2 = 1.41421356;
+    React.useEffect(() => {
+        rawShapeWidth.set(BG_SHAPE_PADDING + leftContentWidth * SQRT_2);
+        rawShapeEdgeWidth.set(BG_SHAPE_PADDING + leftContentWidth * SQRT_2 + BG_SHAPE_EDGE_SIZE);
+    }, [leftContentWidth, rawShapeWidth, rawShapeEdgeWidth]);
+
 
     const render = () => {
 
@@ -55,31 +101,38 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                 <div className="relative inline-block overflow-visible">
 
                     {/* Background Shape (Edge) */}
-                    <div className="
-                        pointer-events-none
-                        absolute left-0 top-1/2
-                        w-[calc(100%*1.41421356+0.75rem)] aspect-square
-                        -translate-x-1/2 -translate-y-1/2
-                        rotate-45
-                        bg-neutral-300 dark:bg-neutral-700
-                        z-2
-                    ">
-                    </div>
+                    <motion.div
+                        style={{ width: shapeEdgeWidth }}
+                        className="
+                            pointer-events-none
+                            absolute left-0 top-1/2
+                            aspect-square
+                            -translate-x-1/2 -translate-y-1/2
+                            rotate-45
+                            bg-neutral-300 dark:bg-neutral-700
+                            z-2
+                        "
+                    />
 
                     {/* Background Shape */}
-                    <div className="
-                        pointer-events-none
-                        absolute left-0 top-1/2
-                        w-[calc(100%*1.41421356)] aspect-square
-                        -translate-x-1/2 -translate-y-1/2
-                        rotate-45
-                        bg-neutral-200 dark:bg-neutral-800
-                        z-5
-                    ">
-                    </div>
+                    <motion.div
+                        style={{ width: shapeWidth }}
+                        className="
+                            pointer-events-none
+                            absolute left-0 top-1/2
+                            aspect-square
+                            -translate-x-1/2 -translate-y-1/2
+                            rotate-45
+                            bg-neutral-200 dark:bg-neutral-800
+                            z-5
+                        "
+                    />
 
                     {/* Left Elements Content */}
-                    <div className="relative z-10 inline-flex items-center gap-14 pr-10">
+                    <div
+                        ref={leftContentRef}
+                        className="relative z-10 inline-flex items-center gap-14 pr-10"
+                    >
 
                         {/* Navbar Brand & Home Link */}
                         <Link className="font-semibold text-xl hover:underline decoration-dotted decoration-ring" to={ROUTE_DEFAULT_LOGGED_IN}>
@@ -108,27 +161,28 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             (extraItems.length > 0)
                             &&
                             <div className="flex items-center gap-2">
+                                
                                 {
                                     extraItems.map((child, index) => {
-
                                         const key = (React.isValidElement(child) && child.key != null)
                                             ? child.key
                                             : `navbar-child-${index}`;
 
                                         return (
                                             <motion.div
-                                                className="gap-2"
+                                                className="gap-2 overflow-hidden"
                                                 key={key}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                transition={{ duration: 0.5, delay: 0.05 * index }}
+                                                initial={{ opacity: 0, x: -8 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -8 }}
+                                                transition={{ duration: 0.25, delay: 0.05 * index }}
                                             >
                                                 {child}
                                             </motion.div>
                                         );
-
                                     })
                                 }
+
                             </div>
                         }
 
