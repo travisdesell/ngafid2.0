@@ -171,6 +171,7 @@ export default function LoginModal({ setModal }: ModalProps) {
                                     <Label htmlFor="password">Password</Label>
                                     <Button
                                         variant="link"
+                                        type="button"
                                         onClick={() => setModal(ForgotPasswordModal)}
                                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                                         disabled={isLoading}
