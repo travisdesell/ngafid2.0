@@ -536,23 +536,19 @@ export default function StatisticsPage() {
     log("Rendering Statistics page with airframes:", allAirframeCards);
 
     return (
-        <div className="page-container">
-            <div className="page-content gap-4 overflow-hidden">
 
-                <div className="flex flex-col flex-1 min-h-0 gap-3 overflow-y-auto">
-                    {
-                        allAirframeCards.map((airframe) => (
-                            <AirframeStatisticsCard
-                                key={airframe.id}
-                                airframeId={airframe.id}
-                                airframeName={airframe.name}
-                            />
-                        ))
-                    }
-                </div>
-
-            </div>
+        <div className="flex flex-col flex-1 min-h-0 gap-3 overflow-y-auto p-4">
+            {
+                allAirframeCards.map((airframe) => (
+                    <AirframeStatisticsCard
+                        key={airframe.id}
+                        airframeId={airframe.id}
+                        airframeName={airframe.name}
+                    />
+                ))
+            }
         </div>
+
     );
 
 }
