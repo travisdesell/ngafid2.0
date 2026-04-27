@@ -56,7 +56,7 @@ export function ChartSummaryEventTotalsFleet({ selectedFleetCount, aggregateFlee
         <CardContent className="flex-1 p-0 w-full">
             <ChartContainer
                 config={chartConfig}
-                className="max-h-[250px]"
+                className="max-h-[250px] mx-auto"
             >
                 <PieChart>
                     <ChartTooltip

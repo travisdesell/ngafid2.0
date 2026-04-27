@@ -542,7 +542,7 @@ export default function SummaryPage() {
                         
                                 </CardHeader>
 
-                                <CardContent className="flex">
+                                <CardContent className="flex gap-2">
 
                                     {/* Event Totals Chart */}
                                     <ChartSummaryEventTotalsTime
