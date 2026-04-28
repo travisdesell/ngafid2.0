@@ -1154,8 +1154,8 @@ export default function UploadsPage() {
         })();
 
         return (
-            <Card className={`card-glossy w-full bg-background! h-48 transition-opacity ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}>
-                <CardContent className="px-6 space-y-4 mt-3">
+            <Card className={`card-glossy w-full bg-background! transition-opacity ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}>
+                <CardContent className="p-0 px-6 py-4 flex flex-col gap-4">
 
                     {/* Top Row */}
                     <div className="flex items-center justify-between gap-3">
