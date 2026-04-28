@@ -223,30 +223,28 @@ must run the following commands in-order:
 
 ## 8.1. Launching with Docker on Your Local Machine
 
-1. Create `ngafid.properties` (this file is gitignored).
-2. Copy the content of `ngafid.properties.local-template` into your newly created`ngafid.properties`.
-3. Set your Azure key in `ngafid.properties`:
-  (The key can be found in NGAFID Setup Data Google Drive)
+Create `ngafid.properties` (this file is gitignored). Copy the content of `ngafid.properties.local-template` into your newly created `ngafid.properties`.
 
-   `ngafid.azure.maps.key=AZURE_KEY_HERE`
+Set your Azure key in `ngafid.properties` (the key can be found in the NGAFID Setup Data Google Drive):
 
-4. Make sure Java 24+ is installed.
-5. Download terrain/data from the NGAFID Setup Data Google Drive into `data-local`.
-   Ensure `data-local/airports/airports_parsed.csv` and `data-local/runways/runways_parsed.csv` are present (from the same Google Drive folder).
-6. Build Java artifacts:
+`ngafid.azure.maps.key=AZURE_KEY_HERE`
 
-   ```shell
-   run/build
-   run/package
-   ```
+Make sure Java 24+ is installed. Download terrain, airports, and runways data from the NGAFID Setup Data Google Drive into `data-local`. You need `data-local/airports/airports_parsed.csv` and `data-local/runways/runways_parsed.csv` in place (from the same folder).
 
-7. Build and start Docker services with the local override file:
+Build Java artifacts:
 
-   ```shell
-   docker compose -f docker-compose.yml -f docker-compose.local-template.yml build base
-   docker compose -f docker-compose.yml -f docker-compose.local-template.yml build
-   docker compose -f docker-compose.yml -f docker-compose.local-template.yml up -d
-   ```
+```shell
+run/build
+run/package
+```
+
+Build and start Docker services with the local override file:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.local-template.yml build base
+docker compose -f docker-compose.yml -f docker-compose.local-template.yml build
+docker compose -f docker-compose.yml -f docker-compose.local-template.yml up -d
+```
 
 Notes:
 - `docker-compose.local-template.yml` maps local host paths from `data-local` instead of host `/mnt`.

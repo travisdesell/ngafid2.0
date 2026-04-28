@@ -11,6 +11,8 @@ x-ngafid-service-common: &ngafid-service-common
       condition: service_started
     ngafid-kafka-topics:
       condition: service_completed_successfully
+    ngafid-validate:
+      condition: service_completed_successfully
   volumes:
     # Local-only host mounts (no host /mnt dependency).
     # Container paths stay aligned with ngafid docker properties.
