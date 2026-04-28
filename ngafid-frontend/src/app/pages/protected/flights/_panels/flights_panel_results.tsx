@@ -110,16 +110,27 @@ function FlightsPanelResultsInner() {
 
     const renderPaginationRow = () => {
 
+        const totalPages = Math.max(0, Math.ceil(totalFlights / (pageSize || FLIGHTS_PER_PAGE_OPTIONS[0])));
+        const hasPages = (totalPages > 0);
+        const maxPage = Math.max(0, totalPages - 1);
         const pagePreviousAvailable:boolean = (currentPage > 0);
-        const pageNextAvailable:boolean = (() => {
-
-            const maxPage = Math.ceil(totalFlights / (pageSize || FLIGHTS_PER_PAGE_OPTIONS[0])) - 1;
-            return (currentPage < maxPage);
-
-        })();
+        const pageNextAvailable:boolean = (totalPages > 0 && currentPage < maxPage);
 
         const pageButtonEnabled = `cursor-pointer`;
         const pageButtonDisabled = `opacity-50 pointer-events-none`;
+
+        const goToPage = (page: number) => {
+
+            if (totalPages === 0) {
+                log("No pages available, cannot navigate.");
+                return;
+            }
+
+            const clamped = Math.min(Math.max(page, 0), maxPage);
+            setCurrentPage(clamped);
+            log("Navigating to page:", clamped);
+
+        }
 
         const pagePrevious = () => {
 
@@ -128,20 +139,17 @@ function FlightsPanelResultsInner() {
                 return;
             }
 
-            setCurrentPage(currentPage - 1);
-            log("Navigating to previous page:", currentPage - 1);
+            goToPage(currentPage - 1);
         }
 
         const pageNext = () => {
 
-            // const maxPage = Math.ceil(totalFlights / (pageSize || FLIGHTS_PER_PAGE_OPTIONS[0])) - 1;
             if (!pageNextAvailable) {
                 log("Already on last page, cannot navigate to next page.");
                 return;
             }
 
-            setCurrentPage(currentPage + 1);
-            log("Navigating to next page:", currentPage + 1);
+            goToPage(currentPage + 1);
         }
 
         return <div className="flex flex-row gap-2 w-full p-2 @container">
@@ -156,15 +164,19 @@ function FlightsPanelResultsInner() {
                     </PaginationItem>
 
                     {/* Current Page */}
-                    <PaginationItem>
-                        <PaginationLink >
-                            {currentPage+1}
+                    <PaginationItem className="pointer-events-none">
+                        <PaginationLink className="w-fit px-2">
+                            {currentPage + 1} {hasPages ? `/ ${totalPages}` : ""}
                         </PaginationLink>
                     </PaginationItem>
 
                     {/* ... */}
                     <PaginationItem>
-                        <PaginationEllipsis />
+                        <PaginationEllipsis
+                            page={currentPage}
+                            pages={totalPages}
+                            onPageChange={goToPage}
+                        />
                     </PaginationItem>
 
                     {/* Next Page Button */}

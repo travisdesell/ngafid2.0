@@ -1295,45 +1295,86 @@ export default function UploadsPage() {
     /*
         Placeholder Paginator Component
     */
-    const Pager = (page: number, pages: number, onPage: (n: number) => void) => (
+    const Pager = (page: number, pages: number, onPage: (n: number) => void) => {
 
-        <Pagination className="mx-0 w-full justify-start p-4">
+        const hasPages = (pages > 0);
+        const maxPage = Math.max(0, pages - 1);
+        const pagePreviousAvailable = (page > 0);
+        const pageNextAvailable = (hasPages && page < maxPage);
+
+        const clampPage = (value: number) => Math.min(Math.max(value, 0), maxPage);
+
+        const goToPage = (value: number) => {
+
+            // No pages, exit
+            if (!hasPages)
+                return;
+
+            onPage(clampPage(value));
+
+        };
+
+        const goToPagePrevious = () => {
+
+            // No previous page, exit
+            if (!pagePreviousAvailable)
+                return;
+
+            goToPage(page - 1);
+
+        };
+
+        const goToPageNext = () => {
+
+            // No next page, exit
+            if (!pageNextAvailable)
+                return;
+
+            goToPage(page + 1);
+
+        };
+
+        const pageButtonEnabled = "cursor-pointer";
+        const pageButtonDisabled = "opacity-50 pointer-events-none";
+
+        return <Pagination className="mx-0 w-full justify-start p-4">
             <PaginationContent>
 
                 {/* Previous */}
-                <PaginationItem>
-                    <PaginationPrevious href="#" />
+                <PaginationItem key="previous">
+                    <PaginationPrevious
+                        onClick={goToPagePrevious}
+                        className={pagePreviousAvailable ? pageButtonEnabled : pageButtonDisabled}
+                    />
                 </PaginationItem>
 
-                {/* Current */}
-                {
-                    Array.from({ length: pages+1 }, (_, i) => i).map((p) => (
-                        <PaginationItem key={`page-${p}`}>
-                            <PaginationLink
-                                href="#"
-                                onClick={(e) => { e.preventDefault(); onPage(p); }}
-                                aria-current={p === page ? "page" : undefined}
-                                isActive={p === page}
-                            >
-                                {p + 1}
-                            </PaginationLink>
-                        </PaginationItem>
-                    ))
-                }
+                {/* Current Page */}
+                <PaginationItem className="pointer-events-none">
+                    <PaginationLink className="w-fit px-2">
+                        {page + 1} {hasPages ? `/ ${pages}` : "?"}
+                    </PaginationLink>
+                </PaginationItem>
 
                 {/* Ellipsis */}
-                <PaginationItem>
-                    <PaginationEllipsis />
+                <PaginationItem key="ellipsis">
+                    <PaginationEllipsis
+                        page={page}
+                        pages={pages}
+                        onPageChange={goToPage}
+                    />
                 </PaginationItem>
 
                 {/* Next */}
-                <PaginationItem>
-                    <PaginationNext href="#" />
+                <PaginationItem key="next">
+                    <PaginationNext
+                        onClick={goToPageNext}
+                        className={pageNextAvailable ? pageButtonEnabled : pageButtonDisabled}
+                    />
                 </PaginationItem>
 
             </PaginationContent>
         </Pagination>
-    );
+    };
 
     /*
         Combine the Uploads and Imports so they

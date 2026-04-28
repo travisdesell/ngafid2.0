@@ -1,11 +1,11 @@
-import * as React from "react"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
+import * as React from "react"
 
-import { cn } from "@/lib/utils"
 import { Button, ButtonProps, buttonVariants } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
     <nav
@@ -95,72 +95,149 @@ const PaginationNext = ({
 )
 PaginationNext.displayName = "PaginationNext"
 
+type PaginationEllipsisProps = {
+    page: number
+    pages: number
+    onPageChange: (page: number) => void
+} & React.ComponentProps<"span">
+
 const PaginationEllipsis = ({
     className,
+    page,
+    pages,
+    onPageChange,
     ...props
-}: React.ComponentProps<"span">) => (
+}: PaginationEllipsisProps) => {
 
+    const [targetPage, setTargetPage] = React.useState("")
+    const hasPages = pages > 0
+    const maxPage = Math.max(0, pages - 1)
 
-    <DropdownMenu>
+    const clampPage = (value: number) => Math.min(Math.max(value, 0), maxPage)
 
-        <DropdownMenuTrigger asChild>
-            <Button variant="ghostMono" size="icon">
+    const goToPage = (value: number) => {
 
-                <span
-                    aria-hidden
-                    className={cn("flex h-9 w-9 items-center justify-center", className)}
-                    {...props}
-                >
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">More pages</span>
-                </span>
-            </Button>
-        </DropdownMenuTrigger>
+        // No pages available, exit
+        if (!hasPages)
+            return
 
-        {/* Available Page Numbers */}
-        <DropdownMenuContent>
+        const clamped = clampPage(value)
+        onPageChange(clamped)
 
-            {
-                // Placeholder for page numbers. In a real implementation, this would be dynamically generated based on the total number of pages and the current page.
-                [1, 2, 3, 4, 5].map(pageNumber => (
-                    <DropdownMenuItem key={pageNumber} onSelect={() => console.log(`Navigate to page ${pageNumber}`)}>
-                        Page {pageNumber}
-                    </DropdownMenuItem>
-                ))
-            }
+    }
 
-            {/* First / Last page */}
-            <Separator className="my-1" />
-            <DropdownMenuGroup>
-                <DropdownMenuItem onSelect={() => console.log("Go to first page")}>
-                    First Page
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => console.log("Go to last page")}>
-                    Last Page
-                </DropdownMenuItem>
-            </DropdownMenuGroup>
+    const commitTargetPage = () => {
 
-            {/* Target page */}
-            <Separator className="my-1" />
-            <div className="flex gap-2">
-                <Input type="number" placeholder="Page #" className="w-full" />
-                <Button>
-                    Go
+        // No pages available, exit
+        if (!hasPages)
+            return
+
+        const cleaned = targetPage.trim()
+
+        // Empty input, exit
+        if (!cleaned)
+            return
+
+        const parsed = Number(cleaned)
+
+        // Invalid number, exit
+        if (!Number.isFinite(parsed))
+            return
+
+        const zeroBased = Math.floor(parsed) - 1
+        const clamped = clampPage(zeroBased)
+        onPageChange(clamped)
+        setTargetPage(String(clamped + 1))
+
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghostMono" size="icon" disabled={!hasPages}>
+                    <span
+                        aria-hidden
+                        className={cn("flex h-9 w-9 items-center justify-center", className)}
+                        {...props}
+                    >
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">More pages</span>
+                    </span>
                 </Button>
-            </div>
+            </DropdownMenuTrigger>
 
-        </DropdownMenuContent>
+            {/* Page Number Selection */}
+            <DropdownMenuContent>
 
-    </DropdownMenu>
-)
+                {/* All Pages */}
+                <div className="max-h-60 overflow-y-auto">
+                    {
+                        hasPages
+                            ? Array.from({ length: pages }, (_, index) => (
+                                <DropdownMenuItem
+                                    key={index}
+                                    onSelect={() => goToPage(index)}
+                                    className={index === page ? "font-semibold" : ""}
+                                >
+                                    Page {index + 1}
+                                </DropdownMenuItem>
+                            ))
+                            : (
+                                <DropdownMenuItem disabled>
+                                    No pages available
+                                </DropdownMenuItem>
+                            )
+                    }
+                </div>
+
+                {/* First / Last Page */}
+                <Separator className="my-1" />
+                <DropdownMenuGroup>
+                    <DropdownMenuItem
+                        disabled={!hasPages || page === 0}
+                        onSelect={() => goToPage(0)}
+                    >
+                        First Page
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        disabled={!hasPages || page === maxPage}
+                        onSelect={() => goToPage(maxPage)}
+                    >
+                        Last Page
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+
+                {/* Specific Page (from user) */}
+                <Separator className="my-1" />
+                <div className="flex gap-2">
+                    <Input
+                        type="number"
+                        min={1}
+                        max={pages}
+                        placeholder="Page #"
+                        value={targetPage}
+                        onChange={(event) => setTargetPage(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                                event.preventDefault()
+                                commitTargetPage()
+                            }
+                        }}
+                        className="w-full"
+                    />
+                    <Button type="button" onClick={commitTargetPage} disabled={!hasPages}>
+                        Go
+                    </Button>
+                </div>
+
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 PaginationEllipsis.displayName = "PaginationEllipsis"
 
 export {
     Pagination,
-    PaginationContent,
-    PaginationLink,
-    PaginationItem,
-    PaginationPrevious,
-    PaginationNext,
-    PaginationEllipsis,
+    PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious
 }
+
