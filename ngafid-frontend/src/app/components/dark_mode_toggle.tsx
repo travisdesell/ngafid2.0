@@ -75,7 +75,6 @@ export function DarkModeToggle() {
             <ContextMenuTrigger>
                 <Tooltip disableHoverableContent>
                     <TooltipTrigger asChild>
-                        {/* <> */}
                         <Button
                             type="button"
                             variant="ghostMono"
@@ -110,7 +109,6 @@ export function DarkModeToggle() {
                                 </>
                             }
                         </Button>
-                        {/* </> */}
 
                     </TooltipTrigger>
 
