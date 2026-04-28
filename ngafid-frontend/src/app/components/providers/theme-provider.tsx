@@ -39,7 +39,7 @@ export function ThemeProvider({
 
     const [theme, setTheme] = useLocalStorage<Theme>("ngafid-theme", defaultTheme);
     const [useHighContrastCharts, setUseHighContrastCharts] = useLocalStorage<boolean>("ngafid-use-high-contrast-charts", false);
-    const [invertBackgroundImage, setInvertBackgroundImage] = useLocalStorage<boolean>("ngafid-invert-background-image", true);
+    const [invertBackgroundImage, setInvertBackgroundImage] = useLocalStorage<boolean>("ngafid-invert-background-image", false);
     const [useNavbarPageNames, setUseNavbarPageNames] = useLocalStorage<boolean>("ngafid-use-navbar-page-names", true);
 
     useEffect(() => {
