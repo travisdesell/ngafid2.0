@@ -62,6 +62,9 @@ export function DarkModeToggle() {
 
     }
 
+
+    const isProtectedRoute = (window.location.pathname.startsWith("/protected"))
+
     return (
         <ContextMenu
             onOpenChange={(open) => {
@@ -113,7 +116,7 @@ export function DarkModeToggle() {
 
                     <TooltipContent
                         leftAction="Toggle Dark/Light Theme"
-                        rightAction="Open Theme Options"
+                        rightAction={isProtectedRoute ? "Open Theme Options" : undefined}
                     >
                         Global Theme Options
                     </TooltipContent>
