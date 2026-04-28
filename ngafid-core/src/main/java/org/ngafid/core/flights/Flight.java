@@ -1,22 +1,32 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.core.util.filters.Filter;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventDefinition;
 import static org.ngafid.core.flights.Parameters.COMP_CONV;
 import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.core.util.filters.Filter;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods
@@ -330,6 +340,9 @@ public class Flight {
             case "flight_tags" ->
                 getFlightsSortedByOccurrencesInTable(
                         connection, fleetId, filter, currentPage, pageSize, "flight_tag_map", isAscending);
+            case "flight_labels" ->
+                getFlightsSortedByOccurrencesInTable(
+                        connection, fleetId, filter, currentPage, pageSize, "flight_label_section", isAscending);
             case "events" ->
                 getFlightsSortedByOccurrencesInTable(
                         connection, fleetId, filter, currentPage, pageSize, "events", isAscending);

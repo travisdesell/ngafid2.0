@@ -174,6 +174,7 @@ public class FlightsJavalinRoutes {
                     - End Date and Time
                     - Number Airports Visited
                     - Number of tags associated
+                    - Number of labels associated
                     - Total Event Count
                     - System ID
                     - Tail Number

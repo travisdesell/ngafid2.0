@@ -1,7 +1,5 @@
 package org.ngafid.core.flights;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -13,9 +11,31 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.ngafid.core.TestWithConnection;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.util.FlightTag;
@@ -248,6 +268,23 @@ public class FlightTest extends TestWithConnection {
         Filter filter = new Filter(filterInputs);
 
         ArrayList<Flight> flights = Flight.getFlightsSorted(connection, 1, filter, 0, 10, "airports_visited", true);
+
+        assertNotNull(flights);
+        assertTrue(flights.size() >= 0);
+    }
+
+    @Test
+    @Order(150)
+    @DisplayName("Should get flights sorted by flight_labels")
+    public void testGetFlightsSortedByFlightLabels() throws SQLException {
+        ArrayList<String> filterInputs = new ArrayList<>();
+        filterInputs.add("Start Date");
+        filterInputs.add(">=");
+        filterInputs.add("2020-01-01");
+
+        Filter filter = new Filter(filterInputs);
+
+        ArrayList<Flight> flights = Flight.getFlightsSorted(connection, 1, filter, 0, 10, "flight_labels", true);
 
         assertNotNull(flights);
         assertTrue(flights.size() >= 0);

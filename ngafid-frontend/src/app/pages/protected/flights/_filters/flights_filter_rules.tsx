@@ -30,6 +30,7 @@ export const SORTABLE_COLUMNS = {
     "Airframe" : "airframe_id",
     "№ Airports Visited" : "airports_visited",
     "№ Tags Associated" : "flight_tags",
+    "№ Labels" : "flight_labels",
     "№ Events" : "events",
     "№ Takeoffs/Landings" : "itinerary",
 } as Record<string, string>;
