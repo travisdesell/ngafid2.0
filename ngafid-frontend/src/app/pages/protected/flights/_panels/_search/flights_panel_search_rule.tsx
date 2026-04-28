@@ -339,7 +339,6 @@ function FlightsPanelSearchRuleInner({ rule, indexPath, ruleDefinitions }: Props
 
                 <SelectContent>
                     <SelectGroup>
-                        <SelectLabel>Rules</SelectLabel>
                         {
                             ruleDefinitions.map((ruleFromList) => (
                                 <SelectItem key={ruleFromList.name} value={ruleFromList.name}>{ruleFromList.name}</SelectItem>
