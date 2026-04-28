@@ -1569,7 +1569,7 @@ export default function FlightsPage() {
                                         <>
                                             <ResizableHandle
                                                 withHandle
-                                                className={`${analysisAreaOpen ? "opacity-100" : "opacity-0 pointer-events-none"} transition-opacity`}
+                                                className={analysisAreaOpen ? '' : 'hidden'}
                                             />
 
                                             <ResizablePanel
