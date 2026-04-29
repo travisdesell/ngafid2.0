@@ -279,7 +279,7 @@ To reduce verbosity, use alias:
 ```shell
 alias dcl='docker compose -f docker-compose.yml -f docker-compose.local-template.yml'
 ```
-Then restarting the command to restart containers reduces to:
+Then the command to restart containers reduces to:
 
 ```shell
 dcl down 
