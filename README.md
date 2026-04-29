@@ -223,13 +223,34 @@ must run the following commands in-order:
 
 ## 8.1. Launching with Docker on Your Local Machine
 
-Create `ngafid.properties` (this file is gitignored). Copy the content of `ngafid.properties.local-template` into your newly created `ngafid.properties`.
+Create `ngafid.properties` in the root directory (this file is gitignored). Copy the content of `ngafid.properties.local-template` into your newly created `ngafid.properties`.
 
 Set your Azure key in `ngafid.properties` (the key can be found in the NGAFID Setup Data Google Drive):
 
 `ngafid.azure.maps.key=AZURE_KEY_HERE`
 
-Make sure Java 24+ is installed. Download terrain, airports, and runways data from the NGAFID Setup Data Google Drive into `data-local`. You need `data-local/airports/airports_parsed.csv` and `data-local/runways/runways_parsed.csv` in place (from the same folder).
+Create `liquibase.docker.properties` inside `ngafid2.0/ngafid-db/src`. 
+
+Place these configuration parameters inside `liquibase.docker.properties`:
+
+```shell
+changeLogFile=changelog-root.xml
+outputChangeLogFile=changelog.mysql.sql
+url=jdbc:mysql://mysql/ngafid
+username=ngafid_user
+password=password
+```
+
+Build the front end. From `ngafid2.0/ngafid-frontend` run:
+
+```shell
+npm install
+npm run build
+```
+
+Make sure Java 24+ is installed.
+
+Download terrain, airports, and runways data from the NGAFID Setup Data Google Drive into `data-local`. You need `data-local/airports/airports_parsed.csv` and `data-local/runways/runways_parsed.csv` in place (from the same folder).
 
 Build Java artifacts:
 
@@ -247,11 +268,26 @@ docker compose -f docker-compose.yml -f docker-compose.local-template.yml up -d
 ```
 
 Notes:
+
+We use local-template.yml to override docker-compose-yaml. For this reason docker commands become verbose. For example to restart the containers we use:
+```shell
+docker compose -f docker-compose.yml -f docker-compose.local-template.yml down
+docker compose -f docker-compose.yml -f docker-compose.local-template.yml up -d
+```
+
+To reduce verbosity, use alias:
+```shell
+alias dcl='docker compose -f docker-compose.yml -f docker-compose.local-template.yml'
+```
+Then restarting the command to restart containers reduces to:
+
+```shell
+dcl down 
+dcl up -d 
+```
+
 - `docker-compose.local-template.yml` maps local host paths from `data-local` instead of host `/mnt`.
 - Do not modify the `data` folder/symlink for local setup. On the VM, `data` is used as a symlink; local Docker uses `data-local` and does not require changes to `data`.
-
-
-
 
 ## 9. Workflow
 

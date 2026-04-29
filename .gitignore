@@ -12,7 +12,6 @@ data/*
 # Local Docker data directory: ignore data files, keep folder placeholders.
 data-local/*
 !data-local/.gitkeep
-!data-local/**/
 !data-local/**/.gitkeep
 
 
