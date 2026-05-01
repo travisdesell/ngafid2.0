@@ -1,0 +1,189 @@
+# Split this up into two separate groups since n:gafid-kafka-topics needs these variables, but should not depend on
+# itself.
+x-ngafid-service-common-base: &ngafid-service-common-base
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+x-ngafid-service-common: &ngafid-service-common
+  <<: *ngafid-service-common-base
+  depends_on:
+    mysql:
+      condition: service_started
+    ngafid-kafka-topics:
+      condition: service_completed_successfully
+    ngafid-validate:
+      condition: service_completed_successfully
+  volumes:
+    # Local-only host mounts (no host /mnt dependency).
+    # Container paths stay aligned with ngafid docker properties.
+    - ./data-local/temp:/mnt/ngafid/temp # Jetty temp directory: upload chunks/files before final write.
+
+    - ./ngafid.properties:/app/ngafid.properties:ro
+
+    - ./data-local/uploads:/mnt/ngafid/uploads
+    - ./data-local/archive:/mnt/ngafid/archive
+    - ./data-local/terrain:/mnt/ngafid/terrain
+    - ./data-local/airports:/mnt/ngafid/airports:ro
+    - ./data-local/runways:/mnt/ngafid/runways:ro
+
+    - ./ngafid-static:/mnt/static
+
+    
+
+    - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
+    # Email credentials: repo-root email_info.txt (line 1=SMTP user, line 2=password) is mounted at /etc/ngafid-email.conf in the container.
+    - ./email_info.txt:/etc/ngafid-email.conf:ro
+
+services:
+  base:
+    build:
+      context: .
+      # No build args needed - everything configured via properties files
+    image: ngafid-base
+    profiles: ["build-only"]
+
+  # This must run and complete before everything else to create the Kafka topics
+  ngafid-kafka-topics:
+    build:
+      context: .
+      dockerfile: ngafid-core/Dockerfile.topics
+    command:
+      [
+        "java",
+        "-cp",
+        "/opt/ngafid-core/ngafid-core.jar:/app",
+        "org.ngafid.core.kafka.Topic",
+      ]
+    <<: *ngafid-service-common-base
+    depends_on:
+      kafka:
+        condition: service_started
+
+  # One-shot preflight validator (local override of data mounts)
+  ngafid-validate:
+    volumes:
+      - ./:/workspace:ro
+      - ./ngafid-validate/validation-results:/validator/validation-results
+      - ./ngafid.properties:/app/ngafid.properties:ro
+      - ./ngafid-db/src/liquibase.docker.properties:/etc/ngafid-db.conf:ro
+      - ./email_info.txt:/etc/ngafid-email.conf:ro
+      - ./ngafid-static:/mnt/static
+      - ./data-local/uploads:/mnt/ngafid/uploads
+      - ./data-local/archive:/mnt/ngafid/archive
+      - ./data-local/terrain:/mnt/ngafid/terrain
+      - ./data-local/airports:/mnt/ngafid/airports:ro
+      - ./data-local/runways:/mnt/ngafid/runways:ro
+
+  # Reads emails from email kafka topic and sends them using the supplied credentials
+  ngafid-email-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      [
+        "java",
+        "-cp",
+        "/opt/ngafid-core/ngafid-core.jar:/app",
+        "org.ngafid.core.kafka.EmailConsumer",
+      ]
+    restart: unless-stopped
+    <<: *ngafid-service-common
+
+  # Our airsync API implementation is fully out of date, this shouldn't be used until it is fixed / rewritten.
+  # AirSync sync daemon
+  # ngafid-airsync-importer:
+  #   build:
+  #     context: .
+  #     dockerfile: ngafid-airsync/Dockerfile
+  #   restart: unless-stopped
+  #   <<: *ngafid-service-common
+
+  # Upload processor. Upload topic is created with 6 partitions by default, so up to 6 replicas would work.
+  ngafid-upload-consumer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 3
+    restart: unless-stopped
+    <<: *ngafid-service-common
+
+  # Webserver
+  ngafid-www:
+    build:
+      context: .
+      dockerfile: ngafid-www/Dockerfile
+    ports:
+      - "8181:8181"
+    restart: unless-stopped
+    <<: *ngafid-service-common
+
+  # Event Consumer: reads from event topic and computes the events
+  ngafid-event-consumer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile.event-consumer
+    restart: unless-stopped
+    <<: *ngafid-service-common
+
+  # Event Observer: scans database for events that have not been computed, and computes them.
+  # This can also be used to re-compute events as potential duplicates are deleted.
+  ngafid-event-observer:
+    build:
+      context: .
+      dockerfile: ngafid-data-processor/Dockerfile.event-observer
+    restart: unless-stopped
+    <<: *ngafid-service-common
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ngafid
+      MYSQL_USER: ngafid
+      MYSQL_PASSWORD: ngafid
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./ngafid-db/src:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+
+  kafka:
+    image: apache/kafka
+    ports:
+      - "9092:9092"
+    restart: unless-stopped
+    environment:
+      # Configure listeners for both docker and host communication
+      KAFKA_LISTENERS: CONTROLLER://localhost:9091,HOST://0.0.0.0:9092,DOCKER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: HOST://localhost:9092,DOCKER://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT,HOST:PLAINTEXT
+
+      # Settings required for KRaft mode
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9091
+
+      # Listener to use for broker-to-broker communication
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+
+      # Required for a single node cluster
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # For persistence
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+    # volumes:
+    #   - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
+
+volumes:
+  mysql_data:
+  kafka_data:
+

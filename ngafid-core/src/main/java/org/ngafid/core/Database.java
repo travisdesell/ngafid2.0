@@ -120,7 +120,10 @@ public final class Database {
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         config.setMaximumPoolSize(32);
         config.setMinimumIdle(1);
-        config.setMaxLifetime(60000);
+        config.setMaxLifetime(1_800_000);
+        config.setIdleTimeout(600_000);
+        config.setKeepaliveTime(300_000);
+        config.setValidationTimeout(5_000);
         CONNECTION_POOL = new HikariDataSource(config);
     }
 }

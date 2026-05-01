@@ -7,20 +7,18 @@
 # EMAIL SETTINGS
 # =============================================================================
 ngafid.docker.email.info=/etc/ngafid-email.conf
-ngafid.docker.admin.emails=email1;email2;email3
+ngafid.docker.admin.emails=EMAIL1;EMAIL2;EMAIL3
 ngafid.docker.email.enabled=false
-# on the VM change this to true and add users who will receive emails.
 
 # =============================================================================
 # EXTERNAL SERVICES
 # =============================================================================
 
 # ⚠️  SENSITIVE:
-ngafid.azure.maps.key=AZURE_MAPS_KEY_HERE
-
+ngafid.azure.maps.key=AZURE_KEY_HERE
 # =============================================================================
-# CHARTS URL
-# =========================================================================
+# CHARTS URL (production tiles; use a local chart server URL if you run charts locally.)
+# =============================================================================
 ngafid.chart.tile.base.url=https://ngafid.org/api/charts
 
 # =============================================================================
@@ -28,11 +26,17 @@ ngafid.chart.tile.base.url=https://ngafid.org/api/charts
 # =============================================================================
 
 # Repository root path (relative to where the application is run from)
-ngafid.repo.path=/opt/ngafid/ngafid2.0
+ngafid.repo.path=./
 
-ngafid.upload.dir=/mnt/ngafid/uploads
-ngafid.archive.dir=/mnt/ngafid/archive
-ngafid.terrain.dir=/mnt/ngafid/terrain
+# Local data root
+ngafid.data.folder=${ngafid.repo.path}/data-local
+ngafid.upload.dir=${ngafid.data.folder}/uploads
+ngafid.archive.dir=${ngafid.data.folder}/archive
+ngafid.terrain.dir=${ngafid.data.folder}/terrain
+
+# Local data files
+ngafid.airports.file=${ngafid.data.folder}/airports/airports_parsed.csv
+ngafid.runways.file=${ngafid.data.folder}/runways/runways_parsed.csv
 
 # Docker paths (automatically used when in Docker environment)
 ngafid.docker.repo.path=/app/

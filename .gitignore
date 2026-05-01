@@ -9,6 +9,11 @@ data/*
 # INCLUDE Symlink to where data is actually located:
 !data
 
+# Local Docker data directory: ignore data files, keep folder placeholders.
+data-local/*
+!data-local/.gitkeep
+!data-local/**/.gitkeep
+
 
 # File/data backups:
 backups/*
