@@ -82,7 +82,7 @@ Use **Providers** to pass globally-accessible values down the component tree.
 
 1. After creating a Provider, add it to the ```providerTree``` array inside ```main.tsx```.
 
-3. The order that the Providers are defined in the array matters.
+3. The order that the Providers are defined in the array matters. Try to avoid Providers that rely on other Providers; things can get tricky in some cases (e.g., requiring another Provider's data inside a Modal).
 
 ---
 
@@ -102,4 +102,6 @@ Page Routes will be automatically generated inside ```main.tsx``` without having
 
 ### Navbars
 
-* ...
+* Additional per-page content can be easily added to the Navbar by rendering a `NavbarExtras` component inside the page's .tsx file.
+  * As an example, this is currently used on the `Flights` page to render panel toggles and a button to open the Event selection modal.
+  * Avoid using this for controls that would be better-suited in sub-sections of the page (e.g., the map type dropdown on the `Flights` page and other pages with maps have been moved out of the Navbar and into the map cards themselves).
