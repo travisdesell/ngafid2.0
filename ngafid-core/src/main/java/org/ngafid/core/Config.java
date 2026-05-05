@@ -1,5 +1,7 @@
 package org.ngafid.core;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -62,34 +64,78 @@ public class Config {
     }
     
     private static void loadProperties() {
-        // Check for custom properties file first
+        String configPathProperty = System.getProperty("ngafid.config.path");
+        if (configPathProperty != null && !configPathProperty.isEmpty()) {
+            File f = resolveConfigFile(configPathProperty);
+            if (f.isFile()) {
+                loadPropertiesFromFile(f);
+                return;
+            }
+            throw new RuntimeException(
+                    "ngafid.config.path is set but file not found: " + f.getAbsolutePath());
+        }
+
+        // Classpath resource name (e.g. under src/main/resources), or try same string as a filesystem path
         String customPropertiesFile = System.getProperty("ngafid.config.file");
-        if (customPropertiesFile != null) {
+        if (customPropertiesFile != null && !customPropertiesFile.isEmpty()) {
+            File customFile = resolveConfigFile(customPropertiesFile);
+            if (customFile.isFile()) {
+                loadPropertiesFromFile(customFile);
+                return;
+            }
             try (InputStream input = Config.class.getClassLoader().getResourceAsStream(customPropertiesFile)) {
                 if (input != null) {
                     properties.load(input);
-                    System.out.println("Loaded configuration from " + customPropertiesFile);
+                    System.out.println("Loaded configuration from classpath resource " + customPropertiesFile);
                     return;
                 }
             } catch (IOException e) {
                 System.err.println("Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
             }
         }
-        
-        // Load the unified properties file
+
         try (InputStream input = Config.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
             if (input != null) {
                 properties.load(input);
-                System.out.println("Loaded unified configuration from " + PROPERTIES_FILE);
-                
+                System.out.println("Loaded unified configuration from classpath " + PROPERTIES_FILE);
                 resolveVariableSubstitutions();
-            } else {
-                System.err.println("Properties file " + PROPERTIES_FILE + " not found!");
-                throw new RuntimeException("Configuration file not found: " + PROPERTIES_FILE);
+                return;
             }
         } catch (IOException e) {
             System.err.println("Error loading properties file: " + e.getMessage());
             throw new RuntimeException("Failed to load configuration file: " + PROPERTIES_FILE, e);
+        }
+
+        File cwdFile = new File(System.getProperty("user.dir"), PROPERTIES_FILE);
+        if (cwdFile.isFile()) {
+            loadPropertiesFromFile(cwdFile);
+            return;
+        }
+
+        System.err.println("Properties file " + PROPERTIES_FILE + " not found on classpath or in user.dir ("
+                + System.getProperty("user.dir") + ").");
+        System.err.println(
+                "Set -Dngafid.config.path=/absolute/path/ngafid.properties or restore "
+                        + "ngafid-core/src/main/resources/ngafid.properties");
+        throw new RuntimeException("Configuration file not found: " + PROPERTIES_FILE);
+    }
+
+    private static File resolveConfigFile(String path) {
+        File f = new File(path.trim());
+        if (!f.isAbsolute()) {
+            f = new File(System.getProperty("user.dir"), path.trim());
+        }
+        return f;
+    }
+
+    private static void loadPropertiesFromFile(File f) throws RuntimeException {
+        try (InputStream input = new FileInputStream(f)) {
+            properties.load(input);
+            System.out.println("Loaded configuration from file " + f.getAbsolutePath());
+            resolveVariableSubstitutions();
+        } catch (IOException e) {
+            System.err.println("Error loading properties file: " + e.getMessage());
+            throw new RuntimeException("Failed to load configuration file: " + f.getAbsolutePath(), e);
         }
     }
     
@@ -114,7 +160,14 @@ public class Config {
         if (propertyValue == null) {
             propertyValue = properties.getProperty(propertyKey);
         }
-        
+
+        // Host / non-Docker JVM: allow docker-prefixed entries if plain keys are absent
+        // (same ngafid.properties as docker-compose, CLI tools run outside containers)
+        if (propertyValue == null && !isDocker) {
+            String dockerKey = propertyKey.replace("ngafid.", "ngafid.docker.");
+            propertyValue = properties.getProperty(dockerKey);
+        }
+
         if (propertyValue != null) {
             return propertyValue;
         }
