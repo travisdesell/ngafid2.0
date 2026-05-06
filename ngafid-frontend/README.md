@@ -27,7 +27,7 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
 3. Connect to the device at the given IP address.
 
 <span style="opacity:0.50">
-🛈 If configured correctly, you can also connect to the Vite server from other devices on your network. (Trying to host from inside WSL may require additional setup inside Windows: <a>https://learn.microsoft.com/en-us/windows/wsl/networking</a>)
+🛈 If configured correctly, you can also connect to the Vite server from other devices on your network. (Trying to host from inside WSL may require additional setup inside Windows: <a>https://learn.microsoft.com/en-us/windows/wsl/networking</a>) This can be particularly useful if we ever want to add proper responsive design for mobile devices.
 </span>
 
 ---
@@ -44,10 +44,12 @@ Contains the React frontend. The new version now uses Vite instead of Webpack, a
     pnpm watch
 ```
 
-
-<div style="opacity:0.50">
+<div style="opacity:0.50; color:sandybrown">
+⚠ Because of validation step requirements, you may be required to create a build (i.e., populate ngafid-static) before you can properly start the server.
+</div>
+<div style="opacity:0.50; color:sandybrown">
 <br>
-🛈 If you run into issues building the site on the beta server, nuking the existing ngafid-static folder may solve the problem.
+⚠ If you run into issues building the site on the Beta server, nuking the existing ngafid-static folder may solve the problem.
 <br>
 <br>
 </div>
@@ -97,6 +99,12 @@ Page Routes will be automatically generated inside ```main.tsx``` without having
     <li>To add a new page, create a new folder with the page's name, and add a new .tsx file with the page's name to that folder.
     <li>Folders with a leading underscore (e.g., <code>.../pages/summary/_charts/...</code>) will be excluded from the Route generation. (See the <code>isPageCandidate</code> function in <code>main.tsx</code> for additional rules.)
 </ol>
+
+---
+
+### Styling
+
+...
 
 ---
 
