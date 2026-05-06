@@ -37,6 +37,13 @@
         @apply min-h-0;
         @apply p-4;
     }
+    .page-content-thin {
+        @apply max-w-7xl;
+        @apply flex flex-col flex-1;
+        @apply overflow-y-auto;
+        @apply min-h-0;
+        @apply p-4;
+    }
 
 
     /* Scrollbar Styling */

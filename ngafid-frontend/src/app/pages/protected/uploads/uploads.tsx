@@ -1445,7 +1445,7 @@ export default function UploadsPage() {
     const render = () => (
         <div className="page-container">
 
-            <div className="page-content space-y-4 w-full max-w-7xl h-full mx-auto">
+            <div className="page-content-thin space-y-4 w-full h-full mx-auto">
 
                 <UploadsDropzone onPickFiles={onPickFiles} />
 
@@ -1459,7 +1459,7 @@ export default function UploadsPage() {
                         </div>
 
                     </CardHeader>
-                    <CardContent className="w-full h-full  space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto overflow-y-auto">
+                    <CardContent className="w-full h-full space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto overflow-y-auto">
 
                         {
                             (hasAnyUploadsOrImports)

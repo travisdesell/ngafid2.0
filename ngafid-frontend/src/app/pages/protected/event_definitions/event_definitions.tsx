@@ -499,7 +499,7 @@ export default function EventDefinitionsPage() {
 
         return (
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                <div className="max-w-7xl w-full mx-auto flex flex-col p-4 flex-1 min-h-0 gap-2">
+                <div className="page-content-thin w-full mx-auto flex flex-col p-4 flex-1 min-h-0 gap-2">
                     <Card className="card-glossy flex-1 min-h-0 overflow-hidden flex flex-col">
 
                         <CardHeader className="shrink-0">

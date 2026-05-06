@@ -289,7 +289,7 @@ export default function Status() {
     return (
         <div className="page-container">
 
-            <div className="page-content grid grid-rows-2 gap-8 mx-auto w-full max-w-7xl min-h-screen py-8">
+            <div className="page-content-thin grid grid-rows-2 gap-8 mx-auto w-full min-h-screen py-8">
 
                 {/* Database Services */}
                 <Card className="relative card-glossy h-64 w-full self-center my-auto">
