@@ -18,6 +18,7 @@ import {
     CloudDownload,
     Download,
     List,
+    ListOrdered,
     Loader,
     RotateCcw,
     Trash
@@ -29,26 +30,29 @@ import SparkMD5 from "spark-md5";
 import { openModal } from "@/components/modals/modal_store";
 import SuccessModal from "@/components/modals/success_modal";
 import UploadDetailsModal from "@/components/modals/upload_details_modal/upload_details_modal";
+import { setPageTitle } from "@/components/page_title";
 import PanelAlert from "@/components/panel_alert";
 import { getLogger } from "@/components/providers/logger";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import UploadsDropzone from "@/pages/protected/uploads/_uploads_dropzone";
-import type {
-    APIError,
-    ImportsListResponse,
-    ImportsPageItem,
-    UploadErrorsPayload,
-    UploadImportItem,
-    UploadInfo,
-    UploadListResponse,
-    UploadStatus
-} from "./_types/types";
-import { setPageTitle } from "@/components/page_title";
+import {
+    UPLOADS_PER_PAGE_OPTIONS,
+    type APIError,
+    type ImportsListResponse,
+    type ImportsPageItem,
+    type UploadErrorsPayload,
+    type UploadImportItem,
+    type UploadInfo,
+    type UploadListResponse,
+    type UploadStatus
+} from "./types";
 
 
 const log = getLogger("Uploads", "black", "Page");
+const DEFAULT_UPLOADS_PAGE_SIZE = 10;
 
 
 // UI Helpers
@@ -370,6 +374,8 @@ export default function UploadsPage() {
     const [uploads, setUploads] = useState<UploadInfo[]>([]);
     const [uploadsPage, setUploadsPage] = useState(() => getUploadsPageFromPath());
     const [uploadsPages, setUploadsPages] = useState(0);
+    const [uploadsPageSize, setUploadsPageSize] = useState(DEFAULT_UPLOADS_PAGE_SIZE);
+    const uploadsPageSizeRef = useRef(uploadsPageSize);
 
     // Imported uploads
     const [imports, setImports] = useState<ImportsPageItem[]>([]);
@@ -391,7 +397,7 @@ export default function UploadsPage() {
     }, [pending]);
 
 
-    const loadUploads = useCallback(async (page = uploadsPage, pageSize = 10, silent = false) => {
+    const loadUploads = useCallback(async (page = uploadsPage, pageSize = uploadsPageSize, silent = false) => {
 
         const params = new URLSearchParams({
             currentPage: String(page),
@@ -437,10 +443,10 @@ export default function UploadsPage() {
 
         return true;
         
-    }, [uploadsPage]);
+    }, [uploadsPage, uploadsPageSize]);
 
 
-    const loadImports = useCallback(async (page = uploadsPage, pageSize = 10, silent = false) => {
+    const loadImports = useCallback(async (page = uploadsPage, pageSize = uploadsPageSize, silent = false) => {
 
         const params = new URLSearchParams({
             currentPage: String(page),
@@ -460,7 +466,7 @@ export default function UploadsPage() {
         setImportsPages(importsListResponse.numberPages ?? 0);
         return true;
 
-    }, [uploadsPage]);
+    }, [uploadsPage, uploadsPageSize]);
 
 
     useEffect(() => {
@@ -514,6 +520,21 @@ export default function UploadsPage() {
         loadImports();
 
     }, [uploadsPage, loadImports]);
+
+    useEffect(() => {
+        if (uploadsPageSizeRef.current === uploadsPageSize)
+            return;
+
+        uploadsPageSizeRef.current = uploadsPageSize;
+
+        if (uploadsPage !== 0) {
+            setUploadsPage(0);
+            return;
+        }
+
+        void loadUploads(0, uploadsPageSize);
+        void loadImports(0, uploadsPageSize);
+    }, [uploadsPageSize, uploadsPage, loadUploads, loadImports]);
 
     useEffect(() => {
 
@@ -602,12 +623,12 @@ export default function UploadsPage() {
 
             isPollingRef.current = true;
 
-            const UPLOAD_IMPORT_LOAD_COUNT = 10;
+            const uploadsImportLoadCount = uploadsPageSize;
 
             try {
                 const [uploadsOK, importsOK] = await Promise.all([
-                    loadUploads(uploadsPage, UPLOAD_IMPORT_LOAD_COUNT, true),
-                    loadImports(uploadsPage, UPLOAD_IMPORT_LOAD_COUNT, true)
+                    loadUploads(uploadsPage, uploadsImportLoadCount, true),
+                    loadImports(uploadsPage, uploadsImportLoadCount, true)
                 ]);
 
                 // Both uploads and imports loaded successfully, reset failure count
@@ -1336,7 +1357,7 @@ export default function UploadsPage() {
         const pageButtonEnabled = "cursor-pointer";
         const pageButtonDisabled = "opacity-50 pointer-events-none";
 
-        return <Pagination className="mx-0 w-full justify-start p-4">
+        return <Pagination className="mx-0 w-full justify-start">
             <PaginationContent>
 
                 {/* Previous */}
@@ -1485,7 +1506,41 @@ export default function UploadsPage() {
                     
                     <CardFooter className="flex flex-col w-full p-0 bg-muted">
                         <Separator />
-                        {Pager(uploadsPage, uploadsPages, setUploadsPage)}
+
+                        <div className="flex items-center justify-between w-full p-4">
+                            {Pager(uploadsPage, uploadsPages, setUploadsPage)}
+
+                            {/* Uploads Per Page Select Dropdown */}
+                            <Select
+                                value={uploadsPageSize.toString()}
+                                onValueChange={(value) => {
+                                    const nextPageSize = Number.parseInt(value, 10);
+                                    if (!Number.isFinite(nextPageSize))
+                                        return;
+
+                                    setUploadsPageSize(nextPageSize);
+                                }}
+                            >
+                                <Button variant="outline" asChild>
+                                    <SelectTrigger className="min-w-16 w-fit">
+                                        <ListOrdered />
+                                        <div className="@max-4xl:hidden!">
+                                            <SelectValue placeholder="Uploads per page" />
+                                        </div>
+                                    </SelectTrigger>
+                                </Button>
+                                <SelectContent>
+                                    {
+                                        UPLOADS_PER_PAGE_OPTIONS.map((option) => (
+                                            <SelectItem key={option} value={option.toString()}>
+                                                {option} per page
+                                            </SelectItem>
+                                        ))
+                                    }
+                                </SelectContent>
+                            </Select>
+                    </div>
+
                     </CardFooter>
 
                 </Card>

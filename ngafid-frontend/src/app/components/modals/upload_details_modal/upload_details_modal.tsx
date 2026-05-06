@@ -8,7 +8,7 @@ import { getLogger } from "@/components/providers/logger";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { fetchJson } from "@/fetchJson";
-import { APIError, UploadErrorsPayload, UploadImportItem } from "@/pages/protected/uploads/_types/types";
+import { APIError, UploadErrorsPayload, UploadImportItem } from "@/pages/protected/uploads/types";
 import { AlertTriangle, Check, CircleAlert, CloudDownload } from "lucide-react";
 import { useEffect, useState } from "react";
 

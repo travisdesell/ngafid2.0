@@ -16,6 +16,13 @@ export type UploadStatus =
     | "DERIVED";
 
 
+export const UPLOADS_PER_PAGE_OPTIONS = [
+    10,
+    25,
+    50,
+    100,
+];
+
 export type UploadInfo = {
     id: number;
     identifier: string;
