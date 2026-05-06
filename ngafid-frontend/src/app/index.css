@@ -39,6 +39,9 @@
     }
     .page-content-thin {
         @apply max-w-7xl;
+        @apply mx-auto;
+        @apply w-full;
+        
         @apply flex flex-col flex-1;
         @apply overflow-y-auto;
         @apply min-h-0;
