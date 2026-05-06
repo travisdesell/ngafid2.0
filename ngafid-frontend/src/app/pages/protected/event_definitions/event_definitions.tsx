@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/event_definitions/event_definitions.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { setPageTitle } from "@/components/page_title";
 import { getLogger } from "@/components/providers/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -270,9 +271,7 @@ export default function EventDefinitionsPage() {
 
     const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-    useEffect(() => {
-        document.title = `NGAFID — Definitions`;
-    });
+    setPageTitle("Event Definitions");
 
     const { setModal } = useModal();
 
@@ -499,7 +498,7 @@ export default function EventDefinitionsPage() {
 
         return (
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                <div className="page-content-thin w-full mx-auto flex flex-col p-4 flex-1 min-h-0 gap-2">
+                <div className="page-content-thin flex flex-col p-4 flex-1 min-h-0 gap-2">
                     <Card className="card-glossy flex-1 min-h-0 overflow-hidden flex flex-col">
 
                         <CardHeader className="shrink-0">

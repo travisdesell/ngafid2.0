@@ -33,6 +33,7 @@ import { startTransition as startConcurrentTransition, useCallback, useEffect, u
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import FlightsPanelCesium from "./_panels/_cesium/flights_panel_cesium";
 import FlightsPanelSearch from "./_panels/_search/flights_panel_search";
+import { setPageTitle } from "@/components/page_title";
 
 
 const log = getLogger("Flights", "black", "Page");
@@ -148,9 +149,7 @@ const filterIsValid = (filter: Filter): boolean => {
 
 export default function FlightsPage() {
 
-    useEffect(() => {
-        document.title = `NGAFID — Flights`;
-    });
+    setPageTitle("Flights");
 
     const { setModal } = useModal();
 

@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/severities/severities.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { setPageTitle } from "@/components/page_title";
 import PanelAlert from "@/components/panel_alert";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -286,6 +287,9 @@ const renderSeveritiesLegendContent = (
 };
 
 export default function SeveritiesPage() {
+
+    setPageTitle("Severities");
+
     const { setModal } = useModal();
     const { useHighContrastCharts } = useTheme();
     const { fleetTags } = useTags();
@@ -305,10 +309,6 @@ export default function SeveritiesPage() {
     const [eventMetaDataById, setEventMetaDataById] = useState<Record<number, EventMetaDataItem[]>>({});
 
     const loading = isCheckingAvailability || isFetchingEvents;
-
-    useEffect(() => {
-        document.title = "NGAFID — Severities";
-    }, []);
 
     const eventNames = useMemo(() => {
         const names = Object.keys(eventDescriptions).sort((a, b) => a.localeCompare(b));
@@ -847,6 +847,7 @@ export default function SeveritiesPage() {
                                 <div className="flex flex-col gap-2">
                                     <Label>Airframe Type</Label>
                                     <Select
+                                    
                                         value={airframeIDSelected.toString()}
                                         onValueChange={(value) => {
                                             const id = parseInt(value, 10);

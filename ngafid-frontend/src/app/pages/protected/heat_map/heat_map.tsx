@@ -43,6 +43,7 @@ import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./heat_map.css";
+import { setPageTitle } from "@/components/page_title";
 
 const log = getLogger("HeatMap", "black", "Page");
 
@@ -689,6 +690,9 @@ function hasAreaSelected(boxCoords: BoxCoords): boolean {
 }
 
 export default function HeatMapPage() {
+
+    setPageTitle("Heat Map");
+
     const { userOS } = usePlatform();
     const { endpointStartDate, endpointEndDate, renderDateRangeMonthly} = useTimeHeader();
     const {
@@ -768,10 +772,6 @@ export default function HeatMapPage() {
     useEffect(() => {
         selectedPointsRef.current = selectedPoints;
     }, [selectedPoints]);
-
-    useEffect(() => {
-        document.title = "NGAFID — Heat Map";
-    }, []);
 
     useEffect(() => {
         let cancelled = false;

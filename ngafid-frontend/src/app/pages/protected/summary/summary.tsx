@@ -20,6 +20,7 @@ import { ChartSummaryEventCounts } from "./_charts/chart-summary-event-counts";
 import { ChartSummaryEventTotalsTime } from "./_charts/chart-summary-event-totals-time";
 import { ChartSummaryEventTotalsFleet } from "./_charts/chart-summary-event-totals-fleet";
 import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summary-percentage-of-flights-with-event";
+import { setPageTitle } from "@/components/page_title";
 
 
 const log = getLogger("Summary", "black", "Page");
@@ -50,9 +51,7 @@ const UPLOAD_FLIGHT_STAT_VALUE_NOT_LOADED = -1;
 
 export default function SummaryPage() {
 
-    useEffect(() => {
-        document.title = `NGAFID — Summary`;
-    });
+    setPageTitle("Summary");
 
     const { setModal } = useModal();
     const { airframes, airframeIDSelected, setAirframeIDSelected, airframeNameSelected, setAirframeNameSelected} = useAirframes();

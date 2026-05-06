@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/status/status.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { setPageTitle } from "@/components/page_title";
 import Ping, { PingColor } from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,9 +125,7 @@ function StatusEntries({ entries }: { entries: StatusEntry[] }) {
 
 export default function Status() {
 
-    useEffect(() => {
-        document.title = `NGAFID — Status`;
-    });
+    setPageTitle("Status");
 
     const { setModal } = useModal();
 
@@ -289,7 +288,7 @@ export default function Status() {
     return (
         <div className="page-container">
 
-            <div className="page-content-thin grid grid-rows-2 gap-8 mx-auto w-full min-h-screen py-8">
+            <div className="page-content-thin grid grid-rows-2 gap-8 min-h-screen py-8">
 
                 {/* Database Services */}
                 <Card className="relative card-glossy h-64 w-full self-center my-auto">

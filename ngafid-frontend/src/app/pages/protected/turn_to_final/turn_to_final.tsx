@@ -1,5 +1,6 @@
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { setPageTitle } from "@/components/page_title";
 import PanelAlert from "@/components/panel_alert";
 import { useAirports } from "@/components/providers/airports_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -330,9 +331,8 @@ const decimatePairSeries = (xValues: number[], yValues: number[], maxPoints: num
 };
 
 export default function TurnToFinalPage() {
-    useEffect(() => {
-        document.title = "NGAFID — Turn to Final";
-    }, []);
+    
+    setPageTitle("Turn to Final");
 
     const { visitedAirports } = useAirports();
     const { setModal } = useModal();

@@ -45,6 +45,7 @@ import type {
     UploadListResponse,
     UploadStatus
 } from "./_types/types";
+import { setPageTitle } from "@/components/page_title";
 
 
 const log = getLogger("Uploads", "black", "Page");
@@ -361,9 +362,7 @@ async function md5BestEffort(file: File, onProgress: (done: number, total: numbe
 
 export default function UploadsPage() {
 
-    useEffect(() => {
-        document.title = `NGAFID — Uploads`;
-    });
+    setPageTitle("Uploads");
 
     const { setModal } = useModal();
 
@@ -1445,7 +1444,7 @@ export default function UploadsPage() {
     const render = () => (
         <div className="page-container">
 
-            <div className="page-content-thin space-y-4 w-full h-full mx-auto">
+            <div className="page-content-thin space-y-4 h-full">
 
                 <UploadsDropzone onPickFiles={onPickFiles} />
 

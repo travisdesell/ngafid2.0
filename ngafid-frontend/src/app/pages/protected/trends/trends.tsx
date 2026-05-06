@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/trends/trends.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { setPageTitle } from "@/components/page_title";
 import PanelAlert from "@/components/panel_alert";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -217,22 +218,20 @@ const buildMergedAnyEvent = (source: EventCountsByEvent): Record<string, TrendsD
 };
 
 export default function TrendsPage() {
+
     const location = useLocation();
+    const isAggregatePage = location.pathname.includes("aggregate_trends");
+    setPageTitle(isAggregatePage ? "Trends (Aggregate)" : "Trends");
+
     const { setModal } = useModal();
     const { useHighContrastCharts } = useTheme();
     const { endpointStartDate, endpointEndDate, reapplyTrigger, renderDateRangeMonthly } = useTimeHeader();
     const { airframes, airframeIDSelected, setAirframeIDSelected, airframeNameSelected, setAirframeNameSelected } = useAirframes();
 
-    const isAggregatePage = location.pathname.includes("aggregate_trends");
-
     const [loading, setLoading] = useState(false);
     const [eventCounts, setEventCounts] = useState<EventCountsByEvent>({});
     const [eventChecked, setEventChecked] = useState<Record<string, boolean>>({ [EVENT_ANY]: false });
     const [eventDescriptions, setEventDescriptions] = useState<Record<string, string>>({});
-
-    useEffect(() => {
-        document.title = `NGAFID — ${isAggregatePage ? "Aggregate Trends" : "Trends"}`;
-    }, [isAggregatePage]);
 
     const fetchEventDescriptions = async () => {
         const descriptions = await fetchJson.get<EventDescriptionResponse>("/api/event/definition/description").catch((error) => {
