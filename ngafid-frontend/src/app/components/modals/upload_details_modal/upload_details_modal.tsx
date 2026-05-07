@@ -158,7 +158,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
 
         return (
             <div className="rounded-lg p-4 border-muted-foreground border relative overflow-visible! my-2 flex flex-col gap-2">
-                <h3 className="font-bold absolute bg-muted px-2 left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">{groupName}</h3>
+                <h3 className="font-bold absolute dark:bg-muted bg-background px-2 left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">{groupName}</h3>
                 <ol className="flex flex-col gap-2" type="1">
                     {children}
                 </ol>
@@ -239,12 +239,12 @@ export default function UploadDetailsModal({ data }: ModalProps) {
                 groups.map((group, index) => (
                     <button
                         key={`error-group-${index}`}
-                        className="border-(--error) rounded-md p-2 mr-2 text-wrap wrap-break-word text-left cursor-pointer bg-background"
+                        className="border-(--error) rounded-md p-2 mr-2 text-wrap wrap-break-word text-left cursor-pointer dark:bg-background bg-muted group"
                         onClick={() => copyErrorDetailsToClipboard(group)}
                     >
 
                         {/* Error Title & Flight Count */}
-                        <div className="flex mb-2">
+                        <div className="flex mb-2 group-hover:underline">
                             <span className="font-semibold">{group.label}</span>
                             &nbsp;<span className="text-nowrap">({group.count} flights):</span>
                         </div>
