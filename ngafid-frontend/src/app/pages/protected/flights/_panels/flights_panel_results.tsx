@@ -287,7 +287,7 @@ function FlightsPanelResultsInner() {
                 {/* Results List */}
                 <motion.div
                     ref={scrollParentRef}
-                    className="flex-1 min-h-0 h-full w-full overflow-y-auto"
+                    className="flex-1 min-h-0 h-full w-full overflow-y-auto scrollbar-themed"
                 >
 
                     {/* Loading Spinner */}
