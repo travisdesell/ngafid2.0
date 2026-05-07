@@ -4,24 +4,13 @@
 import ConfirmModal from "@/components/modals/confirm_modal";
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
-import { Badge, BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { fetchJson } from "@/fetchJson";
 import { CHUNK_SIZE } from "@/workers/md5.shared";
 import Md5Worker from "@/workers/md5.worker.ts?worker";
 import {
-    AlertTriangle,
-    Check,
-    CircleAlert,
-    CloudDownload,
-    Download,
-    List,
-    ListOrdered,
-    Loader,
-    RotateCcw,
-    Trash
+    ListOrdered
 } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -36,8 +25,8 @@ import { getLogger } from "@/components/providers/logger";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import UploadsDropzone from "@/pages/protected/uploads/_uploads_dropzone";
+import UploadItem from "@/pages/protected/uploads/upload_item";
 import {
     UPLOADS_PER_PAGE_OPTIONS,
     type APIError,
@@ -54,11 +43,6 @@ import {
 const log = getLogger("Uploads", "black", "Page");
 const DEFAULT_UPLOADS_PAGE_SIZE = 10;
 
-
-// UI Helpers
-function bytesToKB(num: number) {
-    return (num / 1000).toFixed(2);
-}
 
 function getUploadsPagePath(currentPage: number) {
     return `/protected/uploads/${currentPage + 1}`;
@@ -97,49 +81,7 @@ function syncUploadsPageUrl(currentPage: number) {
 
 }
 
-function statusBadgeVariant(status: UploadStatus): { label: string; variant: BadgeVariant } {
-    switch (status) {
-        case "HASHING":
-        case "ENQUEUED":
-        case "UPLOADED":
-            return { label: status.replace("_", " "), variant: "secondary" };
-        case "UPLOADING":
-        case "PROCESSING":
-            return { label: status, variant: "outline" };
-        case "PROCESSED_OK":
-            return { label: "PROCESSED OK", variant: "outline" };
-        case "PROCESSED_WARNING":
-            return { label: "PROCESSED WARNING", variant: "outline" };
-        case "UPLOADING_FAILED":
-        case "FAILED_INTERRUPTED":
-        case "FAILED_FILE_TYPE":
-        case "FAILED_AIRCRAFT_TYPE":
-        case "FAILED_ARCHIVE_TYPE":
-        case "FAILED_UNKNOWN":
-            return { label: status.replace("_", " "), variant: "destructive" };
-        case "DERIVED":
-            return { label: "DERIVED", variant: "outline" };
-        default:
-            return { label: status, variant: "secondary" };
-    }
-}
 
-function percent(progress: number, total: number) {
-
-    // Total is unset or negative, assume 0%
-    if (!total || total <= 0)
-        return 0;
-
-    // Clamp to [0.00, 100.00]
-    return Math.min(
-        100,
-        Math.max(
-            0,
-            Number(((progress / total) * 100).toFixed(2))
-        )
-    );
-
-}
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const raf = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
@@ -1122,195 +1064,6 @@ export default function UploadsPage() {
 
     }
 
-    const UploadCard = (u:UploadInfo|UploadImportItem, isPending?:boolean) => {
-
-        const uploadProgress = percent(u.progressSize ?? u.bytesUploaded ?? 0, u.totalSize ?? u.sizeBytes ?? 0);
-        const progressBarColor = (u.status === "HASHING" ? "bg-secondary-foreground" : "");
-        const { label, variant } = statusBadgeVariant(u.status);
-        const isDeleting = (u.id !== -1 && deletingUploadIds.has(u.id));
-
-        const hasAnyLocalActiveUpload = (busy || pending.some((p) => p.status === "HASHING" || p.status === "UPLOADING"));
-        const disableAll = (u.status === "HASHING" || u.status === "UPLOADING" || isDeleting);
-        const canRetry = (u.status === "UPLOADING_FAILED" || u.status === "FAILED_INTERRUPTED" || u.status === "FAILED_UNKNOWN");
-        const retryDisabled = (disableAll || !canRetry || (u.status === "FAILED_UNKNOWN" && u.id === -1));
-        const deleteDisabled = (disableAll || isPending || u.id === -1 || hasAnyLocalActiveUpload);
-        const retryTooltipMessage = (() => {
-
-            if (u.status === "FAILED_INTERRUPTED")
-                return `Select the original file '${u.filename}' to resume this interrupted upload.`;
-
-            if (u.status === "UPLOADING_FAILED")
-                return "Retries the upload using the original local file if it is still available.";
-
-            if (u.status === "FAILED_UNKNOWN")
-                return "Requeues this upload on the server for processing again.";
-
-            return "Retry is only available for interrupted or failed uploads.";
-
-        })();
-        const isImported = (u.status === "PROCESSED_OK");
-        const hasImportData = ("validFlights" in u);
-        const totalFlights = hasImportData ? (u.validFlights + u.warningFlights + u.errorFlights) : 0;
-
-        const importPendingMessage = (() => {
-
-            switch (u.status) {
-
-                case "HASHING":
-                    return "Hashing, please do not refresh or navigate away...";
-
-                case "UPLOADING":
-                    return "Uploading, please do not refresh or navigate away...";
-
-                case "UPLOADING_FAILED":
-                case "FAILED_INTERRUPTED":
-                    return "Awaiting file reupload...";
-
-                default:
-                    return "Awaiting import processing...";
-
-            }
-
-        })();
-
-        return (
-            <Card className={`card-glossy w-full bg-background! transition-opacity ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}>
-                <CardContent className="p-0 px-6 py-4 flex flex-col gap-4">
-
-                    {/* Top Row */}
-                    <div className="flex items-center justify-between gap-3">
-
-                        {/* File Info */}
-                        <div className="min-w-0">
-                            <div className="font-medium truncate">{u.filename}</div>
-                            <div className="text-xs text-muted-foreground">Uploaded at: {u.startTime ?? ""}</div>
-                        </div>
-
-                        {/* Status Badge */}
-                        <Badge variant={variant} className="shrink-0">
-                            {label}
-                        </Badge>
-
-                    </div>
-
-                    {/* Bottom Row */}
-                    <div className="flex gap-10 justify-between items-center">
-
-                        {/* Upload Progress Bar */}
-                        <div className="flex flex-col justify-around gap-1 w-full">
-                            <Progress value={uploadProgress} className="h-2" indicatorClassName={progressBarColor} />
-                            <div className="text-xs text-muted-foreground whitespace-nowrap">
-                                {bytesToKB((u.progressSize ?? u.bytesUploaded ?? 0))}/{bytesToKB(u.totalSize ?? u.sizeBytes ?? 0)} kB ({uploadProgress.toFixed(2)}%)
-                            </div>
-                        </div>
-
-                        {/* Delete & Download Buttons */}
-                        <div className="flex justify-end gap-2">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span>
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            disabled={retryDisabled}
-                                            onClick={() => { void retryUpload(u); }}
-                                            title="Retry upload"
-                                        >
-                                            <RotateCcw className="h-4 w-4" />
-                                        </Button>
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    {retryTooltipMessage}
-                                </TooltipContent>
-                            </Tooltip>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                disabled={deleteDisabled}
-                                onClick={() => (u.id !== -1 ? deleteUpload(u) : null)}
-                                title="Delete upload"
-                                className="hover:bg-red-500/25 hover:text-red-500 focus:ring-red-500"
-                            >
-                                <Trash className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                disabled={disableAll || isPending || u.id === -1}
-                                onClick={() => (u.id !== -1 ? downloadUpload(u) : null)}
-                                title="Download uploaded file"
-                            >
-                                <Download className="h-4 w-4" />
-                            </Button>
-                        </div>
-
-                    </div>
-
-                    {/* Import Info */}
-                    {
-                        (isImported && hasImportData)
-                        ?
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-2 text-xs min-w-[75%] flex-wrap">
-                                <Badge className="inline-flex justify-between grow items-center gap-1 rounded-md px-2 py-1 bg-muted dark:text-shadow-md" variant={"outline"}>
-                                    <span className="flex items-center gap-1">
-                                        <CloudDownload className="h-3 w-3" />
-                                        Total:
-                                    </span>
-                                    <span>
-                                        {totalFlights}
-                                    </span>
-                                </Badge>
-                                <Badge className="inline-flex justify-between grow items-center gap-1 rounded-md px-2 py-1 bg-(--info) dark:text-shadow-md" variant={"outline"}>
-                                    <span className="flex items-center gap-1">
-                                        <Check className="h-3 w-3" />
-                                        Valid:
-                                    </span>
-                                    <span>
-                                        {u.validFlights}
-                                    </span>
-                                </Badge>
-                                <Badge className="inline-flex justify-between grow items-center gap-1 rounded-md px-2 py-1 bg-(--warning) dark:text-shadow-md" variant={"outline"}>
-                                    <span className="flex items-center gap-1">
-                                        <AlertTriangle className="h-3 w-3" />
-                                        Warnings:
-                                    </span>
-                                    <span>
-                                        {u.warningFlights}
-                                    </span>
-                                </Badge>
-                                <Badge className="inline-flex justify-between grow items-center gap-1 rounded-md px-2 py-1 bg-(--error) dark:text-shadow-md" variant={"outline"}>
-                                    <span className="flex items-center gap-1">
-                                        <CircleAlert className="h-3 w-3" />
-                                        Errors:
-                                    </span>
-                                    <span>
-                                        {u.errorFlights}
-                                    </span>
-                                </Badge>
-                            </div>
-
-                            <Button
-                                variant={"ghost"} 
-                                onClick={() => openUploadDetailsModal(u)}
-                            >
-                                <List />
-                                Details
-                            </Button>
-
-                        </div>
-                        :
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-                            <Loader size={20} className="animate-spin duration-2000" />
-                            <span>{importPendingMessage}</span>
-                        </div>
-                    }
-
-                </CardContent>
-            </Card>
-        );
-    };
 
     /*
         Placeholder Paginator Component
@@ -1479,7 +1232,7 @@ export default function UploadsPage() {
                         </div>
 
                     </CardHeader>
-                    <CardContent className="w-full h-full space-y-4 pt-6 grid grid-cols-2 gap-2 mb-auto overflow-y-auto">
+                    <CardContent className="w-full h-full pt-6 flex flex-col gap-2 mb-auto overflow-y-auto">
 
                         {
                             (hasAnyUploadsOrImports)
@@ -1491,7 +1244,17 @@ export default function UploadsPage() {
                                     animate={{ opacity: 1.00 }}
                                     transition={{ duration: 0.50, delay: 0.03 * i }}
                                 >
-                                    {UploadCard(u, u.id === -1)}
+                                    <UploadItem
+                                        u={u}
+                                        isPending={u.id === -1}
+                                        busy={busy}
+                                        pending={pending}
+                                        deletingUploadIds={deletingUploadIds}
+                                        retryUpload={retryUpload}
+                                        deleteUpload={deleteUpload}
+                                        downloadUpload={downloadUpload}
+                                        openUploadDetailsModal={openUploadDetailsModal}
+                                    />
                                 </motion.div>
                             )
                             :
