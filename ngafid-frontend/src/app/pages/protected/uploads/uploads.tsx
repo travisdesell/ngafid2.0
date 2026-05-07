@@ -1010,7 +1010,7 @@ export default function UploadsPage() {
     };
 
 
-    const downloadUpload = async (u: UploadInfo) => {
+    const downloadUpload = async (u: UploadInfo | UploadImportItem) => {
 
         setBusy(true);
         setError(null);
@@ -1020,7 +1020,11 @@ export default function UploadsPage() {
             const params = new URLSearchParams({
                 md5hash: u.md5Hash
             });
-            const downloadResponse = await fetchJson.get(`/api/upload/${u.id}/file`, { params });
+            const downloadResponse = await fetch(`/api/upload/${u.id}/file?${params.toString()}`, {
+                headers: {
+                    Accept: "application/zip, application/json"
+                }
+            });
 
             // Download failed, throw error
             if (!downloadResponse.ok)
