@@ -3,6 +3,8 @@ package org.ngafid.www.routes;
 import io.javalin.http.Context;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -49,10 +51,7 @@ public class StatusJavalinRoutes {
                     List.of("ngafid-upload-consumer@0", "ngafid-upload-consumer@1", "ngafid-upload-consumer@2")),
             Map.entry("kafka", List.of("kafka.service")),
             Map.entry("chart-service", List.of("ngafid-chart-service.service")),
-            Map.entry("event-processing", List.of("ngafid-event-consumer.service")),
-
-            // Depends on database used. In prod we use mysql
-            Map.entry("database", List.of("mysqld.service")));
+            Map.entry("event-processing", List.of("ngafid-event-consumer.service")));
 
     /**
      * Maps service API name to a pair of the corresponding status and a long
@@ -61,6 +60,9 @@ public class StatusJavalinRoutes {
      */
     private static final ConcurrentHashMap<String, Pair<ServiceStatusResult, Long>> SERVICE_STATUS_CACHE =
             new ConcurrentHashMap<>();
+    private static final String DATABASE_SERVICE_NAME = "database";
+    private static final int DB_CONNECTION_TIMEOUT_S = 2;
+    private static final int NANOS_PER_MILLI = 1_000_000;
 
     private static ServiceStatusResult checkSystemdService(String apiName, String serviceName) {
         // Command we are running is:
@@ -199,42 +201,63 @@ public class StatusJavalinRoutes {
         };
     }
 
+    private static ServiceStatusResult checkDatabaseConnection() {
+
+        long startNanos = System.nanoTime();
+
+        try (Connection connection = Database.getConnection()) {
+
+            // Connection is null -> Error
+            if (connection == null)
+                return new ServiceStatusResult( ServiceStatus.ERROR, "Database connection failed: no connection available");
+
+            // Connection is invalid -> Error
+            if (!connection.isValid(DB_CONNECTION_TIMEOUT_S))
+                return new ServiceStatusResult(ServiceStatus.ERROR, "Database connection failed validation");
+
+            try (PreparedStatement statement = connection.prepareStatement("SELECT 1")) {
+
+                statement.setQueryTimeout(DB_CONNECTION_TIMEOUT_S);
+
+                try (ResultSet resultSet = statement.executeQuery()) {
+
+                    // No result / or the result isn't 1 -> Error
+                    if (!resultSet.next() || resultSet.getInt(1) != 1)
+                        return new ServiceStatusResult( ServiceStatus.ERROR, "Database validation query returned an unexpected result");
+
+                }
+
+            }
+
+            long elapsedMs = (System.nanoTime() - startNanos) / NANOS_PER_MILLI;
+            String databaseProduct = connection.getMetaData().getDatabaseProductName();
+            String databaseVersion = connection.getMetaData().getDatabaseProductVersion();
+
+            final String messageLogged = "Database connection healthy (%s %s, validation query completed in %d ms)".formatted( databaseProduct, databaseVersion, elapsedMs);
+            final String messageReturned = "Database connection healthy";
+
+            LOG.info(messageLogged);
+
+            return new ServiceStatusResult( ServiceStatus.OK, messageReturned );
+
+        } catch (SQLException e) {
+            return new ServiceStatusResult(ServiceStatus.ERROR, "Database connection failed: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return new ServiceStatusResult(ServiceStatus.ERROR, "Database status check failed: " + e.getMessage());
+        }
+
+    }
+
     private static void getServiceStatus(Context ctx) {
 
         String requested = ctx.pathParam("service-name");
 
         // Checking database status...
-        if ("database".equalsIgnoreCase(requested)) {
-
-            try (Connection connection = Database.getConnection()) {
-
-                final int DB_CONNECTION_TIMEOUT_S = 2;
-
-                // Connection is null, throw exception
-                if (connection == null)
-                    throw new SQLException("Failed to obtain database connection");
-
-                // Connection is invalid, throw exception
-                if (connection.isValid(DB_CONNECTION_TIMEOUT_S))
-                    throw new SQLException("Database connection is not valid");
-                
-                // Connection is valid
-                ServiceStatusResult result = new ServiceStatusResult( ServiceStatus.OK, "Database connection is healthy.");
-                SERVICE_STATUS_CACHE.put("database", new ImmutablePair<>(result, System.nanoTime()));
-                ctx.json(result);
-                return;
-
-            } catch (SQLException e) {
-
-                ServiceStatusResult result = new ServiceStatusResult(
-                    ServiceStatus.ERROR,
-                    "Database connection failed: " + e.getMessage()
-                );
-                SERVICE_STATUS_CACHE.put("database", new ImmutablePair<>(result, System.nanoTime()));
-                ctx.json(result);
-                return;
-
-            }
+        if (DATABASE_SERVICE_NAME.equalsIgnoreCase(requested)) {
+            ServiceStatusResult result = checkDatabaseConnection();
+            SERVICE_STATUS_CACHE.put(DATABASE_SERVICE_NAME, new ImmutablePair<>(result, System.nanoTime()));
+            ctx.json(result);
+            return;
 
         }
 
