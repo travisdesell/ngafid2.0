@@ -81,8 +81,6 @@ function UploadValidityProportion(u: UploadImportItem) {
     const warningProportion = u.warningFlights / totalFlights;
     const errorProportion = u.errorFlights / totalFlights;
 
-    console.log(`Proportions: ${(100 * validProportion).toFixed(1)}% valid, ${(100 * warningProportion).toFixed(1)}% warning, ${(100 * errorProportion).toFixed(1)}% error`);
-
     return (
         <Tooltip disableHoverableContent>
             <TooltipTrigger className="flex w-full border border-border bg-muted rounded overflow-hidden h-3">
@@ -204,7 +202,7 @@ export default function UploadItem(props: UploadItemProps) {
                         <Progress value={uploadProgress} className="h-3 my-1" indicatorClassName={progressBarColor} />
                         <div className="text-xs text-muted-foreground whitespace-nowrap">
                             {
-                                (u.bytesUploaded >= u.sizeBytes)
+                                (u.bytesUploaded < u.sizeBytes)
                                 ?
                                 `${bytesToKB(u.progressSize ?? u.bytesUploaded ?? 0)} / ${bytesToKB(u.totalSize ?? u.sizeBytes ?? 0)} kB (${uploadProgress.toFixed(2)}%)`
                                 :
