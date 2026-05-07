@@ -14,6 +14,49 @@ import { useEffect, useState } from "react";
 
 const log = getLogger("UploadDetailsModal", "black", "Modal");
 
+async function copyTextToClipboard(text: string) {
+
+    // Attempt to use the modern Clipboard API first
+    if (navigator.clipboard?.writeText) {
+
+        try {
+
+            await navigator.clipboard.writeText(text);
+            return;
+
+        } catch {
+
+            // Fall through to the legacy copy path below.
+
+        }
+
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.opacity = "0";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+
+        if (!document.execCommand("copy"))
+            throw new Error("The browser rejected the fallback clipboard copy.");
+
+    } finally {
+
+        document.body.removeChild(textArea);
+
+    }
+
+}
+
 
 export type ModalDataUploadDetails = ModalData & {
     uploadImportData: UploadImportItem;
@@ -174,21 +217,24 @@ export default function UploadDetailsModal({ data }: ModalProps) {
 
     function ErrorDetailItems({ groups }: { groups: { label: string; filenames: Set<string>; count: number }[] }) {
 
-        const copyErrorDetailsToClipboard = (group: { label: string; filenames: Set<string>; count: number }) => {
+        const copyErrorDetailsToClipboard = async (group: { label: string; filenames: Set<string>; count: number }) => {
 
             const textToCopy = `Error: ${group.label}\nCount: ${group.count}\nFilenames: ${Array.from(group.filenames).join(", ")}`;
 
-            navigator.clipboard.writeText(textToCopy)
-                .then(() => {
-                    log("Copied error details to clipboard:", textToCopy);
-                })
-                .catch(err => {
-                    log("Failed to copy error details to clipboard:", err);
-                });
+            try {
+
+                await copyTextToClipboard(textToCopy);
+                log("Copied error details to clipboard:", textToCopy);
+
+            } catch (err) {
+
+                log("Failed to copy error details to clipboard:", err);
+
+            }
 
         };
 
-        return <button className="flex flex-col gap-2 overflow-y-auto max-h-64">
+        return <div className="flex flex-col gap-2 overflow-y-auto max-h-64">
             {
                 groups.map((group, index) => (
                     <button
@@ -211,7 +257,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
                     </button>
                 )
             )}
-        </button>
+        </div>
 
     }
 
