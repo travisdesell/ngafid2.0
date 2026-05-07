@@ -86,7 +86,7 @@ function UploadValidityProportion(u: UploadImportItem) {
     return (
         <Tooltip disableHoverableContent>
             <TooltipTrigger className="flex w-full border border-border bg-muted rounded overflow-hidden h-3">
-                <div className="h-full bg-(--info)" style={{ width: `${validProportion * 100}%` }} />
+                <div className="h-full bg-(--normal)" style={{ width: `${validProportion * 100}%` }} />
                 <div className="h-full bg-(--warning)" style={{ width: `${warningProportion * 100}%` }} />
                 <div className="h-full bg-(--error)" style={{ width: `${errorProportion * 100}%` }} />
             </TooltipTrigger>
@@ -96,7 +96,7 @@ function UploadValidityProportion(u: UploadImportItem) {
 
                     {/* Valid */}
                     <div className="flex items-center gap-1">
-                        <Check className="w-4 h-4 inline text-(--info)" />
+                        <Check className="w-4 h-4 inline text-(--normal)" />
                         <span>Valid:</span>
                     </div>
                     <span className="text-right">{`${u.validFlights} flights`}</span>
@@ -105,7 +105,7 @@ function UploadValidityProportion(u: UploadImportItem) {
                     {/* Warning */}
                     <div className="flex items-center gap-1">
                         <AlertTriangle className="w-4 h-4 inline text-(--warning)" />
-                        <span>Warning:</span>
+                        <span>Warnings:</span>
                     </div>
                     <span className="text-right">{`${u.warningFlights} flights`}</span>
                     <span className="text-right">{`${((100 * warningProportion).toFixed(1))}%`}</span>
@@ -113,7 +113,7 @@ function UploadValidityProportion(u: UploadImportItem) {
                     {/* Error */}
                     <div className="flex items-center gap-1">
                         <AlertCircle className="w-4 h-4 inline text-(--error)" />
-                        <span>Error:</span>
+                        <span>Errors:</span>
                     </div>
                     <span className="text-right">{`${u.errorFlights} flights`}</span>
                     <span className="text-right">{`${((100 * errorProportion).toFixed(1))}%`}</span>

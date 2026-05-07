@@ -352,7 +352,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
                     {/* Flight Counts */}
                     <div className="flex gap-2 text-xs w-full">
                         <UploadCountBadge label="Total" count={totalFlights} icon={CloudDownload} colorClass="bg-(--muted) dark:text-shadow-md" />
-                        <UploadCountBadge label="Valid" count={uploadImportData.validFlights} icon={Check} colorClass="bg-(--info) dark:text-shadow-md" />
+                        <UploadCountBadge label="Valid" count={uploadImportData.validFlights} icon={Check} colorClass="bg-(--normal) dark:text-shadow-md" />
                         <UploadCountBadge label="Warnings" count={uploadImportData.warningFlights} icon={AlertTriangle} colorClass="bg-(--warning) dark:text-shadow-md" />
                         <UploadCountBadge label="Errors" count={uploadImportData.errorFlights} icon={CircleAlert} colorClass="bg-(--error) dark:text-shadow-md" />
                     </div>
