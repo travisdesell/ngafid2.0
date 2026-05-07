@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UploadImportItem, UploadInfo, UploadStatus } from "@/pages/protected/uploads/types";
-import { AlertCircle, AlertTriangle, Check, CircleAlert, CloudDownload, Download, List, Loader, RotateCcw, Trash } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, CircleAlert, CloudDownload, Download, Info, List, Loader, RotateCcw, Trash } from "lucide-react";
 
 
 function bytesToKB(num: number) {
@@ -306,7 +306,7 @@ export default function UploadItem(props: UploadItemProps) {
                         variant={"ghost"}
                         onClick={() => openUploadDetailsModal(u as UploadImportItem)}
                     >
-                        <List />
+                        <Info />
                         {/* Details */}
                     </Button>
 
