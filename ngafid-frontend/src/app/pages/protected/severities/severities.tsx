@@ -121,6 +121,22 @@ const toEpochMs = (value: string | number) => {
     return Number.isNaN(parsed) ? undefined : parsed;
 };
 
+const formatTooltipDateTime = (value: string | number) => {
+    const epochMs = toEpochMs(value);
+    if (epochMs === undefined)
+        return String(value ?? "N/A");
+
+    return new Date(epochMs).toLocaleTimeString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    });
+};
+
 const normalizeEventMetaData = (value: unknown): EventMetaDataItem[] => {
     if (!Array.isArray(value))
         return [];
@@ -969,10 +985,10 @@ export default function SeveritiesPage() {
                                                                                     <div>{`System ID: ${point.systemId}`}</div>
                                                                                     <div>{`Tail: ${point.tail?.length > 0 ? point.tail : "N/A"}`}</div>
                                                                                     <hr />
-                                                                                    <div>{`Tag: ${point.tagName || "N/A"}`}</div>
+                                                                                    <div>{`Tags: ${point.tagName || "N/A"}`}</div>
                                                                                     <hr />
-                                                                                    <div>{`Event Start: ${point.startTime}`}</div>
-                                                                                    <div>{`Event End: ${point.endTime}`}</div>
+                                                                                    <div>{`Event Start: ${formatTooltipDateTime(point.startTime)}`}</div>
+                                                                                    <div>{`Event End: ${formatTooltipDateTime(point.endTime)}`}</div>
                                                                                 </div>
                                                                             );
                                                                         }}
