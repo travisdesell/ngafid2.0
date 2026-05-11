@@ -324,16 +324,11 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                                 </Link>
                             </DropdownMenuItem>
 
-                            {/* Account Management */}
+                            {/* Profile Preferences */}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild disabled>
-                                <Link to="/protected/preferences">
-                                    My Preferences
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild disabled>
-                                <Link to="/protected/update_profile">
-                                    Update Profile
+                            <DropdownMenuItem asChild>
+                                <Link to="/protected/profile_preferences">
+                                    Profile Preferences
                                 </Link>
                             </DropdownMenuItem>
 

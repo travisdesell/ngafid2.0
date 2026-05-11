@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import ErrorModal, { ModalDataError } from "./error_modal";
 import type { ModalProps } from "./types";
 import { openRoute } from "@/lib/route_utils";
+import { validateNewPassword } from "@/lib/password_validation";
 
 const log = getLogger("RegisterModal", "black", "Modal");
 
@@ -91,6 +92,10 @@ export default function RegisterModal({ setModal }: ModalProps) {
             const passwordEmpty = (password.trim().length === 0);
             if (passwordEmpty)
                 throw new Error("Preventing registration submission - Password is required.");
+
+            const passwordValidation = validateNewPassword(password);
+            if (!passwordValidation.valid)
+                throw new Error(passwordValidation.message);
 
             //Managing new fleet...
             if (isManagingNewFleet) {

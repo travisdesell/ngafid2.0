@@ -13,8 +13,21 @@ import { AlertCircleIcon, Loader2Icon, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import ErrorModal, { ModalDataError } from './error_modal';
 import type { ModalProps } from "./types";
+import { Separator } from '@/components/ui/separator';
 
 const log = getLogger("LoginModal", "black", "Modal");
+
+type LoginResponse = {
+    loggedOut?: boolean;
+    waiting?: boolean;
+    denied?: boolean;
+    loggedIn?: boolean;
+    message?: string;
+    errorTitle?: string;
+    errorMessage?: string;
+};
+
+type TwoFactorMode = "authenticator" | "backup";
 
 export default function LoginModal({ setModal }: ModalProps) {
 
@@ -22,8 +35,12 @@ export default function LoginModal({ setModal }: ModalProps) {
 
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
+    const [requires2FA, setRequires2FA] = React.useState(false);
+    const [twoFactorCode, setTwoFactorCode] = React.useState("");
+    const [twoFactorMode, setTwoFactorMode] = React.useState<TwoFactorMode>("authenticator");
     const [errorMessage, setErrorMessage] = React.useState("");
     const [isLoading, setIsLoading] = React.useState(false);
+    const twoFactorInputRef = React.useRef<HTMLInputElement>(null);
 
 
     const emailIsValid = useCallback(() => {
@@ -32,15 +49,23 @@ export default function LoginModal({ setModal }: ModalProps) {
         const isValidEmail = re.test(String(email).toLowerCase()); 
         return isValidEmail;
     }, [email]);
+
+    React.useEffect(() => {
+        if (requires2FA)
+            twoFactorInputRef.current?.focus();
+    }, [requires2FA]);
     
 
 
-    const submitLogin = () => {
+    const submitLogin = (event?: React.FormEvent) => {
+
+        event?.preventDefault();
 
         log("Attempting to submit login....");
 
         //Flag as loading
         setIsLoading(true);
+        setErrorMessage("");
 
         //Email is empty, exit
         const emailEmpty = (email.trim().length === 0);
@@ -60,39 +85,76 @@ export default function LoginModal({ setModal }: ModalProps) {
             return false;
         }
 
+        if (requires2FA) {
+            const expectedCodeLength = (twoFactorMode === "backup") ? 8 : 6;
+            if (twoFactorCode.trim().length !== expectedCodeLength) {
+                setIsLoading(false);
+                setErrorMessage(`Please enter a valid ${expectedCodeLength}-digit verification code.`);
+                return false;
+            }
+        }
+
         const form = new URLSearchParams({
             'email': email,
             'password': password
         });
 
+        if (requires2FA) {
+            if (twoFactorMode === "backup")
+                form.set("backupCode", twoFactorCode);
+            else
+                form.set("totpCode", twoFactorCode);
+        }
+
 
         fetch('/api/auth/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: form,
         })
         .then(response => response.json())
-        .then(data => {
-
-            //Clear password field in UI state
-            setPassword("");
+        .then((data: LoginResponse) => {
 
             //Logged out, show error message
             if (data.loggedOut) {
                 setErrorMessage(data.message || "You have been logged out.");
+                setTwoFactorCode("");
+                return false;
+            }
+
+            if (data.message === "2FA_CODE_REQUIRED") {
+                setRequires2FA(true);
+                setTwoFactorCode("");
+                return false;
+            }
+
+            if (data.message === "2FA_SETUP_REQUIRED") {
+                setErrorMessage("Two-factor authentication setup is incomplete. Please finish setup from Account Security.");
                 return false;
             }
 
             //Got an error, show error modal
             if (data.errorTitle) {
-                setModal(ErrorModal, {title : data.errorTitle, message:data.errorMessage});
+
+                setModal(ErrorModal,
+                    {
+                        title : data.errorTitle,
+                        message:data.errorMessage ?? "An unknown error occurred during login."
+                    } as ModalDataError
+                );
+
                 return false;
+
             }
 
             //Successful login
             log("Login successful!");
+
+            //Clear password field in UI state
+            setPassword("");
+            setTwoFactorCode("");
 
             //Waiting or denied, go to Waiting page
             if (data.waiting || data.denied)
@@ -113,9 +175,15 @@ export default function LoginModal({ setModal }: ModalProps) {
 
         });
     };
-    
 
-    const submitDisabled = (email.trim().length === 0 || password.trim().length === 0 || !emailIsValid() || isLoading);
+    const expectedTwoFactorCodeLength = (twoFactorMode === "backup") ? 8 : 6;
+    const submitDisabled = (
+        email.trim().length === 0
+        || password.trim().length === 0
+        || !emailIsValid()
+        || isLoading
+        || (requires2FA && twoFactorCode.trim().length !== expectedTwoFactorCodeLength)
+    );
 
     return (
         <motion.div
@@ -130,7 +198,11 @@ export default function LoginModal({ setModal }: ModalProps) {
                     <div className="grid gap-2">
                         <CardTitle>Login to your account</CardTitle>
                         <CardDescription>
-                            Enter your email and password below to login to your account
+                            {
+                                requires2FA
+                                ? "Enter your verification code to finish logging in."
+                                : "Enter your email and password below to login to your account"
+                            }
                         </CardDescription>
                     </div>
 
@@ -142,8 +214,10 @@ export default function LoginModal({ setModal }: ModalProps) {
 
                 </CardHeader>
                 <CardContent>
-                    <form>
+                    <form id="login-form" onSubmit={submitLogin}>
                         <div className="flex flex-col gap-6">
+
+                            {/* Error Message */}
                             {
                                 (errorMessage)
                                 &&
@@ -155,6 +229,8 @@ export default function LoginModal({ setModal }: ModalProps) {
                                     </AlertDescription>
                                 </Alert>
                             }
+
+                            {/* Email & PW Fields */}
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
@@ -164,6 +240,7 @@ export default function LoginModal({ setModal }: ModalProps) {
                                     required
                                     onChange={(e) => setEmail(e.target.value)}
                                     value={email}
+                                    disabled={requires2FA || isLoading}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -174,7 +251,7 @@ export default function LoginModal({ setModal }: ModalProps) {
                                         type="button"
                                         onClick={() => setModal(ForgotPasswordModal)}
                                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                                        disabled={isLoading}
+                                        disabled={requires2FA || isLoading}
                                     >
                                         Forgot your password?
                                     </Button>
@@ -185,8 +262,49 @@ export default function LoginModal({ setModal }: ModalProps) {
                                     required
                                     onChange={(e) => setPassword(e.target.value)}
                                     value={password}
+                                    disabled={requires2FA || isLoading}
                                 />
                             </div>
+
+                            {/* 2FA Fields */}
+                            {
+                                (requires2FA)
+                                &&
+                                <div className="grid gap-2">
+                                    <Separator />
+                                    <div className="flex items-center">
+                                        <Label htmlFor="two-factor-code">
+                                            {twoFactorMode === "backup" ? "Backup Code" : "Authenticator Code"}
+                                        </Label>
+                                        <Button
+                                            variant="link"
+                                            type="button"
+                                            onClick={() => {
+                                                setTwoFactorMode(twoFactorMode === "backup" ? "authenticator" : "backup");
+                                                setTwoFactorCode("");
+                                                setErrorMessage("");
+                                            }}
+                                            className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                                            disabled={isLoading}
+                                        >
+                                            {twoFactorMode === "backup" ? "Use authenticator code" : "Use backup code"}
+                                        </Button>
+                                    </div>
+                                    <Input
+                                        ref={twoFactorInputRef}
+                                        id="two-factor-code"
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoComplete="one-time-code"
+                                        placeholder={twoFactorMode === "backup" ? "8-digit backup code (one-time use!)" : "6-digit code"}
+                                        value={twoFactorCode}
+                                        maxLength={expectedTwoFactorCodeLength}
+                                        onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ""))}
+                                        disabled={isLoading}
+                                        data-modal-initial-focus
+                                    />
+                                </div>
+                            }
                         </div>
                     </form>
                 </CardContent>
@@ -199,8 +317,8 @@ export default function LoginModal({ setModal }: ModalProps) {
                             Please wait...
                         </Button>
                         :
-                        <Button type="submit" className="w-full" disabled={submitDisabled} onClick={submitLogin}>
-                            Login
+                        <Button type="submit" form="login-form" className="w-full" disabled={submitDisabled}>
+                            {requires2FA ? "Login With Code" : "Login"}
                         </Button>
                     }
                 </CardFooter>

@@ -8,6 +8,7 @@ import io.javalin.http.UnauthorizedResponse
 import org.ngafid.core.Database
 import org.ngafid.core.accounts.AccountException
 import org.ngafid.core.accounts.FleetAccess
+import org.ngafid.core.accounts.PasswordPolicy
 import org.ngafid.core.accounts.User
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.AccountJavalinRoutes
@@ -238,22 +239,31 @@ object AuthRoutes : RouteProvider() {
         val zipCode = ctx.formParam("zipCode")
         val accountType = ctx.formParam("accountType")
 
+        val passwordValidationError = PasswordPolicy.validationError(password)
+        if (passwordValidationError != null) {
+            ctx.json(ErrorResponse("Invalid Password", passwordValidationError))
+            return
+        }
+
         Database.getConnection().use { connection ->
-            if (accountType != null) {
+            if (accountType == null) {
                 ctx.json(
                     ErrorResponse(
                         "Invalid Account Type",
-                        "A request was made to create an account with an unknown account type '$accountType'."
+                        "A request was made to create an account without an account type."
                     )
                 )
+                return
             }
-            if (accountType != null && accountType == "gaard") {
+
+            if (accountType == "gaard") {
                 ctx.json(
                     ErrorResponse(
                         "Gaard Account Creation Disabled",
                         "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."
                     )
                 )
+                return
             } else if (accountType == "newFleet") {
                 val fleetName = ctx.formParam("fleetName")
                 val user = User.createNewFleetUser(
@@ -322,6 +332,12 @@ object AuthRoutes : RouteProvider() {
                     return
                 }
 
+                val passwordValidationError = PasswordPolicy.validationError(newPassword)
+                if (passwordValidationError != null) {
+                    ctx.json(ErrorResponse("Could not reset password.", passwordValidationError))
+                    return
+                }
+
                 // 2. make sure the passphrase is valid
                 if (!User.validatePassphrase(connection, emailAddress, passphrase)) {
                     ctx.json(ErrorResponse("Could not reset password.", "The passphrase provided was not correct."))
@@ -349,6 +365,7 @@ object AuthRoutes : RouteProvider() {
             // 1. make sure currentPassword authenticates against what's in the database
             if (!user.validate(connection, currentPassword)) {
                 ctx.json(ErrorResponse("Could not update password.", "The current password was not correct."))
+                return
             }
 
             // 2. make sure the new password and confirm password are the same
@@ -359,6 +376,7 @@ object AuthRoutes : RouteProvider() {
                         "The server received different new and confirmation passwords."
                     )
                 )
+                return
             }
 
             // 3. make sure the new password is different from the old password
@@ -369,6 +387,13 @@ object AuthRoutes : RouteProvider() {
                         "The current password was the same as the new password."
                     )
                 )
+                return
+            }
+
+            val passwordValidationError = PasswordPolicy.validationError(newPassword)
+            if (passwordValidationError != null) {
+                ctx.json(ErrorResponse("Could not update password.", passwordValidationError))
+                return
             }
 
             user.updatePassword(connection, newPassword)
