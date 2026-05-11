@@ -37,15 +37,29 @@ export default function ForgotPasswordModal({ setModal }: ModalProps) {
 
     const submitPasswordReset = () => {
 
-        log("Forgot Password Modal - Attempting to submit password reset...");
+        log(`Forgot Password Modal - Attempting to submit password reset for email: '${email}'`);
 
-        const submissionData = {
-            email: email,
-        };
+        const form = new URLSearchParams({
+            email
+        });
 
-        fetchJson.post('/api/auth/forgot-password', submissionData)
+        fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: form
+        })
             .then((response) => {
-                setModal(SuccessModal, { title: "Password Reset Email Sent", message: "If an account with that email exists, a password reset email has been sent." });
+                if (response.ok) {
+                    setModal(SuccessModal, { title: "Password Reset Email Sent", message: "If an account with that email exists, a password reset email has been sent." });
+                } else {
+                    response.json().then((data) => {
+                        setModal(ErrorModal, { title: "Error sending password reset email", message: `Error sending password reset email: ${data.message || response.statusText}` });
+                    }).catch(() => {
+                        setModal(ErrorModal, { title: "Error sending password reset email", message: `Error sending password reset email: ${response.statusText}` });
+                    });
+                }
             })
             .catch((error) => {
                 setModal(ErrorModal, { title: "Error sending password reset email", message: `Error sending password reset email: ${error.message}` });
