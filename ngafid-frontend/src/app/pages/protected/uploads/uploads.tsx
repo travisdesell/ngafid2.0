@@ -239,7 +239,7 @@ function UploadStatusProportion({ statistics }: { statistics: UploadStatusStatis
                     <div className="grid grid-cols-3 grid-rows-3 gap-y-2">
                         <div className="flex items-center gap-1">
                             <Hourglass className="w-4 h-4 inline text-secondary" />
-                            <span>In Progress:</span>
+                            <span>Pending:</span>
                         </div>
                         <span className="text-right">{uploadCountText(inProgress)}</span>
                         <span className="text-right">{`${inProgressProportion.toFixed(1)}%`}</span>
