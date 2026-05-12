@@ -508,9 +508,9 @@ export default function SummaryPage() {
                                 {/* Uploads Row */}
                                 <div className="grid gap-2 grid-cols-4 grid-rows-1">
                                     {renderSummaryBadge(<Upload size={16} />, "Uploads", uploadsTotal, 'bg-(--muted)')}
-                                    {renderSummaryBadge(<Check size={16} />, "Uploads OK", uploadsOk, 'bg-(--normal)')}
+                                    {renderSummaryBadge(<Check size={16} />, "Uploads Processed", uploadsOk, 'bg-(--normal)')}
                                     {renderSummaryBadge(<Hourglass size={16} />, "Uploads Pending", uploadsPending, 'bg-(--warning)')}
-                                    {renderSummaryBadge(<CircleAlert size={16} />, "Uploads with Errors", uploadsErrors, 'bg-(--error)')}
+                                    {renderSummaryBadge(<CircleAlert size={16} />, "Uploads Failed", uploadsErrors, 'bg-(--error)')}
                                 </div>
 
                                 {/* Uploads Row */}
