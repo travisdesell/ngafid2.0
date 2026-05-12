@@ -224,6 +224,10 @@ public class StatisticsJavalinRoutes {
             return getUploadCounts().warningUploadCount();
         }
 
+        public Map<String, Integer> uploadStatusCounts() throws SQLException {
+            return UploadStatistics.getUploadStatusCounts(connection, fleetId);
+        }
+
         public Integer flightsWithWarning() throws SQLException {
             return FlightWarning.getCount(connection, fleetId);
         }

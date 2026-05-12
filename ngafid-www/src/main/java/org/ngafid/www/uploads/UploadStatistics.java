@@ -5,8 +5,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
-    public enum UploadStatistics {;
+public enum UploadStatistics {;
 
     public record UploadCounts(int count, int okUploadCount, int warningUploadCount, int errorUploadCount) {}
 
@@ -76,5 +78,29 @@ import java.time.LocalDate;
         String clause = buildStartTimeDateClause(startDate, endDate);
 
         return getLiveUploadCounts(connection, clause);
+    }
+
+    public static Map<String, Integer> getUploadStatusCounts(Connection connection, int fleetId) throws SQLException {
+        String query = "SELECT status, COUNT(*) AS status_count FROM uploads WHERE status != 'DERIVED'";
+        if (fleetId > 0) {
+            query += " AND fleet_id = ?";
+        }
+        query += " GROUP BY status";
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            if (fleetId > 0) {
+                statement.setInt(1, fleetId);
+            }
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                Map<String, Integer> counts = new HashMap<>();
+
+                while (resultSet.next()) {
+                    counts.put(resultSet.getString("status"), resultSet.getInt("status_count"));
+                }
+
+                return counts;
+            }
+        }
     }
 }

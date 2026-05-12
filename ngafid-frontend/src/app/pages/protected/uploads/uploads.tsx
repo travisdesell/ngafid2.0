@@ -6,10 +6,15 @@ import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { fetchJson } from "@/fetchJson";
 import { CHUNK_SIZE } from "@/workers/md5.shared";
 import Md5Worker from "@/workers/md5.worker.ts?worker";
 import {
+    Check,
+    CircleAlert,
+    CloudUpload,
+    Hourglass,
     ListOrdered
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -25,6 +30,7 @@ import { getLogger } from "@/components/providers/logger";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import UploadsDropzone from "@/pages/protected/uploads/_uploads_dropzone";
 import UploadItem from "@/pages/protected/uploads/upload_item";
 import {
@@ -42,6 +48,22 @@ import {
 
 const log = getLogger("Uploads", "black", "Page");
 const DEFAULT_UPLOADS_PAGE_SIZE = 10;
+
+type UploadStatusStatistics = {
+    total: number;
+    inProgress: number;
+    processed: number;
+    failed: number;
+};
+
+type UploadStatusCounts = Partial<Record<UploadStatus, number>>;
+
+const EMPTY_UPLOAD_STATUS_STATISTICS: UploadStatusStatistics = {
+    total: 0,
+    inProgress: 0,
+    processed: 0,
+    failed: 0,
+};
 
 
 function getUploadsPagePath(currentPage: number) {
@@ -120,6 +142,137 @@ const isObjectRecord = (v: unknown): v is Record<string, unknown> =>
 
 function isAPIError(x: unknown): x is APIError {
     return !!x && typeof x === "object" && "errorTitle" in (x as Record<string, unknown>);
+}
+
+function uploadCountText(count: number) {
+    return `${count} ${count === 1 ? "upload" : "uploads"}`;
+}
+
+function proportionPercent(count: number, total: number) {
+    if (total <= 0)
+        return 0;
+
+    return (100 * count) / total;
+}
+
+function uploadStatusCount(counts: UploadStatusCounts, status: UploadStatus) {
+    return counts[status] ?? 0;
+}
+
+function buildUploadStatusStatistics(counts: UploadStatusCounts, pending: UploadInfo[]): UploadStatusStatistics {
+
+    const uploadingCount = uploadStatusCount(counts, "UPLOADING");
+    const activeUploadingCount = Math.min(
+        uploadingCount,
+        pending.filter((u) => u.id !== -1 && u.status === "UPLOADING").length
+    );
+    const interruptedUploadingCount = Math.max(0, uploadingCount - activeUploadingCount);
+
+    const localOnlyPending = pending.filter((u) => u.id === -1);
+
+    const localOnlyInProgress = localOnlyPending.filter((u) =>
+        u.status === "HASHING" || u.status === "UPLOADING"
+    ).length;
+    const localOnlyFailed = localOnlyPending.filter((u) =>
+        u.status === "UPLOADING_FAILED"
+        || u.status === "FAILED_INTERRUPTED"
+        || u.status.startsWith("FAILED_")
+    ).length;
+
+    const processed = (
+        uploadStatusCount(counts, "PROCESSED_OK")
+        + uploadStatusCount(counts, "PROCESSED_WARNING")
+    );
+
+    const failed = (
+        interruptedUploadingCount
+        + localOnlyFailed
+        + uploadStatusCount(counts, "UPLOADING_FAILED")
+        + uploadStatusCount(counts, "FAILED_INTERRUPTED")
+        + uploadStatusCount(counts, "FAILED_FILE_TYPE")
+        + uploadStatusCount(counts, "FAILED_AIRCRAFT_TYPE")
+        + uploadStatusCount(counts, "FAILED_ARCHIVE_TYPE")
+        + uploadStatusCount(counts, "FAILED_UNKNOWN")
+    );
+
+    const inProgress = (
+        activeUploadingCount
+        + localOnlyInProgress
+        + uploadStatusCount(counts, "UPLOADED")
+        + uploadStatusCount(counts, "ENQUEUED")
+        + uploadStatusCount(counts, "PROCESSING")
+    );
+
+    return {
+        total: processed + failed + inProgress,
+        inProgress,
+        processed,
+        failed,
+    };
+
+}
+
+function UploadStatusProportion({ statistics }: { statistics: UploadStatusStatistics }) {
+
+    const { total, inProgress, processed, failed } = statistics;
+    const inProgressProportion = proportionPercent(inProgress, total);
+    const processedProportion = proportionPercent(processed, total);
+    const failedProportion = proportionPercent(failed, total);
+
+    return (
+        <div className="flex flex-col gap-1 text-xs w-72 min-w-48 max-w-full">
+            <Tooltip disableHoverableContent>
+                <TooltipTrigger className="flex w-full border border-border bg-muted rounded overflow-hidden h-3 *:not-last:border-r">
+                    {
+                        (total > 0)
+                        ?
+                        <>
+                            <div className="h-full bg-secondary" style={{ width: `${inProgressProportion}%` }} />
+                            <div className="h-full bg-background" style={{ width: `${processedProportion}%` }} />
+                            <div className="h-full bg-destructive" style={{ width: `${failedProportion}%` }} />
+                        </>
+                        :
+                        <div className="h-full w-full bg-muted" />
+                    }
+                </TooltipTrigger>
+                <TooltipContent>
+                    <div className="grid grid-cols-3 grid-rows-3 gap-y-2">
+                        <div className="flex items-center gap-1">
+                            <Hourglass className="w-4 h-4 inline text-secondary" />
+                            <span>In Progress:</span>
+                        </div>
+                        <span className="text-right">{uploadCountText(inProgress)}</span>
+                        <span className="text-right">{`${inProgressProportion.toFixed(1)}%`}</span>
+
+                        <div className="flex items-center gap-1">
+                            <Check className="w-4 h-4 inline text-background" />
+                            <span>Processed:</span>
+                        </div>
+                        <span className="text-right">{uploadCountText(processed)}</span>
+                        <span className="text-right">{`${processedProportion.toFixed(1)}%`}</span>
+
+                        <div className="flex items-center gap-1">
+                            <CircleAlert className="w-4 h-4 inline text-destructive" />
+                            <span>Failed:</span>
+                        </div>
+                        <span className="text-right">{uploadCountText(failed)}</span>
+                        <span className="text-right">{`${failedProportion.toFixed(1)}%`}</span>
+                    </div>
+                </TooltipContent>
+            </Tooltip>
+
+            <Badge className="inline-flex justify-between items-center gap-1 bg-background" variant={"outline"}>
+                <span className="flex items-center gap-1">
+                    <CloudUpload className="h-3 w-3" />
+                    Total Uploads:
+                </span>
+                <span>
+                    {total}
+                </span>
+            </Badge>
+        </div>
+    );
+
 }
 
 
@@ -322,6 +475,7 @@ export default function UploadsPage() {
     // Imported uploads
     const [imports, setImports] = useState<ImportsPageItem[]>([]);
     const [importsPages, setImportsPages] = useState(0);
+    const [uploadStatusStatistics, setUploadStatusStatistics] = useState<UploadStatusStatistics>(EMPTY_UPLOAD_STATUS_STATISTICS);
 
     // Pending (client-side) uploads that are currently hashing/uploading
     const [pending, setPending] = useState<UploadInfo[]>([]);
@@ -336,6 +490,27 @@ export default function UploadsPage() {
 
     useEffect(() => {
         pendingIdentifiersRef.current = new Set(pending.map((p) => p.identifier));
+    }, [pending]);
+
+
+    const loadUploadStatusStatistics = useCallback(async (silent = false) => {
+
+        try {
+
+            const counts = await fetchJson.get<UploadStatusCounts>("/api/upload/count/by-status");
+            setUploadStatusStatistics(buildUploadStatusStatistics(counts ?? {}, pending));
+
+            return true;
+
+        } catch (e: any) {
+
+            if (!silent)
+                setError(e?.message || String(e));
+
+            return false;
+
+        }
+
     }, [pending]);
 
 
@@ -464,6 +639,10 @@ export default function UploadsPage() {
     }, [uploadsPage, loadImports]);
 
     useEffect(() => {
+        void loadUploadStatusStatistics();
+    }, [loadUploadStatusStatistics]);
+
+    useEffect(() => {
         if (uploadsPageSizeRef.current === uploadsPageSize)
             return;
 
@@ -568,13 +747,14 @@ export default function UploadsPage() {
             const uploadsImportLoadCount = uploadsPageSize;
 
             try {
-                const [uploadsOK, importsOK] = await Promise.all([
+                const [uploadsOK, importsOK, statisticsOK] = await Promise.all([
                     loadUploads(uploadsPage, uploadsImportLoadCount, true),
-                    loadImports(uploadsPage, uploadsImportLoadCount, true)
+                    loadImports(uploadsPage, uploadsImportLoadCount, true),
+                    loadUploadStatusStatistics(true),
                 ]);
 
                 // Both uploads and imports loaded successfully, reset failure count
-                if (uploadsOK && importsOK)
+                if (uploadsOK && importsOK && statisticsOK)
                     pollingFailuresRef.current = 0;
 
                 // Otherwise, increment failure count (which will increase backoff delay)
@@ -602,7 +782,7 @@ export default function UploadsPage() {
                 window.clearTimeout(timeoutId);
         };
 
-    }, [loadUploads, loadImports, uploadsPage, busy, pending, uploads]);
+    }, [loadUploads, loadImports, loadUploadStatusStatistics, uploadsPage, busy, pending, uploads]);
 
 
 
@@ -720,6 +900,7 @@ export default function UploadsPage() {
             ));
             activeUploadIdsRef.current.add(created.id);
             createdUploadId = created.id;
+            void loadUploadStatusStatistics(true);
 
             // Chunk upload loop (supports resuming interrupted uploads)
             const nChunks = Math.ceil(file.size / CHUNK_SIZE);
@@ -825,6 +1006,7 @@ export default function UploadsPage() {
             // Refresh the uploads list from server (best effort; upload already completed locally)
             try {
                 await loadUploads();
+                await loadUploadStatusStatistics(true);
             } catch (refreshError) {
                 log.warn("Upload completed, but failed to refresh uploads list:", refreshError);
             }
@@ -844,6 +1026,7 @@ export default function UploadsPage() {
                         : u
                 )
             );
+            void loadUploadStatusStatistics(true);
 
         } finally {
 
@@ -898,6 +1081,7 @@ export default function UploadsPage() {
 
                         await loadUploads();
                         await loadImports();
+                        await loadUploadStatusStatistics(true);
                         return;
                     }
 
@@ -911,6 +1095,7 @@ export default function UploadsPage() {
                     // Re-sync both lists
                     await loadUploads();
                     await loadImports();
+                    await loadUploadStatusStatistics(true);
 
                     setModal(SuccessModal, {
                         title: "Upload Deleted",
@@ -922,6 +1107,7 @@ export default function UploadsPage() {
                     // Rollback by reloading both lists
                     await loadUploads();
                     await loadImports();
+                    await loadUploadStatusStatistics(true);
 
                     setError(e?.message || String(e));
 
@@ -998,6 +1184,7 @@ export default function UploadsPage() {
 
                 await loadUploads();
                 await loadImports();
+                await loadUploadStatusStatistics(true);
 
             } catch (e: any) {
 
@@ -1274,39 +1461,47 @@ export default function UploadsPage() {
                     <CardFooter className="flex flex-col w-full p-0 bg-muted">
                         <Separator />
 
-                        <div className="flex items-center justify-between w-full p-4">
+                        <div className="flex items-center justify-between w-full p-4 gap-4">
+
+                            {/* Pagination */}
                             {Pager(uploadsPage, uploadsPages, setUploadsPage)}
 
-                            {/* Uploads Per Page Select Dropdown */}
-                            <Select
-                                value={uploadsPageSize.toString()}
-                                onValueChange={(value) => {
-                                    const nextPageSize = Number.parseInt(value, 10);
-                                    if (!Number.isFinite(nextPageSize))
-                                        return;
+                            <div className="ml-auto flex items-center justify-end gap-4">
 
-                                    setUploadsPageSize(nextPageSize);
-                                }}
-                            >
-                                <Button variant="outline" asChild>
-                                    <SelectTrigger className="min-w-16 w-fit">
-                                        <ListOrdered />
-                                        <div className="@max-4xl:hidden!">
-                                            <SelectValue placeholder="Uploads per page" />
-                                        </div>
-                                    </SelectTrigger>
-                                </Button>
-                                <SelectContent>
-                                    {
-                                        UPLOADS_PER_PAGE_OPTIONS.map((option) => (
-                                            <SelectItem key={option} value={option.toString()}>
-                                                {option} per page
-                                            </SelectItem>
-                                        ))
-                                    }
-                                </SelectContent>
-                            </Select>
-                    </div>
+                                {/* Upload Status Proportion */}
+                                <UploadStatusProportion statistics={uploadStatusStatistics} />
+
+                                {/* Uploads Per Page Select Dropdown */}
+                                <Select
+                                    value={uploadsPageSize.toString()}
+                                    onValueChange={(value) => {
+                                        const nextPageSize = Number.parseInt(value, 10);
+                                        if (!Number.isFinite(nextPageSize))
+                                            return;
+
+                                        setUploadsPageSize(nextPageSize);
+                                    }}
+                                >
+                                    <Button variant="outline" asChild>
+                                        <SelectTrigger className="min-w-16 w-fit">
+                                            <ListOrdered />
+                                            <div className="@max-4xl:hidden!">
+                                                <SelectValue placeholder="Uploads per page" />
+                                            </div>
+                                        </SelectTrigger>
+                                    </Button>
+                                    <SelectContent>
+                                        {
+                                            UPLOADS_PER_PAGE_OPTIONS.map((option) => (
+                                                <SelectItem key={option} value={option.toString()}>
+                                                    {option} per page
+                                                </SelectItem>
+                                            ))
+                                        }
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
 
                     </CardFooter>
 
