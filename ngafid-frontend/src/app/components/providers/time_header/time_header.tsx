@@ -80,8 +80,10 @@ export default function TimeHeader({ children, onApply, dependencies, requireMan
                 {mappedChildren}
 
                 {/* Time Range Selection */}
-                <DatePicker labelText="Start Date" date={startDate} setDate={setStartDate} isInvalid={invalidDateRange} />
-                <DatePicker labelText="End Date" date={endDate} setDate={setEndDate} isInvalid={invalidDateRange} />
+                <div className="flex items-center space-x-6">
+                    <DatePicker labelText="Start Date" date={startDate} setDate={setStartDate} isInvalid={invalidDateRange} />
+                    <DatePicker labelText="End Date" date={endDate} setDate={setEndDate} isInvalid={invalidDateRange} />
+                </div>
 
 
                 {/* Apply Button */}
