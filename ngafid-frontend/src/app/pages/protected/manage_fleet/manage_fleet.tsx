@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ManageFleetFleetUsersContent from "@/pages/protected/manage_fleet/_manage_fleet_fleet_users_content";
 import ManageFleetTailNumbersContent from "@/pages/protected/manage_fleet/_manage_fleet_tail_numbers_content";
-import { JSX } from "react";
+import { JSX, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 type ManageFleetTab = {
@@ -29,18 +29,11 @@ const MANAGE_FLEET_TABS: Record<ManageFleetTabKey, ManageFleetTab> = {
 
 const MANAGE_FLEET_TAB_KEYS = Object.keys(MANAGE_FLEET_TABS) as ManageFleetTabKey[];
 
-function isManageFleetTabKey(value: string | null): value is ManageFleetTabKey {
-    return Boolean(value && value in MANAGE_FLEET_TABS);
-}
-
 export default function ManageFleet() {
 
     const { user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
-    const tabParam = searchParams.get("tab");
-    const manageFleetTab = isManageFleetTabKey(tabParam)
-        ? tabParam
-        : "fleet-users";
+    const [manageFleetTab, setManageFleetTab] = useState<ManageFleetTabKey>("fleet-users");
 
     setPageTitle("Manage Fleet");
 
@@ -62,7 +55,7 @@ export default function ManageFleet() {
                         id="manage-fleet-tabs"
                         defaultValue={manageFleetTab}
                         value={manageFleetTab}
-                        onValueChange={(value) => setSearchParams({ tab: value })}
+                        onValueChange={(value) => setManageFleetTab(value as ManageFleetTabKey)}
                         className="flex flex-col min-h-0 h-full"
                     >
 
