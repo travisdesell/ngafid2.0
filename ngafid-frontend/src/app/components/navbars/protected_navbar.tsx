@@ -313,14 +313,9 @@ export default function ProtectedNavbar({ children }: { children?: React.ReactNo
                             <DropdownMenuSeparator />
 
                             {/* Fleet Management */}
-                            <DropdownMenuItem asChild disabled>
+                            <DropdownMenuItem asChild>
                                 <Link to="/protected/manage_fleet">
                                     Manage Fleet
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild disabled>
-                                <Link to="/protected/system_ids">
-                                    Manage Tail Numbers
                                 </Link>
                             </DropdownMenuItem>
 
