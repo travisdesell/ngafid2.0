@@ -152,7 +152,6 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
 
                     {/* Open Page - Events - Heat Map */}
                     <CommandModalContentItem
-                        disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Heat Map Page"
                         command={()=>navigate("/protected/heat_map")}
@@ -162,10 +161,9 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
 
                     {/* Open Page - Events - Statistics */}
                     <CommandModalContentItem
-                        disabled
                         submitCommand={submitCommand}
                         name="Go to Events — Statistics Page"
-                        command={()=>navigate("/protected/event_statistics")}
+                        command={()=>navigate("/protected/statistics")}
                         Icon={Grid2X2Plus}
                         hotkey="Ctrl+C"
                     />
@@ -208,7 +206,6 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
 
                     {/* Open Page - Account - Manage Fleet */}
                     <CommandModalContentItem
-                        disabled
                         submitCommand={submitCommand}
                         name="Go to Account - Manage Fleet Page"
                         command={()=>navigate("/protected/manage_fleet")}
@@ -216,22 +213,11 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                         hotkey="Ctrl+M"
                     />
 
-                    {/* Open Page - Account - Manage Tail Numbers */}
+                    {/* Open Page - Account - Profile Preferences */}
                     <CommandModalContentItem
-                        disabled
                         submitCommand={submitCommand}
-                        name="Go to Account - Manage Tail Numbers Page"
-                        command={()=>navigate("/protected/manage_tail_numbers")}
-                        Icon={ListOrdered}
-                        hotkey="Ctrl+G"
-                    />
-
-                    {/* Open Page - Account - My Preferences */}
-                    <CommandModalContentItem
-                        disabled
-                        submitCommand={submitCommand}
-                        name="Go to Account - My Preferences Page"
-                        command={()=>navigate("/protected/my_preferences")}
+                        name="Go to Account - Profile Preferences Page"
+                        command={()=>navigate("/protected/profile_preferences")}
                         Icon={User}
                         hotkey="Ctrl+P"
                     />
