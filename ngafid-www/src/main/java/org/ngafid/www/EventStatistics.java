@@ -201,11 +201,20 @@ public class EventStatistics {
                     final int airframeId = result.getInt("airframe_id");
                     final int month = result.getInt("month");
                     final int year = result.getInt("year");
-                    final int totalFlights = fc.getFleetCounts(fleet).get(airframeId);
 
                     final String date = LocalDate.of(year, month, 1).toString();
                     final String eventName = idToEventNameMap.get(eventDefinitionId);
                     final String airframeName = idToAirframeNameMap.get(airframeId);
+                    if (eventName == null) {
+                        LOG.log(Level.WARNING, "Got null event name for id {0}, skipping", eventDefinitionId);
+                        continue;
+                    }
+                    if (airframeName == null) {
+                        LOG.log(Level.WARNING, "Got null airframe name for id {0}, skipping", airframeId);
+                        continue;
+                    }
+
+                    final int totalFlights = fc.getFleetCounts(fleet).getOrDefault(airframeId, flightCount);
 
                     MonthlyEventCountsBuilder mec = eventCounts
                             .computeIfAbsent(eventName, k -> new HashMap<>())
@@ -241,11 +250,11 @@ public class EventStatistics {
         if (endDate == null) endDate = LocalDate.now();
 
         String query = "SELECT COUNT(DISTINCT id) as flight_count, airframe_id, fleet_id FROM flights WHERE "
-                + "start_time BETWEEN ? AND ? GROUP BY flights.airframe_id, flights.fleet_id ";
+                + "start_time >= ? AND start_time < ? GROUP BY flights.airframe_id, flights.fleet_id ";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, startDate.toString());
-            ps.setString(2, endDate.toString());
+            ps.setString(2, endDate.plusDays(1).toString());
 
             try (ResultSet results = ps.executeQuery()) {
                 return new FlightCounts(results);
@@ -413,7 +422,7 @@ public class EventStatistics {
         }
 
         public Map<Integer, Integer> getFleetCounts(int fleetId) {
-            return fleetToAirframeCounts.get(fleetId);
+            return fleetToAirframeCounts.getOrDefault(fleetId, Collections.emptyMap());
         }
     }
 
