@@ -44,6 +44,8 @@ import Style from "ol/style/Style";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./heat_map.css";
 import { setPageTitle } from "@/components/page_title";
+import { Input } from "@/components/ui/input";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 
 const log = getLogger("HeatMap", "black", "Page");
 
@@ -1863,18 +1865,24 @@ export default function HeatMapPage() {
                     </div>
 
                     {/* Selected Bounds */}
-                    <div className="flex flex-col gap-2 min-w-65">
+                    <div className="flex flex-col gap-2 w-68">
                         <Label className="text-sm">Selected Bounds</Label>
-                        <div className="text-xs grid grid-cols-2 gap-x-2 gap-y-1">
-                            <span>Min Lat: {boxCoords.minLat || "--"}</span>
-                            <span>Max Lat: {boxCoords.maxLat || "--"}</span>
-                            <span>Min Lon: {boxCoords.minLon || "--"}</span>
-                            <span>Max Lon: {boxCoords.maxLon || "--"}</span>
+                        <div className="grid grid-rows-2 gap-x-2 gap-y-0 **:text-right **:text-xs!">
+                            <ButtonGroup className="**:rounded-b-none">
+                                <ButtonGroupText className="w-14">Lat</ButtonGroupText>
+                                <Input value={boxCoords.minLat} placeholder="Min" className="h-6 bg-background" />
+                                <Input value={boxCoords.maxLat} placeholder="Max" className="h-6 bg-background" />
+                            </ButtonGroup>
+                            <ButtonGroup className="**:border-t-0 **:rounded-t-none">
+                                <ButtonGroupText className="w-14">Lon</ButtonGroupText>
+                                <Input value={boxCoords.minLon} placeholder="Min" className="h-6 bg-background" />
+                                <Input value={boxCoords.maxLon} placeholder="Max" className="h-6 bg-background" />
+                            </ButtonGroup>
                         </div>
                     </div>
 
                     {/* Severity Range */}
-                    <div className="flex flex-col gap-2 w-70">
+                    <div className="flex flex-col gap-2 w-52">
                         <Label className="text-sm">Severity Range</Label>
                         <div className="flex items-center justify-between gap-2 text-xs w-full">
                             <span>{displayMinSeverity}</span>
