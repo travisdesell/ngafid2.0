@@ -17,6 +17,8 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightError;
+import org.ngafid.core.flights.FlightWarning;
 import org.ngafid.core.flights.Tails;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.EventStatistics;
@@ -223,11 +225,11 @@ public class StatisticsJavalinRoutes {
         }
 
         public Integer flightsWithWarning() throws SQLException {
-            return getUploadCounts().warningUploadCount();
+            return FlightWarning.getCount(connection, fleetId);
         }
 
         public Integer flightsWithError() throws SQLException {
-            return getUploadCounts().errorUploadCount();
+            return FlightError.getCount(connection, fleetId);
         }
     }
 
