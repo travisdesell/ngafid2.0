@@ -35,7 +35,12 @@ export function AirportsProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
 
+        // User missing / logged out, exit
         if (!user)
+            return;
+
+        // Outside of a protected route, exit
+        if (!window.location.pathname.includes('protected'))
             return;
 
         log("User logged in, fetching airport/runway data...");

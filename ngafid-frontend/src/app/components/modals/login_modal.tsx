@@ -152,15 +152,15 @@ export default function LoginModal({ setModal }: ModalProps) {
             //Successful login
             log("Login successful!");
 
-            //Clear password field in UI state
+            // Clear password field in UI state
             setPassword("");
             setTwoFactorCode("");
 
-            //Waiting or denied, go to Waiting page
+            // Waiting or denied, go to Waiting page
             if (data.waiting || data.denied)
                 openRoute("waiting", true);
             
-            //Otherwise, go to Summary page
+            // Otherwise, go to Summary page
             else
                 openRoute("summary", true);
 

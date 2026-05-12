@@ -43,10 +43,15 @@ export function AirframesProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
 
+        // User missing / logged out, exit
         if (!user)
             return;
 
-        log("User logged in, fetching data...");
+        // Outside of a protected route, exit
+        if (!window.location.pathname.includes('protected'))
+            return;
+
+        log(`User logged in (${user.email}), fetching data...`);
 
         //Fetch airframe name/ID pairs
         fetchAirframeNameIDPairs();
