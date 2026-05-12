@@ -2,56 +2,28 @@
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { motion } from "motion/react";
-import { getLogger } from "@/components/providers/logger";
 import type { ModalProps } from "./types";
 import { useModal } from '@/components/modals/modal_context';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/components/providers/auth_provider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import ErrorModal from "@/components/modals/error_modal";
-import { fetchJson } from "@/fetchJson";
 import { openRoute } from "@/lib/route_utils";
-import { fleetAccessAllowed } from "@/components/navbars/multifleet_select";
+import { fleetSelectable } from "@/components/navbars/multifleet_select";
 
-const log = getLogger("WaitingModal", "black", "Modal");
-
-
-/*
-    TODO:
-
-    Pull the fleet selection logic out of this.
-    Has some duplicate code with:
-    
-    1. _profile_preferences_site_preferences_content.tsx
-    2. multifleet_select.tsx
-
-    Or, just export relevant stuff from multifleet_select
-    and use it here if that's easier ¯\_(ツ)_/¯
-*/
-
-type Fleet = {
-    id: number;
-    name: string;
-};
-type FleetAccess = {
-    fleetName: string;
-    fleetId: number;
-    accessType: string;
-    userId: number;
-};
-
-
-export default function WaitingModal({ data }: ModalProps) {
+export default function WaitingModal(_props: ModalProps) {
 
     const { setModal, renderModalHeader } = useModal();
-    const { user } = useAuth();
+    const { user, fleetLoading } = useAuth();
+    const currentFleet = user?.fleet ?? null;
+    const fleetAccess = user?.fleetAccess ?? [];
 
-    const [currentFleet, setCurrentFleet] = useState<Fleet | null>(null);
     const [selectedFleetId, setSelectedFleetId] = useState<string>("");
-    const [fleetAccess, setFleetAccess] = useState<FleetAccess[]>([]);
-    const [fleetLoading, setFleetLoading] = useState(true);
+
+    useEffect(() => {
+        setSelectedFleetId(currentFleet?.id ? String(currentFleet.id) : "");
+    }, [currentFleet?.id]);
 
 
     const switchToFleet = async (fleetId: number) => {
@@ -83,33 +55,6 @@ export default function WaitingModal({ data }: ModalProps) {
 
     };
 
-    useEffect(() => {
-        const fetchFleets = async () => {
-            setFleetLoading(true);
-            const [fleetResponse, accessResponse] = await Promise.all([
-                fetchJson.get<Fleet>("/api/fleet").catch((error: Error) => {
-                    setModal(ErrorModal, { title: "Error fetching fleet", message: error.message });
-                    return null;
-                }),
-                fetchJson.get<FleetAccess[]>("/api/user/fleet-access").catch((error: Error) => {
-                    setModal(ErrorModal, { title: "Error fetching fleet access", message: error.message });
-                    return null;
-                }),
-            ]);
-
-            if (fleetResponse) {
-                setCurrentFleet(fleetResponse);
-                setSelectedFleetId(String(fleetResponse.id));
-            }
-            if (accessResponse)
-                setFleetAccess(accessResponse);
-
-            setFleetLoading(false);
-        };
-
-        fetchFleets();
-    }, [setModal]);
-
     return (
         <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -139,11 +84,11 @@ export default function WaitingModal({ data }: ModalProps) {
                                 <SelectValue placeholder={fleetLoading ? "Loading..." : "Select fleet"} />
                             </SelectTrigger>
                             <SelectContent>
-                                {fleetAccess.map((fleet, i) => (
+                                {fleetAccess.map((fleet) => (
                                     <SelectItem
                                         key={fleet.fleetId}
                                         value={String(fleet.fleetId)}
-                                        disabled={!fleetAccessAllowed(fleetAccess[i])}
+                                        disabled={!fleetSelectable(currentFleet?.id ?? -1, fleet.fleetId, fleet)}
                                     >
                                         {fleet.fleetName}
                                     </SelectItem>

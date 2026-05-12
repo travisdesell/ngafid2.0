@@ -1,19 +1,27 @@
 // src/types.d.ts
 
-
-
-import React from "react";
-
-
+import type React from "react";
 
 export {};
 
-export enum accessType {
-    DENIED="DENIED",
-    WAITING="WAITING",
-    VIEW="VIEW",
-    UPLOAD="UPLOAD",
-    MANAGER="MANAGER",
+export type AccessType =
+  "DENIED"
+  | "WAITING"
+  | "VIEW"
+  | "UPLOAD"
+  | "MANAGER";
+
+
+export interface Fleet {
+    id: number;
+    name: string;
+}
+
+export type FleetAccess = {
+    fleetName: string;
+    userId: number;
+    fleetId: number;
+    accessType: AccessType;
 }
 
 
@@ -22,7 +30,8 @@ export interface NGAFIDUser {
     email: string;
     firstName: string;
     lastName: string;
-    fleetAccess: accessType;
+    fleet: Fleet | null;
+    fleetAccess: FleetAccess[];
     isAdmin: boolean;
     isFleetManager: boolean;
 }
@@ -42,12 +51,13 @@ export interface Event {
 export type MultifleetInvite = {
     fleetName: string,
     inviteEmail: string,
+    fleetId?: number,
 }
 
 export type MultifleetSelectWithAccess = {
     fleetName: string,
     fleetId: number,
-    accessType: accessType,
+    accessType: AccessType,
 }
 
 

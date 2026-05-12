@@ -1,7 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/profile_preferences/_profile_preferences_site_preferences_content.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
-import { fleetAccessAllowed } from "@/components/navbars/multifleet_select";
+import { fleetSelectable } from "@/components/navbars/multifleet_select";
 import { useAuth } from "@/components/providers/auth_provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,24 +11,7 @@ import { fetchJson } from "@/fetchJson";
 import EmailPreferenceItem from "@/pages/protected/profile_preferences/EmailPreferenceItem";
 import { Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-
-type FleetAccess = {
-    fleetName: string;
-    fleetId: number;
-    accessType: string;
-    userId: number;
-};
-
-type Fleet = {
-    id: number;
-    name: string;
-};
-
-type MultifleetInvite = {
-    inviteEmail: string;
-    fleetName: string;
-    fleetId?: number;
-};
+import type { MultifleetInvite } from "src/types";
 
 type MetricPreferencesResponse = {
     flightMetrics?: string[];
@@ -59,17 +42,16 @@ const METRIC_EXEMPT_COLS = new Set(["LOC-I Index", "Stall Index"]);
 export default function ProfilePreferencesSitePreferencesContent() {
 
     const { setModal } = useModal();
-    const { user } = useAuth();
+    const { user, fleetLoading, refreshFleetData } = useAuth();
     const isAdmin = Boolean(user?.isAdmin);
+    const currentFleet = user?.fleet ?? null;
+    const fleetAccess = user?.fleetAccess ?? [];
 
     const [invites, setInvites] = useState<MultifleetInvite[]>([]);
     const [invitesLoading, setInvitesLoading] = useState(true);
     const [inviteAction, setInviteAction] = useState<string | null>(null);
 
-    const [fleetAccess, setFleetAccess] = useState<FleetAccess[]>([]);
-    const [currentFleet, setCurrentFleet] = useState<Fleet | null>(null);
     const [selectedFleetId, setSelectedFleetId] = useState<string>("");
-    const [fleetLoading, setFleetLoading] = useState(true);
 
     const [allMetrics, setAllMetrics] = useState<string[]>([]);
     const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
@@ -89,6 +71,10 @@ export default function ProfilePreferencesSitePreferencesContent() {
     const displayInvites:boolean = invites.some((invite) => !invite.fleetId || invite.fleetId !== currentFleet?.id);
 
     useEffect(() => {
+        setSelectedFleetId(currentFleet?.id ? String(currentFleet.id) : "");
+    }, [currentFleet?.id]);
+
+    useEffect(() => {
         const fetchInvites = async () => {
             setInvitesLoading(true);
             const response = await fetchJson.get<MultifleetInvite[]>("/api/user/multifleet-invites").catch((error: Error) => {
@@ -103,33 +89,6 @@ export default function ProfilePreferencesSitePreferencesContent() {
         };
 
         fetchInvites();
-    }, [setModal]);
-
-    useEffect(() => {
-        const fetchFleets = async () => {
-            setFleetLoading(true);
-            const [fleetResponse, accessResponse] = await Promise.all([
-                fetchJson.get<Fleet>("/api/fleet").catch((error: Error) => {
-                    setModal(ErrorModal, { title: "Error fetching fleet", message: error.message });
-                    return null;
-                }),
-                fetchJson.get<FleetAccess[]>("/api/user/fleet-access").catch((error: Error) => {
-                    setModal(ErrorModal, { title: "Error fetching fleet access", message: error.message });
-                    return null;
-                }),
-            ]);
-
-            if (fleetResponse) {
-                setCurrentFleet(fleetResponse);
-                setSelectedFleetId(String(fleetResponse.id));
-            }
-            if (accessResponse)
-                setFleetAccess(accessResponse);
-
-            setFleetLoading(false);
-        };
-
-        fetchFleets();
     }, [setModal]);
 
     useEffect(() => {
@@ -219,11 +178,8 @@ export default function ProfilePreferencesSitePreferencesContent() {
 
             setInvites((prev) => prev.filter((invite) => invite.fleetName !== fleetName));
 
-            if (action === "accept") {
-                const accessResponse = await fetchJson.get<FleetAccess[]>("/api/user/fleet-access").catch(() => null);
-                if (accessResponse)
-                    setFleetAccess(accessResponse);
-            }
+            if (action === "accept")
+                await refreshFleetData();
         } catch (error) {
             setModal(ErrorModal, { title: "Invite update failed", message: (error as Error).message });
         } finally {
@@ -351,7 +307,11 @@ export default function ProfilePreferencesSitePreferencesContent() {
                             </SelectTrigger>
                             <SelectContent>
                                 {fleetAccess.map((fleet) => (
-                                    <SelectItem key={fleet.fleetId} value={String(fleet.fleetId)} disabled={!fleetAccessAllowed(fleet)}>
+                                    <SelectItem
+                                        key={fleet.fleetId}
+                                        value={String(fleet.fleetId)}
+                                        disabled={!fleetSelectable(currentFleet?.id ?? -1, fleet.fleetId, fleet)}
+                                    >
                                         {fleet.fleetName}
                                     </SelectItem>
                                 ))}

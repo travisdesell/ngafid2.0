@@ -2,29 +2,42 @@
 
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { useAuth } from "@/components/providers/auth_provider";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { fetchJson } from "@/fetchJson";
 import { ChevronDown, UsersRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import type { AccessType, FleetAccess } from "src/types";
 
 const log = getLogger("MultifleetSelect", "black", "Component");
 
 
-export const fleetAccessAllowed = (access: FleetAccess | undefined) => {
+type FleetAccessInput = AccessType | Pick<FleetAccess, "accessType"> | undefined | null;
+
+function normalizeAccessType(access: FleetAccessInput): AccessType | undefined {
+    if (!access)
+        return undefined;
+
+    if (typeof access === "string")
+        return access;
+
+    return access.accessType;
+}
+
+export const fleetAccessAllowed = (access: FleetAccessInput) => {
+
+    const accessType = normalizeAccessType(access);
 
     // Missing access info -> False
-    if (!access)
+    if (!accessType)
         return false;
 
-    const allowedTypes = ["VIEW", "UPLOAD", "MANAGER"];
-
-    return allowedTypes.includes(access.accessType);
+    const allowedTypes: AccessType[] = ["VIEW", "UPLOAD", "MANAGER"];
+    return allowedTypes.includes(accessType);
 
 }
 
-export const fleetSelectable = (fleetIDCurrent: number, fleetIDTarget: number, access: FleetAccess | undefined) => {
+export const fleetSelectable = (fleetIDCurrent: number, fleetIDTarget: number, access: FleetAccessInput) => {
 
     // Fleet access not allowed -> Not selectable
     if (!fleetAccessAllowed(access))
@@ -39,52 +52,15 @@ export const fleetSelectable = (fleetIDCurrent: number, fleetIDTarget: number, a
 }
 
 
-type Fleet = {
-    name: string;
-    id: string;
-}
-
-type FleetAccess = {
-    fleetName: string;
-    userId: number;
-    fleetId: number;
-    accessType: string;
-}
 
 export default function MultifleetSelect() {
 
     const { setModal } = useModal();
+    const { user } = useAuth();
 
-    let [userFleetCurrent, setUserFleetCurrent] = useState<Fleet|null>(null);
-    let [userFleetAccess, setUserFleetAccess] = useState<FleetAccess[]>([]);
-
-    useEffect(() => {
-
-        const fetchCurrentFleet = async () => {
-
-            log("Fetching User Current Fleet...");
-            const newUserFleetCurrent = await fetchJson.get("/api/fleet");
-            log("Fetched User Current Fleet:", newUserFleetCurrent);
-            setUserFleetCurrent(newUserFleetCurrent);
-
-        };
-
-        const fetchFleetAccess = async () => {
-
-            // NEW REQUESTS:
-            log("Fetching User Fleet Access...");
-            const newUserFleetAccess = await fetchJson.get("/api/user/fleet-access");
-            log("Fetched User Fleet Access:", newUserFleetAccess);
-            setUserFleetAccess(newUserFleetAccess);
-            
-        }
-
-        fetchCurrentFleet();
-        fetchFleetAccess();
-        
-    }, []);
-
-    const hasAnyFleetsSelectable = (userFleetAccess.length > 0);
+    const fleetAccess = user?.fleetAccess ?? [];
+    const currentFleetId = user?.fleet?.id ?? -1;
+    const hasAnyFleetsSelectable = fleetAccess.length > 0;
 
     async function switchToFleet(fleetId: number) {
 
@@ -126,7 +102,7 @@ export default function MultifleetSelect() {
                 <Button variant="ghostMono" className="-mr-3 -ml-3 w-full max-w-48 overflow-hidden **:text-ellipsis!">
                     <UsersRound />
                     <div className="w-full text-ellipsis overflow-hidden">
-                        <span className="w-full">{userFleetCurrent?.name ?? "(No Fleet!)"}</span>
+                        <span className="w-full">{user?.fleet?.name ?? "(No Fleet!)"}</span>
                     </div>
                     <ChevronDown />
                 </Button>
@@ -137,15 +113,26 @@ export default function MultifleetSelect() {
                 <DropdownMenuContent>
                     
                     {/* Display All Available Fleets */}
-                    {userFleetAccess.map((fleet: FleetAccess) => (
+                    {/* {userFleetAccess.map((fleet: FleetAccess) => (
                         <DropdownMenuItem
                             key={fleet.fleetId}
                             onSelect={() => switchToFleet(fleet.fleetId)}
-                            disabled={!fleetSelectable(userFleetCurrent?.id ? parseInt(userFleetCurrent.id) : -1, fleet.fleetId, fleet)}
+                            disabled={!fleetSelectable(user?.fleet?.id ? parseInt(String(user.fleet?.id)) : -1, fleet.fleetId, fleet.accessType )}
                         >
                             <span>{fleet.fleetName}</span>
                         </DropdownMenuItem>
-                    ))}
+                    ))} */}
+                    {
+                        fleetAccess.map((fleet: FleetAccess) => (
+                            <DropdownMenuItem
+                                key={fleet.fleetId}
+                                onSelect={() => switchToFleet(fleet.fleetId)}
+                                disabled={!fleetSelectable(currentFleetId, fleet.fleetId, fleet)}
+                            >
+                                <span>{fleet.fleetName}</span>
+                            </DropdownMenuItem>
+                        ))
+                    }
 
                 </DropdownMenuContent>
             }

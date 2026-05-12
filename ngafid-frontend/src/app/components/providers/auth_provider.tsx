@@ -2,11 +2,12 @@
 import ErrorModal, { ModalDataError } from '@/components/modals/error_modal';
 import { useModal } from '@/components/modals/modal_context';
 import { getLogger } from '@/components/providers/logger';
+import { fetchJson } from '@/fetchJson';
 import { ROUTE_DEFAULT_LOGGED_OUT } from '@/lib/route_utils';
 import { LoaderCircle } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { NGAFIDUser } from 'src/types';
+import type { Fleet, FleetAccess, NGAFIDUser } from 'src/types';
 
 // const log = getLogger({ color: "blue",  type: "Provider" });
 const log = getLogger("AuthProvider", "blue", "Provider");
@@ -16,15 +17,24 @@ type AttemptLogOutFn = () => void;
 type AuthState = {
     loading: boolean;
     user: NGAFIDUser|null,
+    fleetLoading: boolean;
+    fleetLoaded: boolean;
 };
 
-type AuthContextValue = AuthState & { isLoggedIn: IsLoggedInFn, attemptLogOut: AttemptLogOutFn };
+type AuthContextValue = AuthState & {
+    isLoggedIn: IsLoggedInFn,
+    attemptLogOut: AttemptLogOutFn,
+    refreshFleetData: () => Promise<void>,
+};
 
 const AuthContext = React.createContext<AuthContextValue>({
     loading: true,
     user: null,
+    fleetLoading: false,
+    fleetLoaded: false,
     isLoggedIn: () => false,
     attemptLogOut: () => {},
+    refreshFleetData: async () => {},
 });
 
 
@@ -36,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [state, setState] = React.useState<AuthState>({
         loading: true,
         user: null,
+        fleetLoading: false,
+        fleetLoaded: false,
     });
     const isLoggedIn = () => (state.user !== null);
     const attemptLogOut = () => {
@@ -58,6 +70,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     }
 
+    const refreshFleetData = useCallback(async () => {
+
+        log("Refreshing auth fleet data...");
+        setState((prev) => ({ ...prev, fleetLoading: true }));
+
+        try {
+
+            const [fleet, fleetAccess] = await Promise.all([
+                fetchJson.get<Fleet>("/api/fleet"),
+                fetchJson.get<FleetAccess[]>("/api/user/fleet-access"),
+            ]);
+
+            setState((prev) => {
+
+                if (!prev.user)
+                    return { ...prev, fleetLoading: false, fleetLoaded: true };
+
+                return {
+                    ...prev,
+                    fleetLoading: false,
+                    fleetLoaded: true,
+                    user: {
+                        ...prev.user,
+                        fleet,
+                        fleetAccess,
+                    },
+                };
+
+            });
+
+        } catch (error) {
+
+            setState((prev) => ({ ...prev, fleetLoading: false }));
+            setModal(ErrorModal, { title: "Error fetching fleet information", message: String(error) });
+
+        }
+
+    }, [setModal]);
+
 
     useEffect(() => {
 
@@ -66,14 +117,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetch('/api/user/me', {
             credentials: 'include'
         })
-        .then(async (r) => (
-            r.ok
-                ? setState({ loading: false, user: await r.json() })
-                : setState({ loading: false, user: null })
-            )
-        )
+        .then(async (r) => {
+
+            if (!r.ok) {
+                setState({ loading: false, user: null, fleetLoading: false, fleetLoaded: false });
+                return;
+            }
+
+            const user = await r.json() as NGAFIDUser;
+            setState({
+                loading: false,
+                fleetLoading: false,
+                fleetLoaded: Boolean(user.fleet && user.fleetAccess?.length),
+                user: {
+                    ...user,
+                    fleet: user.fleet ?? null,
+                    fleetAccess: user.fleetAccess ?? [],
+                },
+            });
+
+        })
         .catch((error) => {
-            setState({ loading: false, user: null });
+            setState({ loading: false, user: null, fleetLoading: false, fleetLoaded: false });
             setModal(ErrorModal, {title : "Error during login submission", message: error.toString()} as ModalDataError);
         });
 
@@ -82,12 +147,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
 
+    useEffect(() => {
+
+        // No user, exit
+        if (!state.user)
+            return;
+
+        // User already has fleet data, exit
+        if (state.fleetLoaded || state.fleetLoading)
+            return;
+
+        void refreshFleetData();
+
+    }, [state.user, state.fleetLoaded, state.fleetLoading, refreshFleetData]);
+
     const render = () => {
 
         log("Rendering, loading =", state.loading, ", user =", state.user);
 
         return (
-            <AuthContext.Provider value={{ ...state, isLoggedIn, attemptLogOut }}>
+            <AuthContext.Provider value={{ ...state, isLoggedIn, attemptLogOut, refreshFleetData }}>
                 {children}
             </AuthContext.Provider>
         );
