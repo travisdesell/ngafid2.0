@@ -177,6 +177,16 @@ export default function UploadItem(props: UploadItemProps) {
 
     })();
 
+    const downloadIncomplete = (u.bytesUploaded < u.sizeBytes);
+    const downloadDisabled = (
+        disableAll
+        || isPending
+        || u.id === -1
+        || downloadIncomplete
+    );
+
+    console.log("Progress Size: ", u.progressSize);
+
     return (
         <Card className={`w-full bg-background! transition-all ${isDeleting ? "opacity-50 pointer-events-none" : ""} `}>
             <CardContent className="p-0 px-4 py-2 flex items-center gap-4 h-16 *:h-full">
@@ -202,7 +212,7 @@ export default function UploadItem(props: UploadItemProps) {
                         <Progress value={uploadProgress} className="h-3 my-1" indicatorClassName={progressBarColor} />
                         <div className="text-xs text-muted-foreground whitespace-nowrap">
                             {
-                                (u.bytesUploaded < u.sizeBytes)
+                                (downloadIncomplete)
                                 ?
                                 `${bytesToKB(u.progressSize ?? u.bytesUploaded ?? 0)} / ${bytesToKB(u.totalSize ?? u.sizeBytes ?? 0)} kB (${uploadProgress.toFixed(2)}%)`
                                 :
@@ -290,7 +300,7 @@ export default function UploadItem(props: UploadItemProps) {
                     <Button
                         size="icon"
                         variant="ghost"
-                        disabled={disableAll || isPending || u.id === -1}
+                        disabled={downloadDisabled}
                         onClick={() => (u.id !== -1 ? downloadUpload(u) : null)}
                         title="Download uploaded file"
                     >
