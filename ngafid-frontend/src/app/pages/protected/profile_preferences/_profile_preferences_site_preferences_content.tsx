@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/profile_preferences/_profile_preferences_site_preferences_content.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { fleetAccessAllowed } from "@/components/navbars/multifleet_select";
 import { useAuth } from "@/components/providers/auth_provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -350,7 +351,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
                             </SelectTrigger>
                             <SelectContent>
                                 {fleetAccess.map((fleet) => (
-                                    <SelectItem key={fleet.fleetId} value={String(fleet.fleetId)}>
+                                    <SelectItem key={fleet.fleetId} value={String(fleet.fleetId)} disabled={!fleetAccessAllowed(fleet)}>
                                         {fleet.fleetName}
                                     </SelectItem>
                                 ))}
@@ -377,24 +378,22 @@ export default function ProfilePreferencesSitePreferencesContent() {
                                 <div className="text-sm text-muted-foreground">No pending invitations.</div>
                             )} */}
                             {!invitesLoading && invites.length > 0 && (
-                                <div className="flex flex-col gap-3">
+                                <div className="grid grid-cols-3">
                                     {invites.map((invite) => (
-                                        <div key={invite.fleetName} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                                        <div key={invite.fleetName} className="flex items-center justify-between gap-2 bg-background rounded-lg border border-border p-3">
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-medium">{invite.fleetName}</span>
                                                 <span className="text-xs text-muted-foreground">Invited by {invite.inviteEmail}</span>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
                                                 <Button
-                                                    size="sm"
                                                     disabled={inviteAction === `accept-${invite.fleetName}`}
                                                     onClick={() => submitInviteAction(invite.fleetName, "accept")}
                                                 >
                                                     Accept
                                                 </Button>
                                                 <Button
-                                                    size="sm"
-                                                    variant="outline"
+                                                    variant="destructive"
                                                     disabled={inviteAction === `decline-${invite.fleetName}`}
                                                     onClick={() => submitInviteAction(invite.fleetName, "decline")}
                                                 >
