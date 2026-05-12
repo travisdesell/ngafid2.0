@@ -213,7 +213,7 @@ export default function UploadItem(props: UploadItemProps) {
                 </div>
 
                 {/* Status Badge */}
-                <Badge variant={variant} className="w-32 h-fit!">
+                <Badge variant={variant} className="w-36 h-fit!">
                     {label}
                 </Badge>
 
