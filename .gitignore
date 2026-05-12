@@ -1,7 +1,7 @@
 # IDE and OS generated files:
 .DS_Store
 .idea
-.vscode/
+.vscode
 
 
 # Data stored in the repository (for local development):

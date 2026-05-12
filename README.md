@@ -214,6 +214,16 @@ them into docker containers:
 ~/ngafid2.0 $ run/package
 ```
 
+For regular Java/Kotlin development, `run/build` uses Maven's reactor without installing snapshot artifacts into
+`~/.m2`. You can build a smaller slice by passing a module name:
+
+```shell
+~/ngafid2.0 $ run/build ngafid-www
+```
+
+That is equivalent to building the selected module and its reactor dependencies with `mvn package -pl ngafid-www -am`.
+Use `clean` or `install` only when you specifically need a clean tree or locally installed artifacts.
+
 Then, build the docker images. Note, that we define a `base` image from which other service-specific images are
 dependent on. The docker build system does not handle dependencies like this properly, so in order to prevent issues you
 must run the following commands in-order:

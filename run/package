@@ -1,2 +1,4 @@
 #!/bin/bash
-mvn clean install -pl '!ngafid-db' -Dmaven.test.skip=true
+set -euo pipefail
+
+mvn package -pl '!ngafid-db' -Dmaven.test.skip=true -Djacoco.skip=true

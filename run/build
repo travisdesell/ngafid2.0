@@ -1,3 +1,11 @@
 #!/bin/bash
-# We add skip assembly to skip generating jars w/ their dependencies which takes some time. use the `package` script.
-mvn install -pl '!ngafid-db' -Dmaven.test.skip=true -Dassembly.skipAssembly=true
+set -euo pipefail
+
+# Fast Java/Kotlin build. Pass module names to build only those modules and their
+# reactor dependencies, for example: run/build ngafid-www
+if [ "$#" -gt 0 ]; then
+    projects=$(IFS=,; echo "$*")
+    mvn package -pl "$projects" -am -Dmaven.test.skip=true -Dassembly.skipAssembly=true -Djacoco.skip=true
+else
+    mvn package -pl '!ngafid-db' -Dmaven.test.skip=true -Dassembly.skipAssembly=true -Djacoco.skip=true
+fi

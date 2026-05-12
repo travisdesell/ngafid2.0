@@ -19,11 +19,13 @@
     <properties>
         <kotlin.version>2.3.20</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
-        <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
+        <kotlin.compiler.daemon>false</kotlin.compiler.daemon>
         <kotlin.compiler.jdkHome>${env.JAVA_HOME}</kotlin.compiler.jdkHome>
         <jvm.target>24</jvm.target>
         <maven.compiler.release>24</maven.compiler.release>
         <kotlin.jvm.target>24</kotlin.jvm.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jacoco.version>0.8.14</jacoco.version>
 
         <jacoco.skip>false</jacoco.skip>
@@ -189,7 +191,7 @@
                         <jvmTarget>${kotlin.jvm.target}</jvmTarget>
                         <jdkHome>${kotlin.compiler.jdkHome}</jdkHome>
                         <args>
-                            <arg>-Xjvm-default=all</arg>
+                            <arg>-jvm-default=no-compatibility</arg>
                         </args>
                     </configuration>
                     <executions>
@@ -202,6 +204,7 @@
                             <configuration>
                                 <sourceDirs>
                                     <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                    <sourceDir>${project.basedir}/src/main/java</sourceDir>
                                 </sourceDirs>
                             </configuration>
                         </execution>
@@ -215,6 +218,7 @@
                             <configuration>
                                 <sourceDirs>
                                     <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                    <sourceDir>${project.basedir}/src/test/java</sourceDir>
                                 </sourceDirs>
                             </configuration>
                         </execution>
@@ -288,12 +292,6 @@
         </pluginManagement>
 
         <plugins>
-            <!-- Kotlin compiler should be listed first! -->
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -316,6 +314,9 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <configuration>
+                    <skip>${jacoco.skip}</skip>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
