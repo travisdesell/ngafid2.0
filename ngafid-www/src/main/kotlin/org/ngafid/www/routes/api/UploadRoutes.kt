@@ -314,8 +314,8 @@ object UploadRoutes : RouteProvider() {
             val upload = Upload.getUploadById(connection, uploadId)
                 ?: throw NotFoundResponse("Upload with id $uploadId not found.")
 
-            if (upload.getFleetId() != user.fleetId)
-                throw UnauthorizedResponse("User or upload is not a part of the correct fleet.")
+            if (!upload.deletionPermittedByUser(connection, user))
+                throw UnauthorizedResponse("User does not have permission to delete this upload.")
 
             upload.getLockedUpload(connection).use { locked -> locked.remove() }
             Tails.removeUnused(connection)

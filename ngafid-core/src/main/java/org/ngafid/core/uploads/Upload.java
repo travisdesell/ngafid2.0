@@ -16,14 +16,19 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.jspecify.annotations.NonNull;
 import org.ngafid.core.Config;
+import org.ngafid.core.accounts.User;
+
 import static org.ngafid.core.Config.NGAFID_ARCHIVE_DIR;
+import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.kafka.Configuration;
 import org.ngafid.core.kafka.Topic;
 import org.ngafid.core.util.MD5;
@@ -822,6 +827,28 @@ public final class Upload {
         zos.setUseZip64(Zip64Mode.Always);
         return zos;
         
+    }
+
+    public boolean deletionPermittedByUser(Connection connection, User user) {
+
+        // User's Fleet ID doesn't match, not permitted
+        if (user.getFleetId() != fleetId)
+            return false;
+
+        // User doesn't have MANAGER / UPLOAD access, not permitted
+        try {
+            
+            FleetAccess access = FleetAccess.get(connection, user.getId(), this.fleetId);
+            if (access == null || !access.canDeleteUploads())
+                return false;
+
+        } catch (SQLException e) {
+            LOG.log(Level.SEVERE, "Database error while checking upload deletion permissions", e);
+            return false;
+        }
+
+        return true;
+
     }
 
     public int getFleetId() {

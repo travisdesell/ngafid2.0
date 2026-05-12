@@ -90,6 +90,28 @@ public class FleetAccess implements Serializable {
     }
 
     /**
+     * @return true if the user can upload flights
+    */
+    boolean canUploadUploads() {
+        return isManager() || isUpload();
+    }
+
+
+    /**
+     * @return true if the user can delete uploads
+     */
+    public boolean canDeleteUploads() {
+        return isManager() || isUpload();
+    }
+
+    /**
+     * @return true if the user can view uploads
+     */
+    boolean canViewUploads() {
+        return isManager() || isUpload() || isView();
+    }
+
+    /**
      * Black constructor so static methods can create a new object
      */
     private FleetAccess() {}
