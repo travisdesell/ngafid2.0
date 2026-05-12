@@ -11,6 +11,34 @@ import { useEffect, useState } from "react";
 
 const log = getLogger("MultifleetSelect", "black", "Component");
 
+
+export const fleetAccessAllowed = (access: FleetAccess | undefined) => {
+
+    // Missing access info -> False
+    if (!access)
+        return false;
+
+    const allowedTypes = ["VIEW", "UPLOAD", "MANAGER"];
+
+    return allowedTypes.includes(access.accessType);
+
+}
+
+export const fleetSelectable = (fleetIDCurrent: number, fleetIDTarget: number, access: FleetAccess | undefined) => {
+
+    // Fleet access not allowed -> Not selectable
+    if (!fleetAccessAllowed(access))
+        return false;
+
+    // Fleet already selected -> Not selectable
+    if (fleetIDCurrent === fleetIDTarget)
+        return false;
+
+    return true;
+
+}
+
+
 type Fleet = {
     name: string;
     id: string;
@@ -95,7 +123,7 @@ export default function MultifleetSelect() {
 
         return <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghostMono" className="-mr-3 -ml-3 w-full max-w-[192px] overflow-hidden **:text-ellipsis!">
+                <Button variant="ghostMono" className="-mr-3 -ml-3 w-full max-w-48 overflow-hidden **:text-ellipsis!">
                     <UsersRound />
                     <div className="w-full text-ellipsis overflow-hidden">
                         <span className="w-full">{userFleetCurrent?.name ?? "(No Fleet!)"}</span>
@@ -110,7 +138,11 @@ export default function MultifleetSelect() {
                     
                     {/* Display All Available Fleets */}
                     {userFleetAccess.map((fleet: FleetAccess) => (
-                        <DropdownMenuItem key={fleet.fleetId} onSelect={() => switchToFleet(fleet.fleetId)}>
+                        <DropdownMenuItem
+                            key={fleet.fleetId}
+                            onSelect={() => switchToFleet(fleet.fleetId)}
+                            disabled={!fleetSelectable(userFleetCurrent?.id ? parseInt(userFleetCurrent.id) : -1, fleet.fleetId, fleet)}
+                        >
                             <span>{fleet.fleetName}</span>
                         </DropdownMenuItem>
                     ))}
