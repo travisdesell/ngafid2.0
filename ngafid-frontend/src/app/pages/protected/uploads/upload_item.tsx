@@ -152,7 +152,7 @@ export default function UploadItem(props: UploadItemProps) {
         return "Retry is only available for interrupted or failed uploads.";
 
     })();
-    const isImported = (u.status === "PROCESSED_OK");
+    const isImported = (u.status.includes("PROCESSED") || u.status === "DERIVED");
     const hasImportData = ("validFlights" in u);
     const totalFlights = hasImportData ? (u.validFlights + u.warningFlights + u.errorFlights) : 0;
 
