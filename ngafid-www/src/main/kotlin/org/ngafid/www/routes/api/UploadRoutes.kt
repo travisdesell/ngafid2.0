@@ -44,6 +44,7 @@ object UploadRoutes : RouteProvider() {
 
                 RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.uploads()) }
                 RouteUtility.getStat("count/success") { ctx, stats -> ctx.json(stats.uploadsOK()) }
+                RouteUtility.getStat("count/processed") { ctx, stats -> ctx.json(stats.uploadsProcessed()) }
                 RouteUtility.getStat("count/warning") { ctx, stats -> ctx.json(stats.uploadsWithWarning()) }
                 RouteUtility.getStat("count/error") { ctx, stats -> ctx.json(stats.uploadsWithError()) }
                 RouteUtility.getStat("count/pending") { ctx, stats -> ctx.json(stats.uploadsNotImported()) }

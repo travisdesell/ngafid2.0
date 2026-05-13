@@ -35,7 +35,7 @@ type FlightHoursByAirframe = {
 
 type UploadStatistics = {
     total: number;
-    ok: number;
+    processed: number;
     pending: number;
     errors: number;
 }
@@ -130,7 +130,7 @@ export default function SummaryPage() {
         const base = '/api/upload/count';
         const endpoints = {
             total: `${base}`,
-            ok: `${base}/success`,
+            processed: `${base}/processed`,
             pending: `${base}/pending`,
             errors: `${base}/error`,
         } as const;
@@ -144,16 +144,16 @@ export default function SummaryPage() {
 
             }
 
-            const [total, ok, pending, errors] = await Promise.all([
+            const [total, processed, pending, errors] = await Promise.all([
                 fetchJson.get(endpoints.total).catch((e) => handleUploadCountFetchError(e, endpoints.total)),
-                fetchJson.get(endpoints.ok).catch((e) => handleUploadCountFetchError(e, endpoints.ok)),
+                fetchJson.get(endpoints.processed).catch((e) => handleUploadCountFetchError(e, endpoints.processed)),
                 fetchJson.get(endpoints.pending).catch((e) => handleUploadCountFetchError(e, endpoints.pending)),
                 fetchJson.get(endpoints.errors).catch((e) => handleUploadCountFetchError(e, endpoints.errors)),
             ]);
 
             const next: UploadStatistics = {
                 total: total ?? 0,
-                ok: ok ?? 0,
+                processed: processed ?? 0,
                 pending: pending ?? 0,
                 errors: errors ?? 0,
             };
@@ -332,12 +332,12 @@ export default function SummaryPage() {
     //Destructure upload statistics (with defaults)
     const {
         uploadsTotal,
-        uploadsOk,
+        uploadsProcessed,
         uploadsPending,
         uploadsErrors
     } = {
         uploadsTotal: uploadStatistics?.total ?? UPLOAD_FLIGHT_STAT_VALUE_NOT_LOADED,
-        uploadsOk: uploadStatistics?.ok ?? UPLOAD_FLIGHT_STAT_VALUE_NOT_LOADED,
+        uploadsProcessed: uploadStatistics?.processed ?? UPLOAD_FLIGHT_STAT_VALUE_NOT_LOADED,
         uploadsPending: uploadStatistics?.pending ?? UPLOAD_FLIGHT_STAT_VALUE_NOT_LOADED,
         uploadsErrors: uploadStatistics?.errors ?? UPLOAD_FLIGHT_STAT_VALUE_NOT_LOADED
     };
@@ -508,7 +508,7 @@ export default function SummaryPage() {
                                 {/* Uploads Row */}
                                 <div className="grid gap-2 grid-cols-4 grid-rows-1">
                                     {renderSummaryBadge(<Upload size={16} />, "Uploads", uploadsTotal, 'bg-(--muted)')}
-                                    {renderSummaryBadge(<Check size={16} />, "Uploads Processed", uploadsOk, 'bg-(--normal)')}
+                                    {renderSummaryBadge(<Check size={16} />, "Uploads Processed", uploadsProcessed, 'bg-(--normal)')}
                                     {renderSummaryBadge(<Hourglass size={16} />, "Uploads Pending", uploadsPending, 'bg-(--warning)')}
                                     {renderSummaryBadge(<CircleAlert size={16} />, "Uploads Failed", uploadsErrors, 'bg-(--error)')}
                                 </div>

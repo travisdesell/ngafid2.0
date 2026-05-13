@@ -211,6 +211,11 @@ public class StatisticsJavalinRoutes {
             return getUploadCounts().okUploadCount();
         }
 
+        public Integer uploadsProcessed() throws SQLException {
+            var counts = getUploadCounts();
+            return counts.okUploadCount() + counts.warningUploadCount();
+        }
+
         public Integer uploadsNotImported() throws SQLException {
             var counts = getUploadCounts();
             return counts.count() - (counts.okUploadCount() + counts.warningUploadCount() + counts.errorUploadCount());
