@@ -651,7 +651,7 @@ export default function TrendsPage() {
 
         return <Card className="card-glossy w-full min-h-0 flex-1 flex flex-col overflow-hidden">
             <CardHeader>
-                <CardTitle>Count of Events Over Time</CardTitle>
+                <CardTitle>Events Counts Over Time</CardTitle>
                 <CardDescription>
                     {
                         isAggregatePage
@@ -839,9 +839,9 @@ export default function TrendsPage() {
                     {/* Chart Cards */}
                     <div className="flex flex-col gap-2 w-full min-h-0 flex-1">
 
-                        {renderPercentageOfFlightsChart()}
-
                         {renderCountOfEventsChart()}
+
+                        {renderPercentageOfFlightsChart()}
 
                     </div>
 
