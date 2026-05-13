@@ -232,7 +232,7 @@ public class ParquetPipeline {
         Flight flight = builder.getFlight();
         //  LOG.info("Finalizing flight: " + flight.getFilename());
 
-        if (flight.getStatus().equals("WARNING")) {
+        if (flight.getStatus() == Flight.FlightStatus.WARNING) {
             warningFlights++;
         } else {
             validFlights++;

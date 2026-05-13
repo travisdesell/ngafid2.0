@@ -142,9 +142,15 @@ public class FlightBuilder {
         // dg.computeParallel();
         dg.computeSequential();
 
+        FlightWarningChecks.addWarnings(this, includeLegacyOptionalCalculationWarnings());
+
         flight = new Flight(meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions, events);
 
         return this;
+    }
+
+    protected boolean includeLegacyOptionalCalculationWarnings() {
+        return true;
     }
 
     public final Flight getFlight() {

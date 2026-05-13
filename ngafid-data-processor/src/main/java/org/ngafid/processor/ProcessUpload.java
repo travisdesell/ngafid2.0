@@ -259,6 +259,10 @@ public final class ProcessUpload {
             uploadException = new Exception("Uploaded file was not a zip or parquet file.");
         }
 
+        if (uploadException == null && warningFlights > 0) {
+            status = Upload.Status.PROCESSED_WARNING;
+        }
+
         // update upload in database, add upload exceptions if there are any
         try (PreparedStatement updateStatement = connection.prepareStatement("UPDATE uploads SET "
                 + "n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
@@ -287,12 +291,12 @@ public final class ProcessUpload {
             Instant end = Instant.now();
             double elapsedMillis = (double) Duration.between(start, end).toMillis();
             double elapsedSeconds = elapsedMillis / 1000;
-            LOG.info("email in " + elapsedSeconds);
+            LOG.info(() -> "email in " + elapsedSeconds);
             uploadProcessedEmail.setImportElapsedTime(elapsedSeconds);
 
-            LOG.info("valid flights: " + validFlights);
-            LOG.info("warning flights: " + warningFlights);
-            LOG.info("error flights: " + errorFlights);
+            LOG.log(Level.INFO, "valid flights: {0}", validFlights);
+            LOG.log(Level.INFO, "warning flights: {0}", warningFlights);
+            LOG.log(Level.INFO, "error flights: {0}", errorFlights);
 
             uploadProcessedEmail.setValidFlights(validFlights);
 

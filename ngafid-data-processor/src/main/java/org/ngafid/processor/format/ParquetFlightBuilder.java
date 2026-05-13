@@ -40,4 +40,9 @@ public class ParquetFlightBuilder extends FlightBuilder {
         }
         return steps;
     }
+
+    @Override
+    protected boolean includeLegacyOptionalCalculationWarnings() {
+        return false;
+    }
 }
