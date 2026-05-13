@@ -28,6 +28,7 @@ export function DarkModeToggle() {
         theme, setTheme,
         useHighContrastCharts, setUseHighContrastCharts,
         invertBackgroundImage, setInvertBackgroundImage,
+        blurBackgroundImage, setBlurBackgroundImage,
         useNavbarPageNames, setUseNavbarPageNames,
     } = useTheme();
     const isDarkTheme = (theme === "dark");
@@ -153,6 +154,19 @@ export function DarkModeToggle() {
                         Invert Background Image
                         <Checkbox
                             checked={invertBackgroundImage}
+                            className="ml-auto pointer-events-none"
+                        />
+                    </ContextMenuItem>
+                    <Separator />
+
+                    {/* Toggle Blur Background Image */}
+                    <ContextMenuItem
+                        className="p-3"
+                        onClick={() => setBlurBackgroundImage(!blurBackgroundImage)}
+                    >
+                        Blur Background Image
+                        <Checkbox
+                            checked={blurBackgroundImage}
                             className="ml-auto pointer-events-none"
                         />
                     </ContextMenuItem>

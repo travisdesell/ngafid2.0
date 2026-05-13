@@ -13,14 +13,24 @@ export default function Background() {
         rendering the background image based on that.
     */
 
-    const { theme, invertBackgroundImage } = useTheme();
+    const { theme, invertBackgroundImage, blurBackgroundImage } = useTheme();
     const isDarkMode = (theme === 'dark') !== invertBackgroundImage;
+
+    const bgClass = `
+        scale-[1.1]
+        fixed top-0 left-0
+        w-full h-full
+        object-cover object-center
+        pointer-events-none select-none
+        -z-10
+        ${blurBackgroundImage ? 'blur-md' : ''}
+    `;
 
     // Otherwise, render background images
     return (
         <>
-            <img src={bgLight} alt="Background" className={`scale-[1.1] fixed top-0 left-0 w-full h-full object-cover object-center pointer-events-none select-none -z-10 blur-md ${isDarkMode ? 'hidden' : 'block'}`} />
-            <img src={bgDark} alt="Background" className={`scale-[1.1] fixed top-0 left-0 w-full h-full object-cover object-center pointer-events-none select-none -z-10 blur-md ${isDarkMode ? 'block' : 'hidden'}`} />
+            <img src={bgLight} alt="Background" className={bgClass + (isDarkMode ? 'hidden' : 'block')} />
+            <img src={bgDark} alt="Background" className={bgClass + (isDarkMode ? 'block' : 'hidden')} />
         </>
     );
 

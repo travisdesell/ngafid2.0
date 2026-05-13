@@ -3,6 +3,16 @@ import { getLogger } from "@/components/providers/logger";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLocalStorage } from "@uidotdev/usehooks";
 
+
+/*
+
+    NOTE: Theme fields are currently modified
+    by the user via the dark_mode_toggle.tsx
+    component, which could probably use a
+    better name than that.
+
+*/
+
 const log = getLogger("ThemeProvider", "fuchsia", "Provider");
 
 type Theme = "dark" | "light" | "system"
@@ -18,6 +28,7 @@ type ThemeProviderState = {
     setTheme: (theme: Theme) => void,
     useHighContrastCharts: boolean, setUseHighContrastCharts: (useHighContrast: boolean) => void,
     invertBackgroundImage: boolean, setInvertBackgroundImage: (invertBackgroundImage: boolean) => void,
+    blurBackgroundImage: boolean, setBlurBackgroundImage: (blurBackgroundImage: boolean) => void,
     useNavbarPageNames: boolean, setUseNavbarPageNames: (useNavbarPageNames: boolean) => void,
 }
 
@@ -26,6 +37,7 @@ const initialState: ThemeProviderState = {
     setTheme: () => null,
     useHighContrastCharts: false, setUseHighContrastCharts: () => null,
     invertBackgroundImage: true, setInvertBackgroundImage: () => null,
+    blurBackgroundImage: false, setBlurBackgroundImage: () => null,
     useNavbarPageNames: true, setUseNavbarPageNames: () => null,
 }
 
@@ -40,6 +52,7 @@ export function ThemeProvider({
     const [theme, setTheme] = useLocalStorage<Theme>("ngafid-theme", "light");
     const [useHighContrastCharts, setUseHighContrastCharts] = useLocalStorage<boolean>("ngafid-use-high-contrast-charts", false);
     const [invertBackgroundImage, setInvertBackgroundImage] = useLocalStorage<boolean>("ngafid-invert-background-image", false);
+    const [blurBackgroundImage, setBlurBackgroundImage] = useLocalStorage<boolean>("ngafid-blur-background-image", true);
     const [useNavbarPageNames, setUseNavbarPageNames] = useLocalStorage<boolean>("ngafid-use-navbar-page-names", true);
 
     useEffect(() => {
@@ -69,6 +82,7 @@ export function ThemeProvider({
         setTheme,
         useHighContrastCharts, setUseHighContrastCharts,
         invertBackgroundImage, setInvertBackgroundImage,
+        blurBackgroundImage, setBlurBackgroundImage,
         useNavbarPageNames, setUseNavbarPageNames,
     };
 
