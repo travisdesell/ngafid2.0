@@ -50,7 +50,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
 
     const [theme, setTheme] = useLocalStorage<Theme>("ngafid-theme", "light");
-    const [useHighContrastCharts, setUseHighContrastCharts] = useLocalStorage<boolean>("ngafid-use-high-contrast-charts", false);
+    const [useHighContrastCharts, setUseHighContrastCharts] = useLocalStorage<boolean>("ngafid-use-high-contrast-charts", true);
     const [invertBackgroundImage, setInvertBackgroundImage] = useLocalStorage<boolean>("ngafid-invert-background-image", false);
     const [blurBackgroundImage, setBlurBackgroundImage] = useLocalStorage<boolean>("ngafid-blur-background-image", true);
     const [useNavbarPageNames, setUseNavbarPageNames] = useLocalStorage<boolean>("ngafid-use-navbar-page-names", true);
