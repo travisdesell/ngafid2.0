@@ -11,6 +11,7 @@ import { fetchJson } from "@/fetchJson";
 import { APIError, UploadErrorsPayload, UploadImportItem } from "@/pages/protected/uploads/types";
 import { AlertTriangle, Check, CircleAlert, CloudDownload } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const log = getLogger("UploadDetailsModal", "black", "Modal");
 
@@ -159,7 +160,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
         return (
             <div className="rounded-lg p-4 border-muted-foreground border relative overflow-visible! my-2 flex flex-col gap-2">
                 <h3 className="font-bold absolute dark:bg-muted bg-background px-2 left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">{groupName}</h3>
-                <ol className="flex flex-col gap-2" type="1">
+                <ol className="flex flex-col gap-2 max-h-48 overflow-y-clip!" type="1">
                     {children}
                 </ol>
             </div>
@@ -178,32 +179,32 @@ export default function UploadDetailsModal({ data }: ModalProps) {
 
             <AccordionContent className="flex flex-col gap-1 px-4 *:text-nowrap">
 
-                    {/* Identifiers */}
-                    <UploadMetaGroup groupName="Identifiers">
-                        {UploadMetaRow({ label: "ID", value: uploadImportData.id })}
-                        {UploadMetaRow({ label: "Identifier", value: uploadImportData.identifier })}
-                        {UploadMetaRow({ label: "MD5 Hash", value: uploadImportData.md5Hash })}
-                    </UploadMetaGroup>
+                {/* Identifiers */}
+                <UploadMetaGroup groupName="Identifiers">
+                    {UploadMetaRow({ label: "ID", value: uploadImportData.id })}
+                    {UploadMetaRow({ label: "Identifier", value: uploadImportData.identifier })}
+                    {UploadMetaRow({ label: "MD5 Hash", value: uploadImportData.md5Hash })}
+                </UploadMetaGroup>
 
-                    {/* File Info */}
-                    <UploadMetaGroup groupName="File Info">
-                        {UploadMetaRow({ label: "Filename", value: uploadImportData.filename })}
-                        {UploadMetaRow({ label: "Size (MB)", value: ()=>(uploadImportData.sizeBytes / (1024 * 1024)).toFixed(2) })}
-                        {UploadMetaRow({ label: "Kind", value: uploadImportData.kind })}
-                    </UploadMetaGroup>
+                {/* File Info */}
+                <UploadMetaGroup groupName="File Info">
+                    {UploadMetaRow({ label: "Filename", value: uploadImportData.filename })}
+                    {UploadMetaRow({ label: "Size (MB)", value: ()=>(uploadImportData.sizeBytes / (1024 * 1024)).toFixed(2) })}
+                    {UploadMetaRow({ label: "Kind", value: uploadImportData.kind })}
+                </UploadMetaGroup>
 
-                    {/* Uploader Info */}
-                    <UploadMetaGroup groupName="Uploader Info">
-                        {UploadMetaRow({ label: "Uploader", value: () => uploadImportData.uploaderId ? `User No. ${uploadImportData.uploaderId}` : "Unknown" })}
-                        {UploadMetaRow({ label: "Fleet", value: () => uploadImportData.fleetId ? `Fleet No. ${uploadImportData.fleetId}` : "Unknown" })}
-                    </UploadMetaGroup>
+                {/* Uploader Info */}
+                <UploadMetaGroup groupName="Uploader Info">
+                    {UploadMetaRow({ label: "Uploader", value: () => uploadImportData.uploaderId ? `User No. ${uploadImportData.uploaderId}` : "Unknown" })}
+                    {UploadMetaRow({ label: "Fleet", value: () => uploadImportData.fleetId ? `Fleet No. ${uploadImportData.fleetId}` : "Unknown" })}
+                </UploadMetaGroup>
 
-                    {/* Details */}
-                    <UploadMetaGroup groupName="Details">
-                        {UploadMetaRow({ label: "Start Time", value: uploadImportData.startTime })}
-                        {UploadMetaRow({ label: "End Time", value: uploadImportData.endTime })}
-                        {UploadMetaRow({ label: "Number of Chunks", value: uploadImportData.numberChunks })}
-                    </UploadMetaGroup>
+                {/* Details */}
+                <UploadMetaGroup groupName="Details">
+                    {UploadMetaRow({ label: "Start Time", value: uploadImportData.startTime })}
+                    {UploadMetaRow({ label: "End Time", value: uploadImportData.endTime })}
+                    {UploadMetaRow({ label: "Number of Chunks", value: uploadImportData.numberChunks })}
+                </UploadMetaGroup>
 
             </AccordionContent>
 
@@ -237,24 +238,32 @@ export default function UploadDetailsModal({ data }: ModalProps) {
         return <div className="flex flex-col gap-2 overflow-y-auto max-h-64">
             {
                 groups.map((group, index) => (
-                    <button
-                        key={`error-group-${index}`}
-                        className="border-(--error) rounded-md p-2 mr-2 text-wrap wrap-break-word text-left cursor-pointer dark:bg-background bg-muted group"
-                        onClick={() => copyErrorDetailsToClipboard(group)}
-                    >
+                    <Tooltip disableHoverableContent>
+                        <TooltipTrigger>
+                            <button
+                                key={`error-group-${index}`}
+                                className="border border-border rounded-md p-2 mr-2 text-wrap wrap-break-word text-left cursor-pointer dark:bg-background bg-muted group"
+                                onClick={() => copyErrorDetailsToClipboard(group)}
+                            >
 
-                        {/* Error Title & Flight Count */}
-                        <div className="flex mb-2 group-hover:underline">
-                            <span className="font-semibold">{group.label}</span>
-                            &nbsp;<span className="text-nowrap">({group.count} flights):</span>
-                        </div>
+                                {/* Error Title & Flight Count */}
+                                <div className="flex mb-2 group-hover:underline">
+                                    <span className="font-semibold">{group.label}</span>
+                                    &nbsp;<span className="text-nowrap">({group.count} flights):</span>
+                                </div>
 
-                        {/* Error Flight Files */}
-                        <div className="text-xs text-muted-foreground">
-                            {Array.from(group.filenames).join(", ")}
-                        </div>
+                                {/* Error Flight Files */}
+                                <div className="text-xs text-muted-foreground">
+                                    {Array.from(group.filenames).join(", ")}
+                                </div>
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Click to copy to clipboard.
+                        </TooltipContent>
 
-                    </button>
+                        
+                    </Tooltip>
                 )
             )}
         </div>
@@ -328,7 +337,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
                     <div className="text-xs text-(--error) py-2">{loadingError}</div>
                 }
 
-                <div className="text-xs text-muted-foreground py-2">Click on an error or warning to copy it.</div>
+                {/* <div className="text-xs text-muted-foreground py-2">Click on an error or warning to copy it.</div> */}
 
                 {
                     (errorDetails.uploadErrors?.length ?? 0) > 0
