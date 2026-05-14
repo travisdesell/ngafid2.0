@@ -912,11 +912,7 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                     }
                     </LineChart>
                 </ChartContainer>
-                <InteractiveChartSelectionOverlay
-                    previewRef={chartInteraction.selectionOverlayRef}
-                    stroke={theme === "dark" ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.9)"}
-                    fill={theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}
-                />
+                <InteractiveChartSelectionOverlay previewRef={chartInteraction.selectionOverlayRef} />
             </div>
         </div>
     );

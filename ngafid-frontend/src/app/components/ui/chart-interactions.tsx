@@ -6,6 +6,7 @@ import * as React from "react";
 import { getLogger } from "@/components/providers/logger";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/providers/theme-provider";
 
 const log = getLogger("ChartInteractions", "blue", "Component");
 
@@ -260,8 +261,29 @@ export function InteractiveChartSelectionOverlay({
     fill,
     className,
 }: InteractiveChartSelectionOverlayProps) {
-    const lineStroke = stroke ?? "rgba(0,0,0,0.9)";
-    const areaFill = fill ?? "rgba(0,0,0,0.1)";
+
+    const { theme } = useTheme();
+    const isDark = (theme === "dark");
+
+    let lineStroke;
+
+    // No stroke color assigned, default to theme color
+    if (!stroke)
+        lineStroke = (isDark) ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.9)";
+
+    // Otherwise, use the provided stroke color
+    else
+        lineStroke = stroke;
+
+    let areaFill;
+
+    // No fill color assigned, default to theme color
+    if (!fill)
+        areaFill = isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)";
+
+    // Otherwise, use the provided fill color
+    else
+        areaFill = fill;
 
     return (
         <div
