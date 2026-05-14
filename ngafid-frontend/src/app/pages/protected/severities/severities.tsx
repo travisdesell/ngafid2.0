@@ -11,14 +11,15 @@ import TimeHeader from "@/components/providers/time_header/time_header";
 import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartConfig, ChartContainer, ChartLegend, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { InteractiveChartSelectionOverlay, useInteractiveCartesianChart } from "@/components/ui/chart-interactions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchJson } from "@/fetchJson";
-import { CircleQuestionMark, Download } from "lucide-react";
+import { CircleQuestionMark, Download, Expand } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from "recharts";
 
@@ -79,12 +80,6 @@ type SeveritySeries = {
     isAny: boolean;
     symbol: (typeof MARKER_SHAPES)[number];
     data: SeverityPoint[];
-};
-
-type LegendItem = {
-    dataKey?: string;
-    color?: string;
-    value?: string;
 };
 
 const sanitizeKey = (value: string) => value.replace(/[^a-zA-Z0-9_]+/g, "_");
@@ -273,33 +268,6 @@ const MarkerShapeIcon = ({ shape, color }: { shape: (typeof MARKER_SHAPES)[numbe
         default:
             return <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0"><circle cx="8" cy="8" r="4.4" {...fillStyle} /></svg>;
     }
-};
-
-const renderSeveritiesLegendContent = (
-    config: ChartConfig,
-    symbolsBySeries: Record<string, (typeof MARKER_SHAPES)[number]>,
-    payload?: LegendItem[],
-) => {
-    if (!payload?.length)
-        return null;
-
-    return (
-        <div className="flex flex-col items-start gap-2 pt-3 ml-8">
-            {payload.map((item, index) => {
-                const key = String(item.dataKey ?? item.value ?? `series-${index}`);
-                const label = String(config[key]?.label ?? item.value ?? key);
-                const symbol = symbolsBySeries[key] ?? "circle";
-                const color = String(item.color ?? config[key]?.color ?? "currentColor");
-
-                return (
-                    <div key={`${key}-${index}`} className="flex items-center gap-1.5">
-                        <MarkerShapeIcon shape={symbol} color={color} />
-                        <span>{label}</span>
-                    </div>
-                );
-            })}
-        </div>
-    );
 };
 
 export default function SeveritiesPage() {
@@ -664,7 +632,6 @@ export default function SeveritiesPage() {
         return {
             chartConfig,
             series,
-            symbolsBySeries: Object.fromEntries(series.map((entry) => [entry.seriesKey, entry.symbol])) as Record<string, (typeof MARKER_SHAPES)[number]>,
             hasData: series.length > 0,
             xDomain: [(xMin - xPadding), (xMax + xPadding)] as [number, number],
             yDomain: [(yMin - yPadding), (yMax + yPadding)] as [number, number],
@@ -777,9 +744,48 @@ export default function SeveritiesPage() {
         window.open(`/protected/flights?${params.toString()}`, "_blank", "noopener");
     };
 
-    const anyEventDisabled = !hasApplied || nonAnyEventNames.every((name) => eventsEmpty[name] ?? true);
     const hasSelectedData = chartModel.hasData;
     const totalVisiblePoints = chartModel.series.reduce((sum, series) => sum + series.data.length, 0);
+
+    const chartInteraction = useInteractiveCartesianChart({
+        hasData: hasSelectedData,
+        interaction: { kind: "cartesian", zoom: "xy", pan: true, wheelZoom: true },
+        baseXDomain: chartModel.xDomain,
+        baseYDomain: chartModel.yDomain,
+        resetDeps: [
+            chartModel.xDomain[0],
+            chartModel.xDomain[1],
+            chartModel.yDomain[0],
+            chartModel.yDomain[1],
+            totalVisiblePoints,
+        ],
+        animationDurationMs: 0,
+        onPointIntent: (context) => {
+            const point = context.activePayload[0]?.payload as SeverityPoint | undefined;
+            if (
+                !point
+                || context.xValue === null
+                || context.yValue === null
+                || !context.activeXDomain
+                || !context.activeYDomain
+                || !context.plotWidth
+                || !context.plotHeight
+            )
+                return;
+
+            const xTolerance = Math.abs(context.activeXDomain[1] - context.activeXDomain[0]) / context.plotWidth * 10;
+            const yTolerance = Math.abs(context.activeYDomain[1] - context.activeYDomain[0]) / context.plotHeight * 10;
+            const nearPoint = (
+                Math.abs(context.xValue - point.x) <= xTolerance
+                && Math.abs(context.yValue - point.y) <= yTolerance
+            );
+
+            if (nearPoint)
+                handleChartClick(context.state);
+        },
+    });
+
+    const anyEventDisabled = !hasApplied || nonAnyEventNames.every((name) => eventsEmpty[name] ?? true);
 
     return (
         <div className="page-container">
@@ -925,17 +931,62 @@ export default function SeveritiesPage() {
                                             ? <PanelAlert title="No Data Available!" description="Select one or more available events to render severity points." />
                                             : (
                                                 <div className="relative h-full w-full min-h-0">
-                                                    <ChartContainer config={chartModel.chartConfig} className="h-full w-full min-h-0 aspect-auto!">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="absolute left-2 top-2 z-10 h-8 w-8 bg-background/70 backdrop-blur-xs"
+                                                                onClick={chartInteraction.resetView}
+                                                            >
+                                                                <Expand className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Reset Zoom</TooltipContent>
+                                                    </Tooltip>
+
+                                                    {
+                                                        chartModel.series.length > 0
+                                                            ? (
+                                                                <div className="absolute right-2 top-2 z-10 flex max-h-[calc(100%-1rem)] max-w-96 flex-col gap-1 overflow-y-auto rounded bg-muted/60 p-2 text-xs shadow-sm opacity-70 backdrop-blur-xs transition-opacity hover:opacity-100">
+                                                                    {
+                                                                        chartModel.series.map((series) => {
+                                                                            const color = String(chartModel.chartConfig[series.seriesKey]?.color ?? "currentColor");
+
+                                                                            return (
+                                                                                <div key={series.seriesKey} className="flex items-center gap-1.5">
+                                                                                    <MarkerShapeIcon shape={series.symbol} color={color} />
+                                                                                    <span className="truncate">{chartModel.chartConfig[series.seriesKey]?.label ?? series.seriesKey}</span>
+                                                                                </div>
+                                                                            );
+                                                                        })
+                                                                    }
+                                                                </div>
+                                                            )
+                                                            : null
+                                                    }
+
+                                                    <ChartContainer
+                                                        config={chartModel.chartConfig}
+                                                        className="h-full w-full min-h-0 select-none aspect-auto!"
+                                                        onWheel={chartInteraction.handleWheel}
+                                                        onMouseDown={chartInteraction.handleContainerMouseDown}
+                                                        onContextMenu={chartInteraction.handleContainerContextMenu}
+                                                    >
                                                         <ScatterChart
+                                                            ref={chartInteraction.chartRef}
                                                             margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
                                                             accessibilityLayer
-                                                            onClick={handleChartClick}
+                                                            onMouseDown={chartInteraction.handleChartMouseDown}
+                                                            onClick={chartInteraction.handleChartClick}
+                                                            className={chartInteraction.cursorClassName}
                                                         >
                                                             <CartesianGrid vertical={false} />
                                                             <XAxis
                                                                 type="number"
                                                                 dataKey="x"
-                                                                domain={chartModel.xDomain}
+                                                                domain={chartInteraction.activeXDomain ?? chartModel.xDomain}
+                                                                allowDataOverflow
                                                                 tickLine={false}
                                                                 axisLine={false}
                                                                 tickMargin={8}
@@ -944,64 +995,64 @@ export default function SeveritiesPage() {
                                                             <YAxis
                                                                 type="number"
                                                                 dataKey="y"
-                                                                domain={chartModel.yDomain}
+                                                                domain={chartInteraction.activeYDomain ?? chartModel.yDomain}
+                                                                allowDataOverflow
                                                                 tickLine={false}
                                                                 axisLine={false}
                                                                 tickMargin={8}
                                                                 tickFormatter={(value) => formatSeverityTick(Number(value))}
                                                             />
-                                                            <ChartTooltip
-                                                                content={(
-                                                                    <ChartTooltipContent
-                                                                        hideLabel
-                                                                        formatter={(_, name, item) => {
+                                                            {
+                                                                !chartInteraction.isInteracting
+                                                                    ? (
+                                                                        <ChartTooltip
+                                                                            content={(
+                                                                                <ChartTooltipContent
+                                                                                    hideLabel
+                                                                                    formatter={(_, name, item) => {
 
-                                                                            // Scatter payload includes both x and y rows; only render once for y.
-                                                                            if (item?.dataKey !== "y")
-                                                                                return null;
+                                                                                        // Scatter payload includes both x and y rows; only render once for y.
+                                                                                        if (item?.dataKey !== "y")
+                                                                                            return null;
 
-                                                                            const point = item.payload as SeverityPoint;
-                                                                            const seriesMatch = chartModel.series.find(
-                                                                                (series) => series.eventName === point.eventName && series.airframeName === point.airframeName,
-                                                                            );
+                                                                                        const point = item.payload as SeverityPoint;
+                                                                                        const seriesMatch = chartModel.series.find(
+                                                                                            (series) => series.eventName === point.eventName && series.airframeName === point.airframeName,
+                                                                                        );
 
-                                                                            const symbol = seriesMatch?.symbol ?? "circle";
-                                                                            const symbolColor = seriesMatch
-                                                                                ? String(chartModel.chartConfig[seriesMatch.seriesKey]?.color ?? item?.color ?? "currentColor")
-                                                                                : String(item?.color ?? "currentColor");
+                                                                                        const symbol = seriesMatch?.symbol ?? "circle";
+                                                                                        const symbolColor = seriesMatch
+                                                                                            ? String(chartModel.chartConfig[seriesMatch.seriesKey]?.color ?? item?.color ?? "currentColor")
+                                                                                            : String(item?.color ?? "currentColor");
 
-                                                                            const otherFlightID = (point.otherFlightId?.length ?? 0) > 0 && (point.otherFlightId !== "null")
-                                                                                ? point.otherFlightId
-                                                                                : null;
+                                                                                        const otherFlightID = (point.otherFlightId?.length ?? 0) > 0 && (point.otherFlightId !== "null")
+                                                                                            ? point.otherFlightId
+                                                                                            : null;
 
-                                                                            return (
-                                                                                <div className="grid w-full gap-2 text-xs text-muted-foreground">
-                                                                                    <div className="flex items-center gap-1.5 font-mono font-medium tabular-nums text-foreground">
-                                                                                        <MarkerShapeIcon shape={symbol} color={symbolColor} />
-                                                                                        <span>{`Severity: ${point.severity.toFixed(2)}`}</span>
-                                                                                    </div>
-                                                                                    <hr />
-                                                                                    <div>{`Flight ID: ${point.flightId} ${(otherFlightID && Number(otherFlightID) > 0) ? `(Other ID: ${otherFlightID})` : ""}`}</div>
-                                                                                    <div>{`System ID: ${point.systemId}`}</div>
-                                                                                    <div>{`Tail: ${point.tail?.length > 0 ? point.tail : "N/A"}`}</div>
-                                                                                    <hr />
-                                                                                    <div>{`Tags: ${point.tagName || "N/A"}`}</div>
-                                                                                    <hr />
-                                                                                    <div>{`Event Start: ${formatTooltipDateTime(point.startTime)}`}</div>
-                                                                                    <div>{`Event End: ${formatTooltipDateTime(point.endTime)}`}</div>
-                                                                                </div>
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                )}
-                                                            />
-                                                            <ChartLegend
-                                                                className="flex-col items-start ml-8"
-                                                                content={(props) => renderSeveritiesLegendContent(chartModel.chartConfig, chartModel.symbolsBySeries, props.payload as LegendItem[])}
-                                                                layout="vertical"
-                                                                verticalAlign="top"
-                                                                align="right"
-                                                            />
+                                                                                        return (
+                                                                                            <div className="grid w-full gap-2 text-xs text-muted-foreground">
+                                                                                                <div className="flex items-center gap-1.5 font-mono font-medium tabular-nums text-foreground">
+                                                                                                    <MarkerShapeIcon shape={symbol} color={symbolColor} />
+                                                                                                    <span>{`Severity: ${point.severity.toFixed(2)}`}</span>
+                                                                                                </div>
+                                                                                                <hr />
+                                                                                                <div>{`Flight ID: ${point.flightId} ${(otherFlightID && Number(otherFlightID) > 0) ? `(Other ID: ${otherFlightID})` : ""}`}</div>
+                                                                                                <div>{`System ID: ${point.systemId}`}</div>
+                                                                                                <div>{`Tail: ${point.tail?.length > 0 ? point.tail : "N/A"}`}</div>
+                                                                                                <hr />
+                                                                                                <div>{`Tags: ${point.tagName || "N/A"}`}</div>
+                                                                                                <hr />
+                                                                                                <div>{`Event Start: ${formatTooltipDateTime(point.startTime)}`}</div>
+                                                                                                <div>{`Event End: ${formatTooltipDateTime(point.endTime)}`}</div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    }}
+                                                                                />
+                                                                            )}
+                                                                        />
+                                                                    )
+                                                                    : null
+                                                            }
                                                             {
                                                                 chartModel.series.map((series) => (
                                                                     <Scatter
@@ -1014,11 +1065,13 @@ export default function SeveritiesPage() {
                                                                         fillOpacity={series.isAny ? 0 : 0.92}
                                                                         strokeOpacity={series.isAny ? 0.9 : 0.5}
                                                                         strokeWidth={series.isAny ? 1.8 : 1.2}
+                                                                        isAnimationActive={false}
                                                                     />
                                                                 ))
                                                             }
                                                         </ScatterChart>
                                                     </ChartContainer>
+                                                    <InteractiveChartSelectionOverlay previewRef={chartInteraction.selectionOverlayRef} />
                                                 </div>
                                             )
                                     )

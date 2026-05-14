@@ -8,7 +8,6 @@ import SuccessModal from "@/components/modals/success_modal";
 import Ping from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
-import { useCartesianZoomPan } from "@/components/providers/useCartesianZoomPan";
 import { Accordion, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,12 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from "@/components/ui/chart";
+import {
+    ChartInteractionPointAction,
+    InteractiveChartSelectionOverlay,
+    useChartInteractionModifiers,
+    useInteractiveCartesianChart,
+} from "@/components/ui/chart-interactions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchJson } from "@/fetchJson";
 import { useEffectPrev } from "@/lib/useEffectPrev";
@@ -30,7 +35,7 @@ import { AccordionItem } from "@radix-ui/react-accordion";
 import { ArrowBigUp, ArrowLeftToLine, Expand, Info, List, Mouse, MousePointerClick, NavigationOff, SquareActivity, SquareChevronUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, XAxis, YAxis } from "recharts";
 
 const log = getLogger("FlightsPanelChart", "blue", "Component");
 
@@ -328,9 +333,6 @@ type InteractiveChartProps = {
     activeLabelingCaptureFlightId: number | null;
     useAlignedStartTimes: boolean;
     theme: string | undefined;
-    shiftHeld: boolean;
-    ctrlHeld: boolean;
-    altHeld: boolean;
     onChartXClick?: (xValue: number) => void;
     pendingStartMarker?: { x: number; color: string } | null;
 };
@@ -344,16 +346,13 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         activeLabelingCaptureFlightId,
         useAlignedStartTimes,
         theme,
-        shiftHeld,
-        ctrlHeld,
-        altHeld,
         onChartXClick,
         pendingStartMarker,
     },
     ref,
 ) {
 
-    const extractChartXValue = (state: any): number | null => {
+    const extractChartXValue = useCallback((state: any): number | null => {
 
         const fromActiveLabel = Number(state?.activeLabel);
         if (Number.isFinite(fromActiveLabel))
@@ -375,28 +374,72 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
 
         return null;
 
-    };
+    }, [chartModel.data]);
 
-    // Early out if no data
-    if (!chartModel.hasData) {
-        return null;
-    }
+    const labelCaptureAction = useMemo<ChartInteractionPointAction>(() => ({
+        id: "flight-label-range-capture",
+        preventDefaultInteraction: true,
+        shouldHandle: (context) => (
+            context.modifiers.altHeld
+            && Number(context.nativeEvent?.button ?? 0) === 0
+        ),
+        onPoint: (context) => {
+            const activePayload = context.activePayload;
+            const hasActiveFlightPayload = (
+                activeLabelingCaptureFlightId !== null
+                && activePayload.some((payloadItem: any) => {
+                    const dataKey = String(payloadItem?.dataKey ?? "");
+                    const payloadFlightId = chartModel.seriesFlightIDByKey[dataKey];
+                    const payloadValue = Number(payloadItem?.value);
 
-    const {
-        chartRef,
-        xDomainOverride,
-        yDomainOverride,
-        selection,
-        isInteracting,
-        handleChartMouseDown,
-        handleChartMouseOperationCancel,
-        handleWheel,
-        resetView,
-    } = useCartesianZoomPan({
-        hasData: chartModel.hasData,
-        baseXDomain: [chartModel.xMin, chartModel.xMax],
-        baseYDomain: [chartModel.yMin, chartModel.yMax],
-        // Reset interactions whenever alignment mode or base domains change
+                    return payloadFlightId === activeLabelingCaptureFlightId && Number.isFinite(payloadValue);
+                })
+            );
+
+            if (!hasActiveFlightPayload) {
+                log.warn("Ignoring Alt label capture click outside active flight series", {
+                    activeLabelingCaptureFlightId,
+                    activePayloadKeys: activePayload.map((payloadItem: any) => String(payloadItem?.dataKey ?? "")),
+                });
+                return;
+            }
+
+            const xValue = context.xValue ?? extractChartXValue(context.state);
+
+            log("Alt label capture click", {
+                altHeld: context.modifiers.altHeld,
+                activeLabel: context.state?.activeLabel,
+                activeTooltipIndex: context.state?.activeTooltipIndex,
+                resolvedX: xValue,
+            });
+
+            if (xValue === null) {
+                log.warn("Alt label capture click had no resolvable x-value", {
+                    activeLabel: context.state?.activeLabel,
+                    activeTooltipIndex: context.state?.activeTooltipIndex,
+                });
+                return;
+            }
+
+            onChartXClick?.(xValue);
+        },
+    }), [activeLabelingCaptureFlightId, chartModel.seriesFlightIDByKey, extractChartXValue, onChartXClick]);
+
+    const hasDomain =
+        Number.isFinite(chartModel.xMin) &&
+        Number.isFinite(chartModel.xMax) &&
+        Number.isFinite(chartModel.yMin) &&
+        Number.isFinite(chartModel.yMax);
+
+    const resolvePoint = useCallback((state: any, fallback: { xValue: number | null; yValue: number | null }) => ({
+        xValue: extractChartXValue(state) ?? fallback.xValue,
+    }), [extractChartXValue]);
+
+    const chartInteraction = useInteractiveCartesianChart({
+        hasData: chartModel.hasData && hasDomain,
+        interaction: { kind: "cartesian", zoom: "xy", pan: true, wheelZoom: true },
+        baseXDomain: hasDomain ? [chartModel.xMin, chartModel.xMax] : null,
+        baseYDomain: hasDomain ? [chartModel.yMin, chartModel.yMax] : null,
         resetDeps: [
             useAlignedStartTimes,
             chartModel.xMin,
@@ -406,37 +449,26 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         ],
         zoomSpeed: 0.005,
         minSpanFactor: 0.001,
-        animationDurationMs: 140,
+        animationDurationMs: 0,
+        pointActions: [labelCaptureAction],
+        resolvePoint,
     });
 
     useImperativeHandle(
         ref,
-        () => ({ resetView }),
-        [resetView],
+        () => ({ resetView: chartInteraction.resetView }),
+        [chartInteraction.resetView],
     );
 
-    const hasDomain =
-        Number.isFinite(chartModel.xMin) &&
-        Number.isFinite(chartModel.xMax) &&
-        Number.isFinite(chartModel.yMin) &&
-        Number.isFinite(chartModel.yMax);
+    // Early out after hooks so reset refs stay stable when data is cleared.
+    if (!chartModel.hasData) {
+        return null;
+    }
 
-    const activeXDomain: [number, number] | null = hasDomain
-        ? [
-            xDomainOverride?.[0] ?? chartModel.xMin,
-            xDomainOverride?.[1] ?? chartModel.xMax,
-        ]
-        : null;
+    const activeXDomain = chartInteraction.activeXDomain;
+    const activeYDomain = chartInteraction.activeYDomain;
 
-    const activeYDomain: [number, number] | null = hasDomain
-        ? [
-            yDomainOverride?.[0] ?? chartModel.yMin,
-            yDomainOverride?.[1] ?? chartModel.yMax,
-        ]
-        : null;
-
-        
-        const axisMeta: AxisMeta = useMemo(() => {
+    const axisMeta: AxisMeta = useMemo(() => {
         if (!activeXDomain) {
             return { ticks: [], dayBoundaryTimes: [], domainSpanMinutes: 0 };
         }
@@ -502,14 +534,6 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
 
         const uniqueTicks = Array.from(new Set(ticks)).sort((a, b) => a - b);
         const uniqueDayBoundaries = Array.from(new Set(dayBoundaryTimes)).sort((a, b) => a - b);
-
-        log("Updated axis meta", {
-            domainMin,
-            domainMax,
-            tickCount: uniqueTicks.length,
-            dayBoundaryCount: uniqueDayBoundaries.length,
-            domainSpanMinutes,
-        });
 
         return { ticks: uniqueTicks, dayBoundaryTimes: uniqueDayBoundaries, domainSpanMinutes };
 
@@ -670,118 +694,28 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
 
     };
 
-    const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault(); // <-- Suppress the browser's context menu
-        // handleChartMouseOperationCancel(e.nativeEvent as MouseEvent); // <-- Cancel any ongoing chart interaction
-    };
-
-    const cursorClass:string = (() => {
-
-        // Default -> Default
-        let cursorOut = "cursor-default!";
-
-        // Shift Held...
-        if (shiftHeld) {
-
-            // Interacting -> Grabbing
-            if (isInteracting)
-                return "cursor-grabbing!";
-
-            // Otherwise -> Grab
-            else 
-                return "cursor-grab!";
-
-        }
-
-        return cursorOut;
-
-    })();
-
     return (
-        <ResponsiveContainer width="100%" height="100%" className="h-full flex p-4 select-none">
-            <ChartContainer
-                config={chartModel.config}
-                className="w-full h-full my-auto"
-                onWheel={handleWheel}
-                onMouseDown={(e) => handleChartMouseOperationCancel(e as unknown as MouseEvent)}
-                onContextMenu={handleContextMenu}
-            >
-                <LineChart
+        <div className="h-full flex p-4 select-none">
+            <div className="relative my-auto h-full w-full">
+                <ChartContainer
+                    config={chartModel.config}
+                    className="w-full h-full"
+                    onWheel={chartInteraction.handleWheel}
+                    onMouseDown={chartInteraction.handleContainerMouseDown}
+                    onContextMenu={chartInteraction.handleContainerContextMenu}
+                >
+                    <LineChart
                     id="flights-panel-chart-linechart"
-                    ref={chartRef}
+                    ref={chartInteraction.chartRef}
                     accessibilityLayer
                     data={chartModel.data}
                     margin={{
                         left: 12,
                         right: 12,
                     }}
-                    onMouseDown={(state: any) => {
-                        const mouseButton = Number(state?.nativeEvent?.button);
-                        const altHeldFromEvent = !!state?.nativeEvent?.altKey;
-                        const altCaptureActive = mouseButton === 0 && (altHeldFromEvent || altHeld);
-
-                        // Alt+LMB is reserved for label range capture, so skip zoom/pan handling.
-                        if (altCaptureActive) {
-                            log("Alt label capture mousedown", {
-                                altHeldFromEvent,
-                                altHeldFromState: altHeld,
-                                activeLabel: state?.activeLabel,
-                                activeTooltipIndex: state?.activeTooltipIndex,
-                            });
-
-                            return;
-                        }
-
-                        handleChartMouseDown(state);
-                    }}
-                    onClick={(state: any) => {
-                        const altHeldFromEvent = !!state?.nativeEvent?.altKey;
-                        const altCaptureActive = (altHeldFromEvent || altHeld);
-
-                        if (!altCaptureActive)
-                            return;
-
-                        const activePayload = Array.isArray(state?.activePayload) ? state.activePayload : [];
-                        const hasActiveFlightPayload = (
-                            activeLabelingCaptureFlightId !== null
-                            && activePayload.some((payloadItem: any) => {
-                                const dataKey = String(payloadItem?.dataKey ?? "");
-                                const payloadFlightId = chartModel.seriesFlightIDByKey[dataKey];
-                                const payloadValue = Number(payloadItem?.value);
-
-                                return payloadFlightId === activeLabelingCaptureFlightId && Number.isFinite(payloadValue);
-                            })
-                        );
-
-                        if (!hasActiveFlightPayload) {
-                            log.warn("Ignoring Alt label capture click outside active flight series", {
-                                activeLabelingCaptureFlightId,
-                                activePayloadKeys: activePayload.map((payloadItem: any) => String(payloadItem?.dataKey ?? "")),
-                            });
-                            return;
-                        }
-
-                        const xValue = extractChartXValue(state);
-
-                        log("Alt label capture click", {
-                            altHeldFromEvent,
-                            altHeldFromState: altHeld,
-                            activeLabel: state?.activeLabel,
-                            activeTooltipIndex: state?.activeTooltipIndex,
-                            resolvedX: xValue,
-                        });
-
-                        if (xValue === null) {
-                            log.warn("Alt label capture click had no resolvable x-value", {
-                                activeLabel: state?.activeLabel,
-                                activeTooltipIndex: state?.activeTooltipIndex,
-                            });
-                            return;
-                        }
-
-                        onChartXClick?.(xValue);
-                    }}
-                    className={`${cursorClass}`}
+                    onMouseDown={chartInteraction.handleChartMouseDown}
+                    onClick={chartInteraction.handleChartClick}
+                    className={`${chartInteraction.cursorClassName}`}
                 >
                     <CartesianGrid />
                     <YAxis
@@ -820,100 +754,105 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                         tickMargin={8}
                         tick={TimeAxisTick}
                     />
-                    <ChartTooltip
-                        cursor={false}
-                        content={
-                            <ChartTooltipContent
-                                className={isInteracting ? "opacity-0" : ""}
-                                labelFormatter={timeLabelFormatter}
-                                formatter={(value, name, item: any, index, payload) => {
+                    {
+                        !chartInteraction.isInteracting
+                            ? (
+                                <ChartTooltip
+                                    cursor={false}
+                                    content={
+                                        <ChartTooltipContent
+                                            labelFormatter={timeLabelFormatter}
+                                            formatter={(value, name, item: any, index, payload) => {
 
-                                    const row = item?.payload as Record<string, number | string> | undefined;
-                                    const time = Number(row?.time ?? Number.NaN);
-                                    const seriesKey = String(item?.dataKey ?? "");
-                                    const flightId = chartModel.seriesFlightIDByKey[seriesKey];
-                                    const displayName = String(chartModel.config[seriesKey]?.label ?? name ?? seriesKey);
-                                    const seriesColor = String(item?.color ?? chartModel.config[seriesKey]?.color ?? "currentColor");
+                                                const row = item?.payload as Record<string, number | string> | undefined;
+                                                const time = Number(row?.time ?? Number.NaN);
+                                                const seriesKey = String(item?.dataKey ?? "");
+                                                const flightId = chartModel.seriesFlightIDByKey[seriesKey];
+                                                const displayName = String(chartModel.config[seriesKey]?.label ?? name ?? seriesKey);
+                                                const seriesColor = String(item?.color ?? chartModel.config[seriesKey]?.color ?? "currentColor");
 
-                                    const rowValue = Number(value ?? 0);
-                                    const formattedValue = Number.isFinite(rowValue)
-                                        ? rowValue.toLocaleString(undefined, { maximumFractionDigits: 2 })
-                                        : String(value ?? "");
+                                                const rowValue = Number(value ?? 0);
+                                                const formattedValue = Number.isFinite(rowValue)
+                                                    ? rowValue.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                                                    : String(value ?? "");
 
-                                    const overlayTolerance = (useAlignedStartTimes ? 0.001 : 1);
+                                                const overlayTolerance = (useAlignedStartTimes ? 0.001 : 1);
 
-                                    const activeEventsForFlight = (
-                                        Number.isFinite(time) && Number.isFinite(flightId)
-                                    )
-                                        ? chartModel.eventOverlays
-                                            .filter((overlay) => (
-                                                overlay.flightId === flightId
-                                                && time >= (overlay.x1 - overlayTolerance)
-                                                && time <= (overlay.x2 + overlayTolerance)
-                                            ))
-                                        : [];
+                                                const activeEventsForFlight = (
+                                                    Number.isFinite(time) && Number.isFinite(flightId)
+                                                )
+                                                    ? chartModel.eventOverlays
+                                                        .filter((overlay) => (
+                                                            overlay.flightId === flightId
+                                                            && time >= (overlay.x1 - overlayTolerance)
+                                                            && time <= (overlay.x2 + overlayTolerance)
+                                                        ))
+                                                    : [];
 
-                                    const firstRowForFlight = (() => {
-                                        if (!Number.isFinite(flightId))
-                                            return true;
+                                                const firstRowForFlight = (() => {
+                                                    if (!Number.isFinite(flightId))
+                                                        return true;
 
-                                        const seenFlightIDs = new Set<number>();
+                                                    const seenFlightIDs = new Set<number>();
 
-                                        for (let i = 0; i < payload.length; i++) {
+                                                    for (let i = 0; i < payload.length; i++) {
 
-                                            const payloadItem = payload[i] as any;
-                                            const payloadSeriesKey = String(payloadItem?.dataKey ?? "");
-                                            const payloadFlightID = chartModel.seriesFlightIDByKey[payloadSeriesKey];
+                                                        const payloadItem = payload[i] as any;
+                                                        const payloadSeriesKey = String(payloadItem?.dataKey ?? "");
+                                                        const payloadFlightID = chartModel.seriesFlightIDByKey[payloadSeriesKey];
 
-                                            if (Number.isFinite(payloadFlightID) && !seenFlightIDs.has(payloadFlightID)) {
-                                                seenFlightIDs.add(payloadFlightID);
+                                                        if (Number.isFinite(payloadFlightID) && !seenFlightIDs.has(payloadFlightID)) {
+                                                            seenFlightIDs.add(payloadFlightID);
 
-                                                if (payloadFlightID === flightId)
-                                                    return i === index;
-                                            }
+                                                            if (payloadFlightID === flightId)
+                                                                return i === index;
+                                                        }
 
-                                        }
+                                                    }
 
-                                        return true;
-                                    })();
+                                                    return true;
+                                                })();
 
-                                    return (
-                                        <div className="grid w-full gap-1">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span
-                                                        className="inline-block h-2 w-2 rounded-[2px]"
-                                                        style={{ backgroundColor: seriesColor }}
-                                                    />
-                                                    <span className="text-muted-foreground">{displayName}</span>
-                                                </div>
-                                                <span className="text-foreground font-mono font-medium tabular-nums">{formattedValue}</span>
-                                            </div>
-                                            {
-                                                firstRowForFlight && activeEventsForFlight.length > 0
-                                                    ? (
-                                                        <div className="ml-3 grid gap-0.5 text-[10px] text-muted-foreground/90">
-                                                            {
-                                                                activeEventsForFlight.map((overlay) => (
-                                                                    <div key={overlay.id} className="flex items-center gap-1.5">
-                                                                        <span
-                                                                            className="inline-block h-1.5 w-1.5 rounded-full"
-                                                                            style={{ backgroundColor: overlay.color }}
-                                                                        />
-                                                                        <span>{`${overlay.eventName} (${overlay.severity.toFixed(2)})`}</span>
-                                                                    </div>
-                                                                ))
-                                                            }
+                                                return (
+                                                    <div className="grid w-full gap-1">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <span
+                                                                    className="inline-block h-2 w-2 rounded-[2px]"
+                                                                    style={{ backgroundColor: seriesColor }}
+                                                                />
+                                                                <span className="text-muted-foreground">{displayName}</span>
+                                                            </div>
+                                                            <span className="text-foreground font-mono font-medium tabular-nums">{formattedValue}</span>
                                                         </div>
-                                                    )
-                                                    : null
-                                            }
-                                        </div>
-                                    );
-                                }}
-                            />
-                        }
-                    />
+                                                        {
+                                                            firstRowForFlight && activeEventsForFlight.length > 0
+                                                                ? (
+                                                                    <div className="ml-3 grid gap-0.5 text-[10px] text-muted-foreground/90">
+                                                                        {
+                                                                            activeEventsForFlight.map((overlay) => (
+                                                                                <div key={overlay.id} className="flex items-center gap-1.5">
+                                                                                    <span
+                                                                                        className="inline-block h-1.5 w-1.5 rounded-full"
+                                                                                        style={{ backgroundColor: overlay.color }}
+                                                                                    />
+                                                                                    <span>{`${overlay.eventName} (${overlay.severity.toFixed(2)})`}</span>
+                                                                                </div>
+                                                                            ))
+                                                                        }
+                                                                    </div>
+                                                                )
+                                                                : null
+                                                        }
+                                                    </div>
+                                                );
+                                            }}
+                                        />
+                                    }
+                                />
+                            )
+                            : null
+                    }
                     {
                         chartModel.eventOverlays.map((overlay) => (
                             <ReferenceArea
@@ -971,26 +910,15 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                             />
                         ))
                     }
-                    {
-                        selection &&
-                        selection.x1 !== null &&
-                        selection.x2 !== null &&
-                        selection.y1 !== null &&
-                        selection.y2 !== null && (
-                            <ReferenceArea
-                                x1={selection.x1}
-                                x2={selection.x2}
-                                y1={selection.y1}
-                                y2={selection.y2}
-                                stroke={theme === "dark" ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.9)"}
-                                fill={theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}
-                                fillOpacity={0.3}
-                            />
-                        )
-                    }
-                </LineChart>
-            </ChartContainer>
-        </ResponsiveContainer>
+                    </LineChart>
+                </ChartContainer>
+                <InteractiveChartSelectionOverlay
+                    previewRef={chartInteraction.selectionOverlayRef}
+                    stroke={theme === "dark" ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.9)"}
+                    fill={theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}
+                />
+            </div>
+        </div>
     );
 
 });
@@ -2518,74 +2446,10 @@ export function FlightsPanelChart() {
     }
 
 
-    const [shiftHeld, setShiftHeld] = useState(false);
-    const [ctrlHeld, setCtrlHeld] = useState(false);
-    const [altHeld, setAltHeld] = useState(false);
-    useEffect(() => {
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-
-            if (e.key === "Control")
-                setCtrlHeld(true);
-
-            else if (e.key === "Shift" && !ctrlHeld)
-                setShiftHeld(true);
-
-            else if (e.key === "Alt")
-                setAltHeld(true);
-            
-        };
-
-        const handleKeyUp = (e: KeyboardEvent) => {
-
-            if (e.key === "Shift")
-                setShiftHeld(false);
-            
-            if (e.key === "Control")
-                setCtrlHeld(false);
-
-            if (e.key === "Alt")
-                setAltHeld(false);
-            
-        };
-
-        const handleMouseWheel = (e: WheelEvent) => {
-
-            const chartElement = document.getElementById("flights-panel-chart-linechart");
-
-            // Chart element not found, exit
-            if (!chartElement)
-                return;
-
-            const chartRegion = chartElement.getBoundingClientRect();
-            const x = e.clientX;
-            const y = e.clientY;
-
-            const isInChartArea =
-                (x >= chartRegion.left)
-                && (x <= chartRegion.right) 
-                && (y >= chartRegion.top)
-                && (y <= chartRegion.bottom);
-
-            // Not hovering the chart, scroll the page normally
-            if (!isInChartArea)
-                return;
-
-            e.preventDefault();
-
-        }
-
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-        window.addEventListener("wheel", handleMouseWheel, { passive: false });
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-            window.removeEventListener("wheel", handleMouseWheel);
-        };
-
-    }, []);
+    const chartInteractionModifiers = useChartInteractionModifiers();
+    const shiftHeld = chartInteractionModifiers.shiftHeld;
+    const ctrlHeld = chartInteractionModifiers.ctrlHeld || chartInteractionModifiers.metaHeld;
+    const altHeld = chartInteractionModifiers.altHeld;
 
     
     const renderChartInteractionControlsGuide = () => {
@@ -2759,9 +2623,6 @@ export function FlightsPanelChart() {
                             activeLabelingCaptureFlightId={activeLabelingCaptureFlightId}
                             useAlignedStartTimes={useAlignedStartTimes}
                             theme={theme}
-                            shiftHeld={shiftHeld}
-                            ctrlHeld={ctrlHeld}
-                            altHeld={altHeld}
                             onChartXClick={handleLabelingChartClick}
                             pendingStartMarker={pendingStartMarker}
                         />

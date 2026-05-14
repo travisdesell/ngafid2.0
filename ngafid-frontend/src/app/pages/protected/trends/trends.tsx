@@ -10,7 +10,8 @@ import TimeHeader from "@/components/providers/time_header/time_header";
 import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartConfig, ChartContainer, ChartLegend, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { InteractiveChartSelectionOverlay, useInteractiveCartesianChart } from "@/components/ui/chart-interactions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,8 +19,8 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchJson } from "@/fetchJson";
 import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
-import { CircleQuestionMark, Download } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CircleQuestionMark, Download, Expand } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
@@ -59,6 +60,12 @@ type CsvValue = {
     flightsWithEventCount: number;
     totalFlights: number;
 };
+
+interface TrendsChartRow {
+    date: string;
+    dateMs: number;
+    [key: string]: string | number;
+}
 
 const toNumberArray = (value: unknown, expectedLength: number): number[] => {
     if (!Array.isArray(value))
@@ -105,10 +112,15 @@ const normalizeTrendsData = (value: unknown): TrendsData | null => {
     };
 };
 
-const formatMonthTick = (dateText: string) => {
+const toMonthTimestamp = (dateText: string) => {
     const parsed = new Date(dateText);
+    return Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
+};
+
+const formatMonthTick = (dateValue: string | number) => {
+    const parsed = new Date(dateValue);
     if (Number.isNaN(parsed.getTime()))
-        return dateText;
+        return String(dateValue);
     return parsed.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
 };
 
@@ -134,50 +146,198 @@ const renderTooltipSeriesIndicator = (seriesKey: string, color?: string) => {
     );
 };
 
-const renderTrendsLegendContent = (
-    config: ChartConfig,
-    payload?: Array<{ dataKey?: string; color?: string; value?: string }>,
-) => {
-    if (!payload?.length)
-        return null;
-
-    return (
-        <div className="flex flex-col items-start gap-4 pt-3 ml-8">
-            {payload.map((item) => {
-                const key = String(item.dataKey ?? item.value ?? "");
-                const label = String(config[key]?.label ?? item.value ?? key);
-                const isAny = isAnyEventSeriesKey(key);
-
-                return (
-                    <div key={key} className="flex items-center gap-1.5">
-                        {
-                            isAny
-                            ? (
-                                <div
-                                    className="h-2 w-2 shrink-0 rounded-[2px] border"
-                                    style={{ borderColor: item.color }}
-                                />
-                            )
-                            : (
-                                <div
-                                    className="h-2 w-2 shrink-0 rounded-[2px]"
-                                    style={{ backgroundColor: item.color }}
-                                />
-                            )
-                        }
-                        <span>{label}</span>
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
-
 const percent = (num: number, den: number) => {
     if (!Number.isFinite(num) || !Number.isFinite(den) || den <= 0)
         return 0;
     return (100 * num) / den;
 };
+
+const getTimeDomain = (rows: Array<TrendsChartRow>): [number, number] | null => {
+    const values = rows
+        .map((row) => Number(row.dateMs))
+        .filter((value) => Number.isFinite(value));
+
+    if (values.length === 0)
+        return null;
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    if (min === max) {
+        const monthPaddingMs = 31 * 24 * 60 * 60 * 1000;
+        return [min - monthPaddingMs, max + monthPaddingMs];
+    }
+
+    return [min, max];
+};
+
+const getValueDomain = (rows: Array<TrendsChartRow>, config: ChartConfig): [number, number] => {
+    const keys = Object.keys(config);
+    const values = rows.flatMap((row) => (
+        keys
+            .map((key) => Number(row[key]))
+            .filter((value) => Number.isFinite(value))
+    ));
+
+    if (values.length === 0)
+        return [0, 1];
+
+    const min = Math.min(0, ...values);
+    const max = Math.max(...values);
+
+    if (min === max)
+        return [min, min + 1];
+
+    return [min, max];
+};
+
+interface TrendsLineChartProps {
+    rows: Array<TrendsChartRow>;
+    config: ChartConfig;
+    yDomain: [number, number];
+    yTickFormatter?: (value: number) => string;
+    valueFormatter: (value: number) => string;
+    emptyMessage: ReactNode;
+}
+
+function TrendsLineChart({
+    rows,
+    config,
+    yDomain,
+    yTickFormatter,
+    valueFormatter,
+    emptyMessage,
+}: TrendsLineChartProps) {
+    const xDomain = useMemo(() => getTimeDomain(rows), [rows]);
+    const chartInteraction = useInteractiveCartesianChart({
+        hasData: rows.length > 0 && xDomain !== null,
+        interaction: { kind: "cartesian", zoom: "x", pan: true, wheelZoom: true, constrainXDomain: true },
+        baseXDomain: xDomain,
+        baseYDomain: yDomain,
+        resetDeps: [rows, xDomain?.[0], xDomain?.[1], yDomain[0], yDomain[1]],
+    });
+
+    if (rows.length === 0)
+        return emptyMessage;
+
+    return (
+        <div className="relative h-full w-full min-h-0">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute left-2 top-2 z-10 h-8 w-8 bg-background/70 backdrop-blur-xs"
+                        onClick={chartInteraction.resetView}
+                    >
+                        <Expand className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset Zoom</TooltipContent>
+            </Tooltip>
+
+            {
+                Object.keys(config).length > 0
+                    ? (
+                        <div className="absolute right-2 top-2 z-10 flex max-h-[calc(100%-1rem)] max-w-80 flex-col gap-1 overflow-y-auto rounded bg-muted/60 p-2 text-xs shadow-sm opacity-70 backdrop-blur-xs transition-opacity hover:opacity-100">
+                            {
+                                Object.entries(config).map(([seriesKey, item]) => (
+                                    <div key={seriesKey} className="flex items-center gap-1.5">
+                                        {renderTooltipSeriesIndicator(seriesKey, item.color)}
+                                        <span className="truncate">{item.label ?? seriesKey}</span>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    )
+                    : null
+            }
+
+            <ChartContainer
+                config={config}
+                className="h-full w-full min-h-0 select-none aspect-auto!"
+                onWheel={chartInteraction.handleWheel}
+                onMouseDown={chartInteraction.handleContainerMouseDown}
+                onContextMenu={chartInteraction.handleContainerContextMenu}
+            >
+                <LineChart
+                    ref={chartInteraction.chartRef}
+                    data={rows}
+                    margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
+                    accessibilityLayer
+                    onMouseDown={chartInteraction.handleChartMouseDown}
+                    onClick={chartInteraction.handleChartClick}
+                    className={chartInteraction.cursorClassName}
+                >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                        dataKey="dateMs"
+                        type="number"
+                        scale="time"
+                        domain={chartInteraction.activeXDomain ?? ["dataMin", "dataMax"]}
+                        allowDataOverflow
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tickFormatter={(value) => formatMonthTick(Number(value))}
+                    />
+                    <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        domain={chartInteraction.activeYDomain ?? yDomain}
+                        allowDataOverflow
+                        tickFormatter={(value) => yTickFormatter ? yTickFormatter(Number(value)) : String(value)}
+                    />
+                    {
+                        !chartInteraction.isInteracting
+                            ? (
+                                <ChartTooltip
+                                    content={(
+                                        <ChartTooltipContent
+                                            labelFormatter={(value) => `Date: ${formatMonthTick(Number(value))}`}
+                                            formatter={(value, name, item) => {
+                                                const seriesKey = String(name);
+                                                const label = String(config[String(name)]?.label ?? name);
+                                                const indicatorColor = item?.color;
+
+                                                return (
+                                                    <>
+                                                        <div className="flex items-center gap-2">
+                                                            {renderTooltipSeriesIndicator(seriesKey, indicatorColor)}
+                                                            <div>{label}</div>
+                                                        </div>
+                                                        <div className="ml-auto font-mono font-medium tabular-nums">{valueFormatter(Number(value))}</div>
+                                                    </>
+                                                );
+                                            }}
+                                        />
+                                    )}
+                                />
+                            )
+                            : null
+                    }
+                    {
+                        Object.keys(config).map((seriesKey) => (
+                            <Line
+                                key={seriesKey}
+                                dataKey={seriesKey}
+                                type="monotone"
+                                stroke={`var(--color-${seriesKey})`}
+                                strokeDasharray={isAnyEventSeriesKey(seriesKey) ? "6 4" : undefined}
+                                strokeWidth={2}
+                                dot={false}
+                                connectNulls
+                                isAnimationActive={false}
+                            />
+                        ))
+                    }
+                </LineChart>
+            </ChartContainer>
+            <InteractiveChartSelectionOverlay previewRef={chartInteraction.selectionOverlayRef} />
+        </div>
+    );
+}
 
 const buildMergedAnyEvent = (source: EventCountsByEvent): Record<string, TrendsData> => {
     const merged: Record<string, TrendsData> = {};
@@ -352,8 +512,8 @@ export default function TrendsPage() {
     }, [availableEventNames, eventCounts, selectedAirframeNames, isAggregatePage]);
 
     const chartModels = useMemo(() => {
-        const countRowsMap = new Map<string, Record<string, string | number>>();
-        const percentRowsMap = new Map<string, Record<string, string | number>>();
+        const countRowsMap = new Map<string, TrendsChartRow>();
+        const percentRowsMap = new Map<string, TrendsChartRow>();
         const countConfig: ChartConfig = {};
         const percentConfig: ChartConfig = {};
         let countSeriesIndex = 0;
@@ -366,7 +526,7 @@ export default function TrendsPage() {
         const getCountRow = (date: string) => {
             let row = countRowsMap.get(date);
             if (!row) {
-                row = { date };
+                row = { date, dateMs: toMonthTimestamp(date) };
                 countRowsMap.set(date, row);
             }
             return row;
@@ -375,7 +535,7 @@ export default function TrendsPage() {
         const getPercentRow = (date: string) => {
             let row = percentRowsMap.get(date);
             if (!row) {
-                row = { date };
+                row = { date, dateMs: toMonthTimestamp(date) };
                 percentRowsMap.set(date, row);
             }
             return row;
@@ -578,68 +738,14 @@ export default function TrendsPage() {
                     chartModels.percentRows.length === 0
                         ? <PanelAlert title="No Data Available!" description={["Select one or more events to render percentage trends."]} />
                         : (
-                            <ChartContainer config={chartModels.percentConfig} className="h-full w-full min-h-0 aspect-auto!">
-                                <LineChart data={chartModels.percentRows} margin={{ left: 8, right: 8, top: 8, bottom: 8 }} accessibilityLayer>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis
-                                        dataKey="date"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                        tickFormatter={formatMonthTick}
-                                    />
-                                    <YAxis
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                        domain={[0, 100]}
-                                        tickFormatter={(value) => `${value}%`}
-                                    />
-                                    <ChartTooltip
-                                        content={(
-                                            <ChartTooltipContent
-                                                labelFormatter={(value) => `Date: ${formatMonthTick(String(value))}`}
-                                                formatter={(value, name, item) => {
-                                                    const seriesKey = String(name);
-                                                    const label = String(chartModels.percentConfig[String(name)]?.label ?? name);
-                                                    const indicatorColor = item?.color;
-
-                                                    return (
-                                                    <>
-                                                        <div className="flex items-center gap-2">
-                                                            {renderTooltipSeriesIndicator(seriesKey, indicatorColor)}
-                                                            <div>{label}</div>
-                                                        </div>
-                                                        <div className="ml-auto font-mono font-medium tabular-nums">{`${Number(value).toFixed(2)}%`}</div>
-                                                    </>
-                                                    );
-                                                }}
-                                            />
-                                        )}
-                                    />
-                                    <ChartLegend
-                                        className="flex-col items-start ml-8"
-                                        content={(props) => renderTrendsLegendContent(chartModels.percentConfig, props.payload as Array<{ dataKey?: string; color?: string; value?: string }>)}
-                                        layout="vertical"
-                                        verticalAlign="top"
-                                        align="right"
-                                    />
-                                    {
-                                        Object.keys(chartModels.percentConfig).map((seriesKey) => (
-                                            <Line
-                                                key={seriesKey}
-                                                dataKey={seriesKey}
-                                                type="monotone"
-                                                stroke={`var(--color-${seriesKey})`}
-                                                strokeDasharray={isAnyEventSeriesKey(seriesKey) ? "6 4" : undefined}
-                                                strokeWidth={2}
-                                                dot={false}
-                                                connectNulls
-                                            />
-                                        ))
-                                    }
-                                </LineChart>
-                            </ChartContainer>
+                            <TrendsLineChart
+                                rows={chartModels.percentRows}
+                                config={chartModels.percentConfig}
+                                yDomain={[0, 100]}
+                                yTickFormatter={(value) => `${value}%`}
+                                valueFormatter={(value) => `${value.toFixed(2)}%`}
+                                emptyMessage={<PanelAlert title="No Data Available!" description={["Select one or more events to render percentage trends."]} />}
+                            />
                         )
                 }
             </CardContent>
@@ -665,62 +771,13 @@ export default function TrendsPage() {
                     chartModels.countRows.length === 0
                         ? <PanelAlert title="No Data Available!" description={["Select one or more events to render count trends."]} />
                         : (
-                            <ChartContainer config={chartModels.countConfig} className="h-full w-full min-h-0 aspect-auto!">
-                                <LineChart data={chartModels.countRows} margin={{ left: 8, right: 8, top: 8, bottom: 8 }} accessibilityLayer>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis
-                                        dataKey="date"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                        tickFormatter={formatMonthTick}
-                                    />
-                                    <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                                    <ChartTooltip
-                                        content={(
-                                            <ChartTooltipContent
-                                                labelFormatter={(value) => `Date: ${formatMonthTick(String(value))}`}
-                                                formatter={(value, name, item) => {
-                                                    const seriesKey = String(name);
-                                                    const label = String(chartModels.countConfig[String(name)]?.label ?? name);
-                                                    const indicatorColor = item?.color;
-
-                                                    return (
-                                                    <>
-                                                        <div className="flex items-center gap-2">
-                                                            {renderTooltipSeriesIndicator(seriesKey, indicatorColor)}
-                                                            <div>{label}</div>
-                                                        </div>
-                                                        <div className="ml-auto font-mono font-medium tabular-nums">{Number(value).toLocaleString()}</div>
-                                                    </>
-                                                    );
-                                                }}
-                                            />
-                                        )}
-                                    />
-                                    <ChartLegend
-                                        className="flex-col items-start ml-8"
-                                        content={(props) => renderTrendsLegendContent(chartModels.countConfig, props.payload as Array<{ dataKey?: string; color?: string; value?: string }>)}
-                                        layout="vertical"
-                                        verticalAlign="top"
-                                        align="right"
-                                    />
-                                    {
-                                        Object.keys(chartModels.countConfig).map((seriesKey) => (
-                                            <Line
-                                                key={seriesKey}
-                                                dataKey={seriesKey}
-                                                type="monotone"
-                                                stroke={`var(--color-${seriesKey})`}
-                                                strokeDasharray={isAnyEventSeriesKey(seriesKey) ? "6 4" : undefined}
-                                                strokeWidth={2}
-                                                dot={false}
-                                                connectNulls
-                                            />
-                                        ))
-                                    }
-                                </LineChart>
-                            </ChartContainer>
+                            <TrendsLineChart
+                                rows={chartModels.countRows}
+                                config={chartModels.countConfig}
+                                yDomain={getValueDomain(chartModels.countRows, chartModels.countConfig)}
+                                valueFormatter={(value) => value.toLocaleString()}
+                                emptyMessage={<PanelAlert title="No Data Available!" description={["Select one or more events to render count trends."]} />}
+                            />
                         )
                 }
             </CardContent>
