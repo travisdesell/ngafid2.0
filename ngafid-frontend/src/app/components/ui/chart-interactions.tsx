@@ -16,6 +16,7 @@ export interface ChartInteractionConfig {
     kind: "cartesian";
     zoom?: ChartInteractionZoomMode;
     pan?: boolean;
+    panStrategy?: "live" | "deferred";
     wheelZoom?: boolean;
     selectionZoom?: boolean;
     constrainXDomain?: boolean;
@@ -73,6 +74,37 @@ interface PanState {
     startClientY: number;
     chartWidth: number;
     chartHeight: number;
+}
+
+interface PanPreviewState {
+    container: HTMLElement;
+    target: HTMLElement;
+    overlay: SVGSVGElement;
+    items: Array<{
+        element: SVGElement;
+        previousTransform: string | null;
+    }>;
+    axisTicks: Array<PanPreviewAxisTick>;
+    previousPosition: string;
+    previousDeferredPanning: string | null;
+}
+
+interface PanPreviewAxisTick {
+    axis: "x" | "y";
+    coordinate: number;
+    index: number;
+    axisConfig: any;
+    plotStart: number;
+    plotSpan: number;
+    texts: Array<{
+        element: SVGTextElement;
+        previousText: string;
+    }>;
+}
+
+interface PendingPanDomain {
+    xDomain: [number, number] | null;
+    yDomain: [number, number] | null;
 }
 
 interface SelectionMeta {
@@ -138,6 +170,7 @@ export interface InteractiveCartesianChartResult {
     selectionMode: ChartInteractionZoomMode;
     selectionOverlayRef: React.RefObject<HTMLDivElement | null>;
     isInteracting: boolean;
+    isDeferredPanning: boolean;
     modifiers: ChartInteractionModifierState;
     cursorClassName: string;
     handleChartMouseDown: (state: any) => void;
@@ -212,6 +245,103 @@ const clampDomainToBase = (
     }
 
     return [min, max];
+};
+
+const getFirstAxisConfig = (axisMap: any) => {
+    if (!axisMap || typeof axisMap !== "object")
+        return null;
+
+    const firstKey = Object.keys(axisMap)[0];
+    return firstKey ? axisMap[firstKey] : null;
+};
+
+const parseSvgTranslate = (transform: string | null): [number, number] | null => {
+    if (!transform)
+        return null;
+
+    const match = /translate\(\s*([-+.\d]+)(?:[,\s]+([-+.\d]+))?\s*\)/.exec(transform);
+    if (!match)
+        return null;
+
+    const x = Number(match[1]);
+    const y = Number(match[2] ?? 0);
+    return Number.isFinite(x) && Number.isFinite(y) ? [x, y] : null;
+};
+
+const getTickCoordinate = (tick: Element, axis: "x" | "y") => {
+    const translated = parseSvgTranslate(tick.getAttribute("transform"));
+    if (translated)
+        return axis === "x" ? translated[0] : translated[1];
+
+    const text = tick.querySelector("text");
+    const value = Number(text?.getAttribute(axis));
+    return Number.isFinite(value) ? value : null;
+};
+
+const formatDurationTick = (value: number, domainSpan: number) => {
+    const sign = value < 0 ? "-" : "";
+    const absolute = Math.abs(value);
+    const hours = Math.floor(absolute / 3600);
+    const minutes = Math.floor((absolute % 3600) / 60);
+    const seconds = Math.floor(absolute % 60);
+    const pad = (n: number) => n.toString().padStart(2, "0");
+
+    if (domainSpan <= 600)
+        return `${sign}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+
+    return `${sign}${pad(hours)}:${pad(minutes)}`;
+};
+
+const formatDateTimeTick = (value: number, domainSpan: number) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime()))
+        return "";
+
+    return date.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: domainSpan <= 10 * 60 * 1000 ? "2-digit" : undefined,
+        hour12: false,
+    });
+};
+
+const formatDateSecondaryTick = (value: number) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime()))
+        return "";
+
+    return date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "2-digit",
+    });
+};
+
+const formatAxisPreviewTick = (
+    axis: "x" | "y",
+    value: number,
+    index: number,
+    axisConfig: any,
+    domain: [number, number],
+) => {
+    if (!Number.isFinite(value))
+        return "";
+
+    const formatter = axisConfig?.tickFormatter;
+    const unit = axisConfig?.unit ?? "";
+
+    if (typeof formatter === "function")
+        return `${formatter(value, index)}${unit}`;
+
+    const domainSpan = Math.abs(domain[1] - domain[0]);
+    const looksLikeEpochMs = Math.max(Math.abs(domain[0]), Math.abs(domain[1]), Math.abs(value)) > 10_000_000_000;
+
+    if (axis === "x" && looksLikeEpochMs)
+        return formatDateTimeTick(value, domainSpan);
+
+    if (axis === "x" && axisConfig?.dataKey === "time" && domainSpan <= 7 * 24 * 3600)
+        return formatDurationTick(value, domainSpan);
+
+    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 };
 
 export function useChartInteractionModifiers(): ChartInteractionModifierState {
@@ -402,12 +532,16 @@ export function useInteractiveCartesianChart({
     const [yDomainOverride, setYDomainOverride] = React.useState<[number, number] | null>(null);
     const [selection, setSelection] = React.useState<ChartInteractionSelectionState | null>(null);
     const [isInteracting, setIsInteractingState] = React.useState(false);
+    const [isDeferredPanning, setIsDeferredPanning] = React.useState(false);
 
     const isInteractingRef = React.useRef(false);
+    const deferredPanActiveRef = React.useRef(false);
     const selectionOverlayRef = React.useRef<HTMLDivElement | null>(null);
     const selectionRef = React.useRef<ChartInteractionSelectionState | null>(null);
     const isDraggingRef = React.useRef(false);
     const panStateRef = React.useRef<PanState | null>(null);
+    const panPreviewStateRef = React.useRef<PanPreviewState | null>(null);
+    const pendingPanDomainRef = React.useRef<PendingPanDomain | null>(null);
     const selectionMetaRef = React.useRef<SelectionMeta | null>(null);
     const pointerDownInfoRef = React.useRef<PointerDownInfo | null>(null);
     const dragExceededThresholdRef = React.useRef(false);
@@ -421,6 +555,7 @@ export function useInteractiveCartesianChart({
 
     const zoomMode = interaction.zoom ?? "xy";
     const panEnabled = interaction.pan ?? true;
+    const panStrategy = interaction.panStrategy ?? "live";
     const wheelZoomEnabled = interaction.wheelZoom ?? true;
     const selectionZoomEnabled = interaction.selectionZoom ?? true;
     const constrainXDomain = interaction.constrainXDomain ?? false;
@@ -521,6 +656,242 @@ export function useInteractiveCartesianChart({
         overlay.style.height = `${Math.max(1, height)}px`;
     }, [zoomMode]);
 
+    const getPanPreviewElements = React.useCallback(() => {
+        const chartAny = chartRef.current as any;
+        const root = chartAny?.container as HTMLElement | undefined;
+
+        if (!root)
+            return null;
+
+        const target = root.classList.contains("recharts-wrapper")
+            ? root
+            : (
+                root.querySelector(".recharts-wrapper")
+                ?? root.closest(".recharts-wrapper")
+            ) as HTMLElement | null;
+
+        if (!target)
+            return null;
+
+        const container = (target.closest("[data-chart]") as HTMLElement | null) ?? target.parentElement ?? target;
+        return { container, target };
+    }, []);
+
+    const getPanPreviewAxisTicks = React.useCallback((target: HTMLElement): Array<PanPreviewAxisTick> => {
+        const chartAny = chartRef.current as any;
+        const offset = chartAny?.state?.offset;
+
+        if (
+            !offset
+            || typeof offset.left !== "number"
+            || typeof offset.top !== "number"
+            || typeof offset.width !== "number"
+            || typeof offset.height !== "number"
+        )
+            return [];
+
+        const xAxisConfig = getFirstAxisConfig(chartAny?.state?.xAxisMap);
+        const yAxisConfig = getFirstAxisConfig(chartAny?.state?.yAxisMap);
+
+        const collect = (
+            axis: "x" | "y",
+            selector: string,
+            axisConfig: any,
+            plotStart: number,
+            plotSpan: number,
+        ) => Array.from(target.querySelectorAll(selector))
+            .map((tick, index): PanPreviewAxisTick | null => {
+                const coordinate = getTickCoordinate(tick, axis);
+                if (coordinate === null)
+                    return null;
+
+                const texts = Array.from(tick.querySelectorAll("text")) as Array<SVGTextElement>;
+                if (texts.length === 0)
+                    return null;
+
+                return {
+                    axis,
+                    coordinate,
+                    index,
+                    axisConfig,
+                    plotStart,
+                    plotSpan,
+                    texts: texts.map((element) => ({
+                        element,
+                        previousText: element.textContent ?? "",
+                    })),
+                };
+            })
+            .filter((tick): tick is PanPreviewAxisTick => tick !== null);
+
+        return [
+            ...collect(
+                "x",
+                ".recharts-xAxis .recharts-cartesian-axis-tick, .xAxis .recharts-cartesian-axis-tick",
+                xAxisConfig,
+                offset.left,
+                offset.width,
+            ),
+            ...collect(
+                "y",
+                ".recharts-yAxis .recharts-cartesian-axis-tick, .yAxis .recharts-cartesian-axis-tick",
+                yAxisConfig,
+                offset.top,
+                offset.height,
+            ),
+        ];
+    }, []);
+
+    const beginPanPreview = React.useCallback(() => {
+        if (panStrategy !== "deferred" || panPreviewStateRef.current)
+            return false;
+
+        const elements = getPanPreviewElements();
+        if (!elements)
+            return false;
+
+        const { container, target } = elements;
+        const containerRect = container.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const surface = target.querySelector("svg.recharts-surface") as SVGSVGElement | null;
+        if (!surface)
+            return false;
+
+        const contentSelector = [
+            ".recharts-line",
+            ".recharts-area",
+            ".recharts-bar",
+            ".recharts-scatter",
+            ".recharts-reference-area",
+            ".recharts-reference-line",
+            ".recharts-reference-dot",
+        ].join(",");
+        const overlay = surface.cloneNode(true) as SVGSVGElement;
+        overlay.querySelectorAll("defs, .recharts-cartesian-grid, .recharts-cartesian-axis, .recharts-tooltip-cursor").forEach((element) => {
+            element.remove();
+        });
+
+        const contentElements = Array.from(overlay.querySelectorAll(contentSelector)) as Array<SVGElement>;
+        const contentSet = new Set(contentElements);
+        const items = contentElements
+            .filter((element) => {
+                let parent = element.parentElement;
+                while (parent) {
+                    if (contentSet.has(parent as SVGElement))
+                        return false;
+
+                    parent = parent.parentElement;
+                }
+
+                return true;
+            })
+            .map((element) => ({
+                element,
+                previousTransform: element.getAttribute("transform"),
+            }));
+
+        if (items.length === 0)
+            return false;
+
+        overlay.setAttribute("aria-hidden", "true");
+        overlay.style.position = "absolute";
+        overlay.style.pointerEvents = "none";
+        overlay.style.zIndex = "2";
+
+        panPreviewStateRef.current = {
+            container,
+            target,
+            overlay,
+            items,
+            axisTicks: getPanPreviewAxisTicks(target),
+            previousPosition: container.style.position,
+            previousDeferredPanning: target.getAttribute("data-chart-deferred-panning"),
+        };
+
+        if (window.getComputedStyle(container).position === "static")
+            container.style.position = "relative";
+
+        target.setAttribute("data-chart-deferred-panning", "true");
+
+        overlay.style.left = `${targetRect.left - containerRect.left}px`;
+        overlay.style.top = `${targetRect.top - containerRect.top}px`;
+        overlay.style.width = `${targetRect.width}px`;
+        overlay.style.height = `${targetRect.height}px`;
+        overlay.style.overflow = "hidden";
+        container.appendChild(overlay);
+        return true;
+    }, [getPanPreviewAxisTicks, getPanPreviewElements, panStrategy]);
+
+    const updatePanPreview = React.useCallback((
+        dx: number,
+        dy: number,
+        xDomain: [number, number] | null,
+        yDomain: [number, number] | null,
+    ) => {
+        const preview = panPreviewStateRef.current;
+        if (!preview)
+            return;
+
+        const translate = `translate(${dx} ${dy})`;
+        preview.items.forEach(({ element, previousTransform }) => {
+            element.setAttribute("transform", previousTransform ? `${previousTransform} ${translate}` : translate);
+        });
+
+        preview.axisTicks.forEach((tick) => {
+            const domain = tick.axis === "x" ? xDomain : yDomain;
+            if (!domain || tick.plotSpan <= 0)
+                return;
+
+            const span = domain[1] - domain[0];
+            const ratio = (tick.coordinate - tick.plotStart) / tick.plotSpan;
+            const value = tick.axis === "x"
+                ? domain[0] + (ratio * span)
+                : domain[1] - (ratio * span);
+
+            tick.texts.forEach(({ element }, textIndex) => {
+                element.textContent = textIndex === 0
+                    ? formatAxisPreviewTick(tick.axis, value, tick.index, tick.axisConfig, domain)
+                    : formatDateSecondaryTick(value);
+            });
+        });
+    }, []);
+
+    const clearPanPreview = React.useCallback((restoreAxisTicks = true) => {
+        const preview = panPreviewStateRef.current;
+        if (!preview)
+            return;
+
+        if (restoreAxisTicks) {
+            preview.axisTicks.forEach((tick) => {
+                tick.texts.forEach(({ element, previousText }) => {
+                    element.textContent = previousText;
+                });
+            });
+        }
+
+        preview.overlay.remove();
+        preview.container.style.position = preview.previousPosition;
+        if (preview.previousDeferredPanning === null)
+            preview.target.removeAttribute("data-chart-deferred-panning");
+        else
+            preview.target.setAttribute("data-chart-deferred-panning", preview.previousDeferredPanning);
+
+        panPreviewStateRef.current = null;
+    }, []);
+
+    const schedulePanPreviewClear = React.useCallback((restoreAxisTicks = false) => {
+        if (typeof window === "undefined") {
+            clearPanPreview(restoreAxisTicks);
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                clearPanPreview(restoreAxisTicks);
+            });
+        });
+    }, [clearPanPreview]);
+
     const setDocumentSelectionDisabled = React.useCallback((disabled: boolean) => {
         if (typeof document === "undefined")
             return;
@@ -580,16 +951,20 @@ export function useInteractiveCartesianChart({
     const cleanupInteraction = React.useCallback((cancelSelection = true) => {
         isDraggingRef.current = false;
         panStateRef.current = null;
+        deferredPanActiveRef.current = false;
+        setIsDeferredPanning(false);
+        pendingPanDomainRef.current = null;
         selectionMetaRef.current = null;
         pointerDownInfoRef.current = null;
         dragExceededThresholdRef.current = false;
         hideSelectionPreview();
+        clearPanPreview();
 
         if (cancelSelection)
             updateSelection(null);
 
         setInteracting(false);
-    }, [hideSelectionPreview, setInteracting, updateSelection]);
+    }, [clearPanPreview, hideSelectionPreview, setInteracting, updateSelection]);
 
     const resetView = React.useCallback(() => {
         cancelZoomAnimation();
@@ -613,9 +988,10 @@ export function useInteractiveCartesianChart({
 
             setDocumentSelectionDisabled(false);
             hideSelectionPreview();
+            clearPanPreview();
             cancelZoomAnimation();
         };
-    }, [cancelZoomAnimation, hideSelectionPreview, setDocumentSelectionDisabled]);
+    }, [cancelZoomAnimation, clearPanPreview, hideSelectionPreview, setDocumentSelectionDisabled]);
 
     const startZoomAnimation = React.useCallback((
         nextXDomain: [number, number] | null,
@@ -918,6 +1294,10 @@ export function useInteractiveCartesianChart({
             };
             selectionMetaRef.current = null;
             updateSelection(null);
+            pendingPanDomainRef.current = null;
+            const deferredPanActive = beginPanPreview();
+            deferredPanActiveRef.current = deferredPanActive;
+            setIsDeferredPanning(deferredPanActive);
             return;
         }
 
@@ -962,6 +1342,7 @@ export function useInteractiveCartesianChart({
         selectionZoomEnabled,
         setInteracting,
         cancelCurrentOperation,
+        beginPanPreview,
         updateSelection,
         updateSelectionPreview,
     ]);
@@ -1126,12 +1507,12 @@ export function useInteractiveCartesianChart({
         const panState = panStateRef.current;
         const selectionMeta = selectionMetaRef.current;
         const activeSelection = selectionRef.current;
-        const scales = getChartScales();
-
-        if (!scales)
-            return;
 
         if (activeSelection && selectionMeta && !panState) {
+            const scales = getChartScales();
+            if (!scales)
+                return;
+
             const {
                 startClientX,
                 startClientY,
@@ -1202,12 +1583,33 @@ export function useInteractiveCartesianChart({
             ] as [number, number]
             : null;
 
-        React.startTransition(() => {
-            if (nextXDomain)
-                setXDomainOverride(constrainXDomain ? clampDomainToBase(nextXDomain, baseXDomain) : nextXDomain);
+        const constrainedXDomain = nextXDomain
+            ? (constrainXDomain ? clampDomainToBase(nextXDomain, baseXDomain) : nextXDomain)
+            : null;
+        const constrainedYDomain = nextYDomain
+            ? (constrainYDomain ? clampDomainToBase(nextYDomain, baseYDomain) : nextYDomain)
+            : null;
 
-            if (nextYDomain)
-                setYDomainOverride(constrainYDomain ? clampDomainToBase(nextYDomain, baseYDomain) : nextYDomain);
+        if (panStrategy === "deferred" && deferredPanActiveRef.current) {
+            pendingPanDomainRef.current = {
+                xDomain: constrainedXDomain,
+                yDomain: constrainedYDomain,
+            };
+            updatePanPreview(
+                allowedX ? clientX - startClientX : 0,
+                allowedY ? clientY - startClientY : 0,
+                constrainedXDomain,
+                constrainedYDomain,
+            );
+            return;
+        }
+
+        React.startTransition(() => {
+            if (constrainedXDomain)
+                setXDomainOverride(constrainedXDomain);
+
+            if (constrainedYDomain)
+                setYDomainOverride(constrainedYDomain);
         });
     }, [
         getChartScales,
@@ -1218,6 +1620,8 @@ export function useInteractiveCartesianChart({
         constrainYDomain,
         baseXDomain,
         baseYDomain,
+        panStrategy,
+        updatePanPreview,
         updateSelectionPreview,
         updateSelectionRef,
     ]);
@@ -1303,6 +1707,7 @@ export function useInteractiveCartesianChart({
 
             let appliedRegion = false;
             const activeSelection = selectionRef.current;
+            const pendingPanDomain = pendingPanDomainRef.current;
 
             if (
                 activeSelection
@@ -1350,8 +1755,25 @@ export function useInteractiveCartesianChart({
                 }
             }
 
+            if (pendingPanDomain) {
+                cancelZoomAnimation();
+
+                if (pendingPanDomain.xDomain)
+                    setXDomainOverride(pendingPanDomain.xDomain);
+
+                if (pendingPanDomain.yDomain)
+                    setYDomainOverride(pendingPanDomain.yDomain);
+
+                schedulePanPreviewClear(false);
+            } else {
+                clearPanPreview();
+            }
+
             ignoreNextClickRef.current = dragExceededThresholdRef.current || appliedRegion;
             panStateRef.current = null;
+            deferredPanActiveRef.current = false;
+            setIsDeferredPanning(false);
+            pendingPanDomainRef.current = null;
             selectionMetaRef.current = null;
             pointerDownInfoRef.current = null;
             dragExceededThresholdRef.current = false;
@@ -1380,7 +1802,9 @@ export function useInteractiveCartesianChart({
         cancelZoomAnimation,
         processPointerMove,
         setInteracting,
+        clearPanPreview,
         hideSelectionPreview,
+        schedulePanPreviewClear,
         updateSelection,
     ]);
 
@@ -1401,6 +1825,7 @@ export function useInteractiveCartesianChart({
         selectionMode: zoomMode,
         selectionOverlayRef,
         isInteracting,
+        isDeferredPanning,
         modifiers,
         cursorClassName: cn(cursorClassName),
         handleChartMouseDown,

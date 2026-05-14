@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchJson } from "@/fetchJson";
 import { CircleQuestionMark, Download, Expand } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from "recharts";
 
 const log = getLogger("Severities", "black", "Page");
@@ -724,13 +724,9 @@ export default function SeveritiesPage() {
         document.body.removeChild(anchor);
     };
 
-    const handleChartClick = (state: unknown) => {
-        const chartState = state as { activePayload?: Array<{ payload?: SeverityPoint }> };
-        const point = chartState?.activePayload?.[0]?.payload;
+    const pendingMarkerClickRef = useRef<SeverityPoint | null>(null);
 
-        if (!point)
-            return;
-
+    const openFlightsForSeverityPoint = (point: SeverityPoint) => {
         const primaryFlightId = String(point.flightId);
         const secondaryFlightId = (point.eventDefinitionId === -1) && point.otherFlightId && (String(point.otherFlightId).length > 0)
             ? String(point.otherFlightId)
@@ -744,12 +740,20 @@ export default function SeveritiesPage() {
         window.open(`/protected/flights?${params.toString()}`, "_blank", "noopener");
     };
 
+    const handleChartClick = (state: unknown) => {
+        const chartState = state as { activePayload?: Array<{ payload?: SeverityPoint }> };
+        const point = chartState?.activePayload?.[0]?.payload;
+
+        if (point)
+            openFlightsForSeverityPoint(point);
+    };
+
     const hasSelectedData = chartModel.hasData;
     const totalVisiblePoints = chartModel.series.reduce((sum, series) => sum + series.data.length, 0);
 
     const chartInteraction = useInteractiveCartesianChart({
         hasData: hasSelectedData,
-        interaction: { kind: "cartesian", zoom: "xy", pan: true, wheelZoom: true },
+        interaction: { kind: "cartesian", zoom: "xy", pan: true, panStrategy: "deferred", wheelZoom: true },
         baseXDomain: chartModel.xDomain,
         baseYDomain: chartModel.yDomain,
         resetDeps: [
@@ -1066,6 +1070,21 @@ export default function SeveritiesPage() {
                                                                         strokeOpacity={series.isAny ? 0.9 : 0.5}
                                                                         strokeWidth={series.isAny ? 1.8 : 1.2}
                                                                         isAnimationActive={false}
+                                                                        cursor="pointer"
+                                                                        onMouseDown={(entry: { payload?: SeverityPoint }, _index: number, event: { preventDefault?: () => void; stopPropagation?: () => void }) => {
+                                                                            event?.preventDefault?.();
+                                                                            event?.stopPropagation?.();
+                                                                            pendingMarkerClickRef.current = entry.payload ?? null;
+                                                                        }}
+                                                                        onClick={(entry: { payload?: SeverityPoint }, _index: number, event: { stopPropagation?: () => void }) => {
+                                                                            event?.stopPropagation?.();
+
+                                                                            const point = entry.payload ?? pendingMarkerClickRef.current;
+                                                                            pendingMarkerClickRef.current = null;
+
+                                                                            if (point)
+                                                                                openFlightsForSeverityPoint(point);
+                                                                        }}
                                                                     />
                                                                 ))
                                                             }

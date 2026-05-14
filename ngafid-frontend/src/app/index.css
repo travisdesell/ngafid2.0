@@ -47,6 +47,18 @@
         @apply p-4;
     }
 
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-line,
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-area,
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-bar,
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-scatter,
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-reference-area,
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-reference-line,
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-reference-dot,
+    .recharts-wrapper[data-chart-deferred-panning="true"] * {
+        opacity: 0 !important;
+        pointer-events: none;
+    }
+
 
     /* Scrollbar Styling */
     :root {

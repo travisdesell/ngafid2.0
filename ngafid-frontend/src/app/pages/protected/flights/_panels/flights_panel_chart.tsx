@@ -437,7 +437,7 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
 
     const chartInteraction = useInteractiveCartesianChart({
         hasData: chartModel.hasData && hasDomain,
-        interaction: { kind: "cartesian", zoom: "xy", pan: true, wheelZoom: true },
+        interaction: { kind: "cartesian", zoom: "xy", pan: true, panStrategy: "deferred", wheelZoom: true },
         baseXDomain: hasDomain ? [chartModel.xMin, chartModel.xMax] : null,
         baseYDomain: hasDomain ? [chartModel.yMin, chartModel.yMax] : null,
         resetDeps: [
