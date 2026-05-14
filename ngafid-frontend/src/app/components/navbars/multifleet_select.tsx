@@ -7,7 +7,7 @@ import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronDown, UsersRound } from "lucide-react";
-import type { AccessType, FleetAccess } from "src/types";
+import type { AccessType, FleetAccess } from "src/types/types";
 
 const log = getLogger("MultifleetSelect", "black", "Component");
 

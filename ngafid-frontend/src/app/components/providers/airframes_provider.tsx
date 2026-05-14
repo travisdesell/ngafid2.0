@@ -1,11 +1,11 @@
 // ngafid-frontend/src/app/components/providers/airframes_provider.tsx
+import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import React, { useEffect } from "react";
-import { AirframeNameID } from "src/types";
+import { AirframeNameID } from "src/types/types";
 import { AIRFRAME_NAMES_IGNORED } from "../../lib/airframe_names_ignored";
 import ErrorModal from "../modals/error_modal";
 import { useAuth } from "./auth_provider";
-import { useModal } from "@/components/modals/modal_context";
 
 const log = getLogger("AirframesProvider", "black", "Provider");
 

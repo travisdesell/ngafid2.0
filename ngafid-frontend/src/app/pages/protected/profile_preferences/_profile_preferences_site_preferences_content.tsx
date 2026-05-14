@@ -11,7 +11,7 @@ import { fetchJson } from "@/fetchJson";
 import EmailPreferenceItem from "@/pages/protected/profile_preferences/EmailPreferenceItem";
 import { Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { MultifleetInvite } from "src/types";
+import type { MultifleetInvite } from "src/types/types";
 
 type MetricPreferencesResponse = {
     flightMetrics?: string[];

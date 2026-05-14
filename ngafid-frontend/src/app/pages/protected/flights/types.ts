@@ -1,7 +1,7 @@
 // ngafid-frontend/src/app/pages/protected/flights/types.ts
 
 import { TagData } from "@/components/providers/tags/tags_provider";
-import { AirframeNameID } from "src/types";
+import { AirframeNameID } from "src/types/types";
 
 export type SortingDirection = "Ascending" | "Descending";
 export const isValidSortingDirection = (value: string): value is SortingDirection => {

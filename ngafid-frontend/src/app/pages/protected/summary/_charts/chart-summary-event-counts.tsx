@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/chart"
 import { JSX } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts"
-import { AirframeEventCounts } from "src/types"
+import { AirframeEventCounts } from "src/types/types"
 
 
 const log = getLogger("ChartSummaryEventCounts", "black", "Chart");

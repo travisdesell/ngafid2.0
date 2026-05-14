@@ -7,7 +7,7 @@ import { useModal } from "@/components/modals/modal_context";
 import { getLogger } from "@/components/providers/logger";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { NGAFIDUser } from "src/types";
+import { NGAFIDUser } from "src/types/types";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Field, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";

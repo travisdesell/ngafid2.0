@@ -1,6 +1,7 @@
 // ngafid-frontend/src/app/pages/summary/summary.tsx
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
+import { setPageTitle } from "@/components/page_title";
 import PanelAlert from "@/components/panel_alert";
 import { ALL_AIRFRAMES_ID, ALL_AIRFRAMES_NAME, useAirframes } from "@/components/providers/airframes_provider";
 import { getLogger } from "@/components/providers/logger";
@@ -15,12 +16,11 @@ import { fetchJson } from "@/fetchJson";
 import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
 import { Check, CircleAlert, CloudDownload, Hourglass, Loader2Icon, TriangleAlert, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AirframeEventCounts } from "src/types";
+import { AirframeEventCounts } from "src/types/types";
 import { ChartSummaryEventCounts } from "./_charts/chart-summary-event-counts";
-import { ChartSummaryEventTotalsTime } from "./_charts/chart-summary-event-totals-time";
 import { ChartSummaryEventTotalsFleet } from "./_charts/chart-summary-event-totals-fleet";
+import { ChartSummaryEventTotalsTime } from "./_charts/chart-summary-event-totals-time";
 import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summary-percentage-of-flights-with-event";
-import { setPageTitle } from "@/components/page_title";
 
 
 const log = getLogger("Summary", "black", "Page");

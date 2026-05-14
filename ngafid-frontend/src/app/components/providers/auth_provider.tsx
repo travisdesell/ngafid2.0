@@ -7,7 +7,7 @@ import { ROUTE_DEFAULT_LOGGED_OUT } from '@/lib/route_utils';
 import { LoaderCircle } from 'lucide-react';
 import React, { useCallback, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import type { Fleet, FleetAccess, NGAFIDUser } from 'src/types';
+import type { Fleet, FleetAccess, NGAFIDUser } from 'src/types/types';
 
 // const log = getLogger({ color: "blue",  type: "Provider" });
 const log = getLogger("AuthProvider", "blue", "Provider");
