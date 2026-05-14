@@ -926,7 +926,7 @@ export default function SeveritiesPage() {
                             <CardTitle>Severity of Events</CardTitle>
                             <CardDescription>Event severity over time for the selected event and airframe filters.</CardDescription>
                         </CardHeader>
-                        <CardContent className="min-h-0 flex-1 w-full">
+                        <CardContent className="min-h-0 flex-1 w-full" id="severity-chart-container">
                             {
                                 (!hasApplied)
                                     ? <PanelAlert title="No Data Available!" description="Apply a date range to load available event severities." />

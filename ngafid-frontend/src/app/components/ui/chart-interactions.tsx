@@ -4,9 +4,9 @@
 import * as React from "react";
 
 import { getLogger } from "@/components/providers/logger";
+import { useTheme } from "@/components/providers/theme-provider";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/components/providers/theme-provider";
 
 const log = getLogger("ChartInteractions", "blue", "Component");
 
@@ -100,6 +100,10 @@ interface PanPreviewAxisTick {
         element: SVGTextElement;
         previousText: string;
     }>;
+}
+
+interface SelectionDraft {
+    meta: SelectionMeta;
 }
 
 interface PendingPanDomain {
@@ -278,6 +282,18 @@ const getTickCoordinate = (tick: Element, axis: "x" | "y") => {
     return Number.isFinite(value) ? value : null;
 };
 
+const setSvgTextPreservingLayout = (element: SVGTextElement, text: string) => {
+    const tspans = Array.from(element.querySelectorAll("tspan"));
+    if (tspans.length === 0) {
+        element.textContent = text;
+        return;
+    }
+
+    tspans.forEach((tspan, index) => {
+        tspan.textContent = index === 0 ? text : "";
+    });
+};
+
 const formatDurationTick = (value: number, domainSpan: number) => {
     const sign = value < 0 ? "-" : "";
     const absolute = Math.abs(value);
@@ -419,7 +435,7 @@ export function InteractiveChartSelectionOverlay({
         <div
             ref={previewRef}
             aria-hidden="true"
-            className={cn("pointer-events-none absolute z-[5] rounded-[2px]", className)}
+            className={cn("pointer-events-none absolute z-5 rounded-[2px]", className)}
             style={{
                 display: "none",
                 left: 0,
@@ -538,6 +554,7 @@ export function useInteractiveCartesianChart({
     const deferredPanActiveRef = React.useRef(false);
     const selectionOverlayRef = React.useRef<HTMLDivElement | null>(null);
     const selectionRef = React.useRef<ChartInteractionSelectionState | null>(null);
+    const selectionDraftRef = React.useRef<SelectionDraft | null>(null);
     const isDraggingRef = React.useRef(false);
     const panStateRef = React.useRef<PanState | null>(null);
     const panPreviewStateRef = React.useRef<PanPreviewState | null>(null);
@@ -743,8 +760,21 @@ export function useInteractiveCartesianChart({
     }, []);
 
     const beginPanPreview = React.useCallback(() => {
-        if (panStrategy !== "deferred" || panPreviewStateRef.current)
+        if (panStrategy !== "deferred")
             return false;
+
+        if (panPreviewStateRef.current) {
+            const previousPreview = panPreviewStateRef.current;
+            previousPreview.overlay.remove();
+            previousPreview.container.style.position = previousPreview.previousPosition;
+
+            if (previousPreview.previousDeferredPanning === null)
+                previousPreview.target.removeAttribute("data-chart-deferred-panning");
+            else
+                previousPreview.target.setAttribute("data-chart-deferred-panning", previousPreview.previousDeferredPanning);
+
+            panPreviewStateRef.current = null;
+        }
 
         const elements = getPanPreviewElements();
         if (!elements)
@@ -757,6 +787,16 @@ export function useInteractiveCartesianChart({
         if (!surface)
             return false;
 
+        const chartAny = chartRef.current as any;
+        const plotOffset = chartAny?.state?.offset as { left?: number; top?: number; width?: number; height?: number } | undefined;
+        const canClipToPlot = (
+            plotOffset
+            && typeof plotOffset.left === "number"
+            && typeof plotOffset.top === "number"
+            && typeof plotOffset.width === "number"
+            && typeof plotOffset.height === "number"
+        );
+
         const contentSelector = [
             ".recharts-line",
             ".recharts-area",
@@ -767,8 +807,11 @@ export function useInteractiveCartesianChart({
             ".recharts-reference-dot",
         ].join(",");
         const overlay = surface.cloneNode(true) as SVGSVGElement;
-        overlay.querySelectorAll("defs, .recharts-cartesian-grid, .recharts-cartesian-axis, .recharts-tooltip-cursor").forEach((element) => {
+        overlay.querySelectorAll(".recharts-cartesian-grid, .recharts-cartesian-axis, .recharts-tooltip-cursor").forEach((element) => {
             element.remove();
+        });
+        overlay.querySelectorAll("[clip-path]").forEach((element) => {
+            element.removeAttribute("clip-path");
         });
 
         const contentElements = Array.from(overlay.querySelectorAll(contentSelector)) as Array<SVGElement>;
@@ -777,7 +820,7 @@ export function useInteractiveCartesianChart({
             .filter((element) => {
                 let parent = element.parentElement;
                 while (parent) {
-                    if (contentSet.has(parent as SVGElement))
+                    if (contentSet.has(parent as unknown as SVGElement))
                         return false;
 
                     parent = parent.parentElement;
@@ -818,6 +861,19 @@ export function useInteractiveCartesianChart({
         overlay.style.width = `${targetRect.width}px`;
         overlay.style.height = `${targetRect.height}px`;
         overlay.style.overflow = "hidden";
+        if (canClipToPlot) {
+            const plotLeft = Math.max(0, plotOffset.left ?? 0);
+            const plotTop = Math.max(0, plotOffset.top ?? 0);
+            const plotRight = Math.max(0, plotLeft + (plotOffset.width ?? 0));
+            const plotBottom = Math.max(0, plotTop + (plotOffset.height ?? 0));
+            const insetTop = Math.max(0, plotTop);
+            const insetLeft = Math.max(0, plotLeft);
+            const insetRight = Math.max(0, targetRect.width - plotRight);
+            const insetBottom = Math.max(0, targetRect.height - plotBottom);
+            const insetClip = `inset(${insetTop}px ${insetRight}px ${insetBottom}px ${insetLeft}px)`;
+            overlay.style.clipPath = insetClip;
+            overlay.style.webkitClipPath = insetClip;
+        }
         container.appendChild(overlay);
         return true;
     }, [getPanPreviewAxisTicks, getPanPreviewElements, panStrategy]);
@@ -849,9 +905,12 @@ export function useInteractiveCartesianChart({
                 : domain[1] - (ratio * span);
 
             tick.texts.forEach(({ element }, textIndex) => {
-                element.textContent = textIndex === 0
-                    ? formatAxisPreviewTick(tick.axis, value, tick.index, tick.axisConfig, domain)
-                    : formatDateSecondaryTick(value);
+                setSvgTextPreservingLayout(
+                    element,
+                    textIndex === 0
+                        ? formatAxisPreviewTick(tick.axis, value, tick.index, tick.axisConfig, domain)
+                        : formatDateSecondaryTick(value),
+                );
             });
         });
     }, []);
@@ -864,7 +923,7 @@ export function useInteractiveCartesianChart({
         if (restoreAxisTicks) {
             preview.axisTicks.forEach((tick) => {
                 tick.texts.forEach(({ element, previousText }) => {
-                    element.textContent = previousText;
+                    setSvgTextPreservingLayout(element, previousText);
                 });
             });
         }
@@ -955,6 +1014,7 @@ export function useInteractiveCartesianChart({
         setIsDeferredPanning(false);
         pendingPanDomainRef.current = null;
         selectionMetaRef.current = null;
+        selectionDraftRef.current = null;
         pointerDownInfoRef.current = null;
         dragExceededThresholdRef.current = false;
         hideSelectionPreview();
@@ -1203,8 +1263,14 @@ export function useInteractiveCartesianChart({
     }, [cancelCurrentOperation]);
 
     const handleChartMouseDown = React.useCallback((state: any) => {
-        if (!hasBaseDomains)
+
+        log("Chart mouse down event.", { state });
+
+        // No base domains available, exit
+        if (!hasBaseDomains) {
+            log("Base domains not available, ignoring mouse down.", { baseXDomain, baseYDomain });
             return;
+        }
 
         const nativeEvent = getNativeMouseEvent(state);
         const mouseButton = Number(nativeEvent?.button ?? 0);
@@ -1217,36 +1283,21 @@ export function useInteractiveCartesianChart({
         if (mouseButton !== 0)
             return;
 
-        nativeEvent?.preventDefault?.();
+        const pointActionsForMouseDown = callbackRef.current.pointActions ?? [];
+        const preventedByAction = pointActionsForMouseDown.some((action) => {
+            if (action.preventDefaultInteraction !== true)
+                return false;
 
-        if (typeof nativeEvent?.clientX === "number" && typeof nativeEvent?.clientY === "number") {
-            pointerDownInfoRef.current = {
-                clientX: nativeEvent.clientX,
-                clientY: nativeEvent.clientY,
-            };
-            dragExceededThresholdRef.current = false;
+            return action.shouldHandle(buildPointerContext(state));
+        });
+
+        if (preventedByAction) {
+            log("Mouse down event prevented by action.", { state });
+            return;
         }
 
-        const context = buildPointerContext(state);
-        const preventedByAction = (callbackRef.current.pointActions ?? []).some((action) => (
-            action.preventDefaultInteraction === true && action.shouldHandle(context)
-        ));
-
-        if (preventedByAction)
-            return;
-
-        if (typeof state?.chartX !== "number" || typeof state?.chartY !== "number")
-            return;
-
-        const scales = getChartScales();
-        if (!scales)
-            return;
-
-        const xValue = normalizeScaleValueToNumber(scales.xScale.invert(state.chartX));
-        const yValue = normalizeScaleValueToNumber(scales.yScale.invert(state.chartY));
-
-        if (!Number.isFinite(xValue) || !Number.isFinite(yValue)) {
-            log.warn("Invalid chart interaction scale inversion.", { xValue, yValue });
+        if (typeof state?.chartX !== "number" || typeof state?.chartY !== "number") {
+            log("Invalid chart coordinates.", { state });
             return;
         }
 
@@ -1264,6 +1315,13 @@ export function useInteractiveCartesianChart({
         const startClientY = typeof nativeEvent?.clientY === "number"
             ? nativeEvent.clientY
             : chartRegion.top + state.chartY;
+
+        pointerDownInfoRef.current = {
+            clientX: startClientX,
+            clientY: startClientY,
+        };
+        dragExceededThresholdRef.current = false;
+
         const startContainerX = Math.max(
             chartOffset.left,
             Math.min(chartOffset.left + chartOffset.width, startClientX - chartRegion.left),
@@ -1274,7 +1332,7 @@ export function useInteractiveCartesianChart({
         );
         const currentViewXDomain: [number, number] | null = xDomainOverride ?? baseXDomain;
         const currentViewYDomain: [number, number] | null = yDomainOverride ?? baseYDomain;
-        const wantsPan = context.modifiers.shiftHeld;
+        const wantsPan = !!nativeEvent?.shiftKey || modifiersRef.current.shiftHeld;
 
         cancelZoomAnimation();
 
@@ -1282,6 +1340,7 @@ export function useInteractiveCartesianChart({
             if (!panEnabled || !currentViewXDomain || !currentViewYDomain)
                 return;
 
+            nativeEvent?.preventDefault?.();
             isDraggingRef.current = true;
             setInteracting(true);
             panStateRef.current = {
@@ -1301,13 +1360,15 @@ export function useInteractiveCartesianChart({
             return;
         }
 
-        if (!selectionZoomEnabled)
+        if (!selectionZoomEnabled) {
+            log("Selection zoom not enabled.", { state });
             return;
+        }
 
-        isDraggingRef.current = true;
-        setInteracting(true);
         panStateRef.current = null;
-        selectionMetaRef.current = {
+        pendingPanDomainRef.current = null;
+
+        const selectionMeta = {
             startClientX,
             startClientY,
             startChartX: state.chartX,
@@ -1320,13 +1381,10 @@ export function useInteractiveCartesianChart({
             chartHeight: chartOffset.height,
         };
 
-        updateSelection({
-            x1: xValue,
-            y1: yValue,
-            x2: xValue,
-            y2: yValue,
-        });
-        updateSelectionPreview(selectionMetaRef.current, startClientX, startClientY);
+        selectionMetaRef.current = selectionMeta;
+        selectionDraftRef.current = {
+            meta: selectionMeta,
+        };
     }, [
         hasBaseDomains,
         buildPointerContext,
@@ -1365,9 +1423,39 @@ export function useInteractiveCartesianChart({
         callbackRef.current.onPointIntent?.(context);
     }, [buildPointerContext]);
 
+    React.useEffect(() => {
+        if (typeof window === "undefined" || !hasBaseDomains || !wheelZoomEnabled)
+            return;
+
+        const preventBrowserZoom = (event: WheelEvent) => {
+            if (!event.ctrlKey && !event.metaKey)
+                return;
+
+            const container = (chartRef.current as any)?.container as HTMLElement | undefined;
+            const target = event.target;
+            const chartRoot = container?.closest("[data-chart]") ?? container;
+
+            if (chartRoot && target instanceof Node && chartRoot.contains(target))
+                event.preventDefault();
+        };
+
+        window.addEventListener("wheel", preventBrowserZoom, { capture: true, passive: false });
+        return () => {
+            window.removeEventListener("wheel", preventBrowserZoom, { capture: true });
+        };
+    }, [hasBaseDomains, wheelZoomEnabled]);
+
     const handleWheel = React.useCallback((event: React.WheelEvent<HTMLElement>) => {
         if (!hasBaseDomains || !wheelZoomEnabled || isDraggingRef.current)
             return;
+
+        const canCancel = event.cancelable !== false;
+
+        if (event.ctrlKey || event.metaKey) {
+            if (canCancel)
+                event.preventDefault();
+            event.stopPropagation();
+        }
 
         const chartOffset = getChartOffset();
         const chartRegion = getChartContainerRect();
@@ -1478,7 +1566,6 @@ export function useInteractiveCartesianChart({
             wheelInteractingTimeoutRef.current = null;
         }, 150);
 
-        event.preventDefault();
         startZoomAnimation(nextXDomain, nextYDomain, currentXDomain, currentYDomain);
     }, [
         hasBaseDomains,
@@ -1631,12 +1718,37 @@ export function useInteractiveCartesianChart({
             return;
 
         const handlePointerMove = (event: PointerEvent) => {
+
             const pointerDownInfo = pointerDownInfoRef.current;
             if (pointerDownInfo) {
                 const dx = event.clientX - pointerDownInfo.clientX;
                 const dy = event.clientY - pointerDownInfo.clientY;
                 if (Math.hypot(dx, dy) > clickThresholdPx)
                     dragExceededThresholdRef.current = true;
+            }
+
+            if (!isDraggingRef.current && dragExceededThresholdRef.current && selectionDraftRef.current) {
+                const scales = getChartScales();
+                if (!scales)
+                    return;
+
+                const draft = selectionDraftRef.current;
+                const xValue = normalizeScaleValueToNumber(scales.xScale.invert(draft.meta.startChartX));
+                const yValue = normalizeScaleValueToNumber(scales.yScale.invert(draft.meta.startChartY));
+
+                if (!Number.isFinite(xValue) || !Number.isFinite(yValue))
+                    return;
+
+                isDraggingRef.current = true;
+                setInteracting(true);
+                updateSelection({
+                    x1: xValue,
+                    y1: yValue,
+                    x2: xValue,
+                    y2: yValue,
+                });
+                updateSelectionPreview(draft.meta, event.clientX, event.clientY);
+                selectionDraftRef.current = null;
             }
 
             if (!isDraggingRef.current)
@@ -1677,7 +1789,11 @@ export function useInteractiveCartesianChart({
     }, [
         hasBaseDomains,
         clickThresholdPx,
+        getChartScales,
         processPointerMove,
+        setInteracting,
+        updateSelection,
+        updateSelectionPreview,
     ]);
 
     React.useEffect(() => {
@@ -1698,6 +1814,8 @@ export function useInteractiveCartesianChart({
 
             if (!isDraggingRef.current) {
                 pointerDownInfoRef.current = null;
+                selectionMetaRef.current = null;
+                selectionDraftRef.current = null;
                 dragExceededThresholdRef.current = false;
                 return;
             }
@@ -1775,6 +1893,7 @@ export function useInteractiveCartesianChart({
             setIsDeferredPanning(false);
             pendingPanDomainRef.current = null;
             selectionMetaRef.current = null;
+            selectionDraftRef.current = null;
             pointerDownInfoRef.current = null;
             dragExceededThresholdRef.current = false;
             hideSelectionPreview();

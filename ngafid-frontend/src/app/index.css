@@ -53,8 +53,7 @@
     .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-scatter,
     .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-reference-area,
     .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-reference-line,
-    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-reference-dot,
-    .recharts-wrapper[data-chart-deferred-panning="true"] * {
+    .recharts-wrapper[data-chart-deferred-panning="true"] .recharts-reference-dot {
         opacity: 0 !important;
         pointer-events: none;
     }

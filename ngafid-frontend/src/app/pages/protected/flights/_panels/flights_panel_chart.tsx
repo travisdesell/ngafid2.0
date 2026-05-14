@@ -919,14 +919,6 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
 
 });
 
-
-/* ============================================================================
-   FlightsPanelChart (parent)
-   - Builds chartModel and all non-interaction UI.
-   - InteractiveChart handles all zoom/pan state so this component
-     no longer re-renders on every mouse move.
-============================================================================ */
-
 export function FlightsPanelChart() {
 
     const {
