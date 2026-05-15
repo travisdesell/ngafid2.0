@@ -11,7 +11,7 @@ import type { ModalData, ModalProps } from "./types";
 const log = getLogger("ConfirmModal", "black", "Modal");
 
 
-export type ModalDataError = ModalData & {
+export type ModalDataConfirm = ModalData & {
     title: string;
     message: string;
     onConfirm?: () => void;
@@ -21,7 +21,7 @@ export type ModalDataError = ModalData & {
 export default function ConfirmModal({ data }: ModalProps) {
 
     const { close, renderModalHeader } = useModal();
-    const { title, message, onConfirm, buttonVariant } = (data as ModalDataError);
+    const { title, message, onConfirm, buttonVariant } = (data as ModalDataConfirm);
     const messageIsKnownOperation = (message && message.length > 0);
 
     const CONFIRM_BUTTON_VARIANT_DEFAULT: ButtonVariant = "destructive";
