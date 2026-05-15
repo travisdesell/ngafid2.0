@@ -32,8 +32,8 @@ export const fleetAccessAllowed = (access: FleetAccessInput) => {
     if (!accessType)
         return false;
 
-    const allowedTypes: AccessType[] = ["VIEW", "UPLOAD", "MANAGER"];
-    return allowedTypes.includes(accessType);
+    const ALLOWED_TYPES: AccessType[] = ["VIEW", "UPLOAD", "MANAGER"];
+    return ALLOWED_TYPES.includes(accessType);
 
 }
 
@@ -50,7 +50,6 @@ export const fleetSelectable = (fleetIDCurrent: number, fleetIDTarget: number, a
     return true;
 
 }
-
 
 
 export default function MultifleetSelect() {
@@ -78,11 +77,8 @@ export default function MultifleetSelect() {
                 log("Received response from switch fleet request:", response);
 
                 // Response not OK
-                if (!response.ok) {
-
+                if (!response.ok)
                     throw new Error(`Failed to switch fleets. Server responded with status ${response.status}: ${response.statusText}`);
-
-                }
 
                 log("Successfully switched fleet:", response);
                 window.location.reload();
@@ -113,15 +109,6 @@ export default function MultifleetSelect() {
                 <DropdownMenuContent>
                     
                     {/* Display All Available Fleets */}
-                    {/* {userFleetAccess.map((fleet: FleetAccess) => (
-                        <DropdownMenuItem
-                            key={fleet.fleetId}
-                            onSelect={() => switchToFleet(fleet.fleetId)}
-                            disabled={!fleetSelectable(user?.fleet?.id ? parseInt(String(user.fleet?.id)) : -1, fleet.fleetId, fleet.accessType )}
-                        >
-                            <span>{fleet.fleetName}</span>
-                        </DropdownMenuItem>
-                    ))} */}
                     {
                         fleetAccess.map((fleet: FleetAccess) => (
                             <DropdownMenuItem
