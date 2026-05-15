@@ -1,15 +1,19 @@
 // ngafid-frontend/src/app/pages/protected/profile_preferences/_profile_preferences_site_preferences_content.tsx
+import ConfirmModal from "@/components/modals/confirm_modal";
 import ErrorModal from "@/components/modals/error_modal";
 import { useModal } from "@/components/modals/modal_context";
 import { fleetSelectable } from "@/components/navbars/multifleet_select";
 import { useAuth } from "@/components/providers/auth_provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { fetchJson } from "@/fetchJson";
 import EmailPreferenceItem from "@/pages/protected/profile_preferences/EmailPreferenceItem";
-import { Users, X } from "lucide-react";
+import { DoorOpen, Info, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { MultifleetInvite } from "src/types/types";
 
@@ -36,6 +40,9 @@ const AIRSYNC_OPTIONS = [
 
 const METRIC_EXEMPT_COLS = new Set(["LOC-I Index", "Stall Index"]);
 
+const FLEET_NAME_LENGTH_LIMIT = 256;
+const FLEET_NAME_REGEX = /^[a-zA-Z0-9 @#$%^&*()_+!.,/\\'-]+$/;
+
 
 
 
@@ -53,6 +60,10 @@ export default function ProfilePreferencesSitePreferencesContent() {
 
     const [selectedFleetId, setSelectedFleetId] = useState<string>("");
 
+    const [newFleetName, setNewFleetName] = useState("");
+    const [isCreatingFleet, setIsCreatingFleet] = useState(false);
+    const [isLeavingFleet, setIsLeavingFleet] = useState(false);
+
     const [allMetrics, setAllMetrics] = useState<string[]>([]);
     const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
     const [decimalPrecision, setDecimalPrecision] = useState<number>(1);
@@ -69,6 +80,23 @@ export default function ProfilePreferencesSitePreferencesContent() {
     const [airSyncSaving, setAirSyncSaving] = useState(false);
 
     const displayInvites:boolean = invites.some((invite) => !invite.fleetId || invite.fleetId !== currentFleet?.id);
+
+    const trimmedFleetName = newFleetName.trim();
+    const isFleetNameValid =
+        (trimmedFleetName.length > 0)
+        && (trimmedFleetName.length < FLEET_NAME_LENGTH_LIMIT)
+        && FLEET_NAME_REGEX.test(trimmedFleetName);
+
+    const selectedFleetAccess = fleetAccess.find((fleet) => fleet.fleetId === currentFleet?.id);
+    const managesSelectedFleet = selectedFleetAccess?.accessType === "MANAGER";
+    const otherFleets = fleetAccess.filter((fleet) => fleet.fleetId !== currentFleet?.id);
+    const allOtherFleetsDeniedOrWaiting = otherFleets.every((fleet) => fleet.accessType === "DENIED" || fleet.accessType === "WAITING");
+    const leaveDisabled = isLeavingFleet || !currentFleet || managesSelectedFleet || allOtherFleetsDeniedOrWaiting;
+    const leaveTitle =
+        !currentFleet ? "No fleet selected."
+        : managesSelectedFleet ? "Unable to leave a fleet you manage."
+        : allOtherFleetsDeniedOrWaiting ? "No other non-waiting/non-denied fleets to select."
+        : "Leave the current fleet.";
 
     useEffect(() => {
         setSelectedFleetId(currentFleet?.id ? String(currentFleet.id) : "");
@@ -209,6 +237,26 @@ export default function ProfilePreferencesSitePreferencesContent() {
         }
     };
 
+    const createFleet = async () => {
+
+        // Already creating fleet / Fleet name is invalid, exit
+        if (isCreatingFleet || !isFleetNameValid)
+            return;
+
+        setIsCreatingFleet(true);
+
+        const payload = new URLSearchParams({ fleetName: trimmedFleetName });
+
+        try {
+            await fetchJson.post("/api/user/create-fleet", payload);
+            window.location.reload();
+        } catch (error) {
+            setModal(ErrorModal, { title: "Error Creating Fleet", message: (error as Error).message });
+            setIsCreatingFleet(false);
+        }
+        
+    };
+
     const updateMetric = async (metricName: string, modificationType: "addition" | "deletion") => {
         if (!metricName)
             return;
@@ -279,15 +327,67 @@ export default function ProfilePreferencesSitePreferencesContent() {
         setAirSyncSaving(false);
     };
 
+    const leaveCurrentFleet = async () => {
+
+        setModal(
+            ConfirmModal,
+            {
+                title: "Leave Current Fleet",
+                message: "Are you sure you want to leave the current fleet? You will not be able to access it unless you are re-invited.",
+                onConfirm: confirmLeaveCurrentFleet,
+            }
+        );
+
+    }
+
+    const confirmLeaveCurrentFleet = async () => {
+
+        // Not allowed to leave, exit
+        if (leaveDisabled)
+            return;
+
+        setIsLeavingFleet(true);
+
+        try {
+            const response = await fetch("/api/user/leave-fleet", { method: "PUT" });
+
+            if (!response.ok) {
+                const message = await response.text().catch(() => "");
+                throw new Error(message || "Failed to leave current fleet.");
+            }
+
+            window.location.reload();
+        } catch (error) {
+            setModal(ErrorModal, { title: "Error Leaving Fleet", message: (error as Error).message });
+            setIsLeavingFleet(false);
+        }
+
+    }
+
     return (
         <div className="flex flex-col gap-6 pb-6">
             <Card className="card-glossy">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users size={16} className="text-foreground" />
-                        <span>Fleet Access</span>
-                    </CardTitle>
-                    <CardDescription>Manage fleet invitations and switch between fleets you can access.</CardDescription>
+                <CardHeader className="flex flex-row items-center! justify-between">
+
+                    <div className="flex flex-col gap-1.5 m-0">
+                        <CardTitle className="flex items-center gap-2">
+                            <Users size={16} className="text-foreground" />
+                            <span>Fleet Access</span>
+                        </CardTitle>
+                        <CardDescription>Manage fleet invitations and switch between fleets you can access.</CardDescription>
+                    </div>
+
+                    {/* Leave Current Fleet */}
+                    <Button
+                        variant="ghostDestructive"
+                        onClick={leaveCurrentFleet}
+                        disabled={leaveDisabled}
+                        title={leaveTitle}
+                    >
+                        <DoorOpen size={16} />
+                        Leave Fleet
+                    </Button>
+
                 </CardHeader>
                 <CardContent className="flex flex-col gap-6">
 
@@ -319,6 +419,53 @@ export default function ProfilePreferencesSitePreferencesContent() {
                         </Select>
                     </div>
 
+                    <Separator />
+
+                    {/* New Fleet Creation */}
+                    <div className="flex flex-col gap-2">
+                        <Label>Create New Fleet</Label>
+
+                        {/* Input + Button */}
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            createFleet();
+                        }}>
+                            <div className="flex gap-2">
+                                <Input
+                                    name="fleetName"
+                                    placeholder="Fleet name"
+                                    disabled={fleetLoading || isCreatingFleet}
+                                    maxLength={FLEET_NAME_LENGTH_LIMIT}
+                                    value={newFleetName}
+                                    onChange={(event) => setNewFleetName(event.target.value)}
+                                />
+                                <Button
+                                    type="submit"
+                                    disabled={fleetLoading || isCreatingFleet || !isFleetNameValid}
+                                >
+                                    {isCreatingFleet ? "Creating..." : "Create"}
+                                </Button>
+                            </div>
+                        </form>
+
+                        {/* Invalid Fleet Name Notice */}
+                        {
+                            (trimmedFleetName.length > 0 && !isFleetNameValid)
+                            &&
+                            <div className="text-sm text-destructive">
+                                Fleet name must be 1-{FLEET_NAME_LENGTH_LIMIT} characters and may only include letters,
+                                numbers, spaces, and @#$%^&amp;*()_+!/\\.,'-
+                            </div>
+                        }
+
+                        {/* Notice */}
+                        <div className="text-sm text-muted-foreground flex items-center gap-1 mt-2">
+                            <Info size={12} className="inline mb-0.5" />
+                            Created fleets cannot be deleted. A fleet cannot be left unless another user can manage it and another valid fleet is available to switch to.
+                        </div>
+
+                    </div>
+
                     {/* Fleet Invitations */}
                     {
                         (displayInvites)
@@ -334,36 +481,40 @@ export default function ProfilePreferencesSitePreferencesContent() {
                                 :
                                 null
                             }
-                            {/* {!invitesLoading && invites.length === 0 && (
-                                <div className="text-sm text-muted-foreground">No pending invitations.</div>
-                            )} */}
-                            {!invitesLoading && invites.length > 0 && (
-                                <div className="grid grid-cols-3">
-                                    {invites.map((invite) => (
-                                        <div key={invite.fleetName} className="flex items-center justify-between gap-2 bg-background rounded-lg border border-border p-3">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-medium">{invite.fleetName}</span>
-                                                <span className="text-xs text-muted-foreground">Invited by {invite.inviteEmail}</span>
+                            
+                            {
+                                (!invitesLoading && invites.length > 0)
+                                &&
+                                <>
+                                    <Separator />
+                                    <div className="grid grid-cols-3">
+                                        {invites.map((invite) => (
+                                            <div key={invite.fleetName} className="flex items-center justify-between gap-2 bg-background rounded-lg border border-border p-3">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="font-medium">{invite.fleetName}</span>
+                                                    <span className="text-xs text-muted-foreground">Invited by {invite.inviteEmail}</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Button
+                                                        variant={"ghost"}
+                                                        disabled={inviteAction === `accept-${invite.fleetName}`}
+                                                        onClick={() => submitInviteAction(invite.fleetName, "accept")}
+                                                    >
+                                                        Accept
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghostDestructive"
+                                                        disabled={inviteAction === `decline-${invite.fleetName}`}
+                                                        onClick={() => submitInviteAction(invite.fleetName, "decline")}
+                                                    >
+                                                        Decline
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                <Button
-                                                    disabled={inviteAction === `accept-${invite.fleetName}`}
-                                                    onClick={() => submitInviteAction(invite.fleetName, "accept")}
-                                                >
-                                                    Accept
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    disabled={inviteAction === `decline-${invite.fleetName}`}
-                                                    onClick={() => submitInviteAction(invite.fleetName, "decline")}
-                                                >
-                                                    Decline
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                        ))}
+                                    </div>
+                                </>
+                            }
                         </div>
                     }
                 </CardContent>
