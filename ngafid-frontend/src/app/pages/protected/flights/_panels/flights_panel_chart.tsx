@@ -8,7 +8,6 @@ import SuccessModal from "@/components/modals/success_modal";
 import Ping from "@/components/pings/ping";
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
-import { Accordion, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,9 +18,9 @@ import {
     ChartTooltipContent
 } from "@/components/ui/chart";
 import {
+    ChartInteractionControlOperation,
     ChartInteractionPointAction,
     InteractiveChartSelectionOverlay,
-    useChartInteractionModifiers,
     useInteractiveCartesianChart,
 } from "@/components/ui/chart-interactions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -31,8 +30,7 @@ import { useFlightsChart } from "@/pages/protected/flights/_flights_context_char
 import FlightsPanelChartLabelCard from "@/pages/protected/flights/_panels/_chart/flights_panel_chart_label_card";
 import { Flight } from "@/pages/protected/flights/types";
 import { TraceSeries } from "@/pages/protected/flights/types_charts";
-import { AccordionItem } from "@radix-ui/react-accordion";
-import { ArrowBigUp, ArrowLeftToLine, Expand, Info, List, Mouse, MousePointerClick, NavigationOff, SquareActivity, SquareChevronUp } from "lucide-react";
+import { ArrowLeftToLine, Expand, Info, List, MousePointerClick } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, XAxis, YAxis } from "recharts";
@@ -435,6 +433,16 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         xValue: extractChartXValue(state) ?? fallback.xValue,
     }), [extractChartXValue]);
 
+    const chartSpecificControls = useMemo<Array<ChartInteractionControlOperation>>(() => [
+        {
+            id: "label-range",
+            name: "Label Range",
+            description: "Alt + left-click to select start/end points for the active labeling flight.",
+            icon: <MousePointerClick className="h-5 w-5" />,
+            modifier: "alt",
+        },
+    ], []);
+
     const chartInteraction = useInteractiveCartesianChart({
         hasData: chartModel.hasData && hasDomain,
         interaction: { kind: "cartesian", zoom: "xy", pan: true, panStrategy: "deferred", wheelZoom: true },
@@ -450,6 +458,11 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         zoomSpeed: 0.005,
         minSpanFactor: 0.001,
         animationDurationMs: 0,
+        controls: {
+            enabled: true,
+            className: "left-24 top-2",
+            operations: chartSpecificControls,
+        },
         pointActions: [labelCaptureAction],
         resolvePoint,
     });
@@ -913,6 +926,7 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
                     </LineChart>
                 </ChartContainer>
                 <InteractiveChartSelectionOverlay previewRef={chartInteraction.selectionOverlayRef} />
+                {chartInteraction.controls}
             </div>
         </div>
     );
@@ -2434,107 +2448,6 @@ export function FlightsPanelChart() {
     };
 
 
-    const chartInteractionModifiers = useChartInteractionModifiers();
-    const shiftHeld = chartInteractionModifiers.shiftHeld;
-    const ctrlHeld = chartInteractionModifiers.ctrlHeld || chartInteractionModifiers.metaHeld;
-    const altHeld = chartInteractionModifiers.altHeld;
-
-    
-    const renderChartInteractionControlsGuide = () => {
-
-        const renderControl = (name:string, description: string, icon: React.ReactNode, iconSecondary?: React.ReactNode) => (
-
-            <div className="flex items-center gap-2 mb-2">
-                <div className="flex relative">
-                    {icon}
-                    {
-                        (iconSecondary)
-                        &&
-                        <div className="absolute right-6.5 top-1/2 -translate-y-1/2 scale-75 opacity-75">
-                            {iconSecondary}
-                        </div>
-                    }
-                </div>
-                <div className="flex flex-col">
-                    <div className="font-bold">{name}</div>
-                    <div className="text-xs">{description}</div>
-                </div>
-            </div>
-
-        );
-
-        return <Card className="absolute left-24 top-2 w-80 overflow-y-auto max-h-[90%] bg-transparent backdrop-blur-xs">
-
-            <Accordion type="single" collapsible defaultValue="" className="px-2">
-
-                <AccordionItem value="controls-guide">
-                    <AccordionTrigger className="mx-6">
-                        Chart Controls
-                    </AccordionTrigger>
-
-                    <AccordionContent className="flex flex-col gap-2 mx-6">
-
-                        {/* Pan */}
-                        {renderControl(
-                            "Pan",
-                            "Shift + left-click and drag to pan around the chart.",
-                            <MousePointerClick type="right-click-drag" className="w-6 h-6" />,
-                            <ArrowBigUp className={`w-4 h-4 ${shiftHeld ? "opacity-100 scale-150!" : "opacity-50"} transition-transform duration-100`} />,
-                        )}
-
-                        {/* Zoom (Selection) */}
-                        {renderControl(
-                            "Zoom (Selection)",
-                            "Left-click and drag to select a region to zoom in on.",
-                            <MousePointerClick type="left-click-drag" className="w-6 h-6" />,
-                        )}
-                        
-                        {/* Zoom (Wheel) */}
-                        {renderControl(
-                            "Zoom (Wheel)",
-                            "Use the mouse wheel to zoom in and out centered on the cursor.",
-                            <Mouse className="w-6 h-6" />,
-                        )}
-
-                        {/* Zoom (Wheel Horizontal) */}
-                        {renderControl(
-                            "Zoom (Wheel Horizontal)",
-                            "Hold Shift and use the mouse wheel to zoom horizontally centered on the cursor.",
-                            <Mouse className="w-6 h-6" />,
-                            <ArrowBigUp className={`w-4 h-4 ${shiftHeld ? "opacity-100 scale-150!" : "opacity-50"} transition-transform duration-100`} />,
-                        )}
-
-                        {/* Zoom (Wheel Vertical) */}
-                        {renderControl(
-                            "Zoom (Wheel Vertical)",
-                            "Hold Ctrl and use the mouse wheel to zoom vertically centered on the cursor.",
-                            <Mouse className="w-6 h-6" />,
-                            <SquareChevronUp className={`w-4 h-4 ${ctrlHeld ? "opacity-100 scale-150!" : "opacity-50"} transition-transform duration-100`} />,
-                        )}
-
-                        {/* Cancel */}
-                        {renderControl(
-                            "Cancel",
-                            "Right-click to cancel the current interaction.",
-                            <NavigationOff type="right-click" className="w-6 h-6" />,
-                        )}
-
-                        {/* Label Range Input */}
-                        {renderControl(
-                            "Label Range",
-                            "Alt + left-click to select start/end points for the active labeling flight.",
-                            <MousePointerClick type="left-click" className="w-6 h-6" />,
-                            <SquareActivity className={`w-4 h-4 ${altHeld ? "opacity-100 scale-150!" : "opacity-50"} transition-transform duration-100`} />,
-                        )}
-
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
-
-        </Card>;
-
-    };
-
     const noFlights = (chartFlights.length === 0);
 
     const legendItems = chartModel.seriesKeys.map((key) => ({
@@ -2676,9 +2589,6 @@ export function FlightsPanelChart() {
                             );
                         })
                     }
-
-                    {/* Controls Guide */}
-                    {renderChartInteractionControlsGuide()}
 
                     {/* Chart Control Buttons */}
                     <div className="flex gap-2 absolute right-2 top-2 justify-end">

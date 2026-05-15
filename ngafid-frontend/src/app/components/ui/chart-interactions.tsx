@@ -5,8 +5,26 @@ import * as React from "react";
 
 import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
+import { Button } from "@/components/ui/button";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import {
+    ArrowBigUp,
+    Expand,
+    Mouse,
+    MousePointerClick,
+    NavigationOff,
+    SlidersHorizontal,
+    SquareActivity,
+    SquareChevronUp,
+} from "lucide-react";
 
 const log = getLogger("ChartInteractions", "blue", "Component");
 
@@ -21,6 +39,25 @@ export interface ChartInteractionConfig {
     selectionZoom?: boolean;
     constrainXDomain?: boolean;
     constrainYDomain?: boolean;
+}
+
+export type ChartInteractionControlModifier = "shift" | "ctrl" | "alt";
+
+export interface ChartInteractionControlOperation {
+    id?: string;
+    name: React.ReactNode;
+    description: React.ReactNode;
+    icon?: React.ReactNode;
+    secondaryIcon?: React.ReactNode;
+    modifier?: ChartInteractionControlModifier;
+    onSelect?: () => void;
+}
+
+export interface ChartInteractionControlsOptions {
+    enabled?: boolean;
+    className?: string;
+    contentClassName?: string;
+    operations?: Array<ChartInteractionControlOperation>;
 }
 
 export interface ChartInteractionModifierState {
@@ -153,6 +190,7 @@ export interface UseInteractiveCartesianChartOptions {
     minSpanFactor?: number;
     animationDurationMs?: number;
     clickThresholdPx?: number;
+    controls?: boolean | ChartInteractionControlsOptions;
     pointActions?: Array<ChartInteractionPointAction>;
     resolvePoint?: (
         state: any,
@@ -175,6 +213,7 @@ export interface InteractiveCartesianChartResult {
     selectionOverlayRef: React.RefObject<HTMLDivElement | null>;
     isInteracting: boolean;
     isDeferredPanning: boolean;
+    controls: React.ReactNode;
     modifiers: ChartInteractionModifierState;
     cursorClassName: string;
     handleChartMouseDown: (state: any) => void;
@@ -450,6 +489,238 @@ export function InteractiveChartSelectionOverlay({
     );
 }
 
+export interface InteractiveChartControlsDropdownProps {
+    interaction: ChartInteractionConfig;
+    modifiers?: ChartInteractionModifierState;
+    customOperations?: Array<ChartInteractionControlOperation>;
+    onResetView?: () => void;
+    className?: string;
+    contentClassName?: string;
+}
+
+const isControlModifierActive = (
+    modifier: ChartInteractionControlModifier | undefined,
+    modifiers: ChartInteractionModifierState,
+) => {
+    if (modifier === "shift")
+        return modifiers.shiftHeld;
+
+    if (modifier === "ctrl")
+        return modifiers.ctrlHeld || modifiers.metaHeld;
+
+    if (modifier === "alt")
+        return modifiers.altHeld;
+
+    return false;
+};
+
+const renderControlModifierIcon = (
+    modifier: ChartInteractionControlModifier | undefined,
+    modifiers: ChartInteractionModifierState,
+) => {
+    const active = isControlModifierActive(modifier, modifiers);
+    const className = cn(
+        "h-4 w-4 transition-transform duration-100",
+        active ? "opacity-100 scale-125" : "opacity-50",
+    );
+
+    if (modifier === "shift")
+        return <ArrowBigUp className={className} />;
+
+    if (modifier === "ctrl")
+        return <SquareChevronUp className={className} />;
+
+    if (modifier === "alt")
+        return <SquareActivity className={className} />;
+
+    return null;
+};
+
+const getDefaultChartControlOperations = (
+    interaction: ChartInteractionConfig,
+    onResetView?: () => void,
+): Array<ChartInteractionControlOperation> => {
+    const zoomMode = interaction.zoom ?? "xy";
+    const panEnabled = interaction.pan ?? true;
+    const wheelZoomEnabled = interaction.wheelZoom ?? true;
+    const selectionZoomEnabled = interaction.selectionZoom ?? true;
+    const includesX = zoomModeIncludesX(zoomMode);
+    const includesY = zoomModeIncludesY(zoomMode);
+    const selectionTarget = zoomMode === "x"
+        ? "a horizontal range"
+        : zoomMode === "y"
+            ? "a vertical range"
+            : "a region";
+    const wheelTarget = zoomMode === "x"
+        ? "horizontally"
+        : zoomMode === "y"
+            ? "vertically"
+            : "in and out";
+    const operations: Array<ChartInteractionControlOperation> = [];
+
+    if (panEnabled) {
+        operations.push({
+            id: "pan",
+            name: "Pan",
+            description: "Shift + left-click and drag to pan around the chart.",
+            icon: <MousePointerClick className="h-5 w-5" />,
+            modifier: "shift",
+        });
+    }
+
+    if (selectionZoomEnabled) {
+        operations.push({
+            id: "selection-zoom",
+            name: "Zoom (Selection)",
+            description: `Left-click and drag to select ${selectionTarget} to zoom in.`,
+            icon: <MousePointerClick className="h-5 w-5" />,
+        });
+    }
+
+    if (wheelZoomEnabled) {
+        operations.push({
+            id: "wheel-zoom",
+            name: "Zoom (Wheel)",
+            description: `Use the mouse wheel to zoom ${wheelTarget} centered on the cursor.`,
+            icon: <Mouse className="h-5 w-5" />,
+        });
+
+        if (includesX && includesY) {
+            operations.push(
+                {
+                    id: "wheel-zoom-x",
+                    name: "Zoom (Wheel Horizontal)",
+                    description: "Hold Shift and use the mouse wheel to zoom horizontally centered on the cursor.",
+                    icon: <Mouse className="h-5 w-5" />,
+                    modifier: "shift",
+                },
+                {
+                    id: "wheel-zoom-y",
+                    name: "Zoom (Wheel Vertical)",
+                    description: "Hold Ctrl and use the mouse wheel to zoom vertically centered on the cursor.",
+                    icon: <Mouse className="h-5 w-5" />,
+                    modifier: "ctrl",
+                },
+            );
+        }
+    }
+
+    if (panEnabled || selectionZoomEnabled) {
+        operations.push({
+            id: "cancel",
+            name: "Cancel",
+            description: "Right-click to cancel the current interaction.",
+            icon: <NavigationOff className="h-5 w-5" />,
+        });
+    }
+
+    operations.push({
+        id: "reset-view",
+        name: "Reset View",
+        description: "Restore the chart to its full zoom and pan extent.",
+        icon: <Expand className="h-5 w-5" />,
+        onSelect: onResetView,
+    });
+
+    return operations;
+};
+
+export function InteractiveChartControlsDropdown({
+    interaction,
+    modifiers: modifiersProp,
+    customOperations,
+    onResetView,
+    className,
+    contentClassName,
+}: InteractiveChartControlsDropdownProps) {
+    const fallbackModifiers = useChartInteractionModifiers();
+    const modifiers = modifiersProp ?? fallbackModifiers;
+    const operations = React.useMemo(
+        () => [
+            ...getDefaultChartControlOperations(interaction, onResetView),
+            ...(customOperations ?? []),
+        ],
+        [customOperations, interaction, onResetView],
+    );
+
+    const renderOperation = (operation: ChartInteractionControlOperation) => {
+        const secondaryIcon = operation.secondaryIcon ?? renderControlModifierIcon(operation.modifier, modifiers);
+        const content = (
+            <>
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+                    {operation.icon ?? <MousePointerClick className="h-5 w-5" />}
+                    {
+                        secondaryIcon
+                            ? (
+                                <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 scale-90 opacity-90">
+                                    {secondaryIcon}
+                                </div>
+                            )
+                            : null
+                    }
+                </div>
+                <div className="min-w-0 flex-1 text-left">
+                    <div className="text-sm font-semibold leading-tight">{operation.name}</div>
+                    <div className="text-xs leading-snug text-muted-foreground">{operation.description}</div>
+                </div>
+            </>
+        );
+
+        if (operation.onSelect) {
+            return (
+                <Button
+                    variant="ghost"
+                    key={operation.id ?? String(operation.name)}
+                    type="button"
+                    onClick={operation.onSelect}
+                    className="flex items-start p-2 h-fit gap-3"
+                >
+                    {content}
+                </Button>
+            );
+        }
+
+        return (
+            <div
+                key={operation.id ?? String(operation.name)}
+                className="flex items-start gap-3 rounded px-2 py-2"
+            >
+                {content}
+            </div>
+        );
+    };
+
+    return (
+        <div className={cn("absolute left-16 top-2 z-20", className)}>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 bg-muted/60 px-2 text-xs shadow-sm opacity-70 backdrop-blur-xs transition-opacity hover:opacity-100"
+                        onMouseDown={(event) => event.stopPropagation()}
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        <span>Chart Controls</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="start"
+                    className={cn("w-88 p-2 pl-4", contentClassName)}
+                    onMouseDown={(event) => event.stopPropagation()}
+                >
+                    {/* <DropdownMenuLabel className="px-2 pb-2 pt-1">Chart Controls</DropdownMenuLabel>
+                    <DropdownMenuSeparator /> */}
+                    <div className="grid gap-1 pt-1">
+                        {operations.map(renderOperation)}
+                    </div>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+    );
+}
+
 export function InteractiveChartContainer({
     config,
     className,
@@ -495,7 +766,7 @@ export function InteractiveChartContainer({
     return (
         <ChartContainer
             config={config}
-            className={className}
+            className={cn("relative", className)}
             onWheel={(event) => {
                 onWheel?.(event);
                 chart.handleWheel(event);
@@ -525,6 +796,7 @@ export function useInteractiveCartesianChart({
     minSpanFactor = 0.001,
     animationDurationMs = 140,
     clickThresholdPx = 4,
+    controls,
     pointActions,
     resolvePoint,
     onPointIntent,
@@ -1934,6 +2206,29 @@ export function useInteractiveCartesianChart({
         return "cursor-default!";
     }, [isInteracting, modifiers.shiftHeld, panEnabled]);
 
+    const controlsOptions = React.useMemo<ChartInteractionControlsOptions | null>(() => {
+        if (controls === true)
+            return { enabled: true };
+
+        if (!controls)
+            return null;
+
+        return controls;
+    }, [controls]);
+
+    const controlsDropdown = controlsOptions?.enabled === false || !controlsOptions
+        ? null
+        : (
+            <InteractiveChartControlsDropdown
+                interaction={interaction}
+                modifiers={modifiers}
+                customOperations={controlsOptions.operations}
+                onResetView={resetView}
+                className={controlsOptions.className}
+                contentClassName={controlsOptions.contentClassName}
+            />
+        );
+
     return {
         chartRef,
         xDomainOverride,
@@ -1945,6 +2240,7 @@ export function useInteractiveCartesianChart({
         selectionOverlayRef,
         isInteracting,
         isDeferredPanning,
+        controls: controlsDropdown,
         modifiers,
         cursorClassName: cn(cursorClassName),
         handleChartMouseDown,

@@ -219,6 +219,7 @@ const TrendsLineChart = forwardRef<TrendsLineChartHandle, TrendsLineChartProps>(
         baseXDomain: xDomain,
         baseYDomain: yDomain,
         resetDeps: [rows, xDomain?.[0], xDomain?.[1], yDomain[0], yDomain[1]],
+        controls: true,
     });
 
     useImperativeHandle(ref, () => ({
@@ -329,6 +330,7 @@ const TrendsLineChart = forwardRef<TrendsLineChartHandle, TrendsLineChartProps>(
                 </LineChart>
             </ChartContainer>
             <InteractiveChartSelectionOverlay previewRef={chartInteraction.selectionOverlayRef} />
+            {chartInteraction.controls}
         </div>
     );
 });

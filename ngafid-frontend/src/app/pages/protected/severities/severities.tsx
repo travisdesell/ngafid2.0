@@ -769,6 +769,7 @@ export default function SeveritiesPage() {
             totalVisiblePoints,
         ],
         animationDurationMs: 0,
+        controls: true,
         onPointIntent: (context) => {
             const point = context.activePayload[0]?.payload as SeverityPoint | undefined;
             if (
@@ -1103,6 +1104,7 @@ export default function SeveritiesPage() {
                                                         </ScatterChart>
                                                     </ChartContainer>
                                                     <InteractiveChartSelectionOverlay previewRef={chartInteraction.selectionOverlayRef} />
+                                                    {chartInteraction.controls}
                                                 </div>
                                             )
                                     )
