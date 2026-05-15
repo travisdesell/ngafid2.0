@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { fetchJson } from "@/fetchJson";
 import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
 import { CircleQuestionMark, Download, Expand } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useLocation } from "react-router-dom";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
@@ -200,14 +200,18 @@ interface TrendsLineChartProps {
     emptyMessage: ReactNode;
 }
 
-function TrendsLineChart({
+interface TrendsLineChartHandle {
+    resetView: () => void;
+}
+
+const TrendsLineChart = forwardRef<TrendsLineChartHandle, TrendsLineChartProps>(function TrendsLineChart({
     rows,
     config,
     yDomain,
     yTickFormatter,
     valueFormatter,
     emptyMessage,
-}: TrendsLineChartProps) {
+}: TrendsLineChartProps, ref) {
     const xDomain = useMemo(() => getTimeDomain(rows), [rows]);
     const chartInteraction = useInteractiveCartesianChart({
         hasData: rows.length > 0 && xDomain !== null,
@@ -217,40 +221,30 @@ function TrendsLineChart({
         resetDeps: [rows, xDomain?.[0], xDomain?.[1], yDomain[0], yDomain[1]],
     });
 
+    useImperativeHandle(ref, () => ({
+        resetView: chartInteraction.resetView,
+    }), [chartInteraction.resetView]);
+
     if (rows.length === 0)
         return emptyMessage;
 
     return (
         <div className="relative h-full w-full min-h-0">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute left-2 top-2 z-10 h-8 w-8 bg-background/70 backdrop-blur-xs"
-                        onClick={chartInteraction.resetView}
-                    >
-                        <Expand className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset Zoom</TooltipContent>
-            </Tooltip>
 
+            {/* Legend */}
             {
-                Object.keys(config).length > 0
-                    ? (
-                        <div className="absolute right-2 top-2 z-10 flex max-h-[calc(100%-1rem)] max-w-80 flex-col gap-1 overflow-y-auto rounded bg-muted/60 p-2 text-xs shadow-sm opacity-70 backdrop-blur-xs transition-opacity hover:opacity-100">
-                            {
-                                Object.entries(config).map(([seriesKey, item]) => (
-                                    <div key={seriesKey} className="flex items-center gap-1.5">
-                                        {renderTooltipSeriesIndicator(seriesKey, item.color)}
-                                        <span className="truncate">{item.label ?? seriesKey}</span>
-                                    </div>
-                                ))
-                            }
-                        </div>
-                    )
-                    : null
+                (Object.keys(config).length > 0)
+                &&
+                <div className="absolute right-2 top-2 z-10 flex max-h-[calc(100%-1rem)] max-w-80 flex-col gap-1 overflow-y-auto rounded bg-muted/60 p-2 text-xs shadow-sm opacity-70 backdrop-blur-xs transition-opacity hover:opacity-100">
+                    {
+                        Object.entries(config).map(([seriesKey, item]) => (
+                            <div key={seriesKey} className="flex items-center gap-1.5">
+                                {renderTooltipSeriesIndicator(seriesKey, item.color)}
+                                <span className="truncate">{item.label ?? seriesKey}</span>
+                            </div>
+                        ))
+                    }
+                </div>
             }
 
             <ChartContainer
@@ -337,7 +331,7 @@ function TrendsLineChart({
             <InteractiveChartSelectionOverlay previewRef={chartInteraction.selectionOverlayRef} />
         </div>
     );
-}
+});
 
 const buildMergedAnyEvent = (source: EventCountsByEvent): Record<string, TrendsData> => {
     const merged: Record<string, TrendsData> = {};
@@ -392,6 +386,8 @@ export default function TrendsPage() {
     const [eventCounts, setEventCounts] = useState<EventCountsByEvent>({});
     const [eventChecked, setEventChecked] = useState<Record<string, boolean>>({ [EVENT_ANY]: false });
     const [eventDescriptions, setEventDescriptions] = useState<Record<string, string>>({});
+    const countChartRef = useRef<TrendsLineChartHandle>(null);
+    const percentChartRef = useRef<TrendsLineChartHandle>(null);
 
     const fetchEventDescriptions = async () => {
         const descriptions = await fetchJson.get<EventDescriptionResponse>("/api/event/definition/description").catch((error) => {
@@ -729,10 +725,29 @@ export default function TrendsPage() {
         document.body.removeChild(anchor);
     };
 
+    function renderResetViewButton(chartRef: RefObject<TrendsLineChartHandle | null>) {
+
+        return <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="p-2 absolute right-2 top-2 select-none"
+                    onClick={() => chartRef.current?.resetView()}
+                >
+                    <Expand size={16} />
+                    <span className="text-xs @max-4xl:hidden!">Reset View</span>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reset Zoom & Pan</TooltipContent>
+        </Tooltip>;
+
+    }
+
     function renderPercentageOfFlightsChart() {
 
         return <Card className="card-glossy w-full min-h-0 flex-1 flex flex-col overflow-hidden">
-            <CardHeader>
+            <CardHeader className="relative">
                 <CardTitle>Percentage of Flights With Event Over Time</CardTitle>
                 <CardDescription>
                     {
@@ -741,21 +756,29 @@ export default function TrendsPage() {
                             : "Monthly percentage of flights with selected events for this fleet vs all other fleets."
                     }
                 </CardDescription>
+
+                {
+                    (chartModels.percentRows.length > 0)
+                    &&
+                    renderResetViewButton(percentChartRef)
+                }
+
             </CardHeader>
             <CardContent className="min-h-0 flex-1 w-full">
                 {
-                    chartModels.percentRows.length === 0
-                        ? <PanelAlert title="No Data Available!" description={["Select one or more events to render percentage trends."]} />
-                        : (
-                            <TrendsLineChart
-                                rows={chartModels.percentRows}
-                                config={chartModels.percentConfig}
-                                yDomain={[0, 100]}
-                                yTickFormatter={(value) => `${value}%`}
-                                valueFormatter={(value) => `${value.toFixed(2)}%`}
-                                emptyMessage={<PanelAlert title="No Data Available!" description={["Select one or more events to render percentage trends."]} />}
-                            />
-                        )
+                    (chartModels.percentRows.length === 0)
+                    ?
+                    <PanelAlert title="No Data Available!" description={["Select one or more events to render percentage trends."]} />
+                    :
+                    <TrendsLineChart
+                        ref={percentChartRef}
+                        rows={chartModels.percentRows}
+                        config={chartModels.percentConfig}
+                        yDomain={[0, 100]}
+                        yTickFormatter={(value) => `${value}%`}
+                        valueFormatter={(value) => `${value.toFixed(2)}%`}
+                        emptyMessage={<PanelAlert title="No Data Available!" description={["Select one or more events to render percentage trends."]} />}
+                    />
                 }
             </CardContent>
         </Card>;
@@ -765,7 +788,7 @@ export default function TrendsPage() {
     function renderCountOfEventsChart() {
 
         return <Card className="card-glossy w-full min-h-0 flex-1 flex flex-col overflow-hidden">
-            <CardHeader>
+            <CardHeader className="relative">
                 <CardTitle>Events Counts Over Time</CardTitle>
                 <CardDescription>
                     {
@@ -774,20 +797,27 @@ export default function TrendsPage() {
                             : "Monthly count of selected events for this fleet vs all other fleets."
                     }
                 </CardDescription>
+
+                {
+                    (chartModels.countRows.length > 0)
+                    &&
+                    renderResetViewButton(countChartRef)
+                }
             </CardHeader>
             <CardContent className="min-h-0 flex-1 w-full">
                 {
-                    chartModels.countRows.length === 0
-                        ? <PanelAlert title="No Data Available!" description={["Select one or more events to render count trends."]} />
-                        : (
-                            <TrendsLineChart
-                                rows={chartModels.countRows}
-                                config={chartModels.countConfig}
-                                yDomain={getValueDomain(chartModels.countRows, chartModels.countConfig)}
-                                valueFormatter={(value) => value.toLocaleString()}
-                                emptyMessage={<PanelAlert title="No Data Available!" description={["Select one or more events to render count trends."]} />}
-                            />
-                        )
+                    (chartModels.countRows.length === 0)
+                    ?
+                    <PanelAlert title="No Data Available!" description={["Select one or more events to render count trends."]} />
+                    :
+                    <TrendsLineChart
+                        ref={countChartRef}
+                        rows={chartModels.countRows}
+                        config={chartModels.countConfig}
+                        yDomain={getValueDomain(chartModels.countRows, chartModels.countConfig)}
+                        valueFormatter={(value) => value.toLocaleString()}
+                        emptyMessage={<PanelAlert title="No Data Available!" description={["Select one or more events to render count trends."]} />}
+                    />
                 }
             </CardContent>
         </Card>;

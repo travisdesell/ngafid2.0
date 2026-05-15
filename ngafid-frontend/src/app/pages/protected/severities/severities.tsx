@@ -927,9 +927,30 @@ export default function SeveritiesPage() {
                     </Card>
 
                     <Card className="card-glossy w-full min-h-0 flex-1 flex flex-col overflow-hidden">
-                        <CardHeader>
+                        <CardHeader className="relative">
                             <CardTitle>Severity of Events</CardTitle>
                             <CardDescription>Event severity over time for the selected event and airframe filters.</CardDescription>
+
+                            {/* Reset View Button */}
+                            {
+                                (hasSelectedData)
+                                &&
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="p-2 absolute right-2 top-2 select-none"
+                                            onClick={chartInteraction.resetView}
+                                        >
+                                            <Expand size={16} />
+                                            <span className="text-xs @max-4xl:hidden!">Reset View</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Reset Zoom & Pan</TooltipContent>
+                                </Tooltip>
+                            }
+
                         </CardHeader>
                         <CardContent className="min-h-0 flex-1 w-full" id="severity-chart-container">
                             {
@@ -940,39 +961,25 @@ export default function SeveritiesPage() {
                                             ? <PanelAlert title="No Data Available!" description="Select one or more available events to render severity points." />
                                             : (
                                                 <div className="relative h-full w-full min-h-0">
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="absolute left-2 top-2 z-10 h-8 w-8 bg-background/70 backdrop-blur-xs"
-                                                                onClick={chartInteraction.resetView}
-                                                            >
-                                                                <Expand className="h-4 w-4" />
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>Reset Zoom</TooltipContent>
-                                                    </Tooltip>
 
+                                                    {/* Legend */}
                                                     {
-                                                        chartModel.series.length > 0
-                                                            ? (
-                                                                <div className="absolute right-2 top-2 z-10 flex max-h-[calc(100%-1rem)] max-w-96 flex-col gap-1 overflow-y-auto rounded bg-muted/60 p-2 text-xs shadow-sm opacity-70 backdrop-blur-xs transition-opacity hover:opacity-100">
-                                                                    {
-                                                                        chartModel.series.map((series) => {
-                                                                            const color = String(chartModel.chartConfig[series.seriesKey]?.color ?? "currentColor");
+                                                        (chartModel.series.length > 0)
+                                                        &&
+                                                        <div className="absolute right-2 top-2 z-10 flex max-h-[calc(100%-1rem)] max-w-96 flex-col gap-1 overflow-y-auto rounded bg-muted/60 p-2 text-xs shadow-sm opacity-70 backdrop-blur-xs transition-opacity hover:opacity-100">
+                                                            {
+                                                                chartModel.series.map((series) => {
+                                                                    const color = String(chartModel.chartConfig[series.seriesKey]?.color ?? "currentColor");
 
-                                                                            return (
-                                                                                <div key={series.seriesKey} className="flex items-center gap-1.5">
-                                                                                    <MarkerShapeIcon shape={series.symbol} color={color} />
-                                                                                    <span className="truncate">{chartModel.chartConfig[series.seriesKey]?.label ?? series.seriesKey}</span>
-                                                                                </div>
-                                                                            );
-                                                                        })
-                                                                    }
-                                                                </div>
-                                                            )
-                                                            : null
+                                                                    return (
+                                                                        <div key={series.seriesKey} className="flex items-center gap-1.5">
+                                                                            <MarkerShapeIcon shape={series.symbol} color={color} />
+                                                                            <span className="truncate">{chartModel.chartConfig[series.seriesKey]?.label ?? series.seriesKey}</span>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            }
+                                                        </div>
                                                     }
 
                                                     <ChartContainer
