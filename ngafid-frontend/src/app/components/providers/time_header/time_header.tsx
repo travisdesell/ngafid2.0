@@ -105,7 +105,7 @@ export default function TimeHeader({ children, onApply, dependencies, initialApp
             <CardHeader>
                 <CardTitle>Time Range Selection</CardTitle>
                 <CardDescription className="flex flex-row items-center gap-0">
-                    <div>Select the time range to use for this page's content.</div>
+                    <div>Select the time range to use for this page&apos;s content.</div>
                     <TooltipIcon
                         icon={CircleQuestionMark}
                         message="Click the Apply button to update the content after changing the dates. Some content may only use the selected years and months while defaulting to the first and last days of the selected months."

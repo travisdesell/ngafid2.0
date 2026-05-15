@@ -39,12 +39,12 @@ export default function ProfilePreferences() {
 
     setPageTitle("Profile Preferences");
 
+    const [profilePreferenceTab, setProfilePreferenceTab] = useState<keyof typeof PROFILE_PREFERENCES_TABS>("Profile Information");
+
     // User data loading state
     if (!user)
         return <p>Loading...</p>;
 
-    
-    const [profilePreferenceTab, setProfilePreferenceTab] = useState<keyof typeof PROFILE_PREFERENCES_TABS>("Profile Information");
     return (
         <div className="page-content-thin gap-2">
 

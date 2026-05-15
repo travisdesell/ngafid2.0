@@ -32,7 +32,7 @@ const STATUS_TUPLES = [
     [StatusName.UNCHECKED, ArrowBigRightDash],
 ] as const;
 
-interface Status {
+interface ServiceStatus {
     name: StatusName;
     icon: React.ForwardRefExoticComponent<
         Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
@@ -42,7 +42,7 @@ interface Status {
 interface StatusEntry {
     name: string;
     nameDisplay: string;
-    status: Status;
+    status: ServiceStatus;
     message: string;
     messageDisplay: string;
 }

@@ -60,12 +60,17 @@ export default function ProfilePreferencesAccountSettingsContent() {
     const [twoFactorPassword, setTwoFactorPassword] = useState("");
     const [twoFactorLoading, setTwoFactorLoading] = useState(false);
     const [twoFactorLoadingInitial, setTwoFactorLoadingInitial] = useState(true);
+    const [twoFactorSuccess, setTwoFactorSuccess] = useState("");
 
     const setupStepRef = useRef<SetupStep>(setupStep);
     useEffect(() => {
         setupStepRef.current = setupStep;
     }, [setupStep]);
 
+    const showSuccessMessage = useCallback((message: string) => {
+        setTwoFactorSuccess(message);
+        window.setTimeout(() => setTwoFactorSuccess(""), 4000);
+    }, []);
 
     const loadUserData = useCallback(async () => {
         setTwoFactorLoadingInitial(true);
@@ -534,6 +539,9 @@ export default function ProfilePreferencesAccountSettingsContent() {
                     <CardDescription>Protect your account with an extra layer of security.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
+                    {twoFactorSuccess && (
+                        <div className="text-sm text-green-600">{twoFactorSuccess}</div>
+                    )}
                     {renderTwoFactorContent()}
                 </CardContent>
             </Card>

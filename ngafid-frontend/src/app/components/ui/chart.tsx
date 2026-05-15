@@ -252,7 +252,6 @@ function ChartTooltipContent({
             {!nestLabel ? tooltipLabel : null}
             <div className="grid gap-1.5">
                 {
-                    /* @ts-ignore */
                     payload.map((item, index) => {
                         const key = `${nameKey || item.name || item.dataKey || "value"}`;
                         const itemConfig = getPayloadConfigFromPayload(config, item, key);

@@ -962,7 +962,6 @@ export default function FlightsPanelCesium() {
                                 <span className="@max-3xl:hidden!">Selected</span>
                             </span>
 
-                            {(false) && <Ping />}
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>Expand Cesium Items</TooltipContent>

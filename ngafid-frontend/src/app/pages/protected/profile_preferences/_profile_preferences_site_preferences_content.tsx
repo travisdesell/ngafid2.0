@@ -454,7 +454,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
                             &&
                             <div className="text-sm text-destructive">
                                 Fleet name must be 1-{FLEET_NAME_LENGTH_LIMIT} characters and may only include letters,
-                                numbers, spaces, and @#$%^&amp;*()_+!/\\.,'-
+                                numbers, spaces, and @#$%^&amp;*()_+!/\\.,&apos;-
                             </div>
                         }
 

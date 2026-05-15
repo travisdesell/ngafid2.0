@@ -188,7 +188,6 @@ function fileToRoute(filePath: string): RouteInfo {
 
 }
 
-/* @ts-ignore */
 const pageModules = import.meta.glob([
     "./pages/**/*.tsx",
     "!./pages/**/_*/**",

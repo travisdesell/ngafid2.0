@@ -206,7 +206,6 @@ export default function FlightsPanelMap(props: FlightsPanelMapProps) {
 
         };
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); //<-- Init once
 
 

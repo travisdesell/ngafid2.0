@@ -284,3 +284,21 @@ Because fleets can be selected in different places (the navbar, the Profile Pref
 * Some of this logic should probably be moved outside the Multifleet Select component, since that's not really its intended purpose.
 * Fleet data is currently fetched inside the `AuthProvider`. It may (or may not) make more sense to have this in a dedicated provider.
 * There are some remaining [issues](https://github.com/travisdesell/ngafid2.0/issues/246) with fleet selection that need to be resolved (though it's mostly working fine).
+
+---
+
+### ESLint
+
+* ESLint is set up and configured with a custom `eslint.config.mjs` file in the root of the frontend directory.
+
+Run ESLint with the following command:
+
+~~~
+    npx eslint
+~~~
+
+To automatically fix any fixable issues, add the `--fix` flag:
+
+~~~
+    npx eslint --fix
+~~~

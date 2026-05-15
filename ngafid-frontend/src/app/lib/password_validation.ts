@@ -4,7 +4,7 @@ export const PASSWORD_ALLOWED_SPECIAL_CHARACTERS = "@#$%^&*()_+!/\\.,";
 export const PASSWORD_REQUIREMENTS_MESSAGE =
     `Must be at least ${PASSWORD_MIN_LENGTH} characters long and contain only letters, numbers, spaces, and these special characters: ${PASSWORD_ALLOWED_SPECIAL_CHARACTERS}`;
 
-const PASSWORD_ALLOWED_REGEX = /^[@#$%^&*()_+!\/\\.,a-zA-Z0-9 ]*$/;
+const PASSWORD_ALLOWED_REGEX = /^[@#$%^&*()_+!/\\.,a-zA-Z0-9 ]*$/;
 
 export interface PasswordValidationResult {
     valid: boolean;

@@ -460,11 +460,6 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         [chartInteraction.resetView],
     );
 
-    // Early out after hooks so reset refs stay stable when data is cleared.
-    if (!chartModel.hasData) {
-        return null;
-    }
-
     const activeXDomain = chartInteraction.activeXDomain;
     const activeYDomain = chartInteraction.activeYDomain;
 
@@ -538,6 +533,11 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         return { ticks: uniqueTicks, dayBoundaryTimes: uniqueDayBoundaries, domainSpanMinutes };
 
     }, [activeXDomain?.[0], activeXDomain?.[1], useAlignedStartTimes]);
+
+    // Early out after hooks so reset refs stay stable when data is cleared.
+    if (!chartModel.hasData) {
+        return null;
+    }
 
     /*
         Custom tick renderer for the time axis (x-axis)

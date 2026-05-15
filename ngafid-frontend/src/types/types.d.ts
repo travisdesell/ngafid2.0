@@ -1,6 +1,6 @@
 // src/types/types.d.ts
 
-import type React from "react";
+import React, {type Root} from "react";
 
 export {};
 
@@ -89,6 +89,7 @@ declare global {
     const eventNames: Array<string>;
 
     interface Window {
+        reactRoot: Root;
         __APP_CONFIG__?: {
             azureMapsKey?: string;
         }

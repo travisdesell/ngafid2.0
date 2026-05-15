@@ -578,7 +578,6 @@ export default function UploadsPage() {
         }
 
         setImports(importsListResponse.imports ?? []);
-        setImportsPages(importsListResponse.numberPages ?? 0);
         return true;
 
     }, [uploadsPage, uploadsPageSize]);

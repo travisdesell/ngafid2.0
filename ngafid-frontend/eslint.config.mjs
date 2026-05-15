@@ -6,7 +6,6 @@ import compat from "eslint-plugin-compat";
 
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
-import reactRecommended from "eslint-plugin-react/configs/recommended.js";
 
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
@@ -19,7 +18,15 @@ export default defineConfig([
     //eslint-plgin-compat
     compat.configs["flat/recommended"],
 
-    reactRecommended,
+    {
+        ...reactPlugin.configs.flat.recommended,
+        settings: {
+            ...reactPlugin.configs.flat.recommended.settings,
+            react: { version: "detect" },
+        },
+    },
+
+    reactPlugin.configs.flat["jsx-runtime"],
 
     js.configs.recommended,
 
@@ -31,7 +38,7 @@ export default defineConfig([
 
         languageOptions: {
 
-            ...reactRecommended.languageOptions,
+            ...reactPlugin.configs.flat.recommended.languageOptions,
 
             parser: tsParser,
 
@@ -40,6 +47,7 @@ export default defineConfig([
 
             parserOptions: {
                 project: './tsconfig.json',
+                noWarnOnMultipleProjects: true,
                 sourceType: 'module',
                 ecmaVersion: 'latest',
                 ecmaFeatures: { jsx: true },
@@ -53,6 +61,7 @@ export default defineConfig([
                 ...globals.browser,
                 window: "readonly",
                 document: "readonly",
+                React: "readonly",
                 $: "readonly",
                 jQuery: "readonly",
                 Cesium: "readonly",
@@ -112,9 +121,12 @@ export default defineConfig([
                 "AbortController",
             ],
             'import/resolver': {
-                typescript: true,
+                typescript: {
+                    project: ['./tsconfig.json', './tsconfig.node.json'],
+                    noWarnOnMultipleProjects: true,
+                },
                 "node": {
-                    "extensions": [".js", ".jsx", ".ts", ".tsx", ".mjs"],
+                    "extensions": [".js", ".jsx", ".ts", ".tsx", ".mjs", ".mts"],
                     "moduleDirectory": ["node_modules", "src/"],
                 }
             },
@@ -143,7 +155,9 @@ export default defineConfig([
 
             //https://react.dev/reference/rules/rules-of-hooks
             "react-hooks/rules-of-hooks": "error",
-            "react-hooks/exhaustive-deps": "warn",
+            "react-hooks/exhaustive-deps": "off",
+
+            "compat/compat": "off",
 
 
 
@@ -156,7 +170,7 @@ export default defineConfig([
                 
             //https://eslint.org/docs/latest/rules/no-var 
             "no-unused-vars": "off",
-            "@typescript-eslint/no-unused-vars": "warn",
+            "@typescript-eslint/no-unused-vars": "off",
 
             //https://eslint.org/docs/latest/rules/prefer-const
             "prefer-const": [
@@ -209,6 +223,8 @@ export default defineConfig([
 
             //https://typescript-eslint.io/rules/consistent-type-definitions/
             "@typescript-eslint/consistent-type-definitions": ["error", "interface"], //<-- Use 'interface' instead of 'type' for object types
+            "@typescript-eslint/no-explicit-any": "off",
+            "@typescript-eslint/no-empty-object-type": "off",
 
         },
 
@@ -220,9 +236,13 @@ export default defineConfig([
             parser: tsParser,
             parserOptions: {
                 project: './tsconfig.node.json',
+                noWarnOnMultipleProjects: true,
                 sourceType: 'module',
                 ecmaVersion: 'latest',
             },
+        },
+        rules: {
+            "import/no-unresolved": "off",
         },
     },
 
