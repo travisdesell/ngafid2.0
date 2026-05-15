@@ -20,7 +20,7 @@ interface PageTitleProps {
 
 export function setPageTitle(title: string) {
 
-    const newFullTitle = `NGAFID — ${title}`;
+    const newFullTitle = `${title} — NGAFID`;
 
     document.title = newFullTitle;
     log(`Set page title to: '${newFullTitle}'`);
