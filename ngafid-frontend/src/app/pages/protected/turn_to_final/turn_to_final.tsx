@@ -973,6 +973,7 @@ export default function TurnToFinalPage() {
                         log("Applying Turn-to-Final date range");
                     }}
                     dependencies={[selectedAirport]}
+                    initialApply="manual"
                 >
 
                     {/* Airport Selection */}

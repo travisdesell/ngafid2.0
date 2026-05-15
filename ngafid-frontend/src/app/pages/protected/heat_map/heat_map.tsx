@@ -417,8 +417,6 @@ function buildMapLayerOptions(mapConfig: HeatMapConfig): MapLayerOption[] {
     const fallbackRoadUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
     const fallbackAerialUrl = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
-    console.log("Azure Maps Key:", azureMapsKey ? "Provided" : "Not provided");
-
     return [
         {
             value: "Aerial",
@@ -1834,7 +1832,7 @@ export default function HeatMapPage() {
             <div className="h-full min-h-0 p-4 space-y-4 flex flex-col">
 
                 {/* Time Header */}
-                <TimeHeader onApply={handleApply} dependencies={dependencies}>
+                <TimeHeader onApply={handleApply} dependencies={dependencies} initialApply="require-dep-change">
 
                     {/* Airframe Type Selection */}
                     <div className="flex flex-col gap-2">
@@ -1865,16 +1863,16 @@ export default function HeatMapPage() {
                     </div>
 
                     {/* Selected Bounds */}
-                    <div className="flex flex-col gap-2 w-68">
+                    <div className="flex flex-col gap-2 w-56">
                         <Label className="text-sm">Selected Bounds</Label>
                         <div className="grid grid-rows-2 gap-x-2 gap-y-0 **:text-right **:text-xs!">
                             <ButtonGroup className="**:rounded-b-none">
-                                <ButtonGroupText className="w-14">Lat</ButtonGroupText>
+                                <ButtonGroupText className="w-9 pl-2">Lat</ButtonGroupText>
                                 <Input value={boxCoords.minLat} placeholder="Min" className="h-6 bg-background" />
                                 <Input value={boxCoords.maxLat} placeholder="Max" className="h-6 bg-background" />
                             </ButtonGroup>
                             <ButtonGroup className="**:border-t-0 **:rounded-t-none">
-                                <ButtonGroupText className="w-14">Lon</ButtonGroupText>
+                                <ButtonGroupText className="w-9 pl-2">Lon</ButtonGroupText>
                                 <Input value={boxCoords.minLon} placeholder="Min" className="h-6 bg-background" />
                                 <Input value={boxCoords.maxLon} placeholder="Max" className="h-6 bg-background" />
                             </ButtonGroup>

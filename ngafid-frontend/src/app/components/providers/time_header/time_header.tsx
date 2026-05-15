@@ -1,59 +1,95 @@
 // ngafid-frontend/src/app/components/time_header/time_header.tsx
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DatePicker from "@/components/date-picker";
-import React, { useEffect } from "react";
-import { useTimeHeader } from "./time_header_provider";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import Ping from "@/components/pings/ping";
 import TooltipIcon from "@/components/tooltip_icon";
-import { Calendar, CircleQuestionMark } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { CircleQuestionMark } from "lucide-react";
+import React, { useEffect } from "react";
+import { useTimeHeader } from "./time_header_provider";
+
+/**
+ * - Automatic: Automatically apply immediately when mounted
+ * - Manual: Wait for user to click apply
+ * - Require-dep-change: Disable apply until a change in dependencies is detected (then require manual apply)
+ */
+export type TimeHeaderInitialApply =
+    | 'manual'
+    | 'automatic' 
+    | 'require-dep-change'
+;
 
 type TimeHeaderProps = {
     children: React.ReactNode;
     onApply: () => void;
     dependencies?: any[];
-    requireManualInitialApply?: boolean;
+    initialApply?: TimeHeaderInitialApply;
 }
 
-export default function TimeHeader({ children, onApply, dependencies, requireManualInitialApply=false }: TimeHeaderProps) {
+export default function TimeHeader({ children, onApply, dependencies, initialApply = 'manual' }: TimeHeaderProps) {
 
-    const { startDate, endDate, setStartDate, setEndDate, setReapplyTrigger, applyCurrentSelection } = useTimeHeader();
+    const { startDate, endDate, setStartDate, setEndDate, applyCurrentSelection } = useTimeHeader();
 
-    //Snapshot last applied values (initialized to mount values)
+    const hasAppliedRef = React.useRef(false);
+
+    const depsInnate = [startDate, endDate];
+    const depsFull = () => (dependencies)
+        ? [...dependencies, ...depsInnate]
+        : depsInnate;
+
+    // Snapshot last applied values (initialized to mount values)
     const appliedRef = React.useRef({
         start: startDate,
         end: endDate,
-        depsKey: JSON.stringify(dependencies ?? []),
+        depsKey: JSON.stringify(depsFull())
     });
+    const depsKey = JSON.stringify(depsFull());
+    const depsChanged = (depsKey !== appliedRef.current.depsKey);
 
-    const depsKey = JSON.stringify(dependencies ?? []);
+    // Derive allowReapply from current VS applied snapshot
+    let allowReapply = depsChanged;
+    if (!hasAppliedRef.current) {
 
-    //Derive allowReapply from current VS applied snapshot
-    const allowReapply =
-        startDate?.getTime() !== appliedRef.current.start?.getTime() ||
-        endDate?.getTime() !== appliedRef.current.end?.getTime() ||
-        depsKey !== appliedRef.current.depsKey;
+        if (initialApply === 'manual')
+            allowReapply = true;
 
-    //Invalid range forces disabled
+        if (initialApply === 'require-dep-change')
+            allowReapply = depsChanged;
+
+    }
+
+    // Invalid range forces disabled
     const invalidDateRange = (startDate && endDate && startDate > endDate);
     const disabled = (!allowReapply || invalidDateRange);
 
-    const applyTimeHeader = () => {
+    const applyTimeHeader = React.useCallback(() => {
 
-        //Update snapshot to current
+        // Update snapshot to current
         appliedRef.current = { start: startDate, end: endDate, depsKey };
+        hasAppliedRef.current = true;
 
-        //Trigger onApply callback
+        // Trigger onApply callback
         onApply();
 
-        //Trigger reapply in context to notify children
-        // setReapplyTrigger(n => n + 1);
-
-        //Trigger context to apply current selection (update applied dates)
+        // Trigger context to apply current selection (update applied dates)
         applyCurrentSelection();
 
-    };
+    }, [applyCurrentSelection, depsKey, endDate, onApply, startDate]);
+
+
+    useEffect(() => {
+
+        if (initialApply !== 'automatic')
+            return;
+
+        if (hasAppliedRef.current || invalidDateRange)
+            return;
+
+        applyTimeHeader();
+
+    }, [applyTimeHeader, initialApply, invalidDateRange]);
+
 
     const mappedChildren = React.Children.map(children, child =>
         <div className="flex flex-row gap-6 items-center">
@@ -62,6 +98,7 @@ export default function TimeHeader({ children, onApply, dependencies, requireMan
         </div>
     );
     
+
     const render = () => (
 
         <Card className="flex flex-row w-full justify-between items-center card-glossy">

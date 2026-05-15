@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { fetchJson } from "@/fetchJson";
 import { AIRFRAME_NAMES_IGNORED } from "@/lib/airframe_names_ignored";
 import { CircleQuestionMark, Download, Expand } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
@@ -470,8 +470,17 @@ export default function TrendsPage() {
         fetchEventDescriptions();
     }, []);
 
+    const isFirstRender = useRef(true);
     useEffect(() => {
+
+        // Prevent automatic fetch when initially rendering the page
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
         fetchMonthlyEventCounts();
+
     }, [reapplyTrigger, isAggregatePage]);
 
     const availableEventNames = useMemo(() => {
@@ -791,7 +800,11 @@ export default function TrendsPage() {
         <div className="page-container">
             <div className="page-content gap-4 overflow-hidden">
 
-                <TimeHeader onApply={() => log("Applying Trends filters...")} dependencies={[isAggregatePage]}>
+                <TimeHeader
+                    onApply={() => log("Applying Trends filters...")}
+                    dependencies={[isAggregatePage]}
+                    initialApply="manual"
+                >
                     <div className="flex items-end gap-3">
                         <Button variant="outline" onClick={exportCSV}>
                             <Download />

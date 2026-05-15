@@ -90,7 +90,7 @@ export default function SummaryPage() {
     }, []);
 
 
-    //...
+    // Re-fetch all summary data when time header is reapplied
     useEffect(() => {
         log("Time range or airframe changed, re-fetching all summary data...");
         fetchAllSummaryData();
@@ -372,7 +372,9 @@ export default function SummaryPage() {
                 {/* Time Header */}
                 <TimeHeader
                     onApply={() => { log("Applying time range...") }}
+                    // onApply={() => fetchAllSummaryData()}
                     dependencies={[airframeIDSelected]}
+                    initialApply="require-dep-change"
                 >
 
                     {/* Airframe Selection */}
@@ -536,7 +538,7 @@ export default function SummaryPage() {
                                         {renderDateRangeMonthly()}
                                     </CardTitle>
                                     <CardDescription>
-                                        Total event counts for this time range/fleet versus all time/all fleets.
+                                        Total event counts and percentages for this time range/fleet versus all time/all fleets.
                                     </CardDescription>
                         
                                 </CardHeader>

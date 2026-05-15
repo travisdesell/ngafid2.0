@@ -292,8 +292,6 @@ export default function SeveritiesPage() {
     const [eventSeverities, setEventSeverities] = useState<EventSeverities>({});
     const [eventMetaDataById, setEventMetaDataById] = useState<Record<number, EventMetaDataItem[]>>({});
 
-    const loading = isCheckingAvailability || isFetchingEvents;
-
     const eventNames = useMemo(() => {
         const names = Object.keys(eventDescriptions).sort((a, b) => a.localeCompare(b));
         return [EVENT_ANY, ...names];
@@ -418,10 +416,17 @@ export default function SeveritiesPage() {
         setIsCheckingAvailability(false);
     }, [endpointEndDate, endpointStartDate, nonAnyEventNames, setModal, tagName]);
 
+    const isFirstRender = useRef(true);
     useEffect(() => {
-        if (!hasApplied)
+
+        // Prevent automatic fetch when initially rendering the page
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
             return;
+        }
+
         fetchAvailability();
+
     }, [fetchAvailability, hasApplied, reapplyTrigger]);
 
     const fetchEventSeveritiesByName = useCallback(async (eventName: string) => {
@@ -789,7 +794,7 @@ export default function SeveritiesPage() {
         },
     });
 
-    const anyEventDisabled = !hasApplied || nonAnyEventNames.every((name) => eventsEmpty[name] ?? true);
+    const anyEventDisabled = nonAnyEventNames.every((name) => eventsEmpty[name] ?? true);
 
     return (
         <div className="page-container">
@@ -801,7 +806,7 @@ export default function SeveritiesPage() {
                         setHasApplied(true);
                     }}
                     dependencies={[tagName]}
-                    requireManualInitialApply
+                    initialApply="manual"
                 >
                     <div className="flex items-end gap-3">
                         <Button variant="outline" onClick={exportCSV} disabled={!hasApplied}>
