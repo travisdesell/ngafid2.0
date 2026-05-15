@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 const log = getLogger("CommandsProvider", "blue", "Provider");
 
-export type CommandData = {
+export interface CommandData {
     id: string;
     name: string;
     command: () => void;
@@ -19,9 +19,9 @@ export type CommandData = {
 export const PAGE_COMMAND_SEPARATOR = undefined;
 
 type PageCommands = CommandData | typeof PAGE_COMMAND_SEPARATOR;
-type CommandsState = {
-    pageCommands: PageCommands[];
-    setSourceCommands: (sourceId: string, commands: CommandData[]) => void;
+interface CommandsState {
+    pageCommands: Array<PageCommands>;
+    setSourceCommands: (sourceId: string, commands: Array<CommandData>) => void;
     clearSourceCommands: (sourceId: string) => void;
 }
 
@@ -33,10 +33,10 @@ export const CommandsContext = createContext<CommandsState>({
 
 export function CommandsProvider({ children }: { children: React.ReactNode }) {
 
-    const [bySource, setBySource] = useState<Record<string, CommandData[]>>({});
-    const [sourceOrder, setSourceOrder] = useState<string[]>([]);
+    const [bySource, setBySource] = useState<Record<string, Array<CommandData>>>({});
+    const [sourceOrder, setSourceOrder] = useState<Array<string>>([]);
 
-    const setSourceCommands = useCallback((sourceId: string, cmds: CommandData[]) => {
+    const setSourceCommands = useCallback((sourceId: string, cmds: Array<CommandData>) => {
 
         setBySource(prev => {
 
@@ -65,9 +65,9 @@ export function CommandsProvider({ children }: { children: React.ReactNode }) {
         
     }, []);
 
-    const pageCommands = useMemo<PageCommands[]>(() => {
+    const pageCommands = useMemo<Array<PageCommands>>(() => {
 
-        const out: PageCommands[] = [];
+        const out: Array<PageCommands> = [];
         const seen = new Set<string>(); // <-- Dedupe by command.id
 
         for (const sourceId of sourceOrder) {
@@ -143,7 +143,7 @@ function useStableSourceId(prefix: string) {
 
 }
 
-export function useRegisterCommands(commands: CommandData[]) {
+export function useRegisterCommands(commands: Array<CommandData>) {
 
     /*
         Registers the given commands with the CommandsProvider under a unique source ID.

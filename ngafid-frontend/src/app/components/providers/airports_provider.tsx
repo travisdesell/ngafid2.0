@@ -8,11 +8,11 @@ import React, { useEffect } from "react";
 
 const log = getLogger("AirportsProvider", "black", "Provider");
 
-type AirportsContextValue = {
-    visitedAirports: string[];
-    visitedRunways: string[];
-    setVisitedAirports: React.Dispatch<React.SetStateAction<string[]>>;
-    setVisitedRunways: React.Dispatch<React.SetStateAction<string[]>>;
+interface AirportsContextValue {
+    visitedAirports: Array<string>;
+    visitedRunways: Array<string>;
+    setVisitedAirports: React.Dispatch<React.SetStateAction<Array<string>>>;
+    setVisitedRunways: React.Dispatch<React.SetStateAction<Array<string>>>;
     refreshVisitedAirportsAndRunways: () => Promise<void>;
 }
 
@@ -30,8 +30,8 @@ export function AirportsProvider({ children }: { children: React.ReactNode }) {
     const { setModal } = useModal();
     const { user } = useAuth();
 
-    const [visitedAirports, setVisitedAirports] = React.useState<string[]>([]);
-    const [visitedRunways, setVisitedRunways] = React.useState<string[]>([]);
+    const [visitedAirports, setVisitedAirports] = React.useState<Array<string>>([]);
+    const [visitedRunways, setVisitedRunways] = React.useState<Array<string>>([]);
 
     useEffect(() => {
 
@@ -56,8 +56,8 @@ export function AirportsProvider({ children }: { children: React.ReactNode }) {
         try {
 
             const [airportsData, runwaysData] = await Promise.all([
-                fetchJson.get<string[]>("/api/aircraft/airports"),
-                fetchJson.get<string[]>("/api/aircraft/runways"),
+                fetchJson.get<Array<string>>("/api/aircraft/airports"),
+                fetchJson.get<Array<string>>("/api/aircraft/runways"),
             ]);
 
             const airports = (airportsData ?? [])

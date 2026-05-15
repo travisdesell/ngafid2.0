@@ -17,15 +17,15 @@ import { DoorOpen, Info, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { MultifleetInvite } from "src/types/types";
 
-type MetricPreferencesResponse = {
-    flightMetrics?: string[];
+interface MetricPreferencesResponse {
+    flightMetrics?: Array<string>;
     decimalPrecision?: number;
-};
+}
 
-type EmailPreferencesResponse = {
-    emailTypesKeys?: string[];
+interface EmailPreferencesResponse {
+    emailTypesKeys?: Array<string>;
     emailTypesUser?: Record<string, boolean>;
-};
+}
 
 const AIRSYNC_OPTIONS = [
     "72 Hours",
@@ -54,7 +54,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
     const currentFleet = user?.fleet ?? null;
     const fleetAccess = user?.fleetAccess ?? [];
 
-    const [invites, setInvites] = useState<MultifleetInvite[]>([]);
+    const [invites, setInvites] = useState<Array<MultifleetInvite>>([]);
     const [invitesLoading, setInvitesLoading] = useState(true);
     const [inviteAction, setInviteAction] = useState<string | null>(null);
 
@@ -64,14 +64,14 @@ export default function ProfilePreferencesSitePreferencesContent() {
     const [isCreatingFleet, setIsCreatingFleet] = useState(false);
     const [isLeavingFleet, setIsLeavingFleet] = useState(false);
 
-    const [allMetrics, setAllMetrics] = useState<string[]>([]);
-    const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
+    const [allMetrics, setAllMetrics] = useState<Array<string>>([]);
+    const [selectedMetrics, setSelectedMetrics] = useState<Array<string>>([]);
     const [decimalPrecision, setDecimalPrecision] = useState<number>(1);
     const [metricsLoading, setMetricsLoading] = useState(true);
     const [metricsSaving, setMetricsSaving] = useState(false);
     const [metricToAdd, setMetricToAdd] = useState<string>("");
 
-    const [emailTypes, setEmailTypes] = useState<string[]>([]);
+    const [emailTypes, setEmailTypes] = useState<Array<string>>([]);
     const [emailSettings, setEmailSettings] = useState<Record<string, boolean>>({});
     const [emailLoading, setEmailLoading] = useState(true);
     const [emailSaving, setEmailSaving] = useState(false);
@@ -105,7 +105,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
     useEffect(() => {
         const fetchInvites = async () => {
             setInvitesLoading(true);
-            const response = await fetchJson.get<MultifleetInvite[]>("/api/user/multifleet-invites").catch((error: Error) => {
+            const response = await fetchJson.get<Array<MultifleetInvite>>("/api/user/multifleet-invites").catch((error: Error) => {
                 setModal(ErrorModal, { title: "Error fetching invites", message: error.message });
                 return null;
             });
@@ -127,7 +127,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
                     setModal(ErrorModal, { title: "Error fetching metric preferences", message: error.message });
                     return null;
                 }),
-                fetchJson.get<{ names: string[] }>("/api/flight/double-series").catch((error: Error) => {
+                fetchJson.get<{ names: Array<string> }>("/api/flight/double-series").catch((error: Error) => {
                     setModal(ErrorModal, { title: "Error fetching metric list", message: error.message });
                     return null;
                 }),
@@ -267,7 +267,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
             modificationType,
         });
 
-        const response = await fetchJson.patch<string[]>("/api/user/me/metric-prefs", payload).catch((error: Error) => {
+        const response = await fetchJson.patch<Array<string>>("/api/user/me/metric-prefs", payload).catch((error: Error) => {
             setModal(ErrorModal, { title: "Error Updating User Preferences", message: error.message });
             return null;
         });
@@ -338,7 +338,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
             }
         );
 
-    }
+    };
 
     const confirmLeaveCurrentFleet = async () => {
 
@@ -362,7 +362,7 @@ export default function ProfilePreferencesSitePreferencesContent() {
             setIsLeavingFleet(false);
         }
 
-    }
+    };
 
     return (
         <div className="flex flex-col gap-6 pb-6">

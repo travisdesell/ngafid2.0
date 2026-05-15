@@ -4,12 +4,12 @@ import { Circle as CircleIcon, LucideIcon } from "lucide-react";
 
 const TOOLTIP_MESSAGE_DEFAULT = "This is a placeholder message...";
 
-type TooltipIconProps = {
+interface TooltipIconProps {
     icon?: LucideIcon;
     message?: string|Array<string>;
     className?: string;
     iconClassName?: string;
-};
+}
 
 export default function TooltipIcon({
     icon: Icon = CircleIcon,

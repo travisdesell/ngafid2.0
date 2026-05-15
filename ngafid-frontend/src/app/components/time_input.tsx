@@ -1,7 +1,7 @@
 // ngafid-frontend/src/app/components/time_input.tsx
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import React from 'react'
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import React from 'react';
 
 type TimeInputProps = React.InputHTMLAttributes<HTMLInputElement> & { label?: string }
 
@@ -29,6 +29,6 @@ const TimeInput = ({ label, id, ...inputProps }: TimeInputProps) => {
         </div>
     );
 
-}
+};
 
-export default TimeInput
+export default TimeInput;

@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useState, useTransition } from "r
 
 const log = getLogger("TagsProvider", "gray", "Provider");
 
-export type TagData = {
+export interface TagData {
     hashId: number;
     fleetId: number;
     name: string;
@@ -18,10 +18,10 @@ export type TagData = {
 }
 
 
-type TagsProviderState = {
-    fleetTags: TagData[];
+interface TagsProviderState {
+    fleetTags: Array<TagData>;
     isFetchingTags: boolean;
-    setFleetTags: (tags: TagData[]) => void;
+    setFleetTags: (tags: Array<TagData>) => void;
     addFleetTag: (tag: TagData) => void;
     updateFleetTag: (tag: TagData) => void;
     deleteFleetTag: (tagId: string) => void;
@@ -48,7 +48,7 @@ export const initialState: TagsProviderState = {
             color: "",
         };
     }
-}
+};
 
 export const TagsProviderContext = createContext<TagsProviderState>(initialState);
 
@@ -56,7 +56,7 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
 
     const { isLoggedIn } = useAuth();
     const { setModal } = useModal();
-    const [fleetTags, setFleetTags] = useState<TagData[]>([]);
+    const [fleetTags, setFleetTags] = useState<Array<TagData>>([]);
     const [isFetchingTags, startTransition] = useTransition();
     const [hasFetched, setHasFetched] = useState(false);
 
@@ -78,7 +78,7 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
                 log("Received response for fleet tags:", response);
 
                 const text = await response.text();
-                const data = JSON.parse(text) as TagData[];
+                const data = JSON.parse(text) as Array<TagData>;
                 log("Parsed fleet tags data:", data);
 
                 // Response not OK, throw error
@@ -113,11 +113,11 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
 
     const addFleetTag = (tag: TagData) => {
         setFleetTags((prev) => [...prev, tag]);
-    }
+    };
 
     const updateFleetTag = (updatedTag: TagData) => {
         setFleetTags((prev) => prev.map(tag => tag.hashId === updatedTag.hashId ? updatedTag : tag));
-    }
+    };
 
     const deleteFleetTag = (tagId: string) => {
 
@@ -136,9 +136,9 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
                 setFleetTags((prev) => prev.filter(tag => tag.hashId.toString() !== tagId));
             });
 
-        })
+        });
 
-    }
+    };
 
     const associateTagWithFlight = async (_tagId: string, _flightId: number): Promise<void> => {
 
@@ -161,7 +161,7 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
             throw error;
         }
 
-    }
+    };
 
     const unassociateTagWithFlight = async (_tagId: string, _flightId: number): Promise<void> => {
 
@@ -184,7 +184,7 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
             throw error;
         }
 
-    }
+    };
 
     const editTag = async (tagId: string, body: { name: string; description: string; color: string }): Promise<TagData> => {
 
@@ -243,4 +243,4 @@ export const useTags = () => {
         throw new Error("useTags must be used within a TagsProvider");
     
     return context;
-}
+};

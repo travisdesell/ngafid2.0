@@ -17,12 +17,12 @@ export async function ensureFlightTraceNames(flight: Flight): Promise<Flight> {
 
     log("Fetching trace names for flight", flight.id);
 
-    const { names } = await fetchJson.get<{ names: string[] }>(
+    const { names } = await fetchJson.get<{ names: Array<string> }>(
         `/api/flight/${flight.id}/double-series`
     );
 
-    const common: string[] = [];
-    const uncommon: string[] = [];
+    const common: Array<string> = [];
+    const uncommon: Array<string> = [];
 
     for (const name of names) {
 
@@ -47,7 +47,7 @@ export async function fetchSeries(flightId: number, traceName: string): Promise<
 
     const encodedName = encodeURIComponent(traceName);
 
-    const response = await fetchJson.get<{ x: string[]; y: number[] }>(
+    const response = await fetchJson.get<{ x: Array<string>; y: Array<number> }>(
         `/api/flight/${flightId}/double-series/${encodedName}`
     );
 
@@ -64,9 +64,9 @@ export async function fetchSeries(flightId: number, traceName: string): Promise<
 
 
 
-type TraceNames = { commonTraceNames: string[]; uncommonTraceNames: string[] };
-type EventInfo = { events: FlightEvent[]; definitions?: EventDefinition[] | null };
-type CachedEvents = { events: FlightEvent[]; definitions: EventDefinition[] | null };
+interface TraceNames { commonTraceNames: Array<string>; uncommonTraceNames: Array<string> }
+interface EventInfo { events: Array<FlightEvent>; definitions?: Array<EventDefinition> | null }
+interface CachedEvents { events: Array<FlightEvent>; definitions: Array<EventDefinition> | null }
 
 // Session caches for trace names and events
 const traceNamesCache = new Map<number, TraceNames>();
@@ -112,7 +112,7 @@ async function fetchEventsForFlight(flightId: number): Promise<CachedEvents> {
 
 }
 
-export async function addFlightToChart(flight: Flight, setChartFlights: Dispatch<SetStateAction<Flight[]>>): Promise<void> {
+export async function addFlightToChart(flight: Flight, setChartFlights: Dispatch<SetStateAction<Array<Flight>>>): Promise<void> {
 
     // Optimistically add to selection
     setChartFlights(prev => {

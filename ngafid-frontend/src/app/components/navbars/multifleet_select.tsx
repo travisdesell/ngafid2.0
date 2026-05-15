@@ -32,10 +32,10 @@ export const fleetAccessAllowed = (access: FleetAccessInput) => {
     if (!accessType)
         return false;
 
-    const ALLOWED_TYPES: AccessType[] = ["VIEW", "UPLOAD", "MANAGER"];
+    const ALLOWED_TYPES: Array<AccessType> = ["VIEW", "UPLOAD", "MANAGER"];
     return ALLOWED_TYPES.includes(accessType);
 
-}
+};
 
 export const fleetSelectable = (fleetIDCurrent: number, fleetIDTarget: number, access: FleetAccessInput) => {
 
@@ -49,7 +49,7 @@ export const fleetSelectable = (fleetIDCurrent: number, fleetIDTarget: number, a
 
     return true;
 
-}
+};
 
 
 export default function MultifleetSelect() {
@@ -123,7 +123,7 @@ export default function MultifleetSelect() {
 
                 </DropdownMenuContent>
             }
-        </DropdownMenu>
+        </DropdownMenu>;
 
     }
 

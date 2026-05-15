@@ -38,7 +38,7 @@ export default function FlightsPanelSearch() {
     const filterRef = useRef(filter);
     useEffect(() => { filterRef.current = filter; }, [filter]);
 
-    const commands = useMemo<CommandData[]>(() => ([
+    const commands = useMemo<Array<CommandData>>(() => ([
         {
             id: "flights.copyFilterUrl",
             name: "Copy Filter URL",
@@ -151,7 +151,7 @@ export default function FlightsPanelSearch() {
 
         void fetchFlightsWithFilter(filter, true);
 
-    }
+    };
 
     const renderSearchSubmitRow = () => {
 
@@ -219,9 +219,9 @@ export default function FlightsPanelSearch() {
 
             </div>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     const renderEmptyFilterMessage = () => {
 
@@ -244,9 +244,9 @@ export default function FlightsPanelSearch() {
                     <div className="flex">Try adding a rule with the <div className="flex items-center font-bold gap-1 mx-2"><Bolt size={16} />New Rule</div> button above.</div>
                 </AlertDescription>
             </div>
-        </motion.div>
+        </motion.div>;
 
-    }
+    };
 
     const render = () => {
 
@@ -287,7 +287,7 @@ export default function FlightsPanelSearch() {
             </Card>
         );
 
-    }
+    };
 
     return render();
 

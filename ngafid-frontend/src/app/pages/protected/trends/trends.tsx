@@ -28,7 +28,7 @@ const log = getLogger("Trends", "black", "Page");
 
 const EVENT_ANY = "ANY Event";
 
-type TrendsDataRaw = {
+interface TrendsDataRaw {
     airframeName?: unknown;
     eventName?: unknown;
     dates?: unknown;
@@ -38,28 +38,28 @@ type TrendsDataRaw = {
     flightsWithEventCounts?: unknown;
     totalEventsCounts?: unknown;
     totalFlightsCounts?: unknown;
-};
+}
 
-type TrendsData = {
+interface TrendsData {
     airframeName: string;
     eventName: string;
-    dates: string[];
-    aggregateFlightsWithEventCounts: number[];
-    aggregateTotalEventsCounts: number[];
-    aggregateTotalFlightsCounts: number[];
-    flightsWithEventCounts: number[];
-    totalEventsCounts: number[];
-    totalFlightsCounts: number[];
-};
+    dates: Array<string>;
+    aggregateFlightsWithEventCounts: Array<number>;
+    aggregateTotalEventsCounts: Array<number>;
+    aggregateTotalFlightsCounts: Array<number>;
+    flightsWithEventCounts: Array<number>;
+    totalEventsCounts: Array<number>;
+    totalFlightsCounts: Array<number>;
+}
 
 type EventCountsByEvent = Record<string, Record<string, TrendsData>>;
 type EventDescriptionResponse = Record<string, Record<string, string>>;
 
-type CsvValue = {
+interface CsvValue {
     eventCount: number;
     flightsWithEventCount: number;
     totalFlights: number;
-};
+}
 
 interface TrendsChartRow {
     date: string;
@@ -67,7 +67,7 @@ interface TrendsChartRow {
     [key: string]: string | number;
 }
 
-const toNumberArray = (value: unknown, expectedLength: number): number[] => {
+const toNumberArray = (value: unknown, expectedLength: number): Array<number> => {
     if (!Array.isArray(value))
         return new Array(expectedLength).fill(0);
 
@@ -680,7 +680,7 @@ export default function TrendsPage() {
         let filetext = "";
 
         const addGroupedHeaderRow = (valueFor: (eventName: string, airframeName: string, index: number) => string) => {
-            const columns: string[] = [];
+            const columns: Array<string> = [];
             for (const eventName of eventNamesSorted) {
                 for (const airframeName of airframeNamesSorted) {
                     if (!csvValues[eventName]?.[airframeName])
@@ -698,7 +698,7 @@ export default function TrendsPage() {
         addGroupedHeaderRow((_, __, index) => ["Events", "Flights With Event", "Total Flights"][index]!);
 
         for (const date of datesSorted) {
-            const row: string[] = [];
+            const row: Array<string> = [];
             for (const eventName of eventNamesSorted) {
                 for (const airframeName of airframeNamesSorted) {
                     if (!csvValues[eventName]?.[airframeName])
@@ -758,7 +758,7 @@ export default function TrendsPage() {
                         )
                 }
             </CardContent>
-        </Card>
+        </Card>;
 
     }
 
@@ -790,7 +790,7 @@ export default function TrendsPage() {
                         )
                 }
             </CardContent>
-        </Card>
+        </Card>;
 
     }
 

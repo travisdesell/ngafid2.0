@@ -4,17 +4,17 @@ import { type Flight } from "@/pages/protected/flights/types";
 import { createContext, useContext } from "react";
 
 
-export type FlightsResponse = {
-    flights: Flight[];
+export interface FlightsResponse {
+    flights: Array<Flight>;
     totalFlights: number;
     numberPages: number;
 }
 
-export type FlightsResultsState = {
-    flights: Flight[];
+export interface FlightsResultsState {
+    flights: Array<Flight>;
     totalFlights: number;
     numberPages: number;
-};
+}
 
 export interface FlightsResultsContextValue extends FlightsResultsState {
     /* ... */

@@ -46,7 +46,7 @@ function FlightsPanelResultsInner() {
 
         const isValidSortingColumn = (value: string): boolean => {
             return SORTABLE_COLUMN_VALUES.includes(value);
-        }
+        };
 
         if (!isValidSortingColumn(value)) {
             log.error("Invalid sorting column value:", value);
@@ -56,7 +56,7 @@ function FlightsPanelResultsInner() {
         setSortingColumn(value);
         log("Updated sorting column to:", value);
 
-    }
+    };
 
     const updateSortingDirection = (value: string) => {
 
@@ -68,7 +68,7 @@ function FlightsPanelResultsInner() {
         setSortingDirection(value);
         log("Updated sorting direction to:", value);
 
-    }
+    };
 
     const updatePageSize = (value: string) => {
         
@@ -82,7 +82,7 @@ function FlightsPanelResultsInner() {
         setPageSize(newSize);
         log("Updated flights per page to:", newSize);
 
-    }
+    };
 
     const renderEmptyResultsMessage = () => {
 
@@ -104,9 +104,9 @@ function FlightsPanelResultsInner() {
                     Try adjusting your search filters to find more flights.
                 </AlertDescription>
             </div>
-        </motion.div>
+        </motion.div>;
 
-    }
+    };
 
     const renderPaginationRow = () => {
 
@@ -130,7 +130,7 @@ function FlightsPanelResultsInner() {
             setCurrentPage(clamped);
             log("Navigating to page:", clamped);
 
-        }
+        };
 
         const pagePrevious = () => {
 
@@ -140,7 +140,7 @@ function FlightsPanelResultsInner() {
             }
 
             goToPage(currentPage - 1);
-        }
+        };
 
         const pageNext = () => {
 
@@ -150,7 +150,7 @@ function FlightsPanelResultsInner() {
             }
 
             goToPage(currentPage + 1);
-        }
+        };
 
         return <div className="flex flex-row gap-2 w-full p-2 @container">
 
@@ -259,9 +259,9 @@ function FlightsPanelResultsInner() {
                 </SelectContent>
             </Select>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     const render = () => {
 
@@ -279,7 +279,7 @@ function FlightsPanelResultsInner() {
 
             return delay;
 
-        }
+        };
 
         return (
             <Card className="w-full h-full min-h-0 card-glossy flex flex-col justify-between overflow-clip relative">
@@ -350,7 +350,7 @@ function FlightsPanelResultsInner() {
                                                 >
                                                     <FlightRow flight={flight} />
                                                 </motion.div>
-                                            </div>
+                                            </div>;
                                     })
                                 }
                                         
@@ -369,7 +369,7 @@ function FlightsPanelResultsInner() {
             </Card>
         );
 
-    }
+    };
 
     return render();
 

@@ -24,9 +24,9 @@
 
 
 export type LogLevel = "log" | "info" | "warn" | "warning" | "error" | "table";
-type LogMethod = (message: string, ...args: any[]) => void;
-type TableColumns = readonly string[];
-export type Logger = ((message: string, ...args: any[]) => void) & {
+type LogMethod = (message: string, ...args: Array<any>) => void;
+type TableColumns = ReadonlyArray<string>;
+export type Logger = ((message: string, ...args: Array<any>) => void) & {
     log: LogMethod;
     info: LogMethod;
     warn: LogMethod;
@@ -37,7 +37,7 @@ export type Logger = ((message: string, ...args: any[]) => void) & {
 
 
 const emit = (level: LogLevel, prefix: string, badge: string) =>
-    (message: string, ...args: any[]) => {
+    (message: string, ...args: Array<any>) => {
 
         // Logger globally disabled, exit
         if (!window.useLogger)
@@ -91,7 +91,7 @@ const makePrefixAndBadge = (name: string, color: string, type: LogComponentKey) 
 
     const { prefix, styling } = LogComponentTypes[type];
 
-    const label = `${prefix ? prefix + " - " : ""}${name}`;
+    const label = `${prefix ? `${prefix  } - ` : ""}${name}`;
     const badge = `color: ${color}; font-weight: bold; background-color: #eee; padding: 2px 6px; border-radius: 8px; ${styling}`;
 
     return { label, badge };
@@ -99,16 +99,16 @@ const makePrefixAndBadge = (name: string, color: string, type: LogComponentKey) 
 };
 
 
-type LogContextValue = {
+interface LogContextValue {
     createLogger: (opts: {
         name: string;
         color?: string;
         type?: LogComponentKey;
     }) => Logger;
-};
+}
 
 
-type LogComponent = {
+interface LogComponent {
     prefix: string,
     styling?: string,
 }
@@ -159,7 +159,7 @@ export type LogComponentKey = keyof typeof LogComponentTypes;
 
 
 
-let globalCreateLogger: LogContextValue["createLogger"] | null = null;
+const globalCreateLogger: LogContextValue["createLogger"] | null = null;
 
 const defaultCreateLogger: LogContextValue["createLogger"] = ({
     name = "Unknown",
@@ -170,7 +170,7 @@ const defaultCreateLogger: LogContextValue["createLogger"] = ({
     const { label, badge } = makePrefixAndBadge(name, color, type);
 
     // Base callable uses "log"
-    const base = ((message: string, ...args: any[]) =>
+    const base = ((message: string, ...args: Array<any>) =>
         emit("log", label, badge)(message, ...args)) as Logger;
 
     // Methods
@@ -260,15 +260,15 @@ window.useLogger = true;
 window.EL = () => {
     window.useLogger = true;
     return "Logger Enabled ✅";
-}
+};
 window.DL = () => {
     window.useLogger = false;
     return "Logger Disabled ❌";
-}
+};
 window.TL = () => {
 
     if (window.useLogger) 
         window.DL();
     else 
         window.EL();
-}
+};

@@ -8,7 +8,7 @@ import { useEffect } from "react";
 
 const log = getLogger("CommandModalContentItem", "black", "Component");
 
-type CommandModalContentItemProps = {
+interface CommandModalContentItemProps {
     submitCommand: (command: any) => void;
     command: () => void;
     name: string;
@@ -37,7 +37,7 @@ export default function CommandModalContentItem(props: CommandModalContentItemPr
             
         });
 
-    }
+    };
 
     const hotkeySplit = hotkey?.split("+") || [];
 
@@ -160,6 +160,6 @@ export default function CommandModalContentItem(props: CommandModalContentItemPr
 
             }
         </Command.Item>
-    )
+    );
 
 }

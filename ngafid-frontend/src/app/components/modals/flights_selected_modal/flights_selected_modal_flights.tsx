@@ -14,14 +14,14 @@ import { Dispatch, SetStateAction } from "react";
 
 const log = getLogger("FlightsSelectedModalFlights", "black", "Component");
 
-type Props = {
-    chartFlights: Flight[];
-    setChartFlights: Dispatch<SetStateAction<Flight[]>>;
+interface Props {
+    chartFlights: Array<Flight>;
+    setChartFlights: Dispatch<SetStateAction<Array<Flight>>>;
 
     eventSelection: EventSelectionState;
     toggleUniversalEvent: (name: string) => void;
     togglePerFlightEvent: (flightId: number, name: string) => void;
-};
+}
 
 
 function getAvailableEventNamesForFlight(flight: Flight): Set<string> {

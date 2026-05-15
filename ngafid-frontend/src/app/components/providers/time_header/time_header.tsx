@@ -20,10 +20,10 @@ export type TimeHeaderInitialApply =
     | 'require-dep-change'
 ;
 
-type TimeHeaderProps = {
+interface TimeHeaderProps {
     children: React.ReactNode;
     onApply: () => void;
-    dependencies?: any[];
+    dependencies?: Array<any>;
     initialApply?: TimeHeaderInitialApply;
 }
 

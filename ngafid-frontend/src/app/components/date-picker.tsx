@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
-import * as React from "react"
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import * as React from "react";
 
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover"
-import { OnSelectHandler } from "react-day-picker"
+} from "@/components/ui/popover";
+import { OnSelectHandler } from "react-day-picker";
 
-export type DatePickerProps = {
+export interface DatePickerProps {
     labelText?: string,
     date: Date,
     setDate: OnSelectHandler<Date>,
@@ -63,5 +63,5 @@ export default function DatePicker({ labelText, date, setDate, isInvalid }: Date
                 </PopoverContent>
             </Popover>
         </div>
-    )
+    );
 }

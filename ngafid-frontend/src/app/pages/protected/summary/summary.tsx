@@ -26,21 +26,21 @@ import { ChartSummaryPercentageOfFlightsWithEvent } from "./_charts/chart-summar
 const log = getLogger("Summary", "black", "Page");
 
 
-type FlightHoursByAirframe = {
+interface FlightHoursByAirframe {
     airframe: string;
     airframe_id: number;
     num_flights: number;
     total_flight_hours: number;
-};
+}
 
-type UploadStatistics = {
+interface UploadStatistics {
     total: number;
     processed: number;
     pending: number;
     errors: number;
 }
 
-type FlightImportStatistics = {
+interface FlightImportStatistics {
     total: number;
     valid: number;
     warnings: number;
@@ -57,10 +57,10 @@ export default function SummaryPage() {
     const { airframes, airframeIDSelected, setAirframeIDSelected, airframeNameSelected, setAirframeNameSelected} = useAirframes();
     const { endpointStartDate, endpointEndDate, reapplyTrigger, renderDateRangeMonthly } = useTimeHeader();
 
-    const [flightHoursByAirframe, setFlightHoursByAirframe] = useState<FlightHoursByAirframe[]>([]);
+    const [flightHoursByAirframe, setFlightHoursByAirframe] = useState<Array<FlightHoursByAirframe>>([]);
     const [uploadStatistics, setUploadStatistics] = useState<UploadStatistics | null>(null);
     const [flightImportStatistics, setFlightImportStatistics] = useState<FlightImportStatistics | null>(null);
-    const [eventCountsByAirframe, setEventCountsByAirframe] = useState<AirframeEventCounts[]>([]);
+    const [eventCountsByAirframe, setEventCountsByAirframe] = useState<Array<AirframeEventCounts>>([]);
     const [eventTotalsSelectedRange, setEventTotalsSelectedRange] = useState<number>(0);
     const [eventTotalsAllTime, setEventTotalsAllTime] = useState<number>(0);
     const [eventTotalsAllFleetsAllTime, setEventTotalsAllFleetsAllTime] = useState<number>(0);
@@ -82,7 +82,7 @@ export default function SummaryPage() {
         // Fetch event totals (time ranges and fleets)
         fetchEventTotals();
 
-    }
+    };
 
     //Fetch all summary data on page load
     useEffect(() => {
@@ -107,7 +107,7 @@ export default function SummaryPage() {
             airframeID: airframeIDSelected.toString()
         });
 
-        let data = await fetchJson.get<FlightHoursByAirframe[]>(
+        let data = await fetchJson.get<Array<FlightHoursByAirframe>>(
             "/api/flight/flight_hours_by_airframe",
             {params}
         ).catch((error) => {
@@ -142,7 +142,7 @@ export default function SummaryPage() {
                 setModal(ErrorModal, { title: "Error fetching upload statistics", message: `Error fetching from ${endpoint}: ${String(error)}` });
                 return 0;
 
-            }
+            };
 
             const [total, processed, pending, errors] = await Promise.all([
                 fetchJson.get(endpoints.total).catch((e) => handleUploadCountFetchError(e, endpoints.total)),
@@ -187,7 +187,7 @@ export default function SummaryPage() {
                 setModal(ErrorModal, { title: "Error fetching flight import statistics", message: `Error fetching from ${endpoint}: ${String(error)}` });
                 return 0;
 
-            }
+            };
 
             const [total, warnings, errors] = await Promise.all([
                 fetchJson.get(endpoints.total).catch((e) => handleFlightImportCountFetchError(e, endpoints.total)),
@@ -226,7 +226,7 @@ export default function SummaryPage() {
         });
 
         const baseURL = "/api/event/count/by-airframe";
-        let data = await fetchJson.get<AirframeEventCounts[]>(
+        const data = await fetchJson.get<Array<AirframeEventCounts>>(
             baseURL,
             {params}
         ).catch((error) => {
@@ -234,7 +234,7 @@ export default function SummaryPage() {
             return [];
         });
 
-        let eventCountsArray = Object.values(data ?? {}) as AirframeEventCounts[];
+        let eventCountsArray = Object.values(data ?? {}) as Array<AirframeEventCounts>;
 
         //Filter out ignored airframe names
         eventCountsArray = eventCountsArray.filter(d => !AIRFRAME_NAMES_IGNORED.includes(d.airframeName));
@@ -246,7 +246,7 @@ export default function SummaryPage() {
         log("Fetched event counts by airframe:", eventCountsArray);
         setEventCountsByAirframe(eventCountsArray);
 
-    }
+    };
 
     const fetchEventTotals = async () => {
 
@@ -310,7 +310,7 @@ export default function SummaryPage() {
 
         // ...
 
-    }
+    };
 
     const renderSummaryBadge = (icon: React.ReactNode, label: string, value: string | number, color?: string) => (
 
@@ -357,7 +357,7 @@ export default function SummaryPage() {
 
     const renderNoDataAvailableMessage = () => (
         <PanelAlert title="No Data Available!" description={["No data available for the selected time range and airframe type(s).", "Try adjusting the time range or airframe selection."]} />
-    )
+    );
 
     const totalFlights = flightHoursByAirframe.reduce((sum, entry) => sum + entry.num_flights, 0);
     const totalHours = flightHoursByAirframe.reduce((sum, entry) => sum + entry.total_flight_hours, 0);
@@ -371,7 +371,7 @@ export default function SummaryPage() {
 
                 {/* Time Header */}
                 <TimeHeader
-                    onApply={() => { log("Applying time range...") }}
+                    onApply={() => { log("Applying time range..."); }}
                     // onApply={() => fetchAllSummaryData()}
                     dependencies={[airframeIDSelected]}
                     initialApply="require-dep-change"

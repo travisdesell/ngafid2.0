@@ -11,16 +11,16 @@ import { FlightLabelSection } from "@/pages/protected/flights/_flights_context_c
 import { Download, FileUp, MapPinned, Minus, Trash } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 
-type Props = {
+interface Props {
     isActive: boolean;
     flightId: number;
     pendingStartX: number | null;
-    flightLabelSections: FlightLabelSection[];
+    flightLabelSections: Array<FlightLabelSection>;
     onFlightCsvDownload: () => void;
     onFleetCsvDownload: () => void;
     onImportCsv: (file: File) => void;
     onRemoveSection: (sectionIndex: number) => void;
-    labelDefinitions: FleetLabelDefinition[];
+    labelDefinitions: Array<FleetLabelDefinition>;
     onUpdateSectionLabel: (sectionIndex: number, labelText: string) => void;
     onToggleSectionVisibility: (sectionIndex: number, visibleOnChart: boolean) => void;
     onCreateLabelDefinition: (labelText: string) => Promise<boolean>;
@@ -28,13 +28,13 @@ type Props = {
     onActivate: () => void;
     position: { left: number; top: number };
     onPositionChange: (next: { left: number; top: number }) => void;
-};
+}
 
-type FleetLabelDefinition = {
+interface FleetLabelDefinition {
     id: number;
     labelText: string;
     displayOrder: number;
-};
+}
 
 const ADD_NEW_LABEL_VALUE = "__add_new__";
 const NONE_LABEL_VALUE = "__none__";
@@ -360,9 +360,9 @@ export default function FlightsPanelChartLabelCard({
                     })
                 }
             </tbody>
-        </table>
+        </table>;
 
-    }
+    };
 
     const renderDownloadImportButtons = () => {
 
@@ -410,7 +410,7 @@ export default function FlightsPanelChartLabelCard({
             />
         </>;
 
-    }
+    };
 
     const render = () => {
 
@@ -461,7 +461,7 @@ export default function FlightsPanelChartLabelCard({
             </Card>
         );
 
-    }
+    };
 
     return render();
 

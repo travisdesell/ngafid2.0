@@ -49,8 +49,8 @@ export function base64urlToU8(b64url: string): Uint8Array {
 
 // Convert filter to compact wire format
 type OperatorShort = "A" | "O";
-type WireRule = { n: string; c: any[] };
-type WireGroup = { op: OperatorShort; r?: WireRule[]; g?: WireGroup[]; s?: 1};
+interface WireRule { n: string; c: Array<any> }
+interface WireGroup { op: OperatorShort; r?: Array<WireRule>; g?: Array<WireGroup>; s?: 1}
 
 export function toWire(group: FilterGroup): WireGroup | null {
 
@@ -58,7 +58,7 @@ export function toWire(group: FilterGroup): WireGroup | null {
         ? "A"
         : "O";
 
-    const rules: WireRule[] = (group.rules ?? [])
+    const rules: Array<WireRule> = (group.rules ?? [])
         .filter((ru: any) => ru?.name && ru.name !== FILTER_RULE_NAME_NEW)
         .map((ru: any) => {
 
@@ -72,11 +72,11 @@ export function toWire(group: FilterGroup): WireGroup | null {
             return { n, c } as WireRule;
 
         })
-        .filter(Boolean) as WireRule[];
+        .filter(Boolean) as Array<WireRule>;
 
-    const groups: WireGroup[] = (group.groups ?? [])
+    const groups: Array<WireGroup> = (group.groups ?? [])
         .map((sg: any) => toWire(sg))
-        .filter((x: any) => x !== null) as WireGroup[];
+        .filter((x: any) => x !== null) as Array<WireGroup>;
 
     // No rules or groups -> null
     if ((rules.length === 0) && (groups.length === 0))

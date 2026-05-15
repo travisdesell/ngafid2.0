@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/pages/summary/charts/chart-summary-event-totals-time.tsx
-"use client"
+"use client";
 
 import { Pie, PieChart } from "recharts";
 
@@ -16,13 +16,13 @@ import {
     ChartTooltipContent,
 } from "@/components/ui/chart";
 
-type DataItem = {
+interface DataItem {
     label: string;
     count: number;
     fill: string;
 }
 
-type ChartSummaryEventTotalsTimeProps = {
+interface ChartSummaryEventTotalsTimeProps {
     selectedPercentage: number;
     data: [DataItem, DataItem];
 }
@@ -76,5 +76,5 @@ export function ChartSummaryEventTotalsTime(props : ChartSummaryEventTotalsTimeP
                 </PieChart>
             </ChartContainer>
         </CardContent>
-    )
+    );
 }

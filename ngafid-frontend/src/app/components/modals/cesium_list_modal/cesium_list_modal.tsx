@@ -15,8 +15,8 @@ const log = getLogger("CesiumListModal", "black", "Modal");
 
 
 export type ModalDataFlightsSelected = ModalData & {
-    chartFlights: Flight[];
-    setChartFlights: Dispatch<SetStateAction<Flight[]>>;
+    chartFlights: Array<Flight>;
+    setChartFlights: Dispatch<SetStateAction<Array<Flight>>>;
 };
 
 export function CesiumListModal({ data }: ModalProps<ModalDataFlightsSelected>) {
@@ -24,15 +24,15 @@ export function CesiumListModal({ data }: ModalProps<ModalDataFlightsSelected>) 
     const { close, renderModalHeader } = useModal();
     const { chartFlights, setChartFlights } = (data as ModalDataFlightsSelected) ?? {};
 
-    const [localChartFlights, setLocalChartFlights] = useState<Flight[]>(chartFlights);
+    const [localChartFlights, setLocalChartFlights] = useState<Array<Flight>>(chartFlights);
 
 
-    const handleSetChartFlights: Dispatch<SetStateAction<Flight[]>> = (updater) => {
+    const handleSetChartFlights: Dispatch<SetStateAction<Array<Flight>>> = (updater) => {
 
         setLocalChartFlights((prevLocal) => {
 
             const nextLocal = (typeof updater === "function")
-                ? (updater as (prev: Flight[]) => Flight[])(prevLocal)
+                ? (updater as (prev: Array<Flight>) => Array<Flight>)(prevLocal)
                 : updater;
 
             // Keep FlightsContext in sync

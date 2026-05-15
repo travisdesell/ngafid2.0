@@ -14,12 +14,12 @@ import { ReactNode, useCallback, useEffect, useState } from "react";
 const log = getLogger("AirframeStatisticsContent", "black", "Page");
 
 
-type AirframeStatisticsCardProps = {
+interface AirframeStatisticsCardProps {
     airframeId: number;
     airframeName: string;
     setIsLoading: (isLoading: boolean) => void;
     setShowNoDataAlert: (show: boolean) => void;
-};
+}
 
 /*
 
@@ -155,12 +155,12 @@ const normalizeAirframeStats = (value: unknown, fallbackAirframeId: number, fall
 };
 
 
-const renderDescriptionWithCode = (description: string): ReactNode[] => {
+const renderDescriptionWithCode = (description: string): Array<ReactNode> => {
 
     // Quick fix for singular "1 second" case (instead of "1 seconds")
     description = description.replaceAll("1 seconds", "1 second");
 
-    const nodes: ReactNode[] = [];
+    const nodes: Array<ReactNode> = [];
     let keyIndex = 0;
 
     let plainTextBuffer = "";

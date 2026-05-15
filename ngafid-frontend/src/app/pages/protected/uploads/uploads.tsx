@@ -49,12 +49,12 @@ import {
 const log = getLogger("Uploads", "black", "Page");
 const DEFAULT_UPLOADS_PAGE_SIZE = 10;
 
-type UploadStatusStatistics = {
+interface UploadStatusStatistics {
     total: number;
     inProgress: number;
     processed: number;
     failed: number;
-};
+}
 
 type UploadStatusCounts = Partial<Record<UploadStatus, number>>;
 
@@ -159,7 +159,7 @@ function uploadStatusCount(counts: UploadStatusCounts, status: UploadStatus) {
     return counts[status] ?? 0;
 }
 
-function buildUploadStatusStatistics(counts: UploadStatusCounts, pending: UploadInfo[]): UploadStatusStatistics {
+function buildUploadStatusStatistics(counts: UploadStatusCounts, pending: Array<UploadInfo>): UploadStatusStatistics {
 
     const uploadingCount = uploadStatusCount(counts, "UPLOADING");
     const activeUploadingCount = Math.min(
@@ -466,19 +466,19 @@ export default function UploadsPage() {
     const { setModal } = useModal();
 
     // Active uploads
-    const [uploads, setUploads] = useState<UploadInfo[]>([]);
+    const [uploads, setUploads] = useState<Array<UploadInfo>>([]);
     const [uploadsPage, setUploadsPage] = useState(() => getUploadsPageFromPath());
     const [uploadsPages, setUploadsPages] = useState(0);
     const [uploadsPageSize, setUploadsPageSize] = useState(DEFAULT_UPLOADS_PAGE_SIZE);
     const uploadsPageSizeRef = useRef(uploadsPageSize);
 
     // Imported uploads
-    const [imports, setImports] = useState<ImportsPageItem[]>([]);
+    const [imports, setImports] = useState<Array<ImportsPageItem>>([]);
     const [importsPages, setImportsPages] = useState(0);
     const [uploadStatusStatistics, setUploadStatusStatistics] = useState<UploadStatusStatistics>(EMPTY_UPLOAD_STATUS_STATISTICS);
 
     // Pending (client-side) uploads that are currently hashing/uploading
-    const [pending, setPending] = useState<UploadInfo[]>([]);
+    const [pending, setPending] = useState<Array<UploadInfo>>([]);
     const [deletingUploadIds, setDeletingUploadIds] = useState<Set<number>>(new Set());
     const activeUploadIdsRef = useRef<Set<number>>(new Set());
     const pendingIdentifiersRef = useRef<Set<string>>(new Set());
@@ -1253,7 +1253,7 @@ export default function UploadsPage() {
 
         openModal(UploadDetailsModal, { uploadImportData });
 
-    }
+    };
 
 
     /*
@@ -1337,7 +1337,7 @@ export default function UploadsPage() {
                 </PaginationItem>
 
             </PaginationContent>
-        </Pagination>
+        </Pagination>;
     };
 
     /*
@@ -1368,7 +1368,7 @@ export default function UploadsPage() {
                 .map((p) => p.identifier)
         );
 
-        const combined: (UploadInfo | UploadImportItem)[] = [];
+        const combined: Array<UploadInfo | UploadImportItem> = [];
 
         // Add pending uploads first
         for (const p of visiblePending) {

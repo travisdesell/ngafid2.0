@@ -14,16 +14,16 @@ import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 const log = getLogger("EventDefinitions", "black", "Page");
 
 
-type RowGeneric = {
+interface RowGeneric {
     eventName: string;
     description: string;
-};
+}
 
-type RowSpecific = {
+interface RowSpecific {
     eventName: string;
     airframe: string;
     description: string;
-};
+}
 
 type EventDefinitions = Record<string, Record<string, string>>;
 
@@ -50,7 +50,7 @@ const Highlight = ({ text, query }: { text: string; query: string }) => {
     const lowerText = text.toLowerCase();
     const lowerQuery = trimmed.toLowerCase();
 
-    const parts: ReactNode[] = [];
+    const parts: Array<ReactNode> = [];
     let start = 0;
 
     // Find all occurrences of query in text (case-insensitive)
@@ -91,14 +91,14 @@ const Highlight = ({ text, query }: { text: string; query: string }) => {
 };
 
 
-const renderDescriptionWithCodeAndHighlight = (description: string, query: string): ReactNode[] => {
+const renderDescriptionWithCodeAndHighlight = (description: string, query: string): Array<ReactNode> => {
 
-    type Segment = {
+    interface Segment {
         text: string;
         inCode: boolean;
-    };
+    }
 
-    const segments: Segment[] = [];
+    const segments: Array<Segment> = [];
     let plainTextBuffer = "";
     let codeBuffer = "";
     let depth = 0;
@@ -161,7 +161,7 @@ const renderDescriptionWithCodeAndHighlight = (description: string, query: strin
 
     flushPlainText();
 
-    const chars: { char: string; inCode: boolean }[] = [];
+    const chars: Array<{ char: string; inCode: boolean }> = [];
     for (const segment of segments) {
         for (const char of segment.text)
             chars.push({ char, inCode: segment.inCode });
@@ -192,12 +192,12 @@ const renderDescriptionWithCodeAndHighlight = (description: string, query: strin
 
     }
 
-    const nodes: ReactNode[] = [];
+    const nodes: Array<ReactNode> = [];
     let keyIndex = 0;
 
-    const renderTextWithHighlight = (text: string, startIndex: number): ReactNode[] => {
+    const renderTextWithHighlight = (text: string, startIndex: number): Array<ReactNode> => {
 
-        const output: ReactNode[] = [];
+        const output: Array<ReactNode> = [];
         let buffer = "";
         let bufferHighlighted = false;
 
@@ -402,8 +402,8 @@ export default function EventDefinitionsPage() {
     // Construct rows for the Generic and Specific tables
     const { rowsGeneric, rowsSpecific } = useMemo(() => {
 
-        const rowsGenericOut: RowGeneric[] = [];
-        const rowsSpecificOut: RowSpecific[] = [];
+        const rowsGenericOut: Array<RowGeneric> = [];
+        const rowsSpecificOut: Array<RowSpecific> = [];
 
         // Deterministic event order
         const eventNames = Object.keys(descriptionsFiltered).sort((a, b) => a.localeCompare(b));

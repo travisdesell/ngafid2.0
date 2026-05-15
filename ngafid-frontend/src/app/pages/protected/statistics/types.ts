@@ -2,7 +2,7 @@
 
 export const EVENT_STAT_MALFORMED = null; 
 
-export type MonthStatsRowRaw = {
+export interface MonthStatsRowRaw {
     rowName?: unknown;
     flightsWithoutError?: unknown;
     flightsWithEvent?: unknown;
@@ -22,24 +22,24 @@ export type MonthStatsRowRaw = {
     aggMinDuration?: unknown;
     aggAvgDuration?: unknown;
     aggMaxDuration?: unknown;
-};
+}
 
-export type EventStatsRaw = {
+export interface EventStatsRaw {
     eventName?: unknown;
     totalFlights?: unknown;
     processedFlights?: unknown;
     humanReadable?: unknown;
     eventId?: unknown;
     monthStats?: unknown;
-};
+}
 
-export type AirframeStatsRaw = {
+export interface AirframeStatsRaw {
     airframeNameId?: unknown;
     airframeName?: unknown;
     events?: unknown;
-};
+}
 
-export type MonthStatsRow = {
+export interface MonthStatsRow {
     rowName: string;
     flightsWithoutError: number;
     flightsWithEvent: number;
@@ -59,24 +59,24 @@ export type MonthStatsRow = {
     aggMinDuration: number;
     aggAvgDuration: number;
     aggMaxDuration: number;
-};
+}
 
-export type EventStats = {
+export interface EventStats {
     eventName: string;
     totalFlights: number;
     processedFlights: number;
     humanReadable: string;
     eventId: number | null;
-    monthStats: MonthStatsRow[];
-};
+    monthStats: Array<MonthStatsRow>;
+}
 
-export type AirframeStats = {
+export interface AirframeStats {
     airframeNameId: number;
     airframeName: string;
-    events: EventStats[];
-};
+    events: Array<EventStats>;
+}
 
-export type AirframeCardData = {
+export interface AirframeCardData {
     id: number;
     name: string;
-};
+}

@@ -41,7 +41,7 @@ export default function RegisterModal({ setModal }: ModalProps) {
     const [isManagingNewFleet, setIsManagingNewFleet] = React.useState(true);
     const [newFleetName, setNewFleetName] = React.useState("");
     const [selectedFleetName, setSelectedFleetName] = React.useState("");
-    const [fleetList, setFleetList] = React.useState<string[]>([]);
+    const [fleetList, setFleetList] = React.useState<Array<string>>([]);
 
     const [isLoading, setIsLoading] = React.useState(false);
 

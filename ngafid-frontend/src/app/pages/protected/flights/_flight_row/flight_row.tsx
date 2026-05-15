@@ -108,7 +108,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
             // Fallback value
             return <span className="opacity-50">{fallback}</span>;
 
-        }
+        };
 
         const labelCount = labelSectionsByFlight[flight.id]?.length ?? 0;
 
@@ -182,9 +182,9 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipContent>
             </Tooltip>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     const renderFlightTimeDetails = () => {
 
@@ -205,7 +205,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
             // Fallback value
             return <span className="opacity-50">{fallback}</span>;
 
-        }
+        };
 
         const flightDuration = (flight: Flight): string => {
 
@@ -222,7 +222,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
 
             return `${hours}h ${minutesStr}m ${secondsStr}s`;
 
-        }
+        };
 
         // return <div className="flex flex-col gap-2">
         return <div className="grid grid-rows-2 text-nowrap min-w-64 gap-11 items-start">
@@ -274,9 +274,9 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </Tooltip>
             </div>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     const renderAirportsDetails = () => {
 
@@ -314,7 +314,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
             </Tooltip>
         );
 
-    }
+    };
 
     const renderTagsRows = () => {
 
@@ -342,9 +342,9 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                     <FlightRowTagBadge key={index} tag={tag} />
                 ))
             }
-        </div>
+        </div>;
 
-    }
+    };
 
     const renderButtonsGrid = () => {
 
@@ -508,7 +508,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                         onClick={() => setModal(TagsListModal, {
                             flightTags: flight.tags || [],
                             flightId: flight.id,
-                            onTagsUpdate: (updatedTags: TagData[]) => {
+                            onTagsUpdate: (updatedTags: Array<TagData>) => {
                                 updateFlightTags(flight.id, updatedTags);
                             },
                         })}
@@ -533,9 +533,9 @@ function FlightRowInner({ flight }: { flight: Flight }) {
                 </TooltipContent>
             </Tooltip>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     /*
         < FLIGHT ROW HEIGHT >
@@ -575,7 +575,7 @@ function FlightRowInner({ flight }: { flight: Flight }) {
             {renderButtonsGrid()}
         </FlightRowSection>
 
-    </div>
+    </div>;
 
 }
 

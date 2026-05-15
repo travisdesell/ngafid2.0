@@ -39,15 +39,15 @@ import { setPageTitle } from "@/components/page_title";
 const log = getLogger("Flights", "black", "Page");
 
 
-type FlightsModalChartStoreSnapshot = {
-    chartFlights: Flight[];
+interface FlightsModalChartStoreSnapshot {
+    chartFlights: Array<Flight>;
     eventSelection: EventSelectionState;
-};
+}
 
-type FlightsModalChartStore = {
+interface FlightsModalChartStore {
     subscribe: (listener: () => void) => () => void;
     getSnapshot: () => FlightsModalChartStoreSnapshot;
-};
+}
 
 
 
@@ -89,7 +89,7 @@ const filterIsEmpty = (filter: Filter): boolean => {
     // No rules or groups -> Empty
     return true;
 
-}
+};
 
 const filterIsValid = (filter: Filter): boolean => {
 
@@ -145,7 +145,7 @@ const filterIsValid = (filter: Filter): boolean => {
     // All checks passed -> Valid
     return true;
 
-}
+};
 
 export default function FlightsPage() {
 
@@ -161,7 +161,7 @@ export default function FlightsPage() {
     const panelExit = { opacity: 0.00, scale: 0.00 };
 
     // Flights
-    const [flights, setFlights] = useState<Flight[]>([]);
+    const [flights, setFlights] = useState<Array<Flight>>([]);
     const [totalFlights, setTotalFlights] = useState<number>(0);
     const [numberPages, setNumberPages] = useState<number>(0);
 
@@ -172,7 +172,7 @@ export default function FlightsPage() {
     const [isFilterSearchLoadingManual, setIsFilterSearchLoadingManual] = useState(false);
 
     // Chart Data State
-    const [chartFlights, setChartFlightsRaw] = useState<Flight[]>([]);
+    const [chartFlights, setChartFlightsRaw] = useState<Array<Flight>>([]);
 
     // Layout State
     const [searchPanelVisible, setSearchPanelVisible] = useState(true);
@@ -231,7 +231,7 @@ export default function FlightsPage() {
             const flightIdParams = params.getAll("flight_id");
             if (flightIdParams && flightIdParams.length > 0) {
 
-                const rules: FilterRule[] = flightIdParams.map((id) => ({
+                const rules: Array<FilterRule> = flightIdParams.map((id) => ({
                     id: SPECIAL_FILTER_GROUP_ID,
                     name: "Flight ID",
                     conditions: [
@@ -631,7 +631,7 @@ export default function FlightsPage() {
                 }
             }
 
-            const fromTemplate = (template: FilterRuleDefinition): FilterCondition[] =>
+            const fromTemplate = (template: FilterRuleDefinition): Array<FilterCondition> =>
                 template.conditions.map((c) => {
                     const cloned = structuredClone(c) as FilterCondition;
 
@@ -646,7 +646,7 @@ export default function FlightsPage() {
                     return cloned;
                 });
 
-            const freshConditions = (): FilterCondition[] => ([
+            const freshConditions = (): Array<FilterCondition> => ([
                 {
                     type: "select",
                     name: "condition",
@@ -660,7 +660,7 @@ export default function FlightsPage() {
                 } as FilterCondition,
             ]);
 
-            const conditions: FilterCondition[] = flightIdTemplateDef
+            const conditions: Array<FilterCondition> = flightIdTemplateDef
                 ? fromTemplate(flightIdTemplateDef)
                 : freshConditions();
 
@@ -1085,7 +1085,7 @@ export default function FlightsPage() {
                 setChartFlightsRaw(prev => {
 
                     const next = (typeof updater === "function")
-                        ? (updater as (prevFlights: Flight[]) => Flight[])(prev)
+                        ? (updater as (prevFlights: Array<Flight>) => Array<Flight>)(prev)
                         : updater;
 
                     setChartState(prevState => {
@@ -1406,7 +1406,7 @@ export default function FlightsPage() {
             togglePerFlightEvent,
         });
 
-    }
+    };
 
     const noChartFlightsSelected = (chartFlights.length === 0);
     const navbarExtras = (
@@ -1448,7 +1448,7 @@ export default function FlightsPage() {
         </>
     );
 
-    const commands = useMemo<CommandData[]>(() => ([
+    const commands = useMemo<Array<CommandData>>(() => ([
 
         /* -- Panel Toggle Commands -- */
         {

@@ -47,17 +47,17 @@ const MAX_POINTS_PER_SCATTER_SERIES = 100;
 
 const RUNWAY_ANY = "Any Runway";
 
-type AirportInfo = {
+interface AirportInfo {
     iataCode?: string;
     latitude?: number;
     longitude?: number;
-};
+}
 
-type RunwayInfo = {
+interface RunwayInfo {
     name?: string;
-};
+}
 
-type TurnToFinalApi = {
+interface TurnToFinalApi {
     flightId?: string;
     flight_id?: string;
     airportIataCode?: string;
@@ -65,17 +65,17 @@ type TurnToFinalApi = {
     flightStartDate?: string;
     maxRoll?: number;
     selfDefinedGlideAngle?: number;
-    selfDefinedGlidePathDeviations?: number[];
-    distanceFromRunway?: number[];
-    AltAGL?: number[];
-    latitude?: number[];
-    longitude?: number[];
-    lat?: number[];
-    lon?: number[];
+    selfDefinedGlidePathDeviations?: Array<number>;
+    distanceFromRunway?: Array<number>;
+    AltAGL?: Array<number>;
+    latitude?: Array<number>;
+    longitude?: Array<number>;
+    lat?: Array<number>;
+    lon?: Array<number>;
     approachn?: number;
-};
+}
 
-type TurnToFinalNormalized = {
+interface TurnToFinalNormalized {
     id: string;
     flightId: string;
     approachn: number;
@@ -84,29 +84,29 @@ type TurnToFinalNormalized = {
     flightStartDate: Date | null;
     maxRoll: number;
     selfDefinedGlideAngle: number;
-    deviations: number[];
-    distanceFromRunway: number[];
-    altAgl: number[];
+    deviations: Array<number>;
+    distanceFromRunway: Array<number>;
+    altAgl: Array<number>;
     pointsLonLat: Array<[number, number]>;
-};
+}
 
-type TurnToFinalResponse = {
+interface TurnToFinalResponse {
     airports?: Record<string, AirportInfo>;
-    ttfs?: TurnToFinalApi[];
-};
+    ttfs?: Array<TurnToFinalApi>;
+}
 
-type CachedPayload = {
+interface CachedPayload {
     airport: string;
     startDate: string;
     endDate: string;
     airports: Record<string, AirportInfo>;
-    ttfs: TurnToFinalNormalized[];
-};
+    ttfs: Array<TurnToFinalNormalized>;
+}
 
-type XYPoint = {
+interface XYPoint {
     x: number;
     y: number;
-};
+}
 
 type LegacyWindow = Window & {
     airports?: unknown;
@@ -124,7 +124,7 @@ const toDate = (input: string | undefined | null): Date | null => {
     return null;
 };
 
-const toFiniteNumberArray = (arr: unknown): number[] => {
+const toFiniteNumberArray = (arr: unknown): Array<number> => {
     if (!Array.isArray(arr))
         return [];
 
@@ -133,7 +133,7 @@ const toFiniteNumberArray = (arr: unknown): number[] => {
         .filter((value) => Number.isFinite(value));
 };
 
-const normalizeTurnToFinalRows = (rowsRaw: TurnToFinalApi[]): TurnToFinalNormalized[] => {
+const normalizeTurnToFinalRows = (rowsRaw: Array<TurnToFinalApi>): Array<TurnToFinalNormalized> => {
     const rows = rowsRaw ?? [];
     const approachCounts: Record<string, number> = {};
 
@@ -252,7 +252,7 @@ const colorForRoll = (roll: number): string => {
 
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 
-}
+};
 
 const styleForRoll = (roll: number): Style => new Style({
     stroke: new Stroke({
@@ -268,14 +268,14 @@ const styleForRoll = (roll: number): Style => new Style({
     }),
 });
 
-const sampleEvenly = <T,>(items: T[], maxItems: number): T[] => {
+const sampleEvenly = <T,>(items: Array<T>, maxItems: number): Array<T> => {
     if (maxItems <= 0)
         return [];
 
     if (items.length <= maxItems)
         return items;
 
-    const sampled: T[] = [];
+    const sampled: Array<T> = [];
     const step = items.length / maxItems;
 
     for (let i = 0; i < maxItems; i++) {
@@ -286,14 +286,14 @@ const sampleEvenly = <T,>(items: T[], maxItems: number): T[] => {
     return sampled;
 };
 
-const decimatePairSeries = (xValues: number[], yValues: number[], maxPoints: number): XYPoint[] => {
+const decimatePairSeries = (xValues: Array<number>, yValues: Array<number>, maxPoints: number): Array<XYPoint> => {
     const pointCount = Math.min(xValues.length, yValues.length);
 
     if (pointCount <= 0)
         return [];
 
     if (pointCount <= maxPoints) {
-        const out: XYPoint[] = new Array(pointCount);
+        const out: Array<XYPoint> = new Array(pointCount);
 
         for (let index = 0; index < pointCount; index++) {
             out[index] = {
@@ -306,7 +306,7 @@ const decimatePairSeries = (xValues: number[], yValues: number[], maxPoints: num
     }
 
     const step = Math.ceil(pointCount / maxPoints);
-    const out: XYPoint[] = [];
+    const out: Array<XYPoint> = [];
 
     for (let index = 0; index < pointCount; index += step) {
         out.push({
@@ -362,7 +362,7 @@ export default function TurnToFinalPage() {
 
     const legacyGlobals = (window as LegacyWindow);
 
-    const fallbackAirportList = useMemo<string[]>(() => {
+    const fallbackAirportList = useMemo<Array<string>>(() => {
 
         const value = legacyGlobals.airports;
 
@@ -375,12 +375,12 @@ export default function TurnToFinalPage() {
         return [];
     }, [legacyGlobals.airports]);
 
-    const fallbackRunwaysByAirport = useMemo<Record<string, string[]>>(() => {
+    const fallbackRunwaysByAirport = useMemo<Record<string, Array<string>>>(() => {
         const value = legacyGlobals.runways;
         if (!value || typeof value !== "object")
             return {};
 
-        const out: Record<string, string[]> = {};
+        const out: Record<string, Array<string>> = {};
         for (const [airportCode, runwaysRaw] of Object.entries(value as Record<string, unknown>)) {
             if (!Array.isArray(runwaysRaw))
                 continue;
@@ -632,7 +632,7 @@ export default function TurnToFinalPage() {
             event.preventDefault();
             hidePopup();
 
-        }
+        };
 
         if (popupCloseRef.current && overlay)
             popupCloseRef.current.onclick = mapClickHandler;
@@ -700,7 +700,7 @@ export default function TurnToFinalPage() {
 
         vectorSource.clear();
 
-        const features: Feature[] = [];
+        const features: Array<Feature> = [];
 
         for (const row of mapRows) {
             if (row.pointsLonLat.length === 0)
@@ -845,7 +845,7 @@ export default function TurnToFinalPage() {
                     renderNoDataMessage()
                 }
             </CardContent>
-        </Card>
+        </Card>;
 
     }
 
@@ -882,7 +882,7 @@ export default function TurnToFinalPage() {
                     </ChartContainer>
                 }
             </CardContent>
-        </Card>
+        </Card>;
 
     }
 
@@ -927,7 +927,7 @@ export default function TurnToFinalPage() {
                     </ChartContainer>
                 }
             </CardContent>
-        </Card>
+        </Card>;
 
     }
 
@@ -959,7 +959,7 @@ export default function TurnToFinalPage() {
                     )
                 }
             </CardContent>
-        </Card>
+        </Card>;
 
     }
 

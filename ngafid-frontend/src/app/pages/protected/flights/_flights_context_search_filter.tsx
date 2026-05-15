@@ -26,7 +26,7 @@ export interface FlightsFilterContextValue extends FlightsFilterState {
     newID: () => string;
 }
 
-export type FlightsSearchFilterState = {
+export interface FlightsSearchFilterState {
     isFilterSearchLoading: boolean;
     isFilterSearchLoadingManual: boolean;
 
@@ -34,7 +34,7 @@ export type FlightsSearchFilterState = {
     sortingDirection?: SortingDirection;    
     pageSize?: number;
     currentPage: number;
-};
+}
 
 export interface FlightsSearchFilterContextValue extends FlightsSearchFilterState {
 
@@ -45,7 +45,7 @@ export interface FlightsSearchFilterContextValue extends FlightsSearchFilterStat
 
     fetchFlightsWithFilter: (filter: FilterGroup, isTriggeredManually: boolean) => Promise<any>;
 
-    updateFlightTags: (flightId: number, tags: TagData[] | null) => void;
+    updateFlightTags: (flightId: number, tags: Array<TagData> | null) => void;
 }
 
 

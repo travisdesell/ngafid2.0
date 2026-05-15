@@ -25,7 +25,7 @@ export const randomHexColor = () => {
     }
 
     return color;
-}
+};
 
 
 interface ColorPickerProps {

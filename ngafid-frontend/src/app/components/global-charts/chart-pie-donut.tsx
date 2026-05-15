@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import { Pie, PieChart } from "recharts"
+import { Pie, PieChart } from "recharts";
 
 import {
     CardContent,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
     ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 
-export const description = "A donut chart"
+export const description = "A donut chart";
 
 const chartData = [
     { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
     { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
-]
+];
 
 const chartConfig = {
     chrome: {
@@ -28,7 +28,7 @@ const chartConfig = {
         label: "Safari",
         color: "var(--chart-5)",
     },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function ChartPieDonut() {
     return (
@@ -51,5 +51,5 @@ export function ChartPieDonut() {
                 </PieChart>
             </ChartContainer>
         </CardContent>
-    )
+    );
 }

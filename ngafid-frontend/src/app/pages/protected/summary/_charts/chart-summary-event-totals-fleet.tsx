@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/pages/summary/charts/chart-summary-event-totals-fleet.tsx
-"use client"
+"use client";
 
 import { Pie, PieChart } from "recharts";
 
@@ -16,10 +16,10 @@ import {
     ChartTooltipContent,
 } from "@/components/ui/chart";
 
-type ChartSummaryEventTotalsFleetProps = {
+interface ChartSummaryEventTotalsFleetProps {
     selectedFleetCount: number;
     aggregateFleetCount: number;
-};
+}
 
 
 
@@ -76,5 +76,5 @@ export function ChartSummaryEventTotalsFleet({ selectedFleetCount, aggregateFlee
                 </PieChart>
             </ChartContainer>
         </CardContent>
-    )
+    );
 }

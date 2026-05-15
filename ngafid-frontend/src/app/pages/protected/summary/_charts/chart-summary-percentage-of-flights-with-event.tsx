@@ -1,10 +1,10 @@
 // ngafid-frontend/src/app/pages/summary/charts/chart-summary-percentage-of-flights-with-event.tsx
-"use client"
+"use client";
 
-import { getLogger } from "@/components/providers/logger"
-import { useTheme } from "@/components/providers/theme-provider"
-import { useTimeHeader } from "@/components/providers/time_header/time_header_provider"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getLogger } from "@/components/providers/logger";
+import { useTheme } from "@/components/providers/theme-provider";
+import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     BAR_RADIUS_HORIZONTAL_SOLO,
     ChartConfig,
@@ -13,21 +13,21 @@ import {
     ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
-} from "@/components/ui/chart"
-import { JSX } from "react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { AirframeEventCounts } from "src/types/types"
+} from "@/components/ui/chart";
+import { JSX } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { AirframeEventCounts } from "src/types/types";
 
 
 const log = getLogger("ChartSummaryPercentageOfFlightsWithEvent", "black", "Chart");
 
 
-type ChartSummaryEventCountsProps = {
-    data: AirframeEventCounts[] | Record<string, AirframeEventCounts>;
+interface ChartSummaryEventCountsProps {
+    data: Array<AirframeEventCounts> | Record<string, AirframeEventCounts>;
     renderNoDataAvailableMessage: () => JSX.Element;
-};
+}
 
-type PercentageChartDatum = {
+interface PercentageChartDatum {
     eventName: string;
     fleetPercent: number;
     aggregatePercent: number;
@@ -35,7 +35,7 @@ type PercentageChartDatum = {
     fleetTotalFlights: number;
     aggregateFlightsWithEvent: number;
     aggregateTotalFlights: number;
-};
+}
 
 const SERIES_LABELS: Record<string, string> = {
     fleetPercent: "This Fleet",
@@ -64,7 +64,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
     const { useHighContrastCharts } = useTheme();
 
     //Normalize to array
-    const rows: AirframeEventCounts[] = Array.isArray(data)
+    const rows: Array<AirframeEventCounts> = Array.isArray(data)
         ? data
         : data && (typeof data === "object")
             ? Object.values(data as Record<string, AirframeEventCounts>)
@@ -82,7 +82,7 @@ export function ChartSummaryPercentageOfFlightsWithEvent({ data, renderNoDataAva
 
 
     // Fleet vs all-fleets percentage values per event.
-    const chartData: PercentageChartDatum[] = eventNames.map((eventName) => {
+    const chartData: Array<PercentageChartDatum> = eventNames.map((eventName) => {
         let fleetFlightsWithEvent = 0;
         let fleetTotalFlights = 0;
         let aggregateFlightsWithEvent = 0;

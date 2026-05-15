@@ -5,11 +5,11 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const log = getLogger("PlatformProvider", "green", "Provider");
 
-type PlatformState = {
+interface PlatformState {
     userOS: string;
     commandKeyStr: string;
     testCtrlCmd: (e: KeyboardEvent) => boolean;
-};
+}
 
 export const PlatformContext = createContext<PlatformState>({
     userOS: "Unknown",

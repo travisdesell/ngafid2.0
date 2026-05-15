@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { fetchJson } from "@/fetchJson";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 
-type ProfileFormState = {
+interface ProfileFormState {
     email: string;
     firstName: string;
     lastName: string;
@@ -20,12 +20,12 @@ type ProfileFormState = {
     address: string;
     phoneNumber: string;
     zipCode: string;
-};
+}
 
-type ErrorResponse = {
+interface ErrorResponse {
     errorTitle?: string;
     errorMessage?: string;
-};
+}
 
 type ProfileResponse = Partial<ProfileFormState> & {
     user?: Partial<ProfileFormState>;
@@ -359,7 +359,7 @@ const emptyProfile: ProfileFormState = {
 
 const selectClassName = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
-function normalizeSelectValue(value: string | null | undefined, options: { code: string; name: string }[]) {
+function normalizeSelectValue(value: string | null | undefined, options: Array<{ code: string; name: string }>) {
     const normalizedValue = value?.trim();
     if (!normalizedValue || normalizedValue === SELECT_NONE_VALUE)
         return SELECT_NONE_VALUE;
@@ -372,7 +372,7 @@ function normalizeSelectValue(value: string | null | undefined, options: { code:
     return option?.code ?? SELECT_NONE_VALUE;
 }
 
-function getSelectLabel(value: string, options: { code: string; name: string }[]) {
+function getSelectLabel(value: string, options: Array<{ code: string; name: string }>) {
     if (value === SELECT_NONE_VALUE)
         return "None";
 

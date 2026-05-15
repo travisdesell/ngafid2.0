@@ -8,11 +8,11 @@ import { motion } from "motion/react";
 
 const log = getLogger("FlightsSelectedModalBadge", "black", "Component");
 
-type Props = {
+interface Props {
     label: string;
     kind: "universal" | "universal-missing" | "per-flight";
     onClick?: () => void;
-};
+}
 
 export function FlightsSelectedModalBadge({ label, kind, onClick }: Props) {
 
@@ -56,7 +56,7 @@ export function FlightsSelectedModalBadge({ label, kind, onClick }: Props) {
             </div>
         </TooltipContent>
         
-    </Tooltip>
+    </Tooltip>;
     
 
 }

@@ -65,7 +65,7 @@ export default function ForgotPasswordModal({ setModal }: ModalProps) {
                 setModal(ErrorModal, { title: "Error sending password reset email", message: `Error sending password reset email: ${error.message}` });
             });
             
-    }
+    };
 
     const submitDisabled = (email.trim().length === 0 || !emailIsValid());
 

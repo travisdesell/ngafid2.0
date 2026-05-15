@@ -34,6 +34,6 @@ export default function PageTitle({ title }: PageTitleProps) {
     }, [title]);
 
     // Render nothing
-    return <></>
+    return <></>;
     
 }

@@ -37,7 +37,7 @@ export default function FilterEditModal({ data }: ModalProps) {
 
     const allowFilterSave = () => {
         return (nameInputValue.trim().length > 0);
-    }
+    };
 
     const renderFilterEditRow = () => {
 
@@ -56,9 +56,9 @@ export default function FilterEditModal({ data }: ModalProps) {
                 onChange={(e) => setNameInputValue(e.target.value)}
             />
 
-        </div>
+        </div>;
 
-    }
+    };
 
     const attemptSaveFilter = () => {
 
@@ -88,7 +88,7 @@ export default function FilterEditModal({ data }: ModalProps) {
             
         });
 
-    }
+    };
 
     log("Rendering with incoming color:", colorIn, "and name:", nameIn);
     return (

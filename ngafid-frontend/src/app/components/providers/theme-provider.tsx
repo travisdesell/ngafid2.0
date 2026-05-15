@@ -17,13 +17,13 @@ const log = getLogger("ThemeProvider", "fuchsia", "Provider");
 
 type Theme = "dark" | "light" | "system"
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
     children: React.ReactNode
     defaultTheme?: Theme
     storageKey?: string
 }
 
-type ThemeProviderState = {
+interface ThemeProviderState {
     theme: Theme
     setTheme: (theme: Theme) => void,
     useHighContrastCharts: boolean, setUseHighContrastCharts: (useHighContrast: boolean) => void,
@@ -39,9 +39,9 @@ const initialState: ThemeProviderState = {
     invertBackgroundImage: true, setInvertBackgroundImage: () => null,
     blurBackgroundImage: false, setBlurBackgroundImage: () => null,
     useNavbarPageNames: true, setUseNavbarPageNames: () => null,
-}
+};
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
     children,
@@ -100,4 +100,4 @@ export const useTheme = () => {
         throw new Error("useTheme must be used within a ThemeProvider");
 
     return context;
-}
+};

@@ -30,12 +30,12 @@ const TAG_ALL = "All Tags";
 const GARMIN_FLIGHT_DISPLAY = "Garmin Flight Display";
 const MARKER_SHAPES = ["circle", "square", "cross", "triangle", "diamond", "star", "wye"] as const;
 
-type EventMetaDataItem = {
+interface EventMetaDataItem {
     name: string;
     value: number | string;
-};
+}
 
-type EventCount = {
+interface EventCount {
     id: number;
     severity: number;
     startTime: string;
@@ -48,13 +48,13 @@ type EventCount = {
     tagName: string;
     flightId: number | string;
     otherFlightId?: number | string;
-};
+}
 
-type EventSeverityByAirframe = Record<string, EventCount[]>;
+type EventSeverityByAirframe = Record<string, Array<EventCount>>;
 type EventSeverities = Record<string, EventSeverityByAirframe>;
 type EventDescriptionResponse = Record<string, Record<string, string>>;
 
-type SeverityPoint = {
+interface SeverityPoint {
     x: number;
     y: number;
     eventId: number;
@@ -71,16 +71,16 @@ type SeverityPoint = {
     endTime: string;
     startLine?: number;
     endLine?: number;
-};
+}
 
-type SeveritySeries = {
+interface SeveritySeries {
     seriesKey: string;
     eventName: string;
     airframeName: string;
     isAny: boolean;
     symbol: (typeof MARKER_SHAPES)[number];
-    data: SeverityPoint[];
-};
+    data: Array<SeverityPoint>;
+}
 
 const sanitizeKey = (value: string) => value.replace(/[^a-zA-Z0-9_]+/g, "_");
 
@@ -132,11 +132,11 @@ const formatTooltipDateTime = (value: string | number) => {
     });
 };
 
-const normalizeEventMetaData = (value: unknown): EventMetaDataItem[] => {
+const normalizeEventMetaData = (value: unknown): Array<EventMetaDataItem> => {
     if (!Array.isArray(value))
         return [];
 
-    const out: EventMetaDataItem[] = [];
+    const out: Array<EventMetaDataItem> = [];
     for (const row of value) {
         if (!row || typeof row !== "object")
             continue;
@@ -290,7 +290,7 @@ export default function SeveritiesPage() {
     const [eventsEmpty, setEventsEmpty] = useState<Record<string, boolean>>({ [EVENT_ANY]: false });
     const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
     const [eventSeverities, setEventSeverities] = useState<EventSeverities>({});
-    const [eventMetaDataById, setEventMetaDataById] = useState<Record<number, EventMetaDataItem[]>>({});
+    const [eventMetaDataById, setEventMetaDataById] = useState<Record<number, Array<EventMetaDataItem>>>({});
 
     const eventNames = useMemo(() => {
         const names = Object.keys(eventDescriptions).sort((a, b) => a.localeCompare(b));
@@ -523,7 +523,7 @@ export default function SeveritiesPage() {
 
     const chartModel = useMemo(() => {
         const chartConfig: ChartConfig = {};
-        const series: SeveritySeries[] = [];
+        const series: Array<SeveritySeries> = [];
         const anyEventData = buildAnyEvent(eventSeverities);
         const eventNamesByColor = nonAnyEventNames;
 
@@ -568,7 +568,7 @@ export default function SeveritiesPage() {
                 const symbolIndex = airframeSymbolIndex.get(airframeName) ?? 0;
                 const symbol = MARKER_SHAPES[symbolIndex % MARKER_SHAPES.length]!;
 
-                const data: SeverityPoint[] = [];
+                const data: Array<SeverityPoint> = [];
                 for (const count of counts) {
                     const x = toEpochMs(count.startTime);
                     if (x === undefined)
@@ -666,7 +666,7 @@ export default function SeveritiesPage() {
         if (rows.length === 0)
             return;
 
-        const metadataCache: Record<number, EventMetaDataItem[]> = { ...eventMetaDataById };
+        const metadataCache: Record<number, Array<EventMetaDataItem>> = { ...eventMetaDataById };
         const idsMissingMetadata = [...new Set(rows.map((row) => row.count.id).filter((id) => !(id in metadataCache)))];
 
         if (idsMissingMetadata.length > 0) {
@@ -694,7 +694,7 @@ export default function SeveritiesPage() {
             ...metadataNames,
         ];
 
-        const lines: string[] = [header.map(csvEscape).join(",")];
+        const lines: Array<string> = [header.map(csvEscape).join(",")];
 
         for (const row of rows) {
             const metadataByName: Record<string, string> = {};

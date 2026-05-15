@@ -3,28 +3,28 @@ export type FilterGroupOperators = "AND" | "OR";
 
 export const SPECIAL_FILTER_GROUP_ID = "special-flight-id-group";
 export type FilterID = string | typeof SPECIAL_FILTER_GROUP_ID;
-export type FilterGroup = {
+export interface FilterGroup {
     id: FilterID;
-    rules?: FilterRule[];
-    groups?: FilterGroup[];
+    rules?: Array<FilterRule>;
+    groups?: Array<FilterGroup>;
     operator: FilterGroupOperators;
-};
+}
 
 export type FilterConditionType = 'select' | 'input' | 'time' | 'date' | 'datetime-local' | 'number';
-export type FilterCondition = {
+export interface FilterCondition {
     type: FilterConditionType;
     name: string;
-    options?: any[];
+    options?: Array<any>;
     value?: string;
     min?: number;
     max?: number;
 }
 
-export type FilterRule = {
+export interface FilterRule {
     id: string;
     name: string;
-    conditions: FilterCondition[];
-};
+    conditions: Array<FilterCondition>;
+}
 
 export type FilterRuleDefinition = Omit<FilterRule, 'id'>;
 

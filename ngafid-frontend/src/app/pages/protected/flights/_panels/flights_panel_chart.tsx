@@ -39,14 +39,14 @@ import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, XAxis, YA
 
 const log = getLogger("FlightsPanelChart", "blue", "Component");
 
-type ActiveSeries = {
+interface ActiveSeries {
     seriesKey: string; //<-- unique key: f{flightId}_{sanitizedParamName}
     flight: Flight;
     flightIndex: number;
     paramName: string;
     paramIndex: number;
     series: TraceSeries;
-};
+}
 
 const MAX_POINTS_PER_SERIES = 1000;
 
@@ -135,12 +135,12 @@ const buildHighContrastColor = (seriesIndex: number): string => {
 const makeSeriesKeyForChart = (flightId: number, paramName: string): string =>
     `f${flightId}_${paramName.replace(/[^a-zA-Z0-9]+/g, "_")}`;
 
-type ChartModel = {
+interface ChartModel {
     loading: boolean;
     hasData: boolean;
     data: Array<Record<string, number | string>>;
     config: ChartConfig;
-    seriesKeys: string[];
+    seriesKeys: Array<string>;
     seriesFlightIDByKey: Record<string, number>;
     eventOverlays: Array<{
         id: string;
@@ -162,7 +162,7 @@ type ChartModel = {
     xMax: number;
     yMin: number;
     yMax: number;
-};
+}
 
 const buildEmptyChartModel = (loading: boolean): ChartModel => ({
     loading,
@@ -179,7 +179,7 @@ const buildEmptyChartModel = (loading: boolean): ChartModel => ({
     yMax: 0,
 });
 
-type ApiFlightLabel = {
+interface ApiFlightLabel {
     id: number;
     startIndex: number;
     endIndex: number;
@@ -188,11 +188,11 @@ type ApiFlightLabel = {
     startValue: number;
     endValue: number;
     labelText?: string;
-    parameterNames?: string[];
+    parameterNames?: Array<string>;
     visibleOnChart?: boolean;
-};
+}
 
-type LabelSection = {
+interface LabelSection {
     id: number | null;
     startIndex: number;
     endIndex: number;
@@ -201,15 +201,15 @@ type LabelSection = {
     startValue: number;
     endValue: number;
     labelText: string;
-    parameterNames: string[];
+    parameterNames: Array<string>;
     visibleOnChart?: boolean;
-};
+}
 
-type FleetLabelDefinition = {
+interface FleetLabelDefinition {
     id: number;
     labelText: string;
     displayOrder: number;
-};
+}
 
 const mapApiLabelToSection = (entry: ApiFlightLabel): LabelSection => ({
     id: Number.isFinite(entry.id) ? entry.id : null,
@@ -283,12 +283,12 @@ const decimateSeries = (series: TraceSeries) => {
 
     // No timestamps, return empty array
     if (timestampsCount === 0)
-        return [] as { t: number; v: number }[];
+        return [] as Array<{ t: number; v: number }>;
 
     // Already beneath the maximum, return as-is
     if (timestampsCount <= MAX_POINTS_PER_SERIES) {
 
-        const out: { t: number; v: number }[] = new Array(timestampsCount);
+        const out: Array<{ t: number; v: number }> = new Array(timestampsCount);
         for (let i = 0; i < timestampsCount; i++) {
             out[i] = { t: timestamps[i]!, v: values[i]! };
         }
@@ -298,7 +298,7 @@ const decimateSeries = (series: TraceSeries) => {
     }
 
     const step = Math.ceil(timestampsCount / MAX_POINTS_PER_SERIES);
-    const out: { t: number; v: number }[] = [];
+    const out: Array<{ t: number; v: number }> = [];
 
     for (let i = 0; i < timestampsCount; i += step) {
 
@@ -326,18 +326,18 @@ const decimateSeries = (series: TraceSeries) => {
 };
 
 
-type AxisMeta = { ticks: number[]; dayBoundaryTimes: number[]; domainSpanMinutes: number; };
+interface AxisMeta { ticks: Array<number>; dayBoundaryTimes: Array<number>; domainSpanMinutes: number; }
 
-type InteractiveChartProps = {
+interface InteractiveChartProps {
     chartModel: ChartModel;
     activeLabelingCaptureFlightId: number | null;
     useAlignedStartTimes: boolean;
     theme: string | undefined;
     onChartXClick?: (xValue: number) => void;
     pendingStartMarker?: { x: number; color: string } | null;
-};
+}
 
-type InteractiveChartHandle = { resetView: () => void; };
+interface InteractiveChartHandle { resetView: () => void; }
 
 
 const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProps>(function InteractiveChart(
@@ -474,8 +474,8 @@ const InteractiveChart = forwardRef<InteractiveChartHandle, InteractiveChartProp
         }
 
         const [domainMin, domainMax] = activeXDomain;
-        let ticks: number[] = [];
-        let dayBoundaryTimes: number[] = [];
+        const ticks: Array<number> = [];
+        const dayBoundaryTimes: Array<number> = [];
         let domainSpanMinutes = 0;
 
         if (useAlignedStartTimes) {
@@ -947,8 +947,8 @@ export function FlightsPanelChart() {
     const [useAlignedStartTimes, setUseAlignedStartTimes] = useState(false);
     const [activeLabelingCaptureFlightId, setActiveLabelingCaptureFlightId] = useState<number | null>(null);
     const [labelingCardPositionByFlight, setLabelingCardPositionByFlight] = useState<Record<number, { left: number; top: number }>>({});
-    const [labelDefinitions, setLabelDefinitions] = useState<FleetLabelDefinition[]>([]);
-    const labelingEnabledFlightIdsPrevRef = useRef<number[]>([]);
+    const [labelDefinitions, setLabelDefinitions] = useState<Array<FleetLabelDefinition>>([]);
+    const labelingEnabledFlightIdsPrevRef = useRef<Array<number>>([]);
 
     const interactiveChartRef = useRef<InteractiveChartHandle | null>(null);
 
@@ -963,7 +963,7 @@ export function FlightsPanelChart() {
     // Map flightId to selected parameter names (union of universal and per-flight parameters)
     const selectedParamsByFlight = useMemo(() => {
 
-        const result: Record<number, string[]> = {};
+        const result: Record<number, Array<string>> = {};
         const universal = chartSelection.universalParams;
         const perFlight = chartSelection.perFlightParams;
 
@@ -1081,7 +1081,7 @@ export function FlightsPanelChart() {
 
     const loadLabelsForFlight = useCallback(async (flightId: number) => {
         try {
-            const result = await fetchJson.get<ApiFlightLabel[]>(`/api/flight/${flightId}/labels`);
+            const result = await fetchJson.get<Array<ApiFlightLabel>>(`/api/flight/${flightId}/labels`);
             const mapped = (result ?? []).map(mapApiLabelToSection);
             setFlightLabelSections(flightId, mapped);
         } catch (error: any) {
@@ -1095,7 +1095,7 @@ export function FlightsPanelChart() {
 
     const loadLabelDefinitions = useCallback(async () => {
         try {
-            const result = await fetchJson.get<FleetLabelDefinition[]>("/api/fleet/labels");
+            const result = await fetchJson.get<Array<FleetLabelDefinition>>("/api/fleet/labels");
             setLabelDefinitions(Array.isArray(result) ? result : []);
         } catch (error: any) {
             setModal(ErrorModal, {
@@ -1369,7 +1369,7 @@ export function FlightsPanelChart() {
         }
     };
 
-    const findNearestSeriesIndex = (timestamps: number[], targetSeconds: number): number | null => {
+    const findNearestSeriesIndex = (timestamps: Array<number>, targetSeconds: number): number | null => {
         if (timestamps.length === 0 || !Number.isFinite(targetSeconds))
             return null;
 
@@ -1452,7 +1452,7 @@ export function FlightsPanelChart() {
     }, [chartData.seriesByFlight, flightStartMsById, flightEndMsById]);
 
     const labelSectionsForDisplayByFlight = useMemo(() => {
-        const out: Record<number, LabelSection[]> = {};
+        const out: Record<number, Array<LabelSection>> = {};
 
         for (const flight of chartFlights) {
             const sections = labelSectionsByFlight[flight.id] ?? [];
@@ -1681,7 +1681,7 @@ export function FlightsPanelChart() {
 
     }, [selectedParamsByFlight, chartData.seriesByFlight, ensureSeries]);
 
-    const buildChartConfig = (activeSeries: ActiveSeries[]): ChartConfig => {
+    const buildChartConfig = (activeSeries: Array<ActiveSeries>): ChartConfig => {
 
         const config: ChartConfig = {};
 
@@ -1723,7 +1723,7 @@ export function FlightsPanelChart() {
         if (!hasAnySelectedParams)
             return buildEmptyChartModel(false);
 
-        const activeSeries: ActiveSeries[] = [];
+        const activeSeries: Array<ActiveSeries> = [];
 
         chartFlights.forEach((flight, flightIndex) => {
 
@@ -1758,13 +1758,13 @@ export function FlightsPanelChart() {
         if (activeSeries.length === 0)
             return buildEmptyChartModel(true);
 
-        type PreparedSeries = {
+        interface PreparedSeries {
             seriesKey: string;
             startMS: number;
-            points: { t: number; v: number }[];
-        };
+            points: Array<{ t: number; v: number }>;
+        }
 
-        const preparedSeries: PreparedSeries[] = [];
+        const preparedSeries: Array<PreparedSeries> = [];
         const timeSet = new Set<number>();
 
         // Decimate and collect union of times (absolute or relative)
@@ -1979,7 +1979,7 @@ export function FlightsPanelChart() {
         ).sort((a, b) => a.localeCompare(b));
 
         // Keep one representative timestamps array per flight for event line-index mapping.
-        const representativeTimestampsByFlight = new Map<number, number[]>();
+        const representativeTimestampsByFlight = new Map<number, Array<number>>();
         for (const entry of activeSeries) {
 
             const flightStartMS = flightStartMsById.get(entry.flight.id);
@@ -2429,9 +2429,9 @@ export function FlightsPanelChart() {
                 </TooltipTrigger>
                 <TooltipContent>Reset Zoom & Pan</TooltipContent>
             </Tooltip>
-        )
+        );
 
-    }
+    };
 
 
     const chartInteractionModifiers = useChartInteractionModifiers();
@@ -2531,9 +2531,9 @@ export function FlightsPanelChart() {
                 </AccordionItem>
             </Accordion>
 
-        </Card>
+        </Card>;
 
-    }
+    };
 
     const noFlights = (chartFlights.length === 0);
 

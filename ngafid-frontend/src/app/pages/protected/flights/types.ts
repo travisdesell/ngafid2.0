@@ -42,7 +42,7 @@ export type AirframeNameIDType = { // ⚠️ TODO: Figure out what to do with th
     }
 } & AirframeNameID;
 
-export type FlightEvent = {
+export interface FlightEvent {
     endLine: number;
     endTime: string;
     eventDefinitionId: number;
@@ -55,7 +55,7 @@ export type FlightEvent = {
     startTime: string;
 }
 
-export type EventDefinition = {
+export interface EventDefinition {
     id: number;
     fleetId: number;
     name: string;
@@ -64,8 +64,8 @@ export type EventDefinition = {
 
     airframeNameId: number;
 
-    columnNames: string[];
-    severityColumnNames: string[];
+    columnNames: Array<string>;
+    severityColumnNames: Array<string>;
     severityType: string;
     filter: unknown;    // ⚠️ TODO: Define EventDefinition filter type
 }
@@ -76,7 +76,7 @@ export interface Flight {
     md5Hash: string;
     startDateTime: string;
     endDateTime: string;
-    itinerary: ItineraryEntry[];
+    itinerary: Array<ItineraryEntry>;
     id: number;
     fleetId: number;
     uploaderId: number;
@@ -87,19 +87,19 @@ export interface Flight {
     numberRows: number;
     doubleTimeSeries: DoubleTimeSeries;  // ⚠️ TODO: Define valid double time series types
     stringTimeSeries: object;  // ⚠️ TODO: Define valid string time series types
-    events: FlightEvent[] | null;
+    events: Array<FlightEvent> | null;
     eventCount: number;
-    eventDefinitions: EventDefinition[] | null;
-    tags: TagData[] | null;
+    eventDefinitions: Array<EventDefinition> | null;
+    tags: Array<TagData> | null;
 
-    commonTraceNames: string[] | null;
-    uncommonTraceNames: string[] | null;
+    commonTraceNames: Array<string> | null;
+    uncommonTraceNames: Array<string> | null;
 }
 
 
 /* --- Double Time Series --- */
 
-export type DoubleTimeSeries = {
-    [traceName: string]: number[];
-};
+export interface DoubleTimeSeries {
+    [traceName: string]: Array<number>;
+}
 export const PREFERRED_TRACE_NAMES = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd", "LOC-I Index", "Stall Index"];

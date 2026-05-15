@@ -23,7 +23,7 @@ export type ModalDataResetPassword = ModalData & {
     resetPhrase: string;
 };
 
-type ResetPasswordResponse = {
+interface ResetPasswordResponse {
     loggedOut?: boolean;
     waiting?: boolean;
     denied?: boolean;
@@ -31,7 +31,7 @@ type ResetPasswordResponse = {
     message?: string;
     errorTitle?: string;
     errorMessage?: string;
-};
+}
 
 export default function ResetPasswordModal({ data }: ModalProps<ModalDataResetPassword>) {
 

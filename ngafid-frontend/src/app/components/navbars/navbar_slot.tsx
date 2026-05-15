@@ -1,16 +1,16 @@
 // src/app/components/navbars/navbar_slot.tsx
 import React from "react";
 
-type Context = {
-    extras: React.ReactNode[];
-    setExtras: (n: React.ReactNode[]) => void;
-};
+interface Context {
+    extras: Array<React.ReactNode>;
+    setExtras: (n: Array<React.ReactNode>) => void;
+}
 
 const NavbarSlotContext = React.createContext<Context | null>(null);
 
 export function NavbarSlotProvider({ children }: { children: React.ReactNode }) {
 
-    const [extras, setExtras] = React.useState<React.ReactNode[]>([]);
+    const [extras, setExtras] = React.useState<Array<React.ReactNode>>([]);
     const value = React.useMemo(() => ({ extras, setExtras }), [extras]);
 
     return <NavbarSlotContext.Provider value={value}>
@@ -34,7 +34,7 @@ function isFragmentElement(el: React.ReactNode): el is React.ReactElement<{ chil
 }
 
 // Recursively flatten Fragments
-function flattenChildren(node: React.ReactNode): React.ReactNode[] {
+function flattenChildren(node: React.ReactNode): Array<React.ReactNode> {
 
     return React.Children.toArray(node).flatMap((child) => {
 

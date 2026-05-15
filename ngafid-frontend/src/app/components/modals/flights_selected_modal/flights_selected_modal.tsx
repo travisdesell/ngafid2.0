@@ -17,19 +17,19 @@ import { Dispatch, SetStateAction, useState, useSyncExternalStore } from "react"
 const log = getLogger("FlightsSelectedModal", "black", "Modal");
 
 
-type FlightsModalChartStoreSnapshot = {
-    chartFlights: Flight[];
+interface FlightsModalChartStoreSnapshot {
+    chartFlights: Array<Flight>;
     eventSelection: EventSelectionState;
-};
+}
 
-type FlightsModalChartStore = {
+interface FlightsModalChartStore {
     subscribe: (listener: () => void) => () => void;
     getSnapshot: () => FlightsModalChartStoreSnapshot;
-};
+}
 
 export type ModalDataFlightsSelected = ModalData & {
     chartStore: FlightsModalChartStore;
-    setChartFlights: Dispatch<SetStateAction<Flight[]>>;
+    setChartFlights: Dispatch<SetStateAction<Array<Flight>>>;
     toggleUniversalEvent: (name: string) => void;
     togglePerFlightEvent: (flightId: number, name: string) => void;
 };
@@ -46,15 +46,15 @@ export function FlightsSelectedModal({ data }: ModalProps<ModalDataFlightsSelect
         chartStore.getSnapshot,
     );
     
-    const [localChartFlights, setLocalChartFlights] = useState<Flight[]>(chartFlights);
+    const [localChartFlights, setLocalChartFlights] = useState<Array<Flight>>(chartFlights);
 
 
-    const handleSetChartFlights: Dispatch<SetStateAction<Flight[]>> = (updater) => {
+    const handleSetChartFlights: Dispatch<SetStateAction<Array<Flight>>> = (updater) => {
 
         setLocalChartFlights((prevLocal) => {
 
             const nextLocal = (typeof updater === "function")
-                ? (updater as (prev: Flight[]) => Flight[])(prevLocal)
+                ? (updater as (prev: Array<Flight>) => Array<Flight>)(prevLocal)
                 : updater;
 
             // Keep FlightsContext in sync

@@ -10,12 +10,12 @@ import { Flight } from "@/pages/protected/flights/types";
 
 const log = getLogger("FlightsSelectedModalChecklist", "black", "Component");
 
-type Props = {
-    chartFlights: Flight[];
+interface Props {
+    chartFlights: Array<Flight>;
     disableItems: boolean;
     universalEvents: Set<string>;
     toggleUniversalEvent: (name: string) => void;
-};
+}
 
 function getAvailableEventNamesForFlight(flight: Flight): Set<string> {
 

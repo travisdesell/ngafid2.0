@@ -6,7 +6,7 @@ const log = getLogger("fetchJson", "white", "Utility");
 
 type Primitive = string | number | boolean | Date;
 type Params =
-    | Record<string, Primitive | Primitive[] | null | undefined>
+    | Record<string, Primitive | Array<Primitive> | null | undefined>
     | URLSearchParams;
 
 

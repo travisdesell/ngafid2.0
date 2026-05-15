@@ -16,8 +16,8 @@ export const ALL_AIRFRAMES_PAIR = {
     id: ALL_AIRFRAMES_ID,
 };
 
-type AirframesContextValue = {
-    airframes: AirframeNameID[],
+interface AirframesContextValue {
+    airframes: Array<AirframeNameID>,
     airframeIDSelected: number | typeof ALL_AIRFRAMES_ID,
     setAirframeIDSelected: React.Dispatch<React.SetStateAction<number>>,
     airframeNameSelected: string | typeof ALL_AIRFRAMES_NAME,
@@ -37,7 +37,7 @@ export function AirframesProvider({ children }: { children: React.ReactNode }) {
     const { setModal } = useModal();
     const { user } = useAuth();
 
-    const [airframes, setAirframes] = React.useState<AirframeNameID[]>([ALL_AIRFRAMES_PAIR]);
+    const [airframes, setAirframes] = React.useState<Array<AirframeNameID>>([ALL_AIRFRAMES_PAIR]);
     const [airframeIDSelected, setAirframeIDSelected] = React.useState<number | typeof ALL_AIRFRAMES_ID>(ALL_AIRFRAMES_ID);
     const [airframeNameSelected, setAirframeNameSelected] = React.useState<string | typeof ALL_AIRFRAMES_NAME>(ALL_AIRFRAMES_NAME);
 
@@ -68,7 +68,7 @@ export function AirframesProvider({ children }: { children: React.ReactNode }) {
                     throw new Error(`Error fetching airframe name/ID pairs: ${response.status} ${response.statusText}`);
                 return response.json();
             })
-            .then((data: AirframeNameID[]) => {
+            .then((data: Array<AirframeNameID>) => {
                 log(`Fetched airframe name/ID pairs: ${JSON.stringify(data)}`);
 
                 //Exclude ignored names from AIRFRAME_NAMES_IGNORED

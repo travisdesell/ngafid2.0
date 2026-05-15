@@ -6,14 +6,14 @@ import type { ModalComponent, ModalData, SetModalFn } from "./types";
 
 const log = getLogger("ModalContext", "blue", "Context");
 
-export type ModalContextValue = {
+export interface ModalContextValue {
     modalType?: ModalComponent;
     modalData?: ModalData;
     setModal: SetModalFn;
     close: () => void;
     onClose?: (data?: any) => void;
     renderModalHeader: (title:string, description:string, allowClose?:boolean) => React.ReactNode;
-};
+}
 
 export const ModalContext = React.createContext<ModalContextValue | null>(null);
 

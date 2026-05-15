@@ -4,11 +4,11 @@ import type { ModalComponent, ModalData } from "./types";
 type AnyModalComponent = ModalComponent<ModalData>;
 type AnyModalData = ModalData;
 
-export type ModalStoreState = {
+export interface ModalStoreState {
     modalType?: AnyModalComponent;
     modalData?: AnyModalData;
     onClose?: (data?: any) => void;
-};
+}
 
 let state: ModalStoreState = {
     modalType: undefined,

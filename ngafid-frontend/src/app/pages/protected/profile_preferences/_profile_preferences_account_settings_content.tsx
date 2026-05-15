@@ -9,34 +9,34 @@ import { fetchJson } from "@/fetchJson";
 import { validatePasswordChange } from "@/lib/password_validation";
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type ErrorResponse = {
+interface ErrorResponse {
     errorTitle?: string;
     errorMessage?: string;
-};
+}
 
-type TwoFactorStatusResponse = {
+interface TwoFactorStatusResponse {
     twoFactorEnabled?: boolean;
     twoFactorSetupComplete?: boolean;
     twoFactorSecret?: string | null;
-};
+}
 
-type TwoFactorSetupResponse = {
+interface TwoFactorSetupResponse {
     success: boolean;
     qrCodeUrl?: string;
     secret?: string;
     message?: string;
-};
+}
 
-type TwoFactorVerifyResponse = {
+interface TwoFactorVerifyResponse {
     success: boolean;
-    backupCodes?: string[];
+    backupCodes?: Array<string>;
     message?: string;
-};
+}
 
-type TwoFactorSimpleResponse = {
+interface TwoFactorSimpleResponse {
     success: boolean;
     message?: string;
-};
+}
 
 type SetupStep = "initial" | "qr" | "disable" | "backup" | "complete";
 
@@ -56,7 +56,7 @@ export default function ProfilePreferencesAccountSettingsContent() {
     const [qrCodeUrl, setQrCodeUrl] = useState("");
     const [secret, setSecret] = useState("");
     const [verificationCode, setVerificationCode] = useState("");
-    const [backupCodes, setBackupCodes] = useState<string[]>([]);
+    const [backupCodes, setBackupCodes] = useState<Array<string>>([]);
     const [twoFactorPassword, setTwoFactorPassword] = useState("");
     const [twoFactorLoading, setTwoFactorLoading] = useState(false);
     const [twoFactorLoadingInitial, setTwoFactorLoadingInitial] = useState(true);

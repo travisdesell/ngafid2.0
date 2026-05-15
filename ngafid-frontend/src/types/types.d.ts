@@ -17,7 +17,7 @@ export interface Fleet {
     name: string;
 }
 
-export type FleetAccess = {
+export interface FleetAccess {
     fleetName: string;
     userId: number;
     fleetId: number;
@@ -31,7 +31,7 @@ export interface NGAFIDUser {
     firstName: string;
     lastName: string;
     fleet: Fleet | null;
-    fleetAccess: FleetAccess[];
+    fleetAccess: Array<FleetAccess>;
     isAdmin: boolean;
     isFleetManager: boolean;
 }
@@ -48,13 +48,13 @@ export interface Event {
 
 }
 
-export type MultifleetInvite = {
+export interface MultifleetInvite {
     fleetName: string,
     inviteEmail: string,
     fleetId?: number,
 }
 
-export type MultifleetSelectWithAccess = {
+export interface MultifleetSelectWithAccess {
     fleetName: string,
     fleetId: number,
     accessType: AccessType,
@@ -67,15 +67,15 @@ export interface AirframeNameID {
     id: number;
 }
 
-export type AirframeEventCounts = {
+export interface AirframeEventCounts {
     airframeName: string;
-    names: string[];
-    flightsWithEventCounts: number[];
-    totalFlightsCounts: number[];
-    totalEventsCounts: number[];
-    aggregateFlightsWithEventCounts: number[];
-    aggregateTotalFlightsCounts: number[];
-    aggregateTotalEventsCounts: number[];
+    names: Array<string>;
+    flightsWithEventCounts: Array<number>;
+    totalFlightsCounts: Array<number>;
+    totalEventsCounts: Array<number>;
+    aggregateFlightsWithEventCounts: Array<number>;
+    aggregateTotalFlightsCounts: Array<number>;
+    aggregateTotalEventsCounts: Array<number>;
 }
 
 declare global {
@@ -84,9 +84,9 @@ declare global {
     const unconfirmedTailsCount: number;
     const modifyTailsAccess: boolean;
     const plotMapHidden: boolean;
-    const airframes: AirframeNameID[];
-    const tagNames: string[];
-    const eventNames: string[];
+    const airframes: Array<AirframeNameID>;
+    const tagNames: Array<string>;
+    const eventNames: Array<string>;
 
     interface Window {
         __APP_CONFIG__?: {

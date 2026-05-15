@@ -30,15 +30,15 @@ type BaseStyleName =
     | 'HelicopterCharts';
 
 
-type FlightsPanelMapProps = {
+interface FlightsPanelMapProps {
     initialStyle?: BaseStyleName;
     initialCenterLonLat?: [number, number];
     initialZoom?: number;
-};
+}
 
 function createBaseMapLayers(azureKey: string | undefined) {
 
-    const styles: BaseStyleName[] = [
+    const styles: Array<BaseStyleName> = [
         'Aerial',
         'Road',
         'RoadOnDemand',
@@ -107,7 +107,7 @@ export default function FlightsPanelMap(props: FlightsPanelMapProps) {
 
     const mapRef = useRef<Map | null>(null);
     const overlayRef = useRef<Overlay | null>(null);
-    const layersRef = useRef<TileLayer<XYZ>[]>([]);
+    const layersRef = useRef<Array<TileLayer<XYZ>>>([]);
     const [mapError, setMapError] = useState(false);
 
     
@@ -235,9 +235,9 @@ export default function FlightsPanelMap(props: FlightsPanelMapProps) {
                     Please try again later.
                 </AlertDescription>
             </div>
-        </div>
+        </div>;
 
-    }
+    };
 
 
     const render = () => {
@@ -289,7 +289,7 @@ export default function FlightsPanelMap(props: FlightsPanelMapProps) {
             </Card>
         );
 
-    }
+    };
 
     return render();
 

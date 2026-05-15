@@ -11,29 +11,29 @@ import { fetchJson } from "@/fetchJson";
 import { Check, Loader2, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type TailRecordResponse = {
+interface TailRecordResponse {
     systemId: string | number;
     fleetId: number;
     tail?: string | null;
     confirmed?: boolean;
-};
+}
 
-type TailRecord = {
+interface TailRecord {
     systemId: string;
     fleetId: number;
     tail: string;
     originalTail: string;
     draftTail: string;
     confirmed: boolean;
-};
+}
 
-type UpdateTailResponse = {
+interface UpdateTailResponse {
     fleetId?: number;
     systemId?: string | number;
     tail?: string | null;
     errorTitle?: string;
     errorMessage?: string;
-};
+}
 
 function normalizeTailRecord(record: TailRecordResponse): TailRecord {
     const tail = record.tail ?? "";
@@ -48,7 +48,7 @@ function normalizeTailRecord(record: TailRecordResponse): TailRecord {
     };
 }
 
-function sortTailRecords(records: TailRecord[]) {
+function sortTailRecords(records: Array<TailRecord>) {
     return [...records].sort((a, b) => {
         const aNumeric = Number(a.systemId);
         const bNumeric = Number(b.systemId);
@@ -70,7 +70,7 @@ function TailNumbersTable({
 }: {
     title: string;
     description: string;
-    records: TailRecord[];
+    records: Array<TailRecord>;
     savingSystemId: string;
     onDraftChange: (systemId: string, value: string) => void;
     onSave: (record: TailRecord) => void;
@@ -152,14 +152,14 @@ export default function ManageFleetTailNumbersContent() {
 
     const { setModal } = useModal();
 
-    const [records, setRecords] = useState<TailRecord[]>([]);
+    const [records, setRecords] = useState<Array<TailRecord>>([]);
     const [loading, setLoading] = useState(true);
     const [savingSystemId, setSavingSystemId] = useState("");
 
     const loadTailRecords = useCallback(async () => {
         setLoading(true);
 
-        const response = await fetchJson.get<TailRecordResponse[]>("/api/aircraft/system-id").catch((error: Error) => {
+        const response = await fetchJson.get<Array<TailRecordResponse>>("/api/aircraft/system-id").catch((error: Error) => {
             setModal(ErrorModal, { title: "Failed to fetch tail numbers", message: error.message });
             return null;
         });
@@ -233,7 +233,7 @@ export default function ManageFleetTailNumbersContent() {
 
     // Loading, show loader circle
     if (loading)
-        return <Loader2 size={128} className="animate-spin mr-2 text-gray-500 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+        return <Loader2 size={128} className="animate-spin mr-2 text-gray-500 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />;
 
     return (
         <div className="flex flex-col gap-6 pb-6">

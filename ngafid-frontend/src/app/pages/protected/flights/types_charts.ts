@@ -1,9 +1,9 @@
 // ngafid-frontend/src/app/pages/protected/flights/types_charts.ts
 
-export type TraceNameList = {
-    commonTraceNames: string[];
-    uncommonTraceNames: string[];
-};
+export interface TraceNameList {
+    commonTraceNames: Array<string>;
+    uncommonTraceNames: Array<string>;
+}
 
 // Key to identify a series uniquely.
 export type SeriesKey = `${number}:${string}`; //<-- `${flightId}:${traceName}`
@@ -11,8 +11,8 @@ export type SeriesKey = `${number}:${string}`; //<-- `${flightId}:${traceName}`
 export interface TraceSeries {
     flightId: number;
     name: string;
-    timestamps: number[];
-    values: number[];
+    timestamps: Array<number>;
+    values: Array<number>;
 }
 
 /*

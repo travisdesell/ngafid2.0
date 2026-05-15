@@ -30,7 +30,7 @@ import Background from './components/background';
 const log = getLogger("Main", "white", "Main");
 
 // Verify that Tailwind was imported correctly
-const tailwindLoaded = !!document.querySelector('style[data-vite-dev-id*="src/app/index.css"]')
+const tailwindLoaded = !!document.querySelector('style[data-vite-dev-id*="src/app/index.css"]');
 log("Tailwind CSS loaded (dev):", tailwindLoaded);
 
 
@@ -78,10 +78,10 @@ class RouteData {
 
     Other files will be public routes.
 */
-const routes: RouteData[] = [];
-const routesProtected: RouteData[] = [];
-const routesAutoPublic: RouteData[] = [];
-const routesAutoProtected: RouteData[] = [];
+const routes: Array<RouteData> = [];
+const routesProtected: Array<RouteData> = [];
+const routesAutoPublic: Array<RouteData> = [];
+const routesAutoProtected: Array<RouteData> = [];
 
 function segmentizeParams(params: string) {
 
@@ -150,11 +150,11 @@ function collapseFolderNamedFile(relNoExt: string) {
 
 }
 
-type RouteInfo = {
+interface RouteInfo {
     url: string;
     isProtected: boolean;
     isAuto: boolean;
-};
+}
 function fileToRoute(filePath: string): RouteInfo {
 
     /*
@@ -177,7 +177,7 @@ function fileToRoute(filePath: string): RouteInfo {
     rel = collapseFolderNamedFile(rel);
 
     // Build a clean URL (avoid accidental "//")
-    let url = "/" + rel.replace(/^\/+/, "");
+    let url = `/${  rel.replace(/^\/+/, "")}`;
     url = segmentizeParams(url);
 
     // Explicit root
@@ -260,7 +260,7 @@ const routeElementsProtected = routesProtected.map((route) => (
 type ProviderEntry<P = any> =
     [React.ComponentType<React.PropsWithChildren<P>>, P];
 
-const providerTree: ProviderEntry[] = [
+const providerTree: Array<ProviderEntry> = [
     [ThemeProvider, { defaultTheme: "light" }],
     [PlatformProvider, {}],
     [TooltipProvider, { delayDuration: 0, skipDelayDuration: 0 }],

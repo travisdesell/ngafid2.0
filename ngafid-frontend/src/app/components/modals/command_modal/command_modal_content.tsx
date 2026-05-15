@@ -15,10 +15,10 @@ import { useNavigate } from "react-router-dom";
 
 const log = getLogger("CommandModalContent", "black", "Modal");
 
-type CommandModalContentProps = {
+interface CommandModalContentProps {
     submitCommand: (command: any) => void;
     inputRef: React.RefObject<HTMLInputElement> | undefined;
-};
+}
 
 export default function CommandModalContent({ submitCommand, inputRef }: CommandModalContentProps) {
 
@@ -60,9 +60,9 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
                 </Command.Group>
                 <Command.Separator />
             </>
-        )
+        );
 
-    }
+    };
 
     return (
         <Command label="Global Command Menu">

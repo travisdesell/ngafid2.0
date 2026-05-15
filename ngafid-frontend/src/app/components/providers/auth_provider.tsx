@@ -14,12 +14,12 @@ const log = getLogger("AuthProvider", "blue", "Provider");
 
 type IsLoggedInFn = () => boolean
 type AttemptLogOutFn = () => void;
-type AuthState = {
+interface AuthState {
     loading: boolean;
     user: NGAFIDUser|null,
     fleetLoading: boolean;
     fleetLoaded: boolean;
-};
+}
 
 type AuthContextValue = AuthState & {
     isLoggedIn: IsLoggedInFn,
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             window.location.assign(ROUTE_DEFAULT_LOGGED_OUT);
         });
 
-    }
+    };
 
     const refreshFleetData = useCallback(async () => {
 
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const [fleet, fleetAccess] = await Promise.all([
                 fetchJson.get<Fleet>("/api/fleet"),
-                fetchJson.get<FleetAccess[]>("/api/user/fleet-access"),
+                fetchJson.get<Array<FleetAccess>>("/api/user/fleet-access"),
             ]);
 
             setState((prev) => {

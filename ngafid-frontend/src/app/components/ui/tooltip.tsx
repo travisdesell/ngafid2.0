@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/components/ui/tooltip.tsx
-"use client"
+"use client";
 
 import { cn } from "@/lib/utils";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -12,25 +12,25 @@ function TooltipProvider({
     delayDuration = 0,
     ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
-    return <TooltipPrimitive.Provider delayDuration={delayDuration} {...props} />
+    return <TooltipPrimitive.Provider delayDuration={delayDuration} {...props} />;
 }
 
 function Tooltip({ onOpenChange, open: openProp, defaultOpen, ...props }: TooltipProps) {
     
-    const isControlled = (openProp !== undefined)
+    const isControlled = (openProp !== undefined);
 
-    const [open, setOpen] = React.useState<boolean>(defaultOpen ?? false)
-    const closeTimerRef = React.useRef<number | null>(null)
+    const [open, setOpen] = React.useState<boolean>(defaultOpen ?? false);
+    const closeTimerRef = React.useRef<number | null>(null);
 
     React.useEffect(() => {
         return () => {
 
             // Clean up timer on unmount
             if (closeTimerRef.current)
-                window.clearTimeout(closeTimerRef.current)
+                window.clearTimeout(closeTimerRef.current);
 
-        }
-    }, [])
+        };
+    }, []);
 
     const handleOpenChange = React.useCallback(
 
@@ -38,29 +38,29 @@ function Tooltip({ onOpenChange, open: openProp, defaultOpen, ...props }: Toolti
 
             // Controlled, call the handler
             if (isControlled) {
-                onOpenChange?.(next)
+                onOpenChange?.(next);
                 return;
             }
 
             // Uncontrolled, manage state with delay on close
             if (closeTimerRef.current)
-                window.clearTimeout(closeTimerRef.current)
+                window.clearTimeout(closeTimerRef.current);
 
             if (next) {
 
-                setOpen(true)
-                onOpenChange?.(true)
+                setOpen(true);
+                onOpenChange?.(true);
 
             } else {
 
-                setOpen(false)
-                onOpenChange?.(false)
+                setOpen(false);
+                onOpenChange?.(false);
 
             }
             
         },
         [isControlled, onOpenChange]
-    )
+    );
 
     return (
         <TooltipPrimitive.Root
@@ -68,7 +68,7 @@ function Tooltip({ onOpenChange, open: openProp, defaultOpen, ...props }: Toolti
             open={isControlled ? openProp : open}
             onOpenChange={handleOpenChange}
         />
-    )
+    );
 }
 
 function TooltipTrigger({
@@ -80,11 +80,11 @@ function TooltipTrigger({
             {...props}
             className={cn("mx-0 p-0 w-fit select-text cursor-auto", className)}
         />
-    )
+    );
 }
 
 
-type TooltipContentActionsProps = {
+interface TooltipContentActionsProps {
     leftAction?: string;
     rightAction?: string;
     keyboardAction?: string;
@@ -161,7 +161,7 @@ function TooltipContent({
                 <TooltipPrimitive.Arrow className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] pointer-events-none" />
             </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
-    )
+    );
 }
 
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };

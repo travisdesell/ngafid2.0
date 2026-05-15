@@ -16,18 +16,18 @@ import { Dispatch, SetStateAction, useState } from "react";
 
 const log = getLogger("ChartsListModalFlights", "black", "Component");
 
-type Props = {
-    chartFlights: Flight[];
-    setChartFlights: Dispatch<SetStateAction<Flight[]>>;
+interface Props {
+    chartFlights: Array<Flight>;
+    setChartFlights: Dispatch<SetStateAction<Array<Flight>>>;
     chartSelection: ChartSelectionState;
     togglePerFlightParam: (flightId: number, name: string) => void;
     toggleUniversalParam: (name: string) => void;
-};
+}
 
-type FlightBadge = {
+interface FlightBadge {
     label: string;
     isUniversal: boolean;
-};
+}
 
 export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSelection, togglePerFlightParam, toggleUniversalParam }: Props) {
 
@@ -306,7 +306,7 @@ export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSel
             <NumberInput
                 value={rangeIDLower}
                 onValueChange={(e) => {
-                    setRangeIDLower(e)
+                    setRangeIDLower(e);
                     if (rangeIDUpper !== undefined && e !== undefined && e > rangeIDUpper)
                         setRangeIDUpper(e);
                 }}
@@ -328,9 +328,9 @@ export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSel
                 <Plus />
             </Button>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     return (
         <div className="flex flex-col gap-2 w-full h-full ">

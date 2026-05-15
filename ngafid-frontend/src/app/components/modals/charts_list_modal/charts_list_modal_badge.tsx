@@ -9,11 +9,11 @@ import { motion } from "motion/react";
 
 const log = getLogger("ChartsListModalBadge", "black", "Component");
 
-type Props = {
+interface Props {
     label: string;
     isUniversal: boolean;
     onClick?: () => void;
-};
+}
 
 export function ChartsListModalBadge({ label, isUniversal, onClick }: Props) {
 
@@ -52,6 +52,6 @@ export function ChartsListModalBadge({ label, isUniversal, onClick }: Props) {
             </div>
         </TooltipContent>
 
-    </Tooltip>
+    </Tooltip>;
 
 }

@@ -9,12 +9,12 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const log = getLogger("SystemIdsProvider", "red", "Provider");
 
-type SystemIdsProviderState = {
-    systemIds: string[];
-    setSystemIds: (ids: string[]) => void;
+interface SystemIdsProviderState {
+    systemIds: Array<string>;
+    setSystemIds: (ids: Array<string>) => void;
 }
 
-type SystemIDResponseItem = {
+interface SystemIDResponseItem {
     confirmed: boolean;
     fleetId: number;
     systemId: string;
@@ -24,7 +24,7 @@ type SystemIDResponseItem = {
 export const initialState: SystemIdsProviderState = {
     systemIds: [],
     setSystemIds: () => undefined,
-}
+};
 
 export const SystemIdsProviderContext = createContext<SystemIdsProviderState>(initialState);
 
@@ -32,7 +32,7 @@ export function SystemIdsProvider({ children }: { children: React.ReactNode }) {
 
     const { isLoggedIn } = useAuth();
     const { setModal } = useModal();
-    const [systemIds, setSystemIds] = useState<string[]>([]);
+    const [systemIds, setSystemIds] = useState<Array<string>>([]);
 
     // Fetch system IDs from API on mount
     useEffect(() => {
@@ -41,7 +41,7 @@ export function SystemIdsProvider({ children }: { children: React.ReactNode }) {
 
             try {
 
-                const response = await fetchJson.get<SystemIDResponseItem[]>("/api/aircraft/system-id");
+                const response = await fetchJson.get<Array<SystemIDResponseItem>>("/api/aircraft/system-id");
                 log("Fetched system IDs:", response);
                 setSystemIds(response.map(item => item.systemId));
 
@@ -77,4 +77,4 @@ export const useSystemIds = () => {
 
     return context;
 
-}
+};

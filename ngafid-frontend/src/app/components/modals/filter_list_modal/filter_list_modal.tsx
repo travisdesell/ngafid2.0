@@ -25,7 +25,7 @@ const log = getLogger("FilterListModal", "black", "Modal");
 
 
 export type ModalDataFilterList = ModalData & {
-    filters: FlightFilter[];
+    filters: Array<FlightFilter>;
     saveFilter(filter: FlightFilter): Promise<void>;
     deleteFilterByName(filterName: string): Promise<void>;
     setFilterFromJSON: (json: string) => void;
@@ -66,7 +66,7 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
                 setFilterFromJSON(filters[index].filter);
                 close();
             } catch (error) {
-                const errorCode = `${error}\n\n${JSON.stringify(filters[index])}`
+                const errorCode = `${error}\n\n${JSON.stringify(filters[index])}`;
                 setModal(ErrorModal, { title: "Invalid Filter", message: `The selected filter is invalid and cannot be applied.`, code: errorCode });
             }
 
@@ -78,7 +78,7 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
             if (!event.ctrlKey)
                 setHasCtrlHeld(false);
             
-        }
+        };
 
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
@@ -103,12 +103,12 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
 
             } catch (error) {
 
-                const errorCode = `${error}\n\n${JSON.stringify(filter)}`
+                const errorCode = `${error}\n\n${JSON.stringify(filter)}`;
                 setModal(ErrorModal, { title: "Invalid Filter", message: `The selected filter is invalid and cannot be applied.`, code: errorCode });
 
             }
 
-        }
+        };
 
         const tooltipKeyboardAction = (index <= (KEYBOARD_SHORTCUT_INDEX_MAX-1))
             ? `${commandKeyStr}+${index + 1}`
@@ -190,9 +190,9 @@ export default function FilterListModal({ data }: ModalProps<ModalDataFilterList
                 </TooltipContent>
             </Tooltip>
 
-        </div>
+        </div>;
 
-    }
+    };
 
 
     log.table("Rendering filters list: ", filters);

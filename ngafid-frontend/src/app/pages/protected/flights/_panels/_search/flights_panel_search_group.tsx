@@ -17,11 +17,11 @@ import FlightsPanelSearchRule from "./flights_panel_search_rule";
 const log = getLogger("FlightsPanelSearchGroup", "green", "Component");
 
 
-type Props = {
+interface Props {
     depth: number;
     group: FilterGroup;
-    indexPath: number[];
-    ruleDefinitions: FilterRuleDefinition[];
+    indexPath: Array<number>;
+    ruleDefinitions: Array<FilterRuleDefinition>;
 }
 function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions }: Props) {
 
@@ -62,7 +62,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
 
         log("New rule created. Updated filter (will reflect after render):", filter);
 
-    }
+    };
 
     const createNewGroup = () => {
 
@@ -107,9 +107,9 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
             return <Badge variant="outline" className="h-7 flex gap-2 items-center bg-accent rounded-xl">
                 <FolderSearch size={16} className="inline" />
                 <span className="text-xs">Flight IDs Group</span>
-            </Badge>
+            </Badge>;
 
-        }
+        };
 
         const toggleOperator = () => {
 
@@ -136,7 +136,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
 
             log("Operator toggled. Updated filter (will reflect after render):", filter);
 
-        }
+        };
 
         return <div className="flex items-center gap-4">
             <Button
@@ -148,9 +148,9 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
                 {group.operator}
             </Button>
             {(isSpecialFilter) && renderSpecialFilterBadge()}
-        </div>
+        </div>;
 
-    }
+    };
 
     const renderNewRuleButton = (isRoot: boolean) => {
 
@@ -162,19 +162,19 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
         >
             {(displayPing) && <Ping />}
             <Bolt />{isRoot && <span>New Rule</span>}
-        </Button>
+        </Button>;
 
-    }
+    };
 
     const renderNewGroupButton = (isRoot: boolean) => {
 
         return <Button onClick={createNewGroup}>
             <Folder />{isRoot && <span> New Group</span>}
-        </Button>
+        </Button>;
 
-    }
+    };
 
-    const renderDeleteGroupButton = (isRoot: boolean, indexPath: number[]) => {
+    const renderDeleteGroupButton = (isRoot: boolean, indexPath: Array<number>) => {
 
         const handleDeleteGroup = () => {
 
@@ -189,7 +189,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
                         ...prev,
                         rules: [],
                         groups: []
-                    }
+                    };
 
                 }
 
@@ -215,7 +215,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
 
             log("Group deleted. Updated filter (will reflect after render):", filter);
 
-        }
+        };
 
         const handleDeleteGroupButtonClicked = () => {
 
@@ -244,7 +244,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
                 }
             );
 
-        }
+        };
 
         // At root, disable if there are no rules/groups
         let disableDelete = false;
@@ -260,9 +260,9 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
             disabled={disableDelete}
         >
             <Trash />{isRoot && <span>Delete Group</span>}
-        </Button>
+        </Button>;
 
-    }
+    };
 
     const render = () => {
 
@@ -286,7 +286,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
             overflow-visible
             gap-2 flex flex-col
             ${hasAnyRules || hasAnySubGroups ? "p-2 " : ""}
-        `
+        `;
 
         return (
             <motion.div
@@ -370,7 +370,7 @@ function FlightsPanelSearchGroupInner({ depth, group, indexPath, ruleDefinitions
 
         );
 
-    }
+    };
 
     return render();
 

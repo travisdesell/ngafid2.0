@@ -22,7 +22,7 @@ const badgeVariants = cva(
       variant: "default",
     },
   }
-)
+);
 
 export type BadgeVariant = VariantProps<typeof badgeVariants>["variant"]
 
@@ -37,13 +37,13 @@ type NonClickableBadgeProps = React.ComponentPropsWithoutRef<"div"> &
 export type BadgeProps = ClickableBadgeProps | NonClickableBadgeProps
 
 function isClickableBadgeProps(props: BadgeProps): props is ClickableBadgeProps {
-  return "onClick" in props && typeof props.onClick === "function"
+  return "onClick" in props && typeof props.onClick === "function";
 }
 
 function Badge(props: BadgeProps) {
   // Has onClick: Return button
   if (isClickableBadgeProps(props)) {
-    const { className, variant, ...buttonProps } = props
+    const { className, variant, ...buttonProps } = props;
     return (
       <button
         type="button"
@@ -54,12 +54,12 @@ function Badge(props: BadgeProps) {
         )}
         {...buttonProps}
       />
-    )
+    );
   }
 
   // Normal: Return div
-  const { className, variant, ...divProps } = props
-  return <div className={cn(badgeVariants({ variant }), className)} {...divProps} />
+  const { className, variant, ...divProps } = props;
+  return <div className={cn(badgeVariants({ variant }), className)} {...divProps} />;
 }
 
 export { Badge, badgeVariants };

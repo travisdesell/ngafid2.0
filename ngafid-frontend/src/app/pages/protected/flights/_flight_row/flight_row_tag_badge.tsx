@@ -1,5 +1,5 @@
 // ngafid-frontend/src/app/pages/protected/flights/_flight_row/flight_row_tag_badge.tsx
-"use client"
+"use client";
 
 import type { TagData } from "@/components/providers/tags/tags_provider";
 import { Badge } from "@/components/ui/badge";

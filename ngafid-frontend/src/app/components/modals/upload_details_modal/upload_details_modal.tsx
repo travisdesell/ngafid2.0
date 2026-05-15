@@ -82,7 +82,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
 
         let cancelled = false;
 
-        const flagRepeatedFilenames = <T extends { filename: string; sameFilename?: boolean }>(entries: T[]) =>
+        const flagRepeatedFilenames = <T extends { filename: string; sameFilename?: boolean }>(entries: Array<T>) =>
             entries.map((entry, index) => ({
                 ...entry,
                 sameFilename: (index > 0 && entries[index - 1].filename === entry.filename)
@@ -208,7 +208,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
 
             </AccordionContent>
 
-        </AccordionItem>
+        </AccordionItem>;
 
     }
 
@@ -216,7 +216,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
         return <div className="rounded-md border border-(--error) text-(--error) px-2 py-1">{message}</div>;
     }
 
-    function ErrorDetailItems({ groups }: { groups: { label: string; filenames: Set<string>; count: number }[] }) {
+    function ErrorDetailItems({ groups }: { groups: Array<{ label: string; filenames: Set<string>; count: number }> }) {
 
         const copyErrorDetailsToClipboard = async (group: { label: string; filenames: Set<string>; count: number }) => {
 
@@ -266,7 +266,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
                     </Tooltip>
                 )
             )}
-        </div>
+        </div>;
 
     }
 
@@ -371,7 +371,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
                     : null
                 }
             </AccordionContent>
-        </AccordionItem>
+        </AccordionItem>;
 
     }
 

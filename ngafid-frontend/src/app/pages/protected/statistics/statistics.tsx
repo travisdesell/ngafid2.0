@@ -33,8 +33,8 @@ export default function StatisticsPage() {
     setPageTitle("Event Statistics");
 
 
-    const allAirframeCards = useMemo<AirframeCardData[]>(() => {
-        const output: AirframeCardData[] = [];
+    const allAirframeCards = useMemo<Array<AirframeCardData>>(() => {
+        const output: Array<AirframeCardData> = [];
         const seenIds = new Set<number>();
 
         const pushCard = (id: number, name: string) => {
@@ -83,7 +83,7 @@ export default function StatisticsPage() {
             setIsLoading(true);
         }
 
-    }
+    };
 
     const disableSelection = (airframes.length === 0 || isLoading);
 

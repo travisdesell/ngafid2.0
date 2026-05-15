@@ -6,10 +6,10 @@ export const PASSWORD_REQUIREMENTS_MESSAGE =
 
 const PASSWORD_ALLOWED_REGEX = /^[@#$%^&*()_+!\/\\.,a-zA-Z0-9 ]*$/;
 
-export type PasswordValidationResult = {
+export interface PasswordValidationResult {
     valid: boolean;
     message: string;
-};
+}
 
 function invalid(message: string): PasswordValidationResult {
     return { valid: false, message };

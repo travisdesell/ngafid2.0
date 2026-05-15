@@ -11,17 +11,17 @@ import { createContext, useContext, useEffect, useState } from "react";
 const log = getLogger("FlightFiltersProvider", "purple", "Provider");
 
 
-export type FlightFilter = {
+export interface FlightFilter {
     name: string,
     color: string,
     filter: string, //<-- JSON string representing filter criteria
-};
+}
 
-type FlightFiltersState = {
-    filters: FlightFilter[],
+interface FlightFiltersState {
+    filters: Array<FlightFilter>,
 }
 type FlightFiltersContextValue = {
-    filters: FlightFilter[],
+    filters: Array<FlightFilter>,
 } & {
     saveFilter(filter: FlightFilter): Promise<void>,
     deleteFilterByName(filterName: string): Promise<void>,
@@ -47,12 +47,12 @@ export function FlightFiltersProvider({ children }: { children: React.ReactNode 
         filters: [],
     });
     const { filters } = state;
-    const setFilters = (filters: FlightFilter[]) => {
+    const setFilters = (filters: Array<FlightFilter>) => {
         setState((prevState) => ({
             ...prevState,
             filters: filters,
         }));
-    }
+    };
 
 
 
@@ -73,7 +73,7 @@ export function FlightFiltersProvider({ children }: { children: React.ReactNode 
 
         log("Fetching flight filters...");
 
-        let filtersData = await fetchJson.get("/api/filter")
+        const filtersData = await fetchJson.get("/api/filter")
             .catch((error) => {
                 setModal(ErrorModal, {
                     title: "Error Fetching Flight Filters",
@@ -86,7 +86,7 @@ export function FlightFiltersProvider({ children }: { children: React.ReactNode 
         else
             log.table(`Fetched flight filters: `, filtersData);
 
-        setFilters(filtersData as FlightFilter[] || []);
+        setFilters(filtersData as Array<FlightFilter> || []);
 
     };
 
@@ -124,7 +124,7 @@ export function FlightFiltersProvider({ children }: { children: React.ReactNode 
         await fetchJson
             .delete(`/api/filter/${encodeURIComponent(name)}`)
             .then(() => {
-                fetchFlightFilters()
+                fetchFlightFilters();
                 setModal(SuccessModal, { title: "Flight Filter Deleted", message: `Successfully deleted flight filter: ${name}` });
             })
             .catch((error) => {

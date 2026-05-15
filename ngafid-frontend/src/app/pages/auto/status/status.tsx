@@ -32,25 +32,25 @@ const STATUS_TUPLES = [
     [StatusName.UNCHECKED, ArrowBigRightDash],
 ] as const;
 
-type Status = {
+interface Status {
     name: StatusName;
     icon: React.ForwardRefExoticComponent<
         Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
     >;
-};
+}
 
-type StatusEntry = {
+interface StatusEntry {
     name: string;
     nameDisplay: string;
     status: Status;
     message: string;
     messageDisplay: string;
-};
+}
 
-type StatusResponse = {
+interface StatusResponse {
     status?: StatusName;
     message?: string;
-};
+}
 
 const STATUS_DEFAULT = StatusName.UNKNOWN;
 const STATUS_DEFAULT_MESSAGE = "No message available...";
@@ -90,11 +90,11 @@ function StatusLoader({ entry }: { entry: StatusEntry }) {
         style={{
             opacity: (entry.messageDisplay.length) ? 0.00 : 1.00
         }}
-    />
+    />;
 
 }
 
-function StatusEntries({ entries }: { entries: StatusEntry[] }) {
+function StatusEntries({ entries }: { entries: Array<StatusEntry> }) {
 
     return entries.map((entry) => (
         <TableRow key={entry.name}>
@@ -119,7 +119,7 @@ function StatusEntries({ entries }: { entries: StatusEntry[] }) {
                 <StatusLoader entry={entry} />
             </TableCell>
         </TableRow>
-    ))
+    ));
 
 }
 
@@ -130,10 +130,10 @@ export default function Status() {
     const { setModal } = useModal();
 
     
-    const [databaseEntries, setDatabaseEntries] = React.useState<StatusEntry[]>(
+    const [databaseEntries, setDatabaseEntries] = React.useState<Array<StatusEntry>>(
         () => STATUS_NAMES_LIST_DATABASE.map((name) => makeEntry(name))
     );
-    const [dockerEntries, setDockerEntries] = React.useState<StatusEntry[]>(
+    const [dockerEntries, setDockerEntries] = React.useState<Array<StatusEntry>>(
         () => STATUS_NAMES_LIST_DOCKER.map((name) => makeEntry(name, (displayName) => displayName.replace(/^Ngafid/i, "")))
     );
 
@@ -156,8 +156,8 @@ export default function Status() {
         const abort = new AbortController();
 
         const fetchStatuses = async (
-            names: readonly string[],
-            updateEntries: React.Dispatch<React.SetStateAction<StatusEntry[]>>,
+            names: ReadonlyArray<string>,
+            updateEntries: React.Dispatch<React.SetStateAction<Array<StatusEntry>>>,
         ) => {
 
             log(`Fetching statuses for: `, names);
@@ -196,7 +196,7 @@ export default function Status() {
             );
 
             // Map results to StatusEntry objects
-            const updated: StatusEntry[] = results.map((r, i) => {
+            const updated: Array<StatusEntry> = results.map((r, i) => {
 
                 const name = names[i];
                 let entryOut: StatusEntry;
@@ -237,7 +237,7 @@ export default function Status() {
                 const animationDelay = (ANIMATION_DELAY_BASE + i * 100); //<-- Stagger animations
                 const animateMessage = (
                     entry: StatusEntry,
-                    updateEntries: React.Dispatch<React.SetStateAction<StatusEntry[]>>,
+                    updateEntries: React.Dispatch<React.SetStateAction<Array<StatusEntry>>>,
                     delay: number = 0,
                 ) => {
 
@@ -253,7 +253,7 @@ export default function Status() {
                         prev.map((e) => (e.name === entry.name ? entry : e))
                     );
 
-                }
+                };
                 // animateMessage(entryOut, animationDelay);
                 setTimeout(animateMessage, animationDelay, entryOut, updateEntries);
 

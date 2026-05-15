@@ -3,7 +3,7 @@ import { Calendar } from "lucide-react";
 import React, { JSX } from "react";
 import { OnSelectHandler } from "react-day-picker";
 
-type TimeHeaderContextValue = {
+interface TimeHeaderContextValue {
     //Selected (non-applied)
     startDate: Date,
     endDate: Date,
@@ -26,7 +26,7 @@ type TimeHeaderContextValue = {
     //UI helpers (reflect applied dates)
     renderDateRangeNumeric: () => JSX.Element,
     renderDateRangeMonthly: () => JSX.Element,
-};
+}
 
 const TimeHeaderContext = React.createContext<TimeHeaderContextValue | null>(null);
 

@@ -23,9 +23,9 @@ const log = getLogger("TagsListModal", "black", "Modal");
 
 
 export type ModalDataTagsList = ModalData & {
-    flightTags: TagData[];
+    flightTags: Array<TagData>;
     flightId: number;
-    onTagsUpdate: (updatedTags: TagData[]) => void;
+    onTagsUpdate: (updatedTags: Array<TagData>) => void;
 }
 
 export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
@@ -34,7 +34,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
     const { fleetTags, associateTagWithFlight, unassociateTagWithFlight, editTag, updateFleetTag, addFleetTag, deleteFleetTag } = useTags();
     const { flightId, flightTags, onTagsUpdate } = (data as ModalDataTagsList);
 
-    const [currentFlightTags, setCurrentFlightTags] = useState<TagData[]>(flightTags ?? []);
+    const [currentFlightTags, setCurrentFlightTags] = useState<Array<TagData>>(flightTags ?? []);
     const [editingTagID, setEditingTagID] = useState<number | null>(null);
 
     const associatedTags = fleetTags.filter((tag) => currentFlightTags.some((ft) => ft.hashId === tag.hashId));
@@ -68,7 +68,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                     return next;
                 });
 
-            }
+            };
 
             return <div key={index} className="flex flex-col p-2 pl-4 border-b last:border-b-0 gap-1 hover:bg-background">
 
@@ -118,9 +118,9 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                     {tag.description}
                 </div>
 
-            </div>
+            </div>;
 
-        }
+        };
 
         return <>
 
@@ -137,9 +137,9 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                 </div>
             }
 
-        </>
+        </>;
 
-    }
+    };
 
     const renderTagsUnassociated = () => {
 
@@ -186,7 +186,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
 
                     }
 
-                }
+                };
 
                 log("Confirming deletion of tag: ", tag);
 
@@ -196,7 +196,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                     onConfirm: onConfirmDelete,
                 });
 
-            }
+            };
 
             return <div key={index} className="flex flex-col p-2 pl-4 border-b last:border-b-0 gap-1 hover:bg-background">
 
@@ -262,9 +262,9 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                     {tag.description}
                 </div>
 
-            </div>
+            </div>;
 
-        }
+        };
 
         return <>
 
@@ -280,10 +280,10 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                 </div>
             }
 
-        </>
+        </>;
 
 
-    }
+    };
 
     const renderTagsCreate = () => {
 
@@ -383,9 +383,9 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                 <Plus size={16} /> Create Tag
             </Button>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     const renderTagsEdit = () => {
 
@@ -430,7 +430,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
             // Move back to the 'Associated' tab
             setModalTab("associated");
 
-        }
+        };
 
         return <div className="grid gap-2">
 
@@ -462,9 +462,9 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
                 <Pencil size={16} /> Update Tag
             </Button>
 
-        </div>
+        </div>;
 
-    }
+    };
 
     const startTagCreate = () => {
 
@@ -478,16 +478,16 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
         setNameInputValue("");
         setDescriptionInputValue("");
 
-    }
+    };
 
 
-    type ModalTab = {
+    interface ModalTab {
         name: string;
         content: () => JSX.Element;
         onOpen?: () => void;
         disabled?: boolean;
         description?: string;
-    };
+    }
 
     const MODAL_TABS: Record<string, ModalTab> = {
         associated: {
@@ -515,7 +515,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
     };
 
 
-    const MODAL_TABS_KEYS = Object.keys(MODAL_TABS) as (keyof typeof MODAL_TABS)[];
+    const MODAL_TABS_KEYS = Object.keys(MODAL_TABS) as Array<keyof typeof MODAL_TABS>;
     const MODAL_TABS_VALUES = Object.values(MODAL_TABS);
 
 
@@ -541,7 +541,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
         log("Updating tab: ", tab);
         setModalTab(tab);
         
-    }
+    };
 
     const startTagEdit = (tag: TagData) => {
 
@@ -557,7 +557,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
         setNameInputValue(tag.name);
         setDescriptionInputValue(tag.description);
 
-    }
+    };
 
 
     // log.table("Rendering tags list: ", tags);

@@ -55,11 +55,11 @@ const BATCH_SIZE = 1000;
 
 const PROXIMITY_DEFINITION_IDS = new Set<number>([-1, -2, -3]);
 
-type RgbColor = {
+interface RgbColor {
     r: number;
     g: number;
     b: number;
-};
+}
 
 const ALL_EVENT_NAMES = [
     "ANY Event",
@@ -100,7 +100,7 @@ const ALL_EVENT_NAMES = [
     "VSI on Final",
 ] as const;
 
-const EVENT_NAME_TO_DEFINITION_IDS: Record<string, number[]> = {
+const EVENT_NAME_TO_DEFINITION_IDS: Record<string, Array<number>> = {
     "ANY Event": [],
     Airspeed: [9, 11, 12, 13, 63],
     Altitude: [14, 15, 16, 17, 64],
@@ -153,27 +153,27 @@ type MapStyleName =
     | "IFREnrouteHighCharts"
     | "HelicopterCharts";
 
-type MapLayerOption = {
+interface MapLayerOption {
     value: MapStyleName;
     label: string;
     url: () => string | undefined;
-};
+}
 
-type BoxCoords = {
+interface BoxCoords {
     minLat: string;
     maxLat: string;
     minLon: string;
     maxLon: string;
-};
+}
 
-type HeatPoint = {
+interface HeatPoint {
     latitude: number;
     longitude: number;
     altitudeAgl: number;
     timestamp: string;
-};
+}
 
-type EventRow = {
+interface EventRow {
     id: number;
     eventDefinitionId: number;
     flightId: number;
@@ -181,21 +181,21 @@ type EventRow = {
     severity: number;
     airframe: string;
     otherAirframe: string;
-};
+}
 
-type EventPointGroup = {
+interface EventPointGroup {
     eventId: number;
     eventDefinitionId: number;
     mainFlightId: number;
     otherFlightId: number | null;
-    mainFlightPoints: HeatPoint[];
-    otherFlightPoints: HeatPoint[];
+    mainFlightPoints: Array<HeatPoint>;
+    otherFlightPoints: Array<HeatPoint>;
     severity: number;
     airframe: string;
     otherAirframe: string;
-};
+}
 
-type MarkerEvent = {
+interface MarkerEvent {
     eventId: number;
     eventDefinitionId: number;
     flightId: number;
@@ -207,9 +207,9 @@ type MarkerEvent = {
     altitudeAgl: number;
     latitude: number;
     longitude: number;
-};
+}
 
-type PopupEventSummary = {
+interface PopupEventSummary {
     eventId: number;
     eventDefinitionId: number;
     eventType: string;
@@ -219,9 +219,9 @@ type PopupEventSummary = {
     severity: number;
     flightAirframe: string;
     otherFlightAirframe: string;
-};
+}
 
-type PopupData = {
+interface PopupData {
     time: string;
     latitude: number;
     longitude: number;
@@ -233,57 +233,57 @@ type PopupData = {
     severity: number;
     eventId: number | null;
     eventType: string;
-    eventTypes: string[];
-    eventSummaries: PopupEventSummary[];
+    eventTypes: Array<string>;
+    eventSummaries: Array<PopupEventSummary>;
     columnValues?: Record<string, string | number | null>;
-};
+}
 
-type PopupState = {
+interface PopupState {
     id: string;
-    coord: number[];
+    coord: Array<number>;
     position: {
         left: number;
         top: number;
     };
     data: PopupData;
-};
+}
 
-type SelectedPoint = {
+interface SelectedPoint {
     id: string;
     latitude: number;
     longitude: number;
     altitude: number;
-};
+}
 
-type Distances = {
+interface Distances {
     lateral: number | null;
     euclidean: number | null;
-};
+}
 
-type EventStatistics = {
+interface EventStatistics {
     totalEvents: number;
     eventsByType: Record<string, number>;
-};
+}
 
-type BatchResultRow = {
+interface BatchResultRow {
     event_id?: unknown;
     flight_id?: unknown;
     points?: unknown;
-};
+}
 
-type BatchResponse = {
-    results?: BatchResultRow[];
-};
+interface BatchResponse {
+    results?: Array<BatchResultRow>;
+}
 
-type HeatMapConfigResponse = {
+interface HeatMapConfigResponse {
     azureMapsKey?: unknown;
     chartTileBaseUrl?: unknown;
-};
+}
 
-type HeatMapConfig = {
+interface HeatMapConfig {
     azureMapsKey: string | undefined;
     chartTileBaseUrl: string;
-};
+}
 
 const DEFAULT_CHART_TILE_BASE_URL = "http://localhost:8187";
 
@@ -411,7 +411,7 @@ function normalizeChartTileBase(value: unknown): string {
     return trimmed.length > 0 ? trimmed.replace(/\/+$/, "") : DEFAULT_CHART_TILE_BASE_URL;
 }
 
-function buildMapLayerOptions(mapConfig: HeatMapConfig): MapLayerOption[] {
+function buildMapLayerOptions(mapConfig: HeatMapConfig): Array<MapLayerOption> {
     const azureMapsKey = mapConfig.azureMapsKey;
     const chartTileBase = mapConfig.chartTileBaseUrl;
     const fallbackRoadUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -574,7 +574,7 @@ function normalizeEventRow(value: unknown): EventRow | null {
     };
 }
 
-function isValidExtent(extent: number[]): boolean {
+function isValidExtent(extent: Array<number>): boolean {
     return (
         Array.isArray(extent)
         && extent.length === 4
@@ -593,7 +593,7 @@ function normalizeTimestamp(text: string): string {
     return parsed.toLocaleString();
 }
 
-function parseBatchResults(response: BatchResponse): Array<{ eventId: number; flightId: number; points: HeatPoint[] }> {
+function parseBatchResults(response: BatchResponse): Array<{ eventId: number; flightId: number; points: Array<HeatPoint> }> {
     const rows = Array.isArray(response.results) ? response.results : [];
     return rows
         .map((row) => {
@@ -609,7 +609,7 @@ function parseBatchResults(response: BatchResponse): Array<{ eventId: number; fl
 
             return { eventId, flightId, points };
         })
-        .filter((row): row is { eventId: number; flightId: number; points: HeatPoint[] } => row !== null);
+        .filter((row): row is { eventId: number; flightId: number; points: Array<HeatPoint> } => row !== null);
 }
 
 function toTimestampMillis(value: string): number | null {
@@ -617,12 +617,12 @@ function toTimestampMillis(value: string): number | null {
     return Number.isFinite(parsed) ? parsed : null;
 }
 
-function buildProximityPointPairs(mainPoints: HeatPoint[], otherPoints: HeatPoint[]): Array<{ mainPoint: HeatPoint; otherPoint: HeatPoint }> {
+function buildProximityPointPairs(mainPoints: Array<HeatPoint>, otherPoints: Array<HeatPoint>): Array<{ mainPoint: HeatPoint; otherPoint: HeatPoint }> {
     if (mainPoints.length === 0 || otherPoints.length === 0)
         return [];
 
     const pairs: Array<{ mainPoint: HeatPoint; otherPoint: HeatPoint }> = [];
-    const otherByTimestamp = new Map<string, HeatPoint[]>();
+    const otherByTimestamp = new Map<string, Array<HeatPoint>>();
     const unmatchedOther = new Set<HeatPoint>(otherPoints);
 
     for (const otherPoint of otherPoints) {
@@ -733,11 +733,11 @@ export default function HeatMapPage() {
     const [showGrid, setShowGrid] = useState(false);
     const [navigationTipsExpanded, setNavigationTipsExpanded] = useState(true);
 
-    const [eventPointGroups, setEventPointGroups] = useState<EventPointGroup[]>([]);
+    const [eventPointGroups, setEventPointGroups] = useState<Array<EventPointGroup>>([]);
     const [eventStatistics, setEventStatistics] = useState<EventStatistics>({ totalEvents: 0, eventsByType: {} });
 
-    const [openPopups, setOpenPopups] = useState<PopupState[]>([]);
-    const [selectedPoints, setSelectedPoints] = useState<SelectedPoint[]>([]);
+    const [openPopups, setOpenPopups] = useState<Array<PopupState>>([]);
+    const [selectedPoints, setSelectedPoints] = useState<Array<SelectedPoint>>([]);
     const [distances, setDistances] = useState<Distances>({ lateral: null, euclidean: null });
     const [draggedPopupId, setDraggedPopupId] = useState<string | null>(null);
     const [recentPopupId, setRecentPopupId] = useState<string | null>(null);
@@ -758,8 +758,8 @@ export default function HeatMapPage() {
     const gridLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
     const gridSourceRef = useRef<VectorSource | null>(null);
 
-    const openPopupsRef = useRef<PopupState[]>([]);
-    const selectedPointsRef = useRef<SelectedPoint[]>([]);
+    const openPopupsRef = useRef<Array<PopupState>>([]);
+    const selectedPointsRef = useRef<Array<SelectedPoint>>([]);
 
     const draggedPopupIdRef = useRef<string | null>(null);
     const dragStartRef = useRef({ x: 0, y: 0 });
@@ -827,7 +827,7 @@ export default function HeatMapPage() {
         </div>
     );
 
-    const getSelectedEventNames = useCallback((): string[] => {
+    const getSelectedEventNames = useCallback((): Array<string> => {
         return ALL_EVENT_NAMES.filter((eventName) => eventChecked[eventName]);
     }, [eventChecked]);
 
@@ -855,7 +855,7 @@ export default function HeatMapPage() {
         setEventStatistics({ totalEvents: 0, eventsByType: {} });
     }, []);
 
-    const calculateEventStatistics = useCallback((groups: EventPointGroup[]): EventStatistics => {
+    const calculateEventStatistics = useCallback((groups: Array<EventPointGroup>): EventStatistics => {
         const eventsByType: Record<string, number> = {};
         let totalEvents = 0;
 
@@ -873,7 +873,7 @@ export default function HeatMapPage() {
             layer.setVisible(key === styleName);
     }, []);
 
-    const renderEventGroups = useCallback((groups: EventPointGroup[], useGrid: boolean) => {
+    const renderEventGroups = useCallback((groups: Array<EventPointGroup>, useGrid: boolean) => {
         const map = mapRef.current;
         const heatmapLayerMain = heatmapLayerMainRef.current;
         const heatmapLayerOther = heatmapLayerOtherRef.current;
@@ -896,9 +896,9 @@ export default function HeatMapPage() {
         connectorSource.clear();
         gridSource.clear();
 
-        const coordinateRegistry = new Map<string, { coord: number[]; events: MarkerEvent[] }>();
+        const coordinateRegistry = new Map<string, { coord: Array<number>; events: Array<MarkerEvent> }>();
         const allPointsForGrid: Array<{ latitude: number; longitude: number }> = [];
-        const connectorFeatures: Feature<LineString>[] = [];
+        const connectorFeatures: Array<Feature<LineString>> = [];
 
         let hasSecondaryPoints = false;
 
@@ -1046,7 +1046,7 @@ export default function HeatMapPage() {
         const otherHasExtent = !!extentOther && isValidExtent(extentOther);
 
         if (mainHasExtent || otherHasExtent) {
-            let extentToFit: number[] = extentMain ?? extentOther ?? [0, 0, 0, 0];
+            let extentToFit: Array<number> = extentMain ?? extentOther ?? [0, 0, 0, 0];
             if (mainHasExtent && otherHasExtent) {
                 extentToFit = [
                     Math.min(extentMain[0], extentOther[0]),
@@ -1094,8 +1094,8 @@ export default function HeatMapPage() {
             const maxCount = Math.max(1, ...Object.values(gridCounts));
             const toWebMercator = getTransform("EPSG:4326", "EPSG:3857");
 
-            const xs: number[] = [];
-            const ys: number[] = [];
+            const xs: Array<number> = [];
+            const ys: Array<number> = [];
 
             for (let lon = Math.floor(lonStart / gridSize) * gridSize; lon <= lonEnd + 1e-9; lon += gridSize)
                 xs.push(toWebMercator([lon, 0])[0]);
@@ -1106,7 +1106,7 @@ export default function HeatMapPage() {
             const rows = ys.length - 1;
             const cols = xs.length - 1;
 
-            const densityFeatures: Feature<Polygon>[] = [];
+            const densityFeatures: Array<Feature<Polygon>> = [];
 
             for (let row = 0; row < rows; row++) {
                 const y0 = ys[row];
@@ -1147,7 +1147,7 @@ export default function HeatMapPage() {
         }
     }, [boxCoords.maxLat, boxCoords.maxLon, boxCoords.minLat, boxCoords.minLon]);
 
-    const recalculateDistances = useCallback((points: SelectedPoint[]) => {
+    const recalculateDistances = useCallback((points: Array<SelectedPoint>) => {
         if (points.length !== 2) {
             setDistances({ lateral: null, euclidean: null });
             return;
@@ -1208,7 +1208,7 @@ export default function HeatMapPage() {
 
     const fetchAndAttachPopupColumns = useCallback(async (
         popupId: string,
-        markerEvents: MarkerEvent[],
+        markerEvents: Array<MarkerEvent>,
     ) => {
         const merged: Record<string, string | number | null> = {};
 
@@ -1301,7 +1301,7 @@ export default function HeatMapPage() {
         if (!mapConfigLoaded || !mapContainerRef.current || mapRef.current)
             return;
 
-        const tileLayers: TileLayer<XYZ>[] = [];
+        const tileLayers: Array<TileLayer<XYZ>> = [];
         const tileLayersByStyle = new Map<string, TileLayer<XYZ>>();
 
         for (const option of mapLayerOptions) {
@@ -1463,14 +1463,14 @@ export default function HeatMapPage() {
                         return;
 
                     const markerEvents = Array.isArray(feature.get("events"))
-                        ? (feature.get("events") as MarkerEvent[])
+                        ? (feature.get("events") as Array<MarkerEvent>)
                         : [];
 
                     const eventTypes = markerEvents.length > 0
                         ? Array.from(new Set(markerEvents.map((eventItem) => getEventTypeName(eventItem.eventDefinitionId))))
                         : [getEventTypeName(toNumber(feature.get("eventDefinitionId")) ?? 0)];
 
-                    const eventSummaries: PopupEventSummary[] = markerEvents.map((eventItem) => ({
+                    const eventSummaries: Array<PopupEventSummary> = markerEvents.map((eventItem) => ({
                         eventId: eventItem.eventId,
                         eventDefinitionId: eventItem.eventDefinitionId,
                         eventType: getEventTypeName(eventItem.eventDefinitionId),
@@ -1615,7 +1615,7 @@ export default function HeatMapPage() {
             clearMapLayers();
     }, [clearMapLayers]);
 
-    const fetchEvents = useCallback(async (definitionIds: number[]): Promise<EventRow[]> => {
+    const fetchEvents = useCallback(async (definitionIds: Array<number>): Promise<Array<EventRow>> => {
         const params = new URLSearchParams({
             event_definition_ids: definitionIds.join(","),
             start_date: endpointStartDate,
@@ -1639,8 +1639,8 @@ export default function HeatMapPage() {
             .filter((row): row is EventRow => row !== null);
     }, [airframeIDSelected, airframeNameSelected, backendMaxSeverity, backendMinSeverity, boxCoords.maxLat, boxCoords.maxLon, boxCoords.minLat, boxCoords.minLon, endpointEndDate, endpointStartDate]);
 
-    const fetchPointsByEventId = useCallback(async (eventIds: number[]) => {
-        const batches: number[][] = [];
+    const fetchPointsByEventId = useCallback(async (eventIds: Array<number>) => {
+        const batches: Array<Array<number>> = [];
         for (let index = 0; index < eventIds.length; index += BATCH_SIZE)
             batches.push(eventIds.slice(index, index + BATCH_SIZE));
 
@@ -1648,23 +1648,23 @@ export default function HeatMapPage() {
             batches.map((batch) => fetchJson.post<BatchResponse>("/api/heatmap/points/batch", { event_ids: batch })),
         );
 
-        const rows: Array<{ eventId: number; flightId: number; points: HeatPoint[] }> = [];
+        const rows: Array<{ eventId: number; flightId: number; points: Array<HeatPoint> }> = [];
         for (const response of responses)
             rows.push(...parseBatchResults(response));
 
         return rows;
     }, []);
 
-    const convertRowsToGroups = useCallback((events: EventRow[], pointRows: Array<{ eventId: number; flightId: number; points: HeatPoint[] }>): EventPointGroup[] => {
-        const pointsByEventAndFlight = new Map<number, Map<number, HeatPoint[]>>();
+    const convertRowsToGroups = useCallback((events: Array<EventRow>, pointRows: Array<{ eventId: number; flightId: number; points: Array<HeatPoint> }>): Array<EventPointGroup> => {
+        const pointsByEventAndFlight = new Map<number, Map<number, Array<HeatPoint>>>();
 
         for (const row of pointRows) {
-            const byFlight = pointsByEventAndFlight.get(row.eventId) ?? new Map<number, HeatPoint[]>();
+            const byFlight = pointsByEventAndFlight.get(row.eventId) ?? new Map<number, Array<HeatPoint>>();
             byFlight.set(row.flightId, row.points);
             pointsByEventAndFlight.set(row.eventId, byFlight);
         }
 
-        const groups: EventPointGroup[] = [];
+        const groups: Array<EventPointGroup> = [];
         const seenProximityPairs = new Set<string>();
 
         for (const event of events) {

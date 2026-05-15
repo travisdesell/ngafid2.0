@@ -1,4 +1,4 @@
-import { Calendar, Home, Inbox, Search, Settings, UserPlus } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, UserPlus } from "lucide-react";
 
 import {
     Sidebar,
@@ -13,7 +13,7 @@ import {
     SidebarMenuItem,
     SidebarRail,
     SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 // Menu items.
 const items = [
@@ -55,7 +55,7 @@ const itemsLogin = [
         url: "#",
         icon: UserPlus,
     },
-]
+];
 
 const itemsFooter = [
     {
@@ -63,7 +63,7 @@ const itemsFooter = [
         url: "#",
         icon: Settings,
     },
-]
+];
 
 
 export function AppSidebar() {
@@ -94,7 +94,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
 
 // export function AppSidebar() {

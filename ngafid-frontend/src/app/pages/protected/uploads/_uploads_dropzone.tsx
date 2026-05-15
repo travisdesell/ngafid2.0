@@ -11,9 +11,9 @@ import { FileUp, Shredder } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 
-type Props = {
+interface Props {
     onPickFiles: (files: FileList | null) => Promise<void>;
-};
+}
 
 const SUPPORTED_FILE_TYPES = [
     "application/zip",
@@ -30,7 +30,7 @@ export default function UploadsDropzone({ onPickFiles }: Props) {
     const { setModal } = useModal();
 
     const onDrop = useCallback(
-        (acceptedFiles: File[]) => {
+        (acceptedFiles: Array<File>) => {
 
             // No files accepted, exit
             if (acceptedFiles.length === 0) {

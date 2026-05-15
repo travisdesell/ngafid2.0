@@ -5,9 +5,9 @@ import { motion } from "motion/react";
 
 const log = getLogger("PanelAlert", "black", "Component");
 
-type PanelAlertProps = {
+interface PanelAlertProps {
     title: string;
-    description: string[]|string;
+    description: Array<string>|string;
     isCritical?: boolean;
     isMap?: boolean;
 }
@@ -53,6 +53,6 @@ export default function PanelAlert(props: PanelAlertProps) {
                 }
             </AlertDescription>
         </div>
-    </motion.div>
+    </motion.div>;
 
 }

@@ -10,10 +10,10 @@ import ProfilePreferencesSitePreferencesContent from "@/pages/protected/profile_
 import { JSX, useState } from "react";
 
 
-type ProfilePreferenceTab = {
+interface ProfilePreferenceTab {
     name: string;
     content: JSX.Element;
-};
+}
 
 const PROFILE_PREFERENCES_TABS: Record<string, ProfilePreferenceTab> = {
     "Profile Information": {
@@ -30,7 +30,7 @@ const PROFILE_PREFERENCES_TABS: Record<string, ProfilePreferenceTab> = {
     },
 };
 
-const PROFILE_PREFERENCES_TABS_KEYS = Object.keys(PROFILE_PREFERENCES_TABS) as (keyof typeof PROFILE_PREFERENCES_TABS)[];
+const PROFILE_PREFERENCES_TABS_KEYS = Object.keys(PROFILE_PREFERENCES_TABS) as Array<keyof typeof PROFILE_PREFERENCES_TABS>;
 
 
 export default function ProfilePreferences() {

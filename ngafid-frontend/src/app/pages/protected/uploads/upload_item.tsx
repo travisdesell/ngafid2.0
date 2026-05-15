@@ -57,17 +57,17 @@ function statusBadgeVariant(status: UploadStatus): { label: string; variant: Bad
     }
 }
 
-type UploadItemProps = {
+interface UploadItemProps {
     u: UploadInfo | UploadImportItem;
     isPending: boolean;
     busy: boolean;
-    pending: UploadInfo[];
+    pending: Array<UploadInfo>;
     deletingUploadIds: Set<number>;
     retryUpload: (u: UploadInfo | UploadImportItem) => Promise<void>;
     deleteUpload: (u: UploadInfo | UploadImportItem) => Promise<void>;
     downloadUpload: (u: UploadInfo | UploadImportItem) => void;
     openUploadDetailsModal: (u: UploadImportItem) => void;
-};
+}
 
 function UploadValidityProportion(u: UploadImportItem) {
 

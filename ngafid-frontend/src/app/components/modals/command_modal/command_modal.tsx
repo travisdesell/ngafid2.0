@@ -31,7 +31,7 @@ export default function CommandModal({ data }: ModalProps) {
         // Close the modal
         close();
     
-    }
+    };
 
     return (
         <motion.div

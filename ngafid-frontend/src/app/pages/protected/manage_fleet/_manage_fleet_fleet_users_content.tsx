@@ -19,45 +19,45 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 type AccessType = "MANAGER" | "UPLOAD" | "VIEW" | "WAITING" | "DENIED";
 
-type FleetAccess = {
+interface FleetAccess {
     fleetId: number;
     accessType: AccessType;
-};
+}
 
-type FleetUser = {
+interface FleetUser {
     id: number;
     email: string;
     firstName?: string;
     lastName?: string;
     fleetAccess: FleetAccess;
     originalAccessType: AccessType;
-};
+}
 
-type Fleet = {
+interface Fleet {
     id: number;
     name: string;
-};
+}
 
-type ErrorResponse = {
+interface ErrorResponse {
     errorTitle?: string;
     errorMessage?: string;
     message?: string;
-};
+}
 
-type EmailType = {
+interface EmailType {
     name: string;
     displayName?: string;
     display?: string;
-};
+}
 
-type EmailPreferencesResponse = {
-    emailTypesKeys?: (string | EmailType)[];
+interface EmailPreferencesResponse {
+    emailTypesKeys?: Array<string | EmailType>;
     emailTypesUser?: Record<string, boolean>;
-};
+}
 
 type EmailPreferencesByUser = Record<number, Record<string, boolean>>;
 
-const ACCESS_TYPES: AccessType[] = ["MANAGER", "UPLOAD", "VIEW", "WAITING", "DENIED"];
+const ACCESS_TYPES: Array<AccessType> = ["MANAGER", "UPLOAD", "VIEW", "WAITING", "DENIED"];
 const EMAIL_TYPE_ORDER = [
     "upload_process_start",
     "import_processed_receipt",
@@ -103,7 +103,7 @@ function normalizeFleetUser(user: any, fallbackFleetId?: number): FleetUser {
     };
 }
 
-function sortUsers(users: FleetUser[]) {
+function sortUsers(users: Array<FleetUser>) {
     return [...users].sort((a, b) => {
         if (a.fleetAccess.accessType === "DENIED" && b.fleetAccess.accessType !== "DENIED")
             return 1;
@@ -163,13 +163,13 @@ function FleetEmailSettingsTable({
     users,
     visibleUsers,
 }: {
-    users: FleetUser[];
-    visibleUsers: FleetUser[];
+    users: Array<FleetUser>;
+    visibleUsers: Array<FleetUser>;
 }) {
 
     const { setModal } = useModal();
 
-    const [emailTypes, setEmailTypes] = useState<EmailType[]>([]);
+    const [emailTypes, setEmailTypes] = useState<Array<EmailType>>([]);
     const [preferencesByUser, setPreferencesByUser] = useState<EmailPreferencesByUser>({});
     const [loading, setLoading] = useState(false);
     const [savingKey, setSavingKey] = useState("");
@@ -350,7 +350,7 @@ export default function ManageFleetFleetUsersContent() {
     const { setModal } = useModal();
 
     const [fleet, setFleet] = useState<Fleet | null>(null);
-    const [users, setUsers] = useState<FleetUser[]>([]);
+    const [users, setUsers] = useState<Array<FleetUser>>([]);
     const [loading, setLoading] = useState(true);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteSaving, setInviteSaving] = useState(false);
@@ -364,7 +364,7 @@ export default function ManageFleetFleetUsersContent() {
                 setModal(ErrorModal, { title: "Error fetching fleet", message: error.message });
                 return null;
             }),
-            fetchJson.get<any[]>("/api/user").catch((error: Error) => {
+            fetchJson.get<Array<any>>("/api/user").catch((error: Error) => {
                 setModal(ErrorModal, { title: "Error fetching fleet users", message: error.message });
                 return null;
             }),
@@ -510,7 +510,7 @@ export default function ManageFleetFleetUsersContent() {
 
     // Loading, show loader circle
     if (loading)
-        return <Loader2 size={128} className="animate-spin mr-2 text-gray-500 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+        return <Loader2 size={128} className="animate-spin mr-2 text-gray-500 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />;
 
     return (
         <div className="flex flex-col gap-6 pb-6">

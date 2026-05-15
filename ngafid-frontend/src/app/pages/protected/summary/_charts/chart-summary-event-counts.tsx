@@ -1,10 +1,10 @@
 // ngafid-frontend/src/app/pages/summary/charts/chart-summary-event-counts.tsx
-"use client"
+"use client";
 
-import { getLogger } from "@/components/providers/logger"
-import { useTheme } from "@/components/providers/theme-provider"
-import { useTimeHeader } from "@/components/providers/time_header/time_header_provider"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getLogger } from "@/components/providers/logger";
+import { useTheme } from "@/components/providers/theme-provider";
+import { useTimeHeader } from "@/components/providers/time_header/time_header_provider";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     BAR_RADIUS_HORIZONTAL_FIRST,
     BAR_RADIUS_HORIZONTAL_LAST,
@@ -16,26 +16,26 @@ import {
     ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
-} from "@/components/ui/chart"
-import { JSX } from "react"
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts"
-import { AirframeEventCounts } from "src/types/types"
+} from "@/components/ui/chart";
+import { JSX } from "react";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { AirframeEventCounts } from "src/types/types";
 
 
 const log = getLogger("ChartSummaryEventCounts", "black", "Chart");
 
 
-type ChartSummaryEventCountsProps = {
-    data: AirframeEventCounts[] | Record<string, AirframeEventCounts>;
+interface ChartSummaryEventCountsProps {
+    data: Array<AirframeEventCounts> | Record<string, AirframeEventCounts>;
     renderNoDataAvailableMessage: () => JSX.Element;
-};
+}
 
 export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: ChartSummaryEventCountsProps) {
 
     const { useHighContrastCharts } = useTheme();
 
     // Normalize to array
-    const rows: AirframeEventCounts[] = Array.isArray(data)
+    const rows: Array<AirframeEventCounts> = Array.isArray(data)
         ? data
         : data && (typeof data === "object")
             ? Object.values(data as Record<string, AirframeEventCounts>)
@@ -63,7 +63,7 @@ export function ChartSummaryEventCounts({ data, renderNoDataAvailableMessage }: 
             useHighContrastCharts
             ? `var(--chart-hc-${(i % 12) + 1})`  // High-contrast palette
             : `var(--chart-${(i % 12) + 1})`     // Standard palette
-        )
+        );
         acc[key] = {
             label: r.airframeName,  //<-- Legend label
             color,

@@ -197,7 +197,7 @@ function isTabbable(el: HTMLElement | null): el is HTMLElement {
     
 }
 
-function getTabbableElements(root: HTMLElement): HTMLElement[] {
+function getTabbableElements(root: HTMLElement): Array<HTMLElement> {
 
     const nodes = Array.from(root.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR));
     return nodes.filter(isTabbable);

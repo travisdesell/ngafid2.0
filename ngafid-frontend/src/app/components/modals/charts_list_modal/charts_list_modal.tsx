@@ -19,8 +19,8 @@ const log = getLogger("ChartsListModal", "black", "Modal");
 
 
 export type ModalDataChartsList = ModalData & {
-    chartFlights: Flight[];
-    setChartFlights: Dispatch<SetStateAction<Flight[]>>;
+    chartFlights: Array<Flight>;
+    setChartFlights: Dispatch<SetStateAction<Array<Flight>>>;
     chartSelection: ChartSelectionState;
     toggleUniversalParam: (name: string) => void;
     togglePerFlightParam: (flightId: number, name: string) => void;
@@ -31,7 +31,7 @@ export function ChartsListModal({ data }: ModalProps<ModalDataChartsList>) {
     const { close } = useModal();
     const { chartFlights, setChartFlights, chartSelection, toggleUniversalParam, togglePerFlightParam } = (data as ModalDataChartsList) ?? {};
 
-    const [localChartFlights, setLocalChartFlights] = useState<Flight[]>(chartFlights);
+    const [localChartFlights, setLocalChartFlights] = useState<Array<Flight>>(chartFlights);
     const [localSelection, setLocalSelection] = useState<ChartSelectionState>(() => ({
         universalParams: new Set(chartSelection.universalParams),
         perFlightParams: Object.fromEntries(
@@ -40,12 +40,12 @@ export function ChartsListModal({ data }: ModalProps<ModalDataChartsList>) {
     }));
 
 
-    const handleSetChartFlights: Dispatch<SetStateAction<Flight[]>> = (updater) => {
+    const handleSetChartFlights: Dispatch<SetStateAction<Array<Flight>>> = (updater) => {
 
         setLocalChartFlights((prevLocal) => {
 
             const nextLocal = (typeof updater === "function")
-                ? (updater as (prev: Flight[]) => Flight[])(prevLocal)
+                ? (updater as (prev: Array<Flight>) => Array<Flight>)(prevLocal)
                 : updater;
 
             // Keep FlightsContext in sync

@@ -16,10 +16,10 @@ import { memo } from "react";
 
 const log = getLogger("FlightsPanelSearchRule", "blue", "Component");
 
-type Props = {
+interface Props {
     rule: FilterRule;
-    indexPath: number[];
-    ruleDefinitions: FilterRuleDefinition[];
+    indexPath: Array<number>;
+    ruleDefinitions: Array<FilterRuleDefinition>;
 }
 function FlightsPanelSearchRuleInner({ rule, indexPath, ruleDefinitions }: Props) {
 
@@ -79,7 +79,7 @@ function FlightsPanelSearchRuleInner({ rule, indexPath, ruleDefinitions }: Props
         log("Flights Panel Search Rule - Current rule updated. Updated filter (will reflect after render):", filter);
     };
 
-    const renderDeleteRuleButton = (indexPath: number[]) => {
+    const renderDeleteRuleButton = (indexPath: Array<number>) => {
 
         /*
             Unlike the Group delete button,
@@ -132,7 +132,7 @@ function FlightsPanelSearchRuleInner({ rule, indexPath, ruleDefinitions }: Props
             <Trash />
         </Button>;
 
-    }
+    };
 
     const renderConditionInput = (condition: FilterCondition, idx: number) => {
 
@@ -281,7 +281,7 @@ function FlightsPanelSearchRuleInner({ rule, indexPath, ruleDefinitions }: Props
 
         };
 
-    }
+    };
 
     const render = () => {
 
@@ -355,7 +355,7 @@ function FlightsPanelSearchRuleInner({ rule, indexPath, ruleDefinitions }: Props
                 ))
             }
 
-        </ButtonGroup>
+        </ButtonGroup>;
 
     };
 

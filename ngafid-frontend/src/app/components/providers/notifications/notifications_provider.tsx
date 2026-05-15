@@ -10,7 +10,7 @@ import { NGAFIDNotification } from "./notifications_data/types";
 const log = getLogger("NotificationsProvider");
 
 
-type NotificationsData = {      //[EX]
+interface NotificationsData {      //[EX]
     notifications: Array<{
         count: number;
         message: string;
@@ -19,13 +19,13 @@ type NotificationsData = {      //[EX]
     }>;
 }
 
-type NotificationsProviderState = {
-    notifications: NGAFIDNotification[],
-};
+interface NotificationsProviderState {
+    notifications: Array<NGAFIDNotification>,
+}
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
     children: React.ReactNode
-};
+}
 
 const NotificationsProviderContext = createContext<NotificationsProviderState | null>(null);
 
@@ -38,8 +38,8 @@ export function NotificationsProvider({children}: ThemeProviderProps) {
         "This is a sample notification.",
         "info",
         1,
-    )
-    const [notifications, setNotifications] = useState<NGAFIDNotification[]>([
+    );
+    const [notifications, setNotifications] = useState<Array<NGAFIDNotification>>([
         TEST_NOTIFICATION,
     ]);
 
@@ -110,7 +110,7 @@ export function NotificationsProvider({children}: ThemeProviderProps) {
         <NotificationsProviderContext.Provider value={value}>
             {children}
         </NotificationsProviderContext.Provider>
-    )
+    );
 
 }
 

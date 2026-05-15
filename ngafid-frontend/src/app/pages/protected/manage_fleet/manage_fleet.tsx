@@ -9,10 +9,10 @@ import ManageFleetTailNumbersContent from "@/pages/protected/manage_fleet/_manag
 import { JSX, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-type ManageFleetTab = {
+interface ManageFleetTab {
     name: string;
     content: JSX.Element;
-};
+}
 
 type ManageFleetTabKey = "fleet-users" | "tail-numbers";
 
@@ -27,7 +27,7 @@ const MANAGE_FLEET_TABS: Record<ManageFleetTabKey, ManageFleetTab> = {
     },
 };
 
-const MANAGE_FLEET_TAB_KEYS = Object.keys(MANAGE_FLEET_TABS) as ManageFleetTabKey[];
+const MANAGE_FLEET_TAB_KEYS = Object.keys(MANAGE_FLEET_TABS) as Array<ManageFleetTabKey>;
 
 export default function ManageFleet() {
 

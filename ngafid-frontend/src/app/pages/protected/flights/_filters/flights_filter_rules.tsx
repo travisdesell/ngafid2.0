@@ -6,17 +6,17 @@ import { FilterRuleDefinition } from "@/pages/protected/flights/_filters/types";
 const log = getLogger("FlightsFilterRules", "black", "Component");
 
 
-export type RuleOptions = {
-    airframes: string[];
-    systemIds: string[];
-    tailNumbers: string[];
-    timeZones?: string[];
-    doubleTimeSeriesNames: string[];
-    visitedAirports: string[];
-    visitedRunways: string[];
-    eventNames: string[];
-    tagNames: string[];
-};
+export interface RuleOptions {
+    airframes: Array<string>;
+    systemIds: Array<string>;
+    tailNumbers: Array<string>;
+    timeZones?: Array<string>;
+    doubleTimeSeriesNames: Array<string>;
+    visitedAirports: Array<string>;
+    visitedRunways: Array<string>;
+    eventNames: Array<string>;
+    tagNames: Array<string>;
+}
 
 const defaultTimeZones = ["UTC", "Local"];
 
@@ -39,7 +39,7 @@ export const SORTABLE_COLUMN_NAMES = Object.keys(SORTABLE_COLUMNS);
 export const SORTABLE_COLUMN_VALUES = Object.values(SORTABLE_COLUMNS);
 
 
-export const createRules = (ruleOptions: RuleOptions): FilterRuleDefinition[] => {
+export const createRules = (ruleOptions: RuleOptions): Array<FilterRuleDefinition> => {
 
     const {
         airframes,
@@ -53,7 +53,7 @@ export const createRules = (ruleOptions: RuleOptions): FilterRuleDefinition[] =>
         tagNames,
     } = ruleOptions;
 
-    const rulesOut: FilterRuleDefinition[] = [
+    const rulesOut: Array<FilterRuleDefinition> = [
 
         {
             name: "Airframe",
@@ -397,7 +397,7 @@ export const createRules = (ruleOptions: RuleOptions): FilterRuleDefinition[] =>
 
 };
 
-export const BASE_RULE_DEFINITIONS: FilterRuleDefinition[] = createRules({
+export const BASE_RULE_DEFINITIONS: Array<FilterRuleDefinition> = createRules({
     airframes: [],
     systemIds: [],
     tailNumbers: [],

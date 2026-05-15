@@ -212,15 +212,18 @@ export default defineConfig([
 
         },
 
-        overrides: [
-            {
-                files: ["vite.config.mts"],
-                parserOptions: {
-                    project: './tsconfig.node.json',
-                },
-            }
-        ]
+    },
 
+    {
+        files: ["vite.config.mts"],
+        languageOptions: {
+            parser: tsParser,
+            parserOptions: {
+                project: './tsconfig.node.json',
+                sourceType: 'module',
+                ecmaVersion: 'latest',
+            },
+        },
     },
 
     {
@@ -229,8 +232,10 @@ export default defineConfig([
             "**/dist/**",
             "**/build/**",
             "**/Build/**",
+            "**/public/cesium/**",
             "**/tailwind.config.js",
             "**/eslint.config.mjs",
+            "**/legacy/**",   /* <-- Ignore legacy code until it's removed */
         ],
     }
     

@@ -23,7 +23,7 @@ export const UPLOADS_PER_PAGE_OPTIONS = [
     100,
 ];
 
-export type UploadInfo = {
+export interface UploadInfo {
     id: number;
     identifier: string;
     filename: string;
@@ -42,9 +42,9 @@ export type UploadInfo = {
     uploaderId?: number;
     fleetId: number;
     kind: string;
-};
+}
 
-export type ImportsPageItem = {
+export interface ImportsPageItem {
     id: number;
     identifier: string;
     filename: string;
@@ -56,26 +56,26 @@ export type ImportsPageItem = {
     sizeBytes: number;
     bytesUploaded: number;
     position?: number;
-};
+}
 
 export type UploadImportItem = UploadInfo & ImportsPageItem;
 
-export type UploadErrorsPayload = {
-    uploadErrors: { id: number; message: string }[];
-    flightWarnings: { id: number; filename: string; message: string; sameFilename?: boolean }[];
-    flightErrors: { id: number; filename: string; message: string; sameFilename?: boolean }[];
-};
+export interface UploadErrorsPayload {
+    uploadErrors: Array<{ id: number; message: string }>;
+    flightWarnings: Array<{ id: number; filename: string; message: string; sameFilename?: boolean }>;
+    flightErrors: Array<{ id: number; filename: string; message: string; sameFilename?: boolean }>;
+}
 
-export type UploadListResponse = {
-    uploads: UploadInfo[];
+export interface UploadListResponse {
+    uploads: Array<UploadInfo>;
     numberPages: number;
     currentPage: number;
-};
+}
 
-export type ImportsListResponse = {
-    imports: ImportsPageItem[];
+export interface ImportsListResponse {
+    imports: Array<ImportsPageItem>;
     numberPages: number;
     currentPage: number;
-};
+}
 
-export type APIError = { errorTitle?: string; errorMessage?: string };
+export interface APIError { errorTitle?: string; errorMessage?: string }

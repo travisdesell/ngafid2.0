@@ -11,12 +11,12 @@ import { Flight } from "@/pages/protected/flights/types";
 const log = getLogger("ChartsListModalChecklist", "black", "Component");
 
 
-type Props = {
-    chartFlights: Flight[];
+interface Props {
+    chartFlights: Array<Flight>;
     disableItems: boolean;
     universalParams: Set<string>;
     toggleUniversalParam: (name: string) => void;
-};
+}
 
 
 export function ChartsListModalChecklist({ chartFlights, disableItems, universalParams, toggleUniversalParam }: Props) {
@@ -41,7 +41,7 @@ export function ChartsListModalChecklist({ chartFlights, disableItems, universal
 
         return shared.filter(name => flightTraceNames.includes(name));
 
-    }, null as string[] | null) ?? [];
+    }, null as Array<string> | null) ?? [];
 
 
 

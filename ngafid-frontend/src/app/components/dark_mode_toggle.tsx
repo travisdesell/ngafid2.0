@@ -61,10 +61,10 @@ export function DarkModeToggle() {
         // Toggle theme
         setTheme(isDarkTheme ? "light" : "dark");
 
-    }
+    };
 
 
-    const isProtectedRoute = (window.location.pathname.startsWith("/protected"))
+    const isProtectedRoute = (window.location.pathname.startsWith("/protected"));
 
     return (
         <ContextMenu

@@ -6,14 +6,14 @@ import React from "react";
 const log = getLogger("ErrorBoundary", "white", "Utility");
 
 
-type ErrorBoundaryProps = {
+interface ErrorBoundaryProps {
     onError?: (error: Error, info: React.ErrorInfo) => void;
     children: React.ReactNode;
-};
+}
 
-type ErrorBoundaryState = {
+interface ErrorBoundaryState {
     hasError: boolean;
-};
+}
 
 export function ErrorBoundary({ onError, children }: ErrorBoundaryProps) {
 

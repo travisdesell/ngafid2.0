@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 
 const log = getLogger("LoginModal", "black", "Modal");
 
-type LoginResponse = {
+interface LoginResponse {
     loggedOut?: boolean;
     waiting?: boolean;
     denied?: boolean;
@@ -25,7 +25,7 @@ type LoginResponse = {
     message?: string;
     errorTitle?: string;
     errorMessage?: string;
-};
+}
 
 type TwoFactorMode = "authenticator" | "backup";
 

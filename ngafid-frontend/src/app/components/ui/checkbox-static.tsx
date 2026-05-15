@@ -1,8 +1,8 @@
 // ngafid-frontend/src/app/components/ui/checkbox-static.tsx
-import { cn } from "@/lib/utils"
-import { Check } from "lucide-react"
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
-type CheckboxStaticProps = {
+interface CheckboxStaticProps {
     checked: boolean
     className?: string
 }
@@ -33,6 +33,6 @@ export function CheckboxStatic({ checked, className }: CheckboxStaticProps) {
                 <Check className="h-3 w-4" />
             }
         </span>
-    )
+    );
 
 }

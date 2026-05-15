@@ -27,7 +27,7 @@ export default function WelcomeNavbar() {
     const attemptRegister = () => {
         log("Showing register modal...");
         setModal(RegisterModal);
-    }
+    };
 
     const render = () => {
 

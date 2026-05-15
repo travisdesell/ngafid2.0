@@ -59,31 +59,31 @@ log.warn("Consider this a placeholder for now. Many aspects of this panel will l
    Cesium data types
 ============================================================================ */
 
-type CesiumFlightData = {
+interface CesiumFlightData {
     startTime: string;                // ISO 8601
     endTime: string;                  // ISO 8601
     airframeType?: string;
-    flightGeoInfoAgl: number[];       // [lon, lat, alt, ...]
-    flightAglTimes: string[];         // ISO 8601 timestamps aligned with positions
-    flightGeoAglTaxiing?: number[];
-    flightGeoAglTakeOff?: number[];
-    flightGeoAglClimb?: number[];
-    flightGeoAglCruise?: number[];
-};
+    flightGeoInfoAgl: Array<number>;       // [lon, lat, alt, ...]
+    flightAglTimes: Array<string>;         // ISO 8601 timestamps aligned with positions
+    flightGeoAglTaxiing?: Array<number>;
+    flightGeoAglTakeOff?: Array<number>;
+    flightGeoAglClimb?: Array<number>;
+    flightGeoAglCruise?: Array<number>;
+}
 
 type CesiumDataResponse = Record<number, CesiumFlightData>;
 
 // Internal, per-flight cesium state
-type CesiumFlightState = {
+interface CesiumFlightState {
     data?: CesiumFlightData;
     error?: string;
     loading: boolean;
-};
+}
 
-type AirframeModels = {
+interface AirframeModels {
     Airplane?: ModelGraphics;
     Drone?: ModelGraphics;
-};
+}
 
 /* ============================================================================
    Helpers
@@ -163,12 +163,12 @@ const buildAirframeModel = (airframeType: string | undefined, models: AirframeMo
    Per-flight entity group
 ============================================================================ */
 
-type FlightEntitiesProps = {
+interface FlightEntitiesProps {
     flight: Flight;
     cesiumData: CesiumFlightData;
     colorHex: string;
     models: AirframeModels;
-};
+}
 
 function FlightEntities({ cesiumData, colorHex, models }: FlightEntitiesProps) {
 
@@ -611,7 +611,7 @@ export default function FlightsPanelCesium() {
 
     const handleResolutionChange = (value: "default" | number) => {
 
-        log("Changing Viewer resolution...")
+        log("Changing Viewer resolution...");
 
         if (value === "default") {
             setUseDefaultResolution(true);
@@ -1151,7 +1151,7 @@ export default function FlightsPanelCesium() {
             </Card>
         );
 
-    }
+    };
 
     return render();
 
