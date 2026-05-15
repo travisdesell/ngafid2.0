@@ -27,7 +27,7 @@ export default function TooltipIcon({
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
                 {message}
-                <TooltipPrimitive.Arrow className="fill-primary pb-[1px] transition-all" />
+                <TooltipPrimitive.Arrow className="fill-primary pb-px transition-all" />
             </TooltipContent>
         </Tooltip>
     );
