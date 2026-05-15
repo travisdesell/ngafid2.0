@@ -871,8 +871,8 @@ export function useInteractiveCartesianChart({
             const insetRight = Math.max(0, targetRect.width - plotRight);
             const insetBottom = Math.max(0, targetRect.height - plotBottom);
             const insetClip = `inset(${insetTop}px ${insetRight}px ${insetBottom}px ${insetLeft}px)`;
-            overlay.style.clipPath = insetClip;
-            overlay.style.webkitClipPath = insetClip;
+            overlay.style.setProperty('clip-path', insetClip);
+            overlay.style.setProperty('-webkit-clip-path', insetClip);
         }
         container.appendChild(overlay);
         return true;
