@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import type { ColorResult } from '@uiw/color-convert';
 import Colorful from '@uiw/react-color-colorful';
 import { Check } from 'lucide-react';
-import { forwardRef, useMemo, useState } from 'react';
+import React, { forwardRef, useMemo, useState } from 'react';
 
 
 export const randomHexColor = () => {

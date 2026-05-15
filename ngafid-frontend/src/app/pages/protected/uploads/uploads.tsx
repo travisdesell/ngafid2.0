@@ -474,7 +474,6 @@ export default function UploadsPage() {
 
     // Imported uploads
     const [imports, setImports] = useState<Array<ImportsPageItem>>([]);
-    const [importsPages, setImportsPages] = useState(0);
     const [uploadStatusStatistics, setUploadStatusStatistics] = useState<UploadStatusStatistics>(EMPTY_UPLOAD_STATUS_STATISTICS);
 
     // Pending (client-side) uploads that are currently hashing/uploading
@@ -486,7 +485,6 @@ export default function UploadsPage() {
     // UI handling
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [expandedErrors, setExpandedErrors] = useState<Record<number, UploadErrorsPayload | "loading" | "error" | undefined>>({});
 
     useEffect(() => {
         pendingIdentifiersRef.current = new Set(pending.map((p) => p.identifier));
@@ -857,7 +855,7 @@ export default function UploadsPage() {
             await sleep(0); //<-- Wait for event loop to yield before hashing
 
             // Get the md5 hash (in worker)
-            const md5 = await md5BestEffort(file, (done, total) => {
+            const md5 = await md5BestEffort(file, (done) => {
                 setPending((p) => p.map((u) => u.identifier === pendingEntry.identifier
                     ? { ...u, progressSize: done, bytesUploaded: done }
                     : u

@@ -22,7 +22,7 @@ export type ModalDataError = ModalData & {
 
 export default function ErrorModal({ data }: ModalProps<ModalDataError>) {
 
-    const { close, setModal, renderModalHeader } = useModal();
+    const { setModal, renderModalHeader } = useModal();
     const { title, message, code, allowReport=true } = (data as ModalDataError) ?? {};
     const { user } = useAuth();
 

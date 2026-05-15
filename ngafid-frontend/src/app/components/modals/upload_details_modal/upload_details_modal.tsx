@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { fetchJson } from "@/fetchJson";
 import { APIError, UploadErrorsPayload, UploadImportItem } from "@/pages/protected/uploads/types";
 import { AlertTriangle, Check, CircleAlert, CloudDownload } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const log = getLogger("UploadDetailsModal", "black", "Modal");
@@ -238,7 +238,7 @@ export default function UploadDetailsModal({ data }: ModalProps) {
         return <div className="flex flex-col gap-2 overflow-y-auto max-h-64">
             {
                 groups.map((group, index) => (
-                    <Tooltip disableHoverableContent>
+                    <Tooltip disableHoverableContent key={`error-group-tooltip-${index}`}>
                         <TooltipTrigger>
                             <button
                                 key={`error-group-${index}`}
@@ -273,11 +273,11 @@ export default function UploadDetailsModal({ data }: ModalProps) {
     function ErrorDetails() {
 
         const allowErrorDetailDisplay = (uploadImportData.errorFlights > 0 || uploadImportData.warningFlights > 0);
-        const hasDetails = (
-            (errorDetails.uploadErrors?.length ?? 0) > 0
-            || (errorDetails.flightWarnings?.length ?? 0) > 0
-            || (errorDetails.flightErrors?.length ?? 0) > 0
-        );
+        // const hasDetails = (
+        //     (errorDetails.uploadErrors?.length ?? 0) > 0
+        //     || (errorDetails.flightWarnings?.length ?? 0) > 0
+        //     || (errorDetails.flightErrors?.length ?? 0) > 0
+        // );
 
         // Group flight errors by the error name, and collect the unique filenames associated with each error
         const errorGroups = errorDetails.flightErrors.reduce((acc, entry) => {

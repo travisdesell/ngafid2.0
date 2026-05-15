@@ -1,6 +1,6 @@
 // ngafid-frontend/src/app/components/providers/theme-provider.tsx
 import { getLogger } from "@/components/providers/logger";
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 import { useLocalStorage } from "@uidotdev/usehooks";
 
 

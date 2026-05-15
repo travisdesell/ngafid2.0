@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UploadImportItem, UploadInfo, UploadStatus } from "@/pages/protected/uploads/types";
-import { AlertCircle, AlertTriangle, Check, CircleAlert, CloudDownload, Download, Info, List, Loader, RotateCcw, Trash } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, CloudDownload, Download, Info, Loader, RotateCcw, Trash } from "lucide-react";
 
 
 function bytesToKB(num: number) {

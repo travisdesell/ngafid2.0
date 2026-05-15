@@ -117,7 +117,7 @@ export function ChartsListModal({ data }: ModalProps<ModalDataChartsList>) {
     
     useEffect(() => {
         log("Rendering ChartsListModal with chartFlights:", localChartFlights);
-    }, []);
+    }, [localChartFlights]);
 
     return (
         <motion.div

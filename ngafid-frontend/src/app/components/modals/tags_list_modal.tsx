@@ -44,8 +44,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
         log.table("Associated Tags: ", associatedTags);
         log.table("Unassociated Tags: ", unassociatedTags);
         log.table("All Fleet Tags: ", fleetTags);
-    }, []);
-
+    }, [associatedTags, fleetTags, unassociatedTags]);
 
 
     const [colorPickerValue, setColorPickerValue] = useState<string>(randomHexColor());
@@ -516,7 +515,7 @@ export default function TagsListModal({ data }: ModalProps<ModalDataTagsList>) {
 
 
     const MODAL_TABS_KEYS = Object.keys(MODAL_TABS) as Array<keyof typeof MODAL_TABS>;
-    const MODAL_TABS_VALUES = Object.values(MODAL_TABS);
+    // const MODAL_TABS_VALUES = Object.values(MODAL_TABS);
 
 
     const [modalTab, setModalTab] = useState<keyof typeof MODAL_TABS>("associated");

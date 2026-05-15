@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { motion } from "motion/react";
-import type { ModalProps } from "./types";
 import { useModal } from '@/components/modals/modal_context';
 import { useAuth } from '@/components/providers/auth_provider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +11,7 @@ import ErrorModal from "@/components/modals/error_modal";
 import { openRoute } from "@/lib/route_utils";
 import { fleetSelectable } from "@/components/navbars/multifleet_select";
 
-export default function WaitingModal(_props: ModalProps) {
+export default function WaitingModal() {
 
     const { setModal, renderModalHeader } = useModal();
     const { user, fleetLoading } = useAuth();

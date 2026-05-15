@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchJson } from "@/fetchJson";
 import { CircleQuestionMark, Download, Expand } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from "recharts";
 
 const log = getLogger("Severities", "black", "Page");
@@ -288,7 +288,7 @@ export default function SeveritiesPage() {
     const [eventDescriptions, setEventDescriptions] = useState<Record<string, string>>({});
     const [eventChecked, setEventChecked] = useState<Record<string, boolean>>({ [EVENT_ANY]: false });
     const [eventsEmpty, setEventsEmpty] = useState<Record<string, boolean>>({ [EVENT_ANY]: false });
-    const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
+    const [severityEventCountes, setseverityEventCountes] = useState<Record<string, number>>({});
     const [eventSeverities, setEventSeverities] = useState<EventSeverities>({});
     const [eventMetaDataById, setEventMetaDataById] = useState<Record<number, Array<EventMetaDataItem>>>({});
 
@@ -398,7 +398,7 @@ export default function SeveritiesPage() {
             nextCounts[eventName] = Number.isFinite(count) && count > 0 ? count : 0;
         }
 
-        setEventCounts(nextCounts);
+        setseverityEventCountes(nextCounts);
         setEventsEmpty((prev) => {
             const next: Record<string, boolean> = { ...prev, [EVENT_ANY]: false };
             for (const eventName of nonAnyEventNames)
@@ -851,7 +851,7 @@ export default function SeveritiesPage() {
                                                     ? <Label className="font-normal">{eventName}</Label>
                                                     : (
                                                         <div className="text-sm flex gap-1 items-center">
-                                                            <span>{eventName}{eventCounts[eventName] ? ` (${eventCounts[eventName]})` : ""}</span>
+                                                            <span>{eventName}{severityEventCountes[eventName] ? ` (${severityEventCountes[eventName]})` : ""}</span>
                                                             <Tooltip disableHoverableContent>
                                                                 <TooltipTrigger asChild>
                                                                     <Label className="font-normal cursor-help inline-flex items-center gap-1">

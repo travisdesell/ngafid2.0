@@ -24,11 +24,6 @@ interface Props {
     toggleUniversalParam: (name: string) => void;
 }
 
-interface FlightBadge {
-    label: string;
-    isUniversal: boolean;
-}
-
 export function ChartsListModalFlights({ chartFlights, setChartFlights, chartSelection, togglePerFlightParam, toggleUniversalParam }: Props) {
 
     const [rangeIDLower, setRangeIDLower] = useState<number | undefined>(undefined);

@@ -11,7 +11,6 @@ import { useModal } from '@/components/modals/modal_context';
 import RegisterModal from '@/components/modals/register_modal';
 import { getLogger } from '@/components/providers/logger';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useEffect } from 'react';
 import { setPageTitle } from "@/components/page_title";
 
 

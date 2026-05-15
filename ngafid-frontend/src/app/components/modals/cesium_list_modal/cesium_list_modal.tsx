@@ -11,7 +11,7 @@ import { Flight } from "@/pages/protected/flights/types";
 import { motion } from "motion/react";
 import { Dispatch, SetStateAction, useState } from "react";
 
-const log = getLogger("CesiumListModal", "black", "Modal");
+// const log = getLogger("CesiumListModal", "black", "Modal");
 
 
 export type ModalDataFlightsSelected = ModalData & {
@@ -21,7 +21,7 @@ export type ModalDataFlightsSelected = ModalData & {
 
 export function CesiumListModal({ data }: ModalProps<ModalDataFlightsSelected>) {
 
-    const { close, renderModalHeader } = useModal();
+    const { renderModalHeader } = useModal();
     const { chartFlights, setChartFlights } = (data as ModalDataFlightsSelected) ?? {};
 
     const [localChartFlights, setLocalChartFlights] = useState<Array<Flight>>(chartFlights);

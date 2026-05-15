@@ -9,8 +9,8 @@ import { getLogger } from "@/components/providers/logger";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Input } from "@/components/ui/input";
 import { Command } from "cmdk";
-import { Bug, ChartArea, Flame, Grid2X2Plus, Home, Image, Info, ListOrdered, LogOut, Menu, Moon, Plane, Rows3, Search, Upload, User, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Bug, ChartArea, Flame, Grid2X2Plus, Home, Image, Info, LogOut, Menu, Moon, Plane, Rows3, Search, Upload, User, Users } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const log = getLogger("CommandModalContent", "black", "Modal");
@@ -26,7 +26,7 @@ export default function CommandModalContent({ submitCommand, inputRef }: Command
     const { theme, setTheme, useHighContrastCharts, setUseHighContrastCharts, invertBackgroundImage, setInvertBackgroundImage, useNavbarPageNames, setUseNavbarPageNames } = useTheme();
     const { setModal } = useModal();
     const { user, attemptLogOut } = useAuth();
-    const [previousCommandData, setPreviousCommandData] = useState<null|CommandData>(null);
+    const [previousCommandData] = useState<null|CommandData>(null);
     const navigate = useNavigate();
 
     // Focus the input on mount

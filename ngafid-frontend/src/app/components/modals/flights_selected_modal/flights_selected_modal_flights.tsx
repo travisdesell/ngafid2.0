@@ -95,7 +95,7 @@ export function FlightsSelectedModalFlights({ chartFlights, setChartFlights, eve
 
             const universalList = Array.from(eventSelection.universalEvents);
 
-            const missingUniversalCount = universalList.filter(n => !availableNames.has(n)).length;
+            // const missingUniversalCount = universalList.filter(n => !availableNames.has(n)).length;
 
             const selectedPresentCount = universalList.filter(n => availableNames.has(n)).length
                 + Array.from(perSet).filter(n => availableNames.has(n) && !eventSelection.universalEvents.has(n)).length;
