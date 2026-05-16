@@ -635,6 +635,7 @@ export function InteractiveChartControlsDropdown({
 }: InteractiveChartControlsDropdownProps) {
     const fallbackModifiers = useChartInteractionModifiers();
     const modifiers = modifiersProp ?? fallbackModifiers;
+    const wrapperRef = React.useRef<HTMLDivElement | null>(null);
     const operations = React.useMemo(
         () => [
             ...getDefaultChartControlOperations(interaction, onResetView),
@@ -690,9 +691,18 @@ export function InteractiveChartControlsDropdown({
         );
     };
 
+    const keepOpenForChartInteraction = React.useCallback((event: Event) => {
+        const wrapper = wrapperRef.current;
+        const target = event.target;
+        const chartHost = wrapper?.parentElement;
+
+        if (chartHost && target instanceof Node && chartHost.contains(target))
+            event.preventDefault();
+    }, []);
+
     return (
-        <div className={cn("absolute left-16 top-2 z-20", className)}>
-            <DropdownMenu>
+        <div ref={wrapperRef} className={cn("absolute left-16 top-2 z-20", className)}>
+            <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                     <Button
                         type="button"
@@ -707,11 +717,14 @@ export function InteractiveChartControlsDropdown({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="start"
-                    className={cn("w-88 p-2 pl-4", contentClassName)}
+                    className={cn(
+                        "w-88 border bg-muted/60 p-2 pl-4 shadow-sm backdrop-blur-xs",
+                        contentClassName,
+                    )}
                     onMouseDown={(event) => event.stopPropagation()}
+                    onPointerDownOutside={keepOpenForChartInteraction}
+                    onInteractOutside={keepOpenForChartInteraction}
                 >
-                    {/* <DropdownMenuLabel className="px-2 pb-2 pt-1">Chart Controls</DropdownMenuLabel>
-                    <DropdownMenuSeparator /> */}
                     <div className="grid gap-1 pt-1">
                         {operations.map(renderOperation)}
                     </div>
