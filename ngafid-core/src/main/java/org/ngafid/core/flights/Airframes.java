@@ -73,6 +73,8 @@ public final class Airframes {
 
     public static final String AIRFRAME_QUEST_KODIAK_100 = "Quest Kodiak 100";
 
+    public static final String AIRFRAME_AW119 = "AW-119";
+
     private static HashMap<String, Integer> nameIdMap = new HashMap<>();
     private static HashMap<Integer, String> airframeNameMap = new HashMap<>();
     private static HashMap<String, Integer> typeIdMap = new HashMap<>();
@@ -102,7 +104,7 @@ public final class Airframes {
             AIRFRAME_BEECHCRAFT_G58));
 
     // CHECKSTYLE:OFF
-    public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
+    public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44",AIRFRAME_AW119);
 
     // CHECKSTYLE:ON
     public record AliasKey(String name, int fleetId) {}
@@ -119,7 +121,8 @@ public final class Airframes {
             Map.entry(new AliasKey("Garmin Flight Display", 1), "R44"),
             Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
             Map.entry(defaultAlias("Robinson R44"), "R44"),
-            Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
+            Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"),
+            Map.entry(defaultAlias("AW-119"), AIRFRAME_AW119));
 
     // CHECKSTYLE:ON
     public static class Type extends NormalizedColumn<Type> {
