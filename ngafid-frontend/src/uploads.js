@@ -185,9 +185,9 @@ class Upload extends React.Component {
         const sizeText = `${(progressSize / 1000).toFixed(2).toLocaleString()  }/${  (totalSize / 1000).toFixed(2).toLocaleString()  } kB (${  width  }%)`;
 
 
-        const status = uploadInfo.status;
+        const status = resolveUploadDisplayStatus(uploadInfo);
 
-        console.log("[EX] Upload Status: ", status);
+        console.log("[EX] Upload Status: ", status, uploadInfo);
 
         /*
 
@@ -419,6 +419,33 @@ class Upload extends React.Component {
 
 function getUploadeIdentifier(filename, size) {
     return (`${size  }-${  filename.replace(/[^0-9a-zA-Z_-]/img, '')}`);
+}
+
+/**
+ * Server uploads can be left as PROCESSED_OK when every flight in the zip failed; use flight counts for display.
+ */
+function resolveUploadDisplayStatus(uploadInfo) {
+    const status = uploadInfo.status;
+    if (status !== "PROCESSED_OK") {
+        return status;
+    }
+
+    const errorFlights = uploadInfo.errorFlights ?? 0;
+    const warningFlights = uploadInfo.warningFlights ?? 0;
+    const validFlights = uploadInfo.validFlights ?? 0;
+
+    if (errorFlights > 0 && validFlights === 0) {
+        return "FAILED_UNKNOWN";
+    }
+    if (errorFlights > 0 || warningFlights > 0) {
+        return "PROCESSED_WARNING";
+    }
+    return status;
+}
+
+function pendingUploadsNotOnServer(pendingUploads, serverUploads) {
+    const onServer = new Set(serverUploads.map((u) => u.identifier));
+    return pendingUploads.filter((p) => !onServer.has(p.identifier));
 }
 
 
@@ -778,9 +805,10 @@ export class UploadsPage extends React.Component {
 
                     console.log("Should be finished uploading...");
 
-                    const pendingUploads = [...this.state.pendingUploads];
-                    pendingUploads[uploadInfo.position] = uploadInfo;
-                    this.setState({ pendingUploads });
+                    const pendingUploads = this.state.pendingUploads.filter(
+                        (p) => p.identifier !== uploadInfo.identifier
+                    );
+                    this.setState({ pendingUploads }, () => this.submitFilter());
 
                 }
 
@@ -826,6 +854,10 @@ export class UploadsPage extends React.Component {
 
                 this.setState({
                     uploads: response.uploads,
+                    pendingUploads: pendingUploadsNotOnServer(
+                        this.state.pendingUploads,
+                        response.uploads
+                    ),
                     numberPages: response.numberPages,
                     currentPage: response.currentPage
                 });
@@ -877,7 +909,7 @@ export class UploadsPage extends React.Component {
                                     return (
                                         <Upload
                                             uploadInfo={uploadInfo}
-                                            key={uploadInfo.identifier}
+                                            key={`pending-${uploadInfo.identifier}`}
                                             removeUpload={(uploadInfo) => {
                                                 this.removePendingUpload(uploadInfo);
                                             }}
@@ -898,7 +930,7 @@ export class UploadsPage extends React.Component {
                                     return (
                                         <Upload
                                             uploadInfo={uploadInfo}
-                                            key={uploadInfo.identifier}
+                                            key={`upload-${uploadInfo.id ?? uploadInfo.identifier}`}
                                             removeUpload={(uploadInfo) => {
                                                 this.removeUploadProp(uploadInfo);
                                             }}

@@ -327,8 +327,25 @@ public final class ProcessUpload {
             }
         }
 
-        // ingestion was successful
+        if (status == Upload.Status.PROCESSED_OK) {
+            status = resolveStatusFromFlightCounts(validFlights, warningFlights, errorFlights);
+        }
+
         return status;
+    }
+
+    /**
+     * Zip/parquet ingestion starts as {@link Upload.Status#PROCESSED_OK}; adjust when individual flights
+     * failed or produced warnings.
+     */
+    static Upload.Status resolveStatusFromFlightCounts(int validFlights, int warningFlights, int errorFlights) {
+        if (errorFlights > 0 && validFlights == 0) {
+            return Upload.Status.FAILED_UNKNOWN;
+        }
+        if (warningFlights > 0 || errorFlights > 0) {
+            return Upload.Status.PROCESSED_WARNING;
+        }
+        return Upload.Status.PROCESSED_OK;
     }
 
     public static class FlightInfo {
