@@ -135,7 +135,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Factory factory = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis, StandardCharsets.UTF_8))) {
-            if (RotorcraftCSVFileProcessor.isRotorcraftUpload(connection, filename)) {
+            if (RotorcraftCSVFileProcessor.isRotorcraftUpload(connection, filename, reader)) {
                 factory = RotorcraftCSVFileProcessor::new;
             } else {
                 List<String> headerLines = extractHeaderLines(reader);

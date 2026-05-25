@@ -78,6 +78,7 @@ public abstract class FlightFileProcessor implements Callable<Void> {
                     .parallel()
                     .filter(Objects::nonNull)
                     .map(fbs -> pipeline.build(connection, fbs))
+                    .filter(Objects::nonNull)
                     .forEach(builders::add);
 
             // Null out stream now that we've parsed all of the data in.
