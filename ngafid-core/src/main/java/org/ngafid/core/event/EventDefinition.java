@@ -101,6 +101,27 @@ public class EventDefinition {
             int startBuffer,
             int stopBuffer,
             int airframeNameId,
+            Filter filter,
+            TreeSet<String> severityColumnNames,
+            SeverityType severityType) {
+        this(
+                fleetId,
+                name,
+                startBuffer,
+                stopBuffer,
+                airframeNameId,
+                null,
+                filter,
+                severityColumnNames,
+                severityType);
+    }
+
+    public EventDefinition(
+            int fleetId,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            int airframeNameId,
             Integer airframeTypeId,
             Filter filter,
             TreeSet<String> severityColumnNames,
