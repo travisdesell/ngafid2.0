@@ -24,7 +24,7 @@ public class EventDefinition {
             new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
-    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, airframe_type_id "
+    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, airframe_type_id, "
             + "condition_json, column_names, severity_column_names, severity_type";
 
     /*
@@ -414,11 +414,22 @@ public class EventDefinition {
             int stopBuffer,
             String airframe,
             String filterJson,
-            String severityColumNamesJson,
+            String severityColumnNamesJson,
             String severityType
     ) throws SQLException {
         insert(
-                connection, fleetId, name, startBuffer, stopBuffer, airframe, null, filterJson, severityColumNamesJson, severityType);
+                connection, fleetId, name, startBuffer, stopBuffer, airframe, null, filterJson, severityColumnNamesJson, severityType);
+    }
+
+    public static void insert(
+            Connection connection,
+            int id,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            int airframeId
+    ) throws SQLException {
+        insert(connection, id, name, startBuffer, stopBuffer, airframeId, null);
     }
 
     /**
@@ -434,7 +445,7 @@ public class EventDefinition {
      * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(
-            Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId)
+            Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId, Integer airframeTypeId)
             throws SQLException {
         if (id > 0) {
             LOG.info("Passed a positive ID to special event insertion.");
@@ -451,7 +462,7 @@ public class EventDefinition {
             preparedStatement.setInt(3, startBuffer);
             preparedStatement.setInt(4, stopBuffer);
             preparedStatement.setInt(5, airframeId);
-            preparedStatement.setObject(6, java.sql.Types.INTEGER);
+            preparedStatement.setObject(6, airframeTypeId, java.sql.Types.INTEGER);
             preparedStatement.setString(7, "{}");
             preparedStatement.setString(8, "{}");
             preparedStatement.setString(9, "{}");
