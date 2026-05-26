@@ -6,6 +6,7 @@ import { showErrorModal } from "./error_modal.js";
 import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 import { Paginator } from "./paginator_component.tsx";
 import SignedInNavbar from "./signed_in_navbar.js";
+import { sanitizeUploadFilename } from "./upload_filename.js";
 
 import Button from "react-bootstrap/Button";
 import SparkMD5 from "spark-md5";
@@ -544,7 +545,7 @@ export class UploadsPage extends React.Component {
         // console.log(`Starting upload of file: ${file}`);
 
         //different versions of firefox have different field names
-        const filename = file.webkitRelativePath || file.fileName || file.name;
+        const filename = sanitizeUploadFilename(file.webkitRelativePath || file.fileName || file.name);
         const identifier = file.identifier;
         const position = file.position;
 
@@ -573,7 +574,7 @@ export class UploadsPage extends React.Component {
                 console.log("New upload response: ", xhr.responseText);
                 const response = JSON.parse(xhr.responseText);
 
-                const filename = (file.webkitRelativePath || file.fileName || file.name);
+                const filename = sanitizeUploadFilename(file.webkitRelativePath || file.fileName || file.name);
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
@@ -607,7 +608,7 @@ export class UploadsPage extends React.Component {
 
     addUpload(file) {
 
-        const filename = (file.webkitRelativePath || file.fileName || file.name);
+        const filename = sanitizeUploadFilename(file.webkitRelativePath || file.fileName || file.name);
         const progressSize = 0;
         const status = "HASHING";
         const totalSize = file.size;

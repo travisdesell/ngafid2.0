@@ -214,6 +214,17 @@ public final class ProcessUpload {
                 warningFlights = pipeline.getWarningFlightsCount();
                 validFlights = pipeline.getValidFlightsCount();
 
+                if (status == Upload.Status.PROCESSED_OK
+                        && pipeline.getFilesQueued() > 0
+                        && validFlights == 0
+                        && errorFlights == 0) {
+                    status = Upload.Status.FAILED_UNKNOWN;
+                    UploadError.insertError(
+                            connection,
+                            uploadId,
+                            "No flights were imported from the archive. Check upload consumer logs for errors.");
+                }
+
             } catch (java.nio.file.NoSuchFileException e) {
                 LOG.log(Level.SEVERE, "NoSuchFileException: {0}", e.toString());
                 e.printStackTrace();
@@ -339,7 +350,7 @@ public final class ProcessUpload {
      * failed or produced warnings.
      */
     static Upload.Status resolveStatusFromFlightCounts(int validFlights, int warningFlights, int errorFlights) {
-        if (errorFlights > 0 && validFlights == 0) {
+        if (validFlights == 0 && errorFlights > 0) {
             return Upload.Status.FAILED_UNKNOWN;
         }
         if (warningFlights > 0 || errorFlights > 0) {

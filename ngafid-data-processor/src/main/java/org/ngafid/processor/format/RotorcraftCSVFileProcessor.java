@@ -812,7 +812,11 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             var name = headers.get(j);
             var dataType = dataTypes.get(j);
             if (columnLooksNumeric(columnData)) {
-                doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, columnData));
+                try {
+                    doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, columnData));
+                } catch (NumberFormatException e) {
+                    stringTimeSeries.put(name, new StringTimeSeries(name, dataType, columnData));
+                }
             } else {
                 stringTimeSeries.put(name, new StringTimeSeries(name, dataType, columnData));
             }

@@ -87,6 +87,10 @@ public abstract class FlightFileProcessor implements Callable<Void> {
             if (builders.isEmpty()) return null;
         } catch (SQLException e) {
             pipeline.fail(filename, e);
+            return null;
+        } catch (Exception e) {
+            pipeline.fail(filename, e);
+            return null;
         }
 
         long nanostart = System.nanoTime();
