@@ -146,7 +146,7 @@ object UploadRoutes : RouteProvider() {
 
             val errorResponse = ErrorResponse(
                 "File Upload Failure",
-                "The filename could not be normalized for upload."
+                "Upload zip filename contains unsupported characters. NGAFID only allows letters (A-Z), digits (0-9), dashes ('-'), underscores ('_'), and periods ('.'). Characters such as spaces (' ') and parentheses ('(' or ')') are not accepted. Rename the zip and retry."
             )
 
             ctx.json(errorResponse)

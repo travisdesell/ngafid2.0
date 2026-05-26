@@ -173,7 +173,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     }
 
     /**
-     * For USCG files: reads metadata serial, looks up registry tail/airframe, and builds system id from the filename.
+     * For USCG files: reads metadata serial, looks up registry tail/airframe, and builds a
+     * {@code ParsedFilename.systemId} token from the filename (kept for layout-specific time parsing).
      */
     static Optional<ParsedFilename> resolveUscgRotorcraftIdentity(
             Connection connection, BufferedReader reader, String firstLine, String filename)
@@ -344,7 +345,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return name;
     }
 
-    /** Sets {@link FlightMeta} tail, system id, and airframe from a registry lookup. */
+    /** Sets {@link FlightMeta} tail, stored system id, and airframe from a registry lookup. */
     private static void applyRegistryIdentity(Connection connection, FlightMeta meta, ParsedFilename parsed)
             throws FatalFlightFileException, SQLException {
         Optional<RotorcraftTailAirframeRegistry.Entry> entry =
@@ -353,7 +354,10 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             throw new FatalFlightFileException("Tail '" + parsed.tail()
                     + "' is not in tail_airframe_registry as a Rotorcraft aircraft.");
         }
-        String systemId = parsed.systemId();
+        // For rotorcraft uploads, we store the operator tail (registry tail) as the system id.
+        // The filename-derived token (parsed.systemId) is still used inside {@link #parse()} for
+        // layout-specific fallbacks like Metro OTL/HAA date parsing.
+        String systemId = entry.get().tail();
         if (systemId.length() > 64) {
             systemId = systemId.substring(0, 64);
         }
