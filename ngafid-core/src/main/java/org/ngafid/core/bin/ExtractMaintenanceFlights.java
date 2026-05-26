@@ -47,8 +47,8 @@ public final class ExtractMaintenanceFlights {
     private static final int WINDOW_DAYS_BEFORE = 10;
     private static final int WINDOW_DAYS_AFTER = 10;
     /** Max flights to extract: before (closest to open) and after (closest to close). */
-    private static final int MAX_BEFORE_FLIGHTS = 10;
-    private static final int MAX_AFTER_FLIGHTS = 10;
+    private static final int MAX_BEFORE_FLIGHTS = 5;
+    private static final int MAX_AFTER_FLIGHTS = 5;
 
     /** Log file for per-workorder time trace; all dates in GMT. */
     private static PrintWriter timeLogWriter = null;
