@@ -756,91 +756,115 @@ public final class ExtractMaintenanceFlights {
         }
     }
 
+    /** Flight is in the maintenance window (open through close inclusive). */
+    private static boolean isTrueDuringFlight(AircraftTimeline ac) {
+        return ac.getPreviousEvent() != null && ac.getNextEvent() != null
+                && ac.getPreviousEvent() == ac.getNextEvent();
+    }
+
+    /** First flight in a contiguous during block for this workorder (anchor for before counting). */
+    private static boolean isFirstTrueDuringForEvent(List<AircraftTimeline> timeline, int index) {
+        AircraftTimeline ac = timeline.get(index);
+        if (!isTrueDuringFlight(ac)) {
+            return false;
+        }
+        MaintenanceRecord record = ac.getPreviousEvent();
+        if (index == 0) {
+            return true;
+        }
+        AircraftTimeline prev = timeline.get(index - 1);
+        return !isTrueDuringFlight(prev) || prev.getPreviousEvent() != record;
+    }
+
+    /** Last flight in a contiguous during block for this workorder (anchor for after counting). */
+    private static boolean isLastTrueDuringForEvent(List<AircraftTimeline> timeline, int index) {
+        AircraftTimeline ac = timeline.get(index);
+        if (!isTrueDuringFlight(ac)) {
+            return false;
+        }
+        MaintenanceRecord record = ac.getPreviousEvent();
+        if (index + 1 >= timeline.size()) {
+            return true;
+        }
+        AircraftTimeline next = timeline.get(index + 1);
+        return !isTrueDuringFlight(next) || next.getPreviousEvent() != record;
+    }
+
     /**
      * Mark up to N before/after flights around each maintenance period.
+     * Before/after loops run once per workorder (first/last during flight), not once per during flight.
      * Ground runs are excluded.
      */
     private static void setFlightsToNextFlights(Connection connection, List<AircraftTimeline> timeline) throws SQLException {
         for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
             AircraftTimeline ac = timeline.get(currentAircraft);
 
-            // Trigger counting when: 
-            // 1. Flight is during maintenance (between open and close; daysToNext==0 or daysSincePrevious==0)
-            // 2. OR when transitioning between maintenance events (nextEvent changes from previous flight)
+            // Before: first during flight for this event, or transition between upcoming maintenance events.
+            // After: last during flight for this event (second pass handles no-during cases).
             boolean isOnMaintenanceDay = ac.getDaysToNext() == 0 || ac.getDaysSincePrevious() == 0;
             boolean isAfterMaintenanceGap = false;
-            
+
             if (!isOnMaintenanceDay && currentAircraft > 0 && ac.getNextEvent() != null) {
                 AircraftTimeline prev = timeline.get(currentAircraft - 1);
-                // Check if this is the first flight after a maintenance event (next event changed)
                 isAfterMaintenanceGap = prev.getNextEvent() != ac.getNextEvent();
             }
-            
-            if (isOnMaintenanceDay || isAfterMaintenanceGap) {
-                MaintenanceRecord recordForBefore = ac.getNextEvent(); // during or transition: record for "before" count
-                MaintenanceRecord recordForAfter = ac.getPreviousEvent(); // during or transition: record for "after" count
+
+            boolean runBeforeCount = isFirstTrueDuringForEvent(timeline, currentAircraft) || isAfterMaintenanceGap;
+            boolean runAfterCount = isLastTrueDuringForEvent(timeline, currentAircraft);
+
+            if (runBeforeCount || runAfterCount) {
+                MaintenanceRecord recordForBefore = ac.getNextEvent();
+                MaintenanceRecord recordForAfter = ac.getPreviousEvent();
 
                 int i = 1;
                 int flightCount = 0;
-                while ((currentAircraft - i) >= 0 && flightCount < MAX_BEFORE_FLIGHTS) {
-                    AircraftTimeline a = timeline.get(currentAircraft - i);
-                    if (a.getDaysToNext() == 0) {
-                        // True during = both events set and same; reclassified first-day has only nextEvent
-                        boolean isTrueDuring = a.getPreviousEvent() != null && a.getNextEvent() != null
-                                && a.getPreviousEvent() == a.getNextEvent();
-                        if (isTrueDuring) {
+                if (runBeforeCount) {
+                    while ((currentAircraft - i) >= 0 && flightCount < MAX_BEFORE_FLIGHTS) {
+                        AircraftTimeline a = timeline.get(currentAircraft - i);
+                        if (a.getDaysToNext() == 0 && isTrueDuringFlight(a)) {
                             a.setFlightsToNext(-1); // -1 means during
                             i++;
                             continue;
                         }
-                    }
-                    // Only count flights that are "before" for the same record
-                    if (recordForBefore == null || a.getNextEvent() != recordForBefore) {
+                        if (recordForBefore == null || a.getNextEvent() != recordForBefore) {
+                            i++;
+                            continue;
+                        }
+                        if (!flightTookOff(connection, a.getFlightId())) {
+                            a.setFlightsToNext(-2);
+                            i++;
+                            continue;
+                        }
+                        a.setFlightsToNext(flightCount);
                         i++;
-                        continue;
+                        flightCount++;
                     }
-
-                    if (!flightTookOff(connection, a.getFlightId())) {
-                        a.setFlightsToNext(-2); // -2 means ground run, don't extract
-                        i++;
-                        continue;
-                    }
-
-                    a.setFlightsToNext(flightCount);
-                    i++;
-                    flightCount++;
                 }
 
                 i = 1;
                 flightCount = 0;
 
-                while ((currentAircraft + i) < timeline.size() && flightCount < MAX_AFTER_FLIGHTS) {
-                    AircraftTimeline a = timeline.get(currentAircraft + i);
-                    if (a.getDaysSincePrevious() == 0) {
-                        // True during = both events set and same; reclassified last-day has only previousEvent
-                        boolean isTrueDuring = a.getPreviousEvent() != null && a.getNextEvent() != null
-                                && a.getPreviousEvent() == a.getNextEvent();
-                        if (isTrueDuring) {
-                            a.setFlightsSincePrevious(-1); // -1 means during
+                if (runAfterCount) {
+                    while ((currentAircraft + i) < timeline.size() && flightCount < MAX_AFTER_FLIGHTS) {
+                        AircraftTimeline a = timeline.get(currentAircraft + i);
+                        if (a.getDaysSincePrevious() == 0 && isTrueDuringFlight(a)) {
+                            a.setFlightsSincePrevious(-1);
                             i++;
                             continue;
                         }
-                    }
-                    // Only count flights that are "after" for the same record
-                    if (recordForAfter == null || a.getPreviousEvent() != recordForAfter) {
+                        if (recordForAfter == null || a.getPreviousEvent() != recordForAfter) {
+                            i++;
+                            continue;
+                        }
+                        if (!flightTookOff(connection, a.getFlightId())) {
+                            a.setFlightsSincePrevious(-2);
+                            i++;
+                            continue;
+                        }
+                        a.setFlightsSincePrevious(flightCount);
                         i++;
-                        continue;
+                        flightCount++;
                     }
-
-                    if (!flightTookOff(connection, a.getFlightId())) {
-                        a.setFlightsSincePrevious(-2); // -2 means ground run, don't extract
-                        i++;
-                        continue;
-                    }
-
-                    a.setFlightsSincePrevious(flightCount);
-                    i++;
-                    flightCount++;
                 }
             }
         }
