@@ -43,14 +43,14 @@ import org.ngafid.core.util.TimeUtils;
 import org.ngafid.processor.Pipeline;
 
 /**
- * CSV flight recorder exports for rotorcraft. Identity (tail, system id, airframe) comes from the
- * filename and {@code tail_airframe_registry}, not from embedded recorder metadata.
+ * CSV flight recorder exports for rotorcraft. Tail and airframe come from {@code tail_airframe_registry}:
+ * standard {@code tail_...} filenames, or USCG IGS metadata ({@code Aircraft Serial Number,<tail>}).
  * <p>
- * The tail is the first segment of the basename ({@code 344Y} in {@code 344Y_190724180219_NGAFID_FLT.csv}).
- * When present, the second segment is used as system id ({@code 190724180219}).
+ * Standard filenames use the first basename segment as tail ({@code 344Y} in
+ * {@code 344Y_190724180219_NGAFID_FLT.csv}); the next segment is system id when present.
  * <p>
- * Supported layouts: Garmin {@code #airframe_info}, direct {@code Lcl Date} columns, Appareo, Metro OTL/HAA,
- * and RT_Flight / Pfizer timeseries ({@code Month,Day,Year,...} header plus units row).
+ * Supported layouts: USCG IGS, Garmin {@code #airframe_info}, direct {@code Lcl Date} columns, Appareo,
+ * Metro OTL/HAA, and RT_Flight ({@code Month,Day,Year,...} header plus units row).
  */
 public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
@@ -96,6 +96,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
     private final ParsedFilename parsed;
 
+    /** Resolves tail/system id from USCG metadata or filename, then loads airframe from the registry. */
     public RotorcraftCSVFileProcessor(
             Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException, FatalFlightFileException, SQLException {
@@ -105,8 +106,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     }
 
     /**
-     * CSV factory routing: peek file content for USCG {@code Aircraft Serial Number} (before filename tail), then
-     * standard {@code tail_...} filenames. Reader is rewound before return.
+     * Returns true when this CSV should use {@link RotorcraftCSVFileProcessor}: USCG metadata serial in the
+     * registry, or a {@code tail_...} filename in the registry. Rewinds {@code reader} before returning.
      */
     public static boolean isRotorcraftUpload(Connection connection, String filename, BufferedReader reader)
             throws SQLException, IOException, FatalFlightFileException {
@@ -118,7 +119,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                     return true;
                 }
                 if (isUscgFormat(firstLine)) {
-                    throw fatalUscgRegistryMiss(reader, firstLine);
+                    throw fatalUscgRegistryMiss(peekUscgAircraftSerialAfterReset(reader));
                 }
             } finally {
                 reader.reset();
@@ -127,23 +128,20 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return isRotorcraftFilenameInRegistry(connection, filename);
     }
 
-    /**
-     * Standard {@code tail_...} / {@code tail_date_...} filename with a rotorcraft registry tail.
-     */
+    /** True when the first {@code _}-delimited filename segment is a rotorcraft tail in the registry. */
     public static boolean isRotorcraftFilenameInRegistry(Connection connection, String filename) throws SQLException {
         Optional<ParsedFilename> parsed = parseFilename(filename);
         return parsed.isPresent()
                 && RotorcraftTailAirframeRegistry.findRotorcraft(connection, parsed.get().tail()).isPresent();
     }
 
-    /**
-     * USCG IGS card exports ({@code IGS v,...} preamble). Tail comes from file metadata, not the filename.
-     */
+    /** True when the first line is a USCG IGS export ({@code IGS v,...}). */
     static boolean isUscgFormat(String firstLine) {
         String normalized = normalizeLine(firstLine);
         return normalized.startsWith(USCG_IGS_FIRST_LINE_PREFIX);
     }
 
+    /** Trims a line and strips a leading UTF-8 BOM when present. */
     static String normalizeLine(String line) {
         if (line == null) {
             return "";
@@ -155,22 +153,18 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return trimmed;
     }
 
-    static boolean isUscgIgsFirstLine(String line) {
-        return isUscgFormat(line);
-    }
-
     /**
-     * Reads the IGS metadata preamble and returns {@code Aircraft Serial Number} when present.
+     * Scans the IGS preamble for {@code Aircraft Serial Number,<tail>} and returns the substring after the comma.
      */
     static Optional<String> peekUscgAircraftSerial(BufferedReader reader, String firstLine) throws IOException {
+        String prefix = USCG_AIRCRAFT_SERIAL_KEY + ",";
         String line = firstLine;
         while (line != null && !isUscgIgsSeparatorLine(line)) {
-            int comma = line.indexOf(',');
-            if (comma > 0) {
-                String key = line.substring(0, comma).trim();
-                String value = line.substring(comma + 1).replace('\r', ' ').trim();
-                if (USCG_AIRCRAFT_SERIAL_KEY.equalsIgnoreCase(key) && !value.isEmpty()) {
-                    return Optional.of(value);
+            String normalized = normalizeLine(line);
+            if (normalized.regionMatches(true, 0, prefix, 0, prefix.length())) {
+                String tail = normalized.substring(prefix.length());
+                if (!tail.isEmpty()) {
+                    return Optional.of(tail);
                 }
             }
             line = reader.readLine();
@@ -179,8 +173,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     }
 
     /**
-     * Peeks the IGS preamble for {@code Aircraft Serial Number} and returns identity when that tail is in
-     * {@code tail_airframe_registry} as Rotorcraft.
+     * For USCG files: reads metadata serial, looks up registry tail/airframe, and builds system id from the filename.
      */
     static Optional<ParsedFilename> resolveUscgRotorcraftIdentity(
             Connection connection, BufferedReader reader, String firstLine, String filename)
@@ -200,10 +193,15 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return Optional.of(new ParsedFilename(entry.get().tail(), parseUscgSystemIdFromFilename(filename)));
     }
 
+    /**
+     * Resolves tail and system id from USCG metadata or {@code tail_...} filename; fails if layout is unknown or
+     * unregistered.
+     */
     static ParsedFilename resolveParsedFilename(Connection connection, String filename, InputStream stream)
             throws FatalFlightFileException, SQLException, IOException {
         stream.mark(512 * 1024);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            reader.mark(512 * 1024);
             String firstLine = reader.readLine();
             Optional<ParsedFilename> fromContent =
                     resolveUscgRotorcraftIdentity(connection, reader, firstLine, filename);
@@ -211,7 +209,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 return fromContent.get();
             }
             if (isUscgFormat(firstLine)) {
-                throw fatalUscgRegistryMiss(reader, firstLine);
+                throw fatalUscgRegistryMiss(peekUscgAircraftSerialAfterReset(reader));
             }
         } finally {
             stream.reset();
@@ -224,12 +222,15 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         throw new FatalFlightFileException("Invalid rotorcraft filename or unrecognized layout: " + filename);
     }
 
-    private static FatalFlightFileException fatalUscgRegistryMiss(BufferedReader reader, String firstLine)
-            throws IOException {
+    /** Rewinds the reader and re-reads the IGS preamble to obtain the metadata serial for error messages. */
+    private static Optional<String> peekUscgAircraftSerialAfterReset(BufferedReader reader) throws IOException {
         reader.reset();
         reader.mark(512 * 1024);
-        firstLine = reader.readLine();
-        Optional<String> serial = peekUscgAircraftSerial(reader, firstLine);
+        return peekUscgAircraftSerial(reader, reader.readLine());
+    }
+
+    /** Builds an error for a USCG file with a missing or unregistered {@code Aircraft Serial Number}. */
+    private static FatalFlightFileException fatalUscgRegistryMiss(Optional<String> serial) {
         if (serial.isEmpty()) {
             return new FatalFlightFileException("USCG IGS file is missing 'Aircraft Serial Number' metadata.");
         }
@@ -238,6 +239,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 + " the tail to the registry.");
     }
 
+    /** True for the dashed line between IGS metadata and the {@code Rec #,...} data header. */
     static boolean isUscgIgsSeparatorLine(String line) {
         if (line == null) {
             return false;
@@ -246,54 +248,38 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return trimmed.length() >= 10 && trimmed.chars().allMatch(ch -> ch == '-');
     }
 
-    /** @deprecated use {@link #peekUscgAircraftSerial} and {@link #resolveUscgRotorcraftIdentity} */
-    static Optional<ParsedFilename> parseUscgIgsIdentity(
-            BufferedReader reader, String firstLine, String filename) throws IOException {
-        Optional<String> serial = peekUscgAircraftSerial(reader, firstLine);
-        if (serial.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(new ParsedFilename(serial.get(), parseUscgSystemIdFromFilename(filename)));
-    }
-
+    /** Returns the USCG datetime prefix from the basename (e.g. {@code 20240125-134952C} from {@code 20240125-134952C_...}). */
     static String parseUscgSystemIdFromFilename(String path) {
-        Matcher matcher = USCG_FILENAME_DATE_TIME.matcher(basenameWithoutExtension(path));
-        if (!matcher.find()) {
+        String base = basenameWithoutExtension(path);
+        int underscore = base.indexOf('_');
+        if (underscore <= 0) {
             return "";
         }
-        return matcher.group(1) + "T" + matcher.group(2);
+        String prefix = base.substring(0, underscore);
+        if (USCG_FILENAME_DATE_TIME.matcher(prefix).find()) {
+            return prefix;
+        }
+        return "";
     }
 
+    /** True when the file starts with Garmin {@code #airframe_info}. */
     static boolean isGarminStyleRotorcraftHeader(String firstLine) {
-        if (firstLine == null) {
-            return false;
-        }
-        return firstLine.trim().regionMatches(true, 0, GARMIN_STYLE_FIRST_LINE_PREFIX, 0, GARMIN_STYLE_FIRST_LINE_PREFIX.length());
+        String normalized = normalizeLine(firstLine);
+        return normalized.regionMatches(
+                true, 0, GARMIN_STYLE_FIRST_LINE_PREFIX, 0, GARMIN_STYLE_FIRST_LINE_PREFIX.length());
     }
 
+    /** True when the first row is a Garmin column header beginning with {@code Lcl Date}. */
     static boolean isDirectGarminColumnHeader(String firstLine) {
-        if (firstLine == null) {
-            return false;
-        }
-        return firstLine.trim().startsWith(DIRECT_COLUMN_HEADER_PREFIX);
+        return normalizeLine(firstLine).startsWith(DIRECT_COLUMN_HEADER_PREFIX);
     }
 
-    /** RT_Flight / Pfizer exports: {@code Month,Day,Year,Hour,Minute,Second,...} then a units row. */
+    /** True for RT_Flight / Pfizer layouts ({@code Month,Day,Year,...} header row). */
     static boolean isRtFlightHeader(String firstLine) {
-        if (firstLine == null) {
-            return false;
-        }
-        String trimmed = firstLine.strip();
-        if (trimmed.startsWith("\uFEFF")) {
-            trimmed = trimmed.substring(1);
-        }
-        return trimmed.startsWith("Month,Day,Year");
+        return normalizeLine(firstLine).startsWith("Month,Day,Year");
     }
 
-    static boolean isTimeseriesHeader(String firstLine) {
-        return isRtFlightHeader(firstLine);
-    }
-
+    /** True for Appareo {@code #} comment lines in the preamble. */
     static boolean isAppareoCommentLine(String line) {
         if (line == null) {
             return false;
@@ -303,10 +289,12 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 && (trimmed.toLowerCase().contains("appareo") || trimmed.startsWith("# Converted Flight Data"));
     }
 
+    /** True when a row is the Appareo data header ({@code Relative Time,...}). */
     static boolean isAppareoDataHeader(String line) {
         return line != null && line.trim().startsWith(APPAREO_HEADER_PREFIX);
     }
 
+    /** True for Metro OTL/HAA quoted CSV whose first column is {@code index}. */
     static boolean isMetroOtlHeader(String firstLine) {
         if (firstLine == null) {
             return false;
@@ -320,7 +308,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     }
 
     /**
-     * Basename first {@code _}-delimited segment is the tail; second segment is system id when present.
+     * Parses {@code tail} and optional {@code systemId} from the basename ({@code 344Y_190724180219_...}).
      */
     static Optional<ParsedFilename> parseFilename(String path) {
         String base = basenameWithoutExtension(path);
@@ -342,6 +330,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return Optional.of(new ParsedFilename(tail, systemId));
     }
 
+    /** Returns the filename without path or extension. */
     static String basenameWithoutExtension(String path) {
         String name = path;
         int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
@@ -355,6 +344,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return name;
     }
 
+    /** Sets {@link FlightMeta} tail, system id, and airframe from a registry lookup. */
     private static void applyRegistryIdentity(Connection connection, FlightMeta meta, ParsedFilename parsed)
             throws FatalFlightFileException, SQLException {
         Optional<RotorcraftTailAirframeRegistry.Entry> entry =
@@ -373,6 +363,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 connection, entry.get().airframe(), new Airframes.Type(entry.get().airframeType())));
     }
 
+    /**
+     * Parses rows, builds canonical time/position columns for the detected layout, and promotes aliases for storage.
+     */
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         try {
@@ -398,6 +391,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return Stream.of(makeFlightBuilder(meta, doubleTimeSeries, stringTimeSeries));
     }
 
+    /** Uses {@link RotorcraftFlightBuilder} so recorder column aliases apply during ingest. */
     @Override
     FlightBuilder makeFlightBuilder(
             FlightMeta metaParam,
@@ -406,10 +400,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return new RotorcraftFlightBuilder(metaParam, doubleSeries, stringSeries);
     }
 
-    /**
-     * Builds canonical {@link Parameters#UNIX_TIME_SECONDS} and {@link Parameters#UTC_DATE_TIME} from Appareo
-     * {@value #APPAREO_UNIX_TIME_COLUMN} (absolute epoch seconds; {@code Relative Time} is not used).
-     */
+    /** Fills canonical unix/UTC series from Appareo {@value #APPAREO_UNIX_TIME_COLUMN} (epoch seconds). */
     static void addCanonicalUnixTimeSeries(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.UNIX_TIME_SECONDS)
@@ -443,10 +434,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, utcCanonical);
     }
 
-    /**
-     * RT_Flight / recorder exports with {@code Month,Day,Year,Hour,Minute,Second} columns (no timezone in file).
-     * Timestamps are interpreted as UTC to match filename {@code yyyyMMdd'T'HHmmss} segments when present.
-     */
+    /** Builds canonical time from {@code Month/Day/Year/Hour/Minute/Second} columns (interpreted as UTC). */
     static void addCanonicalTimeFromCalendarColumns(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.UNIX_TIME_SECONDS)
@@ -492,9 +480,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, utcCanonical);
     }
 
-    /**
-     * Metro OTL/HAA: calendar date from filename {@code yyyyMMdd'T'HHmmss}, sample time from {@code Analog-time}.
-     */
+    /** Combines flight date from system id with each {@code Analog-time} sample (Metro OTL/HAA). */
     static void addCanonicalTimeFromMetroAnalogTime(
             Map<String, DoubleTimeSeries> doubleTimeSeries,
             Map<String, StringTimeSeries> stringTimeSeries,
@@ -543,9 +529,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, utcCanonical);
     }
 
-    /**
-     * USCG IGS exports: {@code UTC_Day/Month/Year} plus {@code UTC_Time} (time-of-day string).
-     */
+    /** Builds canonical time from USCG {@code UTC_Day/Month/Year} and {@code UTC_Time} columns. */
     static void addCanonicalTimeFromUscgUtcColumns(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.UNIX_TIME_SECONDS)
@@ -596,6 +580,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, utcCanonical);
     }
 
+    /** Row count from the first present USCG UTC column (double or string series). */
     private static int uscgUtcSeriesSize(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         for (String name : List.of(USCG_UTC_DAY, USCG_UTC_MONTH, USCG_UTC_YEAR, USCG_UTC_TIME)) {
@@ -637,6 +622,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return OptionalInt.empty();
     }
 
+    /** Returns {@code UTC_Time} as a string at {@code index}, formatting numeric seconds-of-day when needed. */
     private static String uscgTimeOfDaySample(
             Map<String, DoubleTimeSeries> doubles, Map<String, StringTimeSeries> strings, int index) {
         StringTimeSeries text = strings.get(USCG_UTC_TIME);
@@ -654,9 +640,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return LocalTime.ofSecondOfDay((int) seconds % 86400).format(USCG_UTC_TIME_OF_DAY);
     }
 
-    /**
-     * USCG PNAV position is DMS text ({@code 041:15:59.2813}, {@code -072:53:02.0000}), not decimal degrees.
-     */
+    /** Converts USCG {@code PNAV_Lat}/{@code PNAV_Long} DMS strings to decimal {@code Latitude}/{@code Longitude}. */
     static void addCanonicalPositionFromPnavDms(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.LATITUDE)) {
@@ -693,6 +677,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         doubleTimeSeries.put(Parameters.LONGITUDE, longitude);
     }
 
+    /** Looks up a string series by exact or case-insensitive trimmed column name. */
     private static StringTimeSeries resolveStringSeries(Map<String, StringTimeSeries> stringTimeSeries, String name) {
         StringTimeSeries direct = stringTimeSeries.get(name);
         if (direct != null) {
@@ -706,6 +691,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return null;
     }
 
+    /** Parses {@code deg:min:sec[.frac]} (optional leading minus) to decimal degrees; NaN on failure. */
     static double parseDmsCoordinate(String value) {
         if (value == null || value.isBlank()) {
             return Double.NaN;
@@ -730,6 +716,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         }
     }
 
+    /** Skips IGS metadata, then reads {@code Rec #,...} header and units rows into {@code headers}/{@code dataTypes}. */
     private void readUscgIgsHeadersAndUnits(BufferedReader reader, String firstLine)
             throws FatalFlightFileException, IOException, CsvException {
         String line = firstLine;
@@ -752,6 +739,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         dedupeColumnNames(headers);
     }
 
+    /** Parses {@code yyyyMMdd} from a system id containing {@code yyyyMMddTHHmmss}. */
     static Optional<LocalDate> parseDateFromSystemId(String systemId) {
         if (systemId == null || systemId.isBlank()) {
             return Optional.empty();
@@ -766,6 +754,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 Integer.parseInt(matcher.group(3))));
     }
 
+    /** True when all six RT_Flight calendar components are non-NaN at {@code index}. */
     private static boolean hasCalendarSample(
             DoubleTimeSeries month,
             DoubleTimeSeries day,
@@ -782,20 +771,13 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 && !Double.isNaN(second.get(index));
     }
 
-    private static boolean hasUscgCalendarSample(
-            DoubleTimeSeries month, DoubleTimeSeries day, DoubleTimeSeries year, int index) {
-        return !Double.isNaN(month.get(index))
-                && !Double.isNaN(day.get(index))
-                && !Double.isNaN(year.get(index));
-    }
-
+    /** Rounds a calendar column value to an integer component. */
     private static int calendarComponent(DoubleTimeSeries series, int index) {
         return (int) Math.round(series.get(index));
     }
 
     /**
-     * USCG and other rotorcraft exports often leave leading rows blank for UTC columns; the base implementation
-     * classifies a column from its middle row only, which mislabels those columns as strings.
+     * Classifies each column as numeric or string by scanning for the first parseable cell (not middle-row only).
      */
     @Override
     void readTimeSeries(
@@ -837,6 +819,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         }
     }
 
+    /** True if any non-empty cell in the column parses as a double. */
     static boolean columnLooksNumeric(List<String> columnData) {
         for (String cell : columnData) {
             if (cell == null || cell.trim().isEmpty()) {
@@ -852,6 +835,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return false;
     }
 
+    /**
+     * Detects rotorcraft CSV layout from the first line, sets {@code headers}/{@code dataTypes}, and reads data rows.
+     */
     @Override
     List<String[]> extractFlightData() throws FlightProcessingException {
         try (BufferedReader bufferedReader =
@@ -900,6 +886,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         }
     }
 
+    /** Skips Appareo preamble, then reads column header and units rows. */
     private void readAppareoHeadersAndUnits(BufferedReader reader, String line)
             throws FatalFlightFileException, IOException {
         String headerLine = advancePastAppareoPreamble(reader, line);
@@ -915,7 +902,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         dataTypes = splitCommaSeparated(unitsLine);
     }
 
-    /** Skips {@code #} comment lines and blank lines before the column header row. */
+    /** Advances past Appareo {@code #} comments and blank lines to the column header row. */
     static String advancePastAppareoPreamble(BufferedReader reader, String line) throws IOException {
         String current = line;
         while (current != null) {
@@ -929,11 +916,12 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         return null;
     }
 
+    /** Returns one empty unit string per column when the export has no units row. */
     private static List<String> emptyUnits(int columnCount) {
         return new ArrayList<>(Collections.nCopies(columnCount, ""));
     }
 
-    /** RT_Flight headers occasionally repeat a name (e.g. {@code Fuel Qty (R)}); keep columns distinct for maps. */
+    /** Appends {@code [n]} to repeated header names so column keys stay unique. */
     static void dedupeColumnNames(List<String> headers) {
         Map<String, Integer> seen = new HashMap<>();
         for (int i = 0; i < headers.size(); i++) {
@@ -945,10 +933,12 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         }
     }
 
+    /** Splits a simple comma-separated line and strips each field (no quoted-field handling). */
     private static List<String> splitCommaSeparated(String line) {
         return Arrays.stream(line.split(",", -1)).map(String::strip).collect(Collectors.toList());
     }
 
+    /** Parses one CSV record with OpenCSV (handles quoted fields for Metro headers). */
     private static List<String> parseCsvFields(String line) throws IOException, CsvException {
         try (CSVReader reader = new CSVReader(new StringReader(line))) {
             String[] fields = reader.readNext();
@@ -959,5 +949,6 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         }
     }
 
+    /** Tail and optional system id resolved from filename or USCG metadata. */
     record ParsedFilename(String tail, String systemId) {}
 }

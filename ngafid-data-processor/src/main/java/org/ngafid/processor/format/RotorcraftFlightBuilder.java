@@ -16,9 +16,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     /** First pair with enough valid samples wins ({@link #promoteForPersistence}). */
     private static final String[][] POSITION_SOURCE_PAIRS = {
         {"GPS-NAV_LAT", "GPS-NAV_LNG"},
-        {RotorcraftCSVFileProcessor.USCG_PNAV_LAT, RotorcraftCSVFileProcessor.USCG_PNAV_LONG},
         {"GeneralPurpose-PP_LAT", "GeneralPurpose-PP_LNG"},
-        {"Latitude", "Longitude"},
         {"Latitude (1)", "Longitude (1)"},
         {"GeneralPurpose-NAV_LAT", "GeneralPurpose-NAV_LNG"},
     };
@@ -115,6 +113,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Gyro-LNG_ACC",
                             "GeneralPurpose-LNG_ACC")));
 
+    /** Creates a rotorcraft flight builder that aliases recorder columns to canonical parameter keys. */
     public RotorcraftFlightBuilder(
             FlightMeta meta,
             Map<String, DoubleTimeSeries> doubleTimeSeries,
@@ -123,13 +122,15 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * Copies rotorcraft recorder columns into canonical {@link Parameters} keys for database storage and map APIs.
-     * Called from {@link RotorcraftCSVFileProcessor} only; does not affect other {@link FlightBuilder} subclasses.
+     * Promotes recorder columns into canonical {@link Parameters} keys for storage/map APIs (numeric series only).
      */
     static void promoteForPersistence(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         promoteForPersistence(doubleTimeSeries, null);
     }
 
+    /**
+     * Promotes recorder columns into canonical {@link Parameters} keys (numeric series only, plus optional USCG DMS).
+     */
     static void promoteForPersistence(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (stringTimeSeries != null) {
@@ -155,14 +156,15 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         }
     }
 
+    /**
+     * If canonical {@link Parameters#LATITUDE} is missing, builds it from the first lat/lon recorder pair
+     * with at least one non-zero, non-NaN sample.
+     */
     private static void promotePositionPair(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.LATITUDE)) {
             return;
         }
         for (String[] pair : POSITION_SOURCE_PAIRS) {
-            if (RotorcraftCSVFileProcessor.USCG_PNAV_LAT.equals(pair[0])) {
-                continue;
-            }
             DoubleTimeSeries latSource = doubleTimeSeries.get(pair[0]);
             DoubleTimeSeries lonSource = doubleTimeSeries.get(pair[1]);
             if (latSource == null || lonSource == null || latSource.size() != lonSource.size()) {
@@ -188,6 +190,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         }
     }
 
+    /** Deep-copies a {@link DoubleTimeSeries} into a new series name (canonical parameter key). */
     private static DoubleTimeSeries copySeries(String canonicalName, DoubleTimeSeries source) {
         DoubleTimeSeries canonical = new DoubleTimeSeries(canonicalName, source.getDataType(), source.size());
         for (int i = 0; i < source.size(); i++) {
@@ -196,6 +199,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         return canonical;
     }
 
+    /** Alias set consumed by the base {@link FlightBuilder} when computing derived parameters. */
     @Override
     protected Map<String, Set<String>> getAliases() {
         return ALIASES;
