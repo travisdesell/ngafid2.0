@@ -44,8 +44,10 @@ public final class ExtractMaintenanceFlights {
     private static final double CRUISE_ALTITUDE_AGL_FT = 600.0;
 
     /** Days to look before maintenance open and after maintenance close. */
-    private static final int WINDOW_DAYS_BEFORE = 10;
-    private static final int WINDOW_DAYS_AFTER = 10;
+    private static final int WINDOW_DAYS_BEFORE = 30;
+    private static final int WINDOW_DAYS_AFTER = 30;
+    /** Maximum day-by-day search depth for selecting before/after flights. */
+    private static final int MAX_SEARCH_DAYS = 30;
     /** Max flights to extract: before (closest to open) and after (closest to close). */
     private static final int MAX_BEFORE_FLIGHTS = 5;
     private static final int MAX_AFTER_FLIGHTS = 5;
@@ -757,56 +759,78 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Select the N flights closest to maintenance open (before) and close (after) by start time.
-     * Ground runs do not count toward the limit.
+     * Select the N flights by walking day-by-day around the workorder:
+     * - before: from open date backward
+     * - after: from day after close forward
+     * Ground runs do not count toward the limit. Search is capped at MAX_SEARCH_DAYS.
      */
     private static void selectClosestBeforeAfterFlights(Connection connection, List<AircraftTimeline> timeline,
                                                         MaintenanceRecord record) throws SQLException {
         LocalDateTime openGmt = record.getOpenDateTime();
         LocalDateTime closeGmt = record.getCloseDateTime();
+        LocalDate openDate = record.getOpenDate();
+        LocalDate afterStartDate = record.getCloseDate().plusDays(1);
 
         for (AircraftTimeline ac : timeline) {
             ac.setFlightsToNext(-1);
             ac.setFlightsSincePrevious(-1);
         }
 
-        List<AircraftTimeline> beforeCandidates = new ArrayList<>();
-        List<AircraftTimeline> afterCandidates = new ArrayList<>();
+        Map<Long, List<AircraftTimeline>> beforeByDay = new HashMap<>();
+        Map<Long, List<AircraftTimeline>> afterByDay = new HashMap<>();
         for (AircraftTimeline ac : timeline) {
             String phase = computeMaintenancePhase(ac.getStartDateTime(), openGmt, closeGmt);
             if (PHASE_BEFORE.equals(phase)) {
-                beforeCandidates.add(ac);
+                long dayOffset = ChronoUnit.DAYS.between(ac.getStartTime(), openDate);
+                if (dayOffset >= 0 && dayOffset <= MAX_SEARCH_DAYS) {
+                    beforeByDay.computeIfAbsent(dayOffset, k -> new ArrayList<>()).add(ac);
+                }
             } else if (PHASE_AFTER.equals(phase)) {
-                afterCandidates.add(ac);
+                long dayOffset = ChronoUnit.DAYS.between(afterStartDate, ac.getStartTime());
+                if (dayOffset >= 0 && dayOffset <= MAX_SEARCH_DAYS) {
+                    afterByDay.computeIfAbsent(dayOffset, k -> new ArrayList<>()).add(ac);
+                }
             }
         }
 
-        // Closest before open = latest start time still before open
-        beforeCandidates.sort((a, b) -> b.getStartDateTime().compareTo(a.getStartDateTime()));
         int beforeRank = 0;
-        for (AircraftTimeline ac : beforeCandidates) {
-            if (beforeRank >= MAX_BEFORE_FLIGHTS) {
-                break;
-            }
-            if (!flightTookOff(connection, ac.getFlightId())) {
-                ac.setFlightsToNext(-2);
+        for (int day = 0; day <= MAX_SEARCH_DAYS && beforeRank < MAX_BEFORE_FLIGHTS; day++) {
+            List<AircraftTimeline> dayFlights = beforeByDay.get((long) day);
+            if (dayFlights == null || dayFlights.isEmpty()) {
                 continue;
             }
-            ac.setFlightsToNext(beforeRank++);
+            // On each day, keep the flights closest to open first.
+            dayFlights.sort((a, b) -> b.getStartDateTime().compareTo(a.getStartDateTime()));
+            for (AircraftTimeline ac : dayFlights) {
+                if (beforeRank >= MAX_BEFORE_FLIGHTS) {
+                    break;
+                }
+                if (!flightTookOff(connection, ac.getFlightId())) {
+                    ac.setFlightsToNext(-2);
+                    continue;
+                }
+                ac.setFlightsToNext(beforeRank++);
+            }
         }
 
-        // Closest after close = earliest start time on/after the day after close
-        afterCandidates.sort(Comparator.comparing(AircraftTimeline::getStartDateTime));
         int afterRank = 0;
-        for (AircraftTimeline ac : afterCandidates) {
-            if (afterRank >= MAX_AFTER_FLIGHTS) {
-                break;
-            }
-            if (!flightTookOff(connection, ac.getFlightId())) {
-                ac.setFlightsSincePrevious(-2);
+        for (int day = 0; day <= MAX_SEARCH_DAYS && afterRank < MAX_AFTER_FLIGHTS; day++) {
+            List<AircraftTimeline> dayFlights = afterByDay.get((long) day);
+            if (dayFlights == null || dayFlights.isEmpty()) {
                 continue;
             }
-            ac.setFlightsSincePrevious(afterRank++);
+            // On each day, keep earlier flights first.
+            dayFlights.sort(Comparator.comparing(AircraftTimeline::getStartDateTime));
+            for (AircraftTimeline ac : dayFlights) {
+                if (afterRank >= MAX_AFTER_FLIGHTS) {
+                    break;
+                }
+                if (!flightTookOff(connection, ac.getFlightId())) {
+                    ac.setFlightsSincePrevious(-2);
+                    continue;
+                }
+                ac.setFlightsSincePrevious(afterRank++);
+            }
         }
     }
 
