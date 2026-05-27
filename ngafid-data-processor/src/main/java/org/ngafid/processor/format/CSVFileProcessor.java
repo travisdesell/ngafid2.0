@@ -135,18 +135,22 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Factory factory = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis, StandardCharsets.UTF_8))) {
-            List<String> headerLines = extractHeaderLines(reader);
-            String firstLine = reader.readLine();
-            if (firstLine == null) throw new IOException("Encountered end of stream prematurely in file " + filename);
-
-            String[] values = firstLine.split(",");
-
-            if (airframeIsG5(headerLines) || airframeIsG3X(headerLines)) {
-                factory = G5CSVFileProcessor::new;
-            } else if (airframeIsScanEagle(headerLines.get(0))) {
-                factory = ScanEagleCSVFileProcessor::new;
+            if (RotorcraftCSVFileProcessor.isRotorcraftUpload(connection, filename, reader)) {
+                factory = RotorcraftCSVFileProcessor::new;
             } else {
-                factory = CSVFileProcessor::new;
+                List<String> headerLines = extractHeaderLines(reader);
+                String nextLine = reader.readLine();
+                if (nextLine == null) {
+                    throw new IOException("Encountered end of stream prematurely in file " + filename);
+                }
+
+                if (airframeIsG5(headerLines) || airframeIsG3X(headerLines)) {
+                    factory = G5CSVFileProcessor::new;
+                } else if (airframeIsScanEagle(headerLines.get(0))) {
+                    factory = ScanEagleCSVFileProcessor::new;
+                } else {
+                    factory = CSVFileProcessor::new;
+                }
             }
         }
 

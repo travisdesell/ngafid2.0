@@ -106,6 +106,9 @@ public class Pipeline implements AutoCloseable {
     // Maps filenames to a FlightInfo object.
     private final ConcurrentHashMap<String, ProcessUpload.FlightInfo> flightInfo = new ConcurrentHashMap<>();
 
+    /** Flight files queued for parsing (used to detect silent ingest failures). */
+    private final AtomicInteger filesQueued = new AtomicInteger(0);
+
     public Pipeline(Connection connection, Upload upload, ZipFile zipFile) {
         this.connection = connection;
         this.upload = upload;
@@ -149,6 +152,7 @@ public class Pipeline implements AutoCloseable {
             try {
                 FlightFileProcessor fileProcessor = create(entry);
                 if (fileProcessor != null) {
+                    filesQueued.incrementAndGet();
                     pool.submit(fileProcessor);
                 }
             } catch (SQLException | IOException | FatalFlightFileException e) {
@@ -178,6 +182,7 @@ public class Pipeline implements AutoCloseable {
                         try {
                             FlightFileProcessor fileProcessor = create(entry);
                             if (fileProcessor != null) {
+                                filesQueued.incrementAndGet();
                                 while (true) {
                                     try {
                                         taskQueue.put(fileProcessor);
@@ -219,7 +224,11 @@ public class Pipeline implements AutoCloseable {
                     try {
                         var task = taskQueue.take();
                         if (task instanceof FlightFileProcessor proc) {
-                            proc.call();
+                            try {
+                                proc.call();
+                            } catch (Exception e) {
+                                fail(proc.getFilename(), e);
+                            }
                         } else {
                             break;
                         }
@@ -432,6 +441,10 @@ public class Pipeline implements AutoCloseable {
 
     public int getValidFlightsCount() {
         return validFlightsCount.get();
+    }
+
+    public int getFilesQueued() {
+        return filesQueued.get();
     }
 
     public int getDerivedUploadId() {
