@@ -248,6 +248,7 @@ object EventRoutes : RouteProvider() {
         val startBuffer = ctx.formParam("startBuffer")!!.toInt()
         val stopBuffer = ctx.formParam("stopBuffer")!!.toInt()
         val airframe = ctx.formParam("airframe")
+        val airframeTypeId = ctx.formParam("airframeTypeId")?.toIntOrNull()
         val filterJSON = ctx.formParam("filterQuery")
         val severityColumnNamesJSON = ctx.formParam("severityColumnNames")
         val severityType = ctx.formParam("severityType")
@@ -260,6 +261,7 @@ object EventRoutes : RouteProvider() {
                 startBuffer,
                 stopBuffer,
                 airframe,
+                airframeTypeId,
                 filterJSON,
                 severityColumnNamesJSON,
                 severityType

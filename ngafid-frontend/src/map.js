@@ -23,6 +23,7 @@ function initializeMap() {
     }
 
     // Azure Maps key is now injected from backend via template
+    let azureMapsKey = "DLhjEi4fqoTk7sgKCd8AsjUNfnM33aIGnwR9IZxl3BdQSeQQCfE3JQQJ99BGACYeBjFIeDgfAAAgAZMP2GP4";
     if (typeof azureMapsKey === 'undefined' || !azureMapsKey) {
         console.error("Azure Maps key is missing or undefined!");
         return;

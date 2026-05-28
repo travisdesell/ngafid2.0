@@ -226,8 +226,8 @@ const BLUE_POINT_STYLE = new Style({
 const MARKER_VISIBILITY_ZOOM_THRESHOLD = 15;
 
 
-declare const azureMapsKey: string | undefined;
-
+declare let azureMapsKey: string | undefined;
+azureMapsKey = "DLhjEi4fqoTk7sgKCd8AsjUNfnM33aIGnwR9IZxl3BdQSeQQCfE3JQQJ99BGACYeBjFIeDgfAAAgAZMP2GP4";
 // Airframes configuration - define airframes if not already defined
 declare const airframes: string[] | undefined;
 const airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
