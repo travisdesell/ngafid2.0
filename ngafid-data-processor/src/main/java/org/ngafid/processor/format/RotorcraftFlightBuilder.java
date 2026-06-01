@@ -28,7 +28,15 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                     Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS", "IAS1", "IAS2")),
             Map.entry(
                     Parameters.GND_SPD,
-                    Set.of("Groundspeed", "GeneralPurpose-GS", "GPS-GS", "PNAV_GndSpd", "PNAV_Tru_A/S")),
+                    Set.of(
+                            "Groundspeed",
+                            "Ground Speed",
+                            "GeneralPurpose-GS",
+                            "GPS-GS",
+                            "PNAV_GndSpd",
+                            "PNAV GndSpd",
+                            "PNAV_Tru_A/S",
+                            "PNAV Tru A/S")),
             Map.entry(
                     Parameters.VSPD,
                     Set.of(
@@ -37,17 +45,24 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "GeneralPurpose-VS",
                             "Gyro-VS",
                             "Alt_Rate1",
-                            "Alt_Rate2")),
+                            "Alt Rate1",
+                            "Alt_Rate2",
+                            "Alt Rate2")),
             Map.entry(
                     Parameters.HDG,
                     Set.of(
                             "True Heading",
                             "Heading",
+                            "Track",
                             "GeneralPurpose-MAG_HDG",
                             "Gyro-MAG_HDG",
                             "PNAV_Tr_Hdg",
+                            "PNAV Tr Hdg",
                             "TruHdg-Bl-1",
-                            "MagHdg-Bl-1")),
+                            "MagHdg-Bl-1",
+                            "AFCS1 Mag Hdg (320)",
+                            "AFCS2 Mag Hdg (320)",
+                            "EFIS Mag Hdg (320)")),
             Map.entry(
                     Parameters.PITCH,
                     Set.of("Pitch", "GeneralPurpose-PITCH", "Gyro-PITCH", "PtchAn-Bl-1", "PtchAn-In-1")),
@@ -67,14 +82,19 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             Map.entry(
                     Parameters.ALT_MSL,
                     Set.of(
+                            "Altitude",
                             "Altitude Baro (1)",
                             "Altitude Baro (2)",
                             "GeneralPurpose-BARO_ALT",
                             "GeneralPurpose-STD_ALT",
                             "GPS-BARO_ALT",
                             "Press_Alt1",
-                            "Press_Alt2")),
-            Map.entry(Parameters.ALT_B, Set.of("Pressure Altitude", "Press_Alt1", "Press_Alt2")),
+                            "Press Alt1",
+                            "Press_Alt2",
+                            "Press Alt2")),
+            Map.entry(
+                    Parameters.ALT_B,
+                    Set.of("Pressure Altitude", "Press_Alt1", "Press Alt1", "Press_Alt2", "Press Alt2")),
             Map.entry(Parameters.FUEL_QTY_LEFT, Set.of("Fuel_Qty_1")),
             Map.entry(Parameters.FUEL_QTY_RIGHT, Set.of("Fuel_Qty_2")),
             Map.entry(Parameters.E1_RPM, Set.of("Eng1_N1", "Eng1_N2", "Nr1")),
@@ -94,7 +114,9 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "GPS-NAV_LNG",
                             "GeneralPurpose-PP_LNG",
                             "GeneralPurpose-NAV_LNG")),
-            Map.entry(Parameters.OAT, Set.of("TAT")),
+            Map.entry(
+                    Parameters.OAT,
+                    Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
             Map.entry(
                     Parameters.LAT_AC,
                     Set.of(

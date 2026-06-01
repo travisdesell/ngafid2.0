@@ -89,15 +89,27 @@ public class ComputeUTCTime extends ComputeStep {
 
         StringTimeSeries timestampSeries = new StringTimeSeries(UTC_DATE_TIME, Unit.UTC_DATE_TIME.toString());
         DoubleTimeSeries unixtime = new DoubleTimeSeries(UNIX_TIME_SECONDS, Unit.SECONDS.toString());
+        String lastGoodOffset = null;
         for (int i = 0; i < dates.size(); i++) {
-            if (stringEmpty(dates.get(i)) || stringEmpty(times.get(i)) || stringEmpty(offsets.get(i))) {
+            if (stringEmpty(dates.get(i)) || stringEmpty(times.get(i))) {
                 timestampSeries.add("");
                 unixtime.add(Double.NaN);
                 continue;
             }
 
+            String offset = TimeUtils.normalizeUtcOffsetForParsing(offsets.get(i));
+            if (offset == null) {
+                offset = lastGoodOffset;
+            }
+            if (offset == null) {
+                timestampSeries.add("");
+                unixtime.add(Double.NaN);
+                continue;
+            }
+            lastGoodOffset = offset;
+
             LocalDateTime local = LocalDateTime.parse(dates.get(i) + " " + times.get(i), formatter);
-            ZoneOffset zoneOffset = ZoneOffset.of(offsets.get(i));
+            ZoneOffset zoneOffset = ZoneOffset.of(offset);
             OffsetDateTime odt = OffsetDateTime.of(local, zoneOffset);
             timestampSeries.add(odt.format(ISO_8601_FORMAT));
             unixtime.add(odt.toEpochSecond());

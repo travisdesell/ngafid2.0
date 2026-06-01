@@ -105,6 +105,72 @@ public final class Airframes {
     public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
 
     // CHECKSTYLE:ON
+
+    /** Canonical rotorcraft codes in {@code tail_airframe_registry} / {@code airframes}. */
+    public static final Set<String> ROTORCRAFT_AIRFRAME_CODES = Set.of(
+            "407", "AS350", "AW109", "AW119", "AW139", "BK117", "EC130", "EC135", "MH60", "MH65", "R44");
+
+    /**
+     * Garmin {@code #airframe_info} {@code airframe_name} values mapped to {@link #ROTORCRAFT_AIRFRAME_CODES}.
+     * Keys are lower-case for case-insensitive lookup.
+     */
+    public static final Map<String, String> GARMIN_ROTORCRAFT_ALIASES = Map.ofEntries(
+            Map.entry("bell 407", "407"),
+            Map.entry("robinson r44", "R44"),
+            Map.entry("robinson r44 raven i", "R44"),
+            Map.entry("airbus as350", "AS350"),
+            Map.entry("eurocopter as350", "AS350"),
+            Map.entry("as350 b3e", "AS350"),
+            Map.entry("as350 b3", "AS350"),
+            Map.entry("airbus ec130", "EC130"),
+            Map.entry("eurocopter ec130", "EC130"),
+            Map.entry("ec130 t2", "EC130"),
+            Map.entry("airbus ec135", "EC135"),
+            Map.entry("eurocopter ec135", "EC135"),
+            Map.entry("agusta aw109", "AW109"),
+            Map.entry("aw109 power", "AW109"),
+            Map.entry("aw119", "AW119"),
+            Map.entry("aw-119", "AW119"),
+            Map.entry("agusta aw-119", "AW119"),
+            Map.entry("aw119kx", "AW119"),
+            Map.entry("aw-109", "AW109"),
+            Map.entry("aw-139", "AW139"),
+            Map.entry("aw139", "AW139"),
+            Map.entry("bk117", "BK117"),
+            Map.entry("bk 117", "BK117"),
+            Map.entry("mh-60", "MH60"),
+            Map.entry("mh60", "MH60"),
+            Map.entry("sikorsky mh-60", "MH60"),
+            Map.entry("mh-65", "MH65"),
+            Map.entry("mh65", "MH65"),
+            Map.entry("eurocopter mh-65", "MH65"));
+
+    /**
+     * Maps a Garmin recorder {@code airframe_name} to a rotorcraft airframe code, or empty when unknown.
+     */
+    public static Optional<String> resolveGarminRotorcraftAirframeCode(String recorderName) {
+        if (recorderName == null || recorderName.isBlank()) {
+            return Optional.empty();
+        }
+        String trimmed = recorderName.trim();
+        String key = trimmed.toLowerCase(Locale.ROOT);
+        String alias = GARMIN_ROTORCRAFT_ALIASES.get(key);
+        if (alias == null) {
+            alias = GARMIN_ROTORCRAFT_ALIASES.get(key.replace("-", ""));
+        }
+        if (alias != null) {
+            return Optional.of(alias);
+        }
+        String codeKey = trimmed.replace("-", "");
+        if (ROTORCRAFT_AIRFRAME_CODES.contains(codeKey)) {
+            return Optional.of(codeKey);
+        }
+        if (ROTORCRAFT_AIRFRAME_CODES.contains(trimmed)) {
+            return Optional.of(trimmed);
+        }
+        return Optional.empty();
+    }
+
     public record AliasKey(String name, int fleetId) {}
 
     public static AliasKey defaultAlias(String name) {

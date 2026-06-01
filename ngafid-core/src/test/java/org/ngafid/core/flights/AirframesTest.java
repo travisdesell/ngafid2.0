@@ -195,6 +195,16 @@ public class AirframesTest extends TestWithConnection {
     }
 
     @Test
+    @DisplayName("Should resolve Garmin rotorcraft airframe names to registry codes")
+    public void testGarminRotorcraftAirframeAliases() {
+        assertEquals(Optional.of("407"), Airframes.resolveGarminRotorcraftAirframeCode("Bell 407"));
+        assertEquals(Optional.of("EC130"), Airframes.resolveGarminRotorcraftAirframeCode("Airbus EC130"));
+        assertEquals(Optional.of("AW119"), Airframes.resolveGarminRotorcraftAirframeCode("AW-119"));
+        assertEquals(Optional.of("407"), Airframes.resolveGarminRotorcraftAirframeCode("407"));
+        assertTrue(Airframes.resolveGarminRotorcraftAirframeCode("Cessna 172S").isEmpty());
+    }
+
+    @Test
     @DisplayName("Should have correct rotorcraft set")
     public void testRotorcraftSet() {
         Set<String> rotorcraft = Airframes.ROTORCRAFT;

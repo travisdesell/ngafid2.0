@@ -521,3 +521,37 @@ INSERT INTO tail_airframe_registry (tail, airframe) VALUES
     ('N975SC', '407'),
     ('N9CP', 'AW139');
 
+--changeset roman:tail-airframe-registry-n272mj labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe)
+VALUES ('N272MJ', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-n158-n159-am labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N158AM', '407'),
+    ('N159AM', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-air-methods-cf labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N902CF', '407'),
+    ('N903CF', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-air-methods-batch labels:flights,airframes,rotorcraft
+-- Idempotent batch for Air Methods uploads (Garmin 407 + Appareo CF tails)
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N272MJ', '407'),
+    ('N158AM', '407'),
+    ('N159AM', '407'),
+    ('N404AM', '407'),
+    ('N450AM', '407'),
+    ('N902CF', '407'),
+    ('N903CF', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-lifelink-n365ll labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe)
+VALUES ('N365LL', 'AW119')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+

@@ -64,6 +64,27 @@ public final class TimeUtils {
         return offset;
     }
 
+    /**
+     * Returns a {@link ZoneOffset} id (e.g. {@code -06:00}) after {@link #updateBadOffset(String)}, or null when the
+     * value is empty or a Garmin placeholder ({@code -} / {@code +} with no offset).
+     */
+    public static String normalizeUtcOffsetForParsing(String offset) {
+        if (offset == null) {
+            return null;
+        }
+        String trimmed = offset.trim();
+        if (trimmed.isEmpty() || trimmed.equals("-") || trimmed.equals("+")) {
+            return null;
+        }
+        trimmed = updateBadOffset(trimmed);
+        try {
+            ZoneOffset.of(trimmed);
+            return trimmed;
+        } catch (DateTimeException e) {
+            return null;
+        }
+    }
+
     private static DateTimeFormatter STANDARD_FORMAT = DateTimeFormatter.ofPattern("yyyy-M-d H:m:s");
 
     public static String toString(OffsetDateTime offsetDateTime) {
