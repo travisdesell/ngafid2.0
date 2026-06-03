@@ -382,6 +382,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     private void setAirframeName(String name) throws FatalFlightFileException {
+        name = name.strip();
         var fleetKey = new AliasKey(name, pipeline.getUpload().getFleetId());
         var defaultKey = Airframes.defaultAlias(name);
 
@@ -390,6 +391,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
             airframeName = Airframes.AIRFRAME_ALIASES.get(fleetKey);
         } else {
             airframeName = Airframes.AIRFRAME_ALIASES.getOrDefault(defaultKey, name);
+        }
+
+        if (!Airframes.FIXED_WING_AIRFRAMES.contains(airframeName)
+                && !airframeName.contains("Garmin")
+                && !Airframes.ROTORCRAFT.contains(airframeName)) {
+            airframeName =
+                    Airframes.resolveGarminRotorcraftAirframeCode(name).orElse(airframeName);
         }
 
         String airframeType = null;

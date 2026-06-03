@@ -117,6 +117,7 @@ public final class Airframes {
     public static final Map<String, String> GARMIN_ROTORCRAFT_ALIASES = Map.ofEntries(
             Map.entry("bell 407", "407"),
             Map.entry("robinson r44", "R44"),
+            Map.entry("robinson r44 cadet", "R44"),
             Map.entry("robinson r44 raven i", "R44"),
             Map.entry("airbus as350", "AS350"),
             Map.entry("eurocopter as350", "AS350"),
@@ -185,6 +186,7 @@ public final class Airframes {
             Map.entry(new AliasKey("Garmin Flight Display", 1), "R44"),
             Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
             Map.entry(defaultAlias("Robinson R44"), "R44"),
+            Map.entry(defaultAlias("Robinson R44 Cadet"), "R44"),
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
     // CHECKSTYLE:ON
