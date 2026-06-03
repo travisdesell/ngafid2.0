@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -76,7 +77,8 @@ public class ComputeUTCTime extends ComputeStep {
                     continue;
                 }
 
-                formatter = TimeUtils.findCorrectFormatter(dates.get(i), times.get(i));
+                String time = TimeUtils.normalizeLocalTimeForParsing(times.get(i));
+                formatter = TimeUtils.findCorrectFormatter(dates.get(i), time);
                 break;
             }
         } catch (TimeUtils.UnrecognizedDateTimeFormatException e) {
@@ -108,11 +110,19 @@ public class ComputeUTCTime extends ComputeStep {
             }
             lastGoodOffset = offset;
 
-            LocalDateTime local = LocalDateTime.parse(dates.get(i) + " " + times.get(i), formatter);
-            ZoneOffset zoneOffset = ZoneOffset.of(offset);
-            OffsetDateTime odt = OffsetDateTime.of(local, zoneOffset);
-            timestampSeries.add(odt.format(ISO_8601_FORMAT));
-            unixtime.add(odt.toEpochSecond());
+            String time = TimeUtils.normalizeLocalTimeForParsing(times.get(i));
+            try {
+                LocalDateTime local = LocalDateTime.parse(dates.get(i) + " " + time, formatter);
+                ZoneOffset zoneOffset = ZoneOffset.of(offset);
+                OffsetDateTime odt = OffsetDateTime.of(local, zoneOffset);
+                timestampSeries.add(odt.format(ISO_8601_FORMAT));
+                unixtime.add(odt.toEpochSecond());
+            } catch (DateTimeParseException e) {
+                LOG.fine("Skipping row with unparseable local date/time: "
+                        + dates.get(i) + " " + time + " (" + e.getMessage() + ")");
+                timestampSeries.add("");
+                unixtime.add(Double.NaN);
+            }
         }
 
         builder.addTimeSeries(timestampSeries);

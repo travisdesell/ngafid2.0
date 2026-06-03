@@ -85,6 +85,24 @@ public final class TimeUtils {
         }
     }
 
+    /**
+     * Garmin and similar logs sometimes emit {@code HH:mm} without seconds (e.g. touch-down footer rows).
+     * Appends {@code :00} when the time has hours and minutes only.
+     */
+    public static String normalizeLocalTimeForParsing(String time) {
+        if (time == null) {
+            return null;
+        }
+        String trimmed = time.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+        if (trimmed.matches("^\\d{1,2}:\\d{2}$")) {
+            return trimmed + ":00";
+        }
+        return trimmed;
+    }
+
     private static DateTimeFormatter STANDARD_FORMAT = DateTimeFormatter.ofPattern("yyyy-M-d H:m:s");
 
     public static String toString(OffsetDateTime offsetDateTime) {

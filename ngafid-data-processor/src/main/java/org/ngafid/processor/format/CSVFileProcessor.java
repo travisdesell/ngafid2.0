@@ -215,6 +215,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             processMetaData(bufferedReader);
             dataTypes = processDataTypes(bufferedReader);
             headers = processHeaders(bufferedReader);
+            skipGarminExtraHeaderRowIfPresent(bufferedReader);
 
             CSVReader csvReader = new CSVReader(bufferedReader);
             return new ArrayList<>(csvReader.readAll());
@@ -292,7 +293,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } catch (IOException e) {
             throw new FatalFlightFileException("Stream ended prematurely -- cannot process file.", e);
         }
-
         String[] infoParts = fileInformation.split(",");
 
         HashMap<String, String> values = new HashMap<>(infoParts.length * 2);
@@ -355,6 +355,25 @@ public class CSVFileProcessor extends FlightFileProcessor {
             return splitCommaSeparated(reader.readLine());
         } catch (IOException e) {
             throw new FatalFlightFileException("Stream ended prematurely -- cannot process file.", e);
+        }
+    }
+
+    /**
+     * Some Garmin logs (especially GIFD) repeat the {@code Lcl Date,...} header row before numeric data. Ingesting
+     * that row makes {@code ComputeUTCTime} try to parse the literal strings {@code Lcl Date} and {@code Lcl Time}.
+     * When the next line still looks like a header, drop it; otherwise leave the stream unchanged for older logs.
+     */
+    protected static void skipGarminExtraHeaderRowIfPresent(BufferedReader reader)
+            throws IOException, FatalFlightFileException {
+        reader.mark(256 * 1024);
+        try {
+            String line = reader.readLine();
+            if (line != null && line.strip().startsWith("Lcl Date")) {
+                return;
+            }
+            reader.reset();
+        } catch (IOException e) {
+            throw new FatalFlightFileException("Could not read Garmin CSV row after column headers.", e);
         }
     }
 

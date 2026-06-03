@@ -124,7 +124,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
     /**
      * Returns true when this CSV should use {@link RotorcraftCSVFileProcessor}: USCG metadata serial in the
-     * registry, or a {@code tail_...} filename in the registry. Rewinds {@code reader} before returning.
+     * registry, or a filename tail prefix present in {@code tail_airframe_registry}. A Garmin-style header alone
+     * is not enough (fixed-wing logs such as {@code log_*.csv} also use {@code #airframe_info}). Rewinds
+     * {@code reader} before returning.
      */
     public static boolean isRotorcraftUpload(Connection connection, String filename, BufferedReader reader)
             throws SQLException, IOException, FatalFlightFileException {
@@ -143,11 +145,6 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                     String tail = parsed.get().tail();
                     if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail).isPresent()) {
                         return true;
-                    }
-                    Optional<String> layout = describeRotorcraftCsvLayout(firstLine);
-                    if (layout.isPresent()) {
-                        throw fatalTailRegistryMiss(
-                                tail, filename, peekGarminAirframeName(firstLine), layout);
                     }
                 }
             } finally {
@@ -461,11 +458,6 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 String tail = fromFilename.get().tail();
                 if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail).isPresent()) {
                     return fromFilename.get();
-                }
-                Optional<String> layout = describeRotorcraftCsvLayout(firstLine);
-                if (layout.isPresent()) {
-                    throw fatalTailRegistryMiss(
-                            tail, filename, peekGarminAirframeName(firstLine), layout);
                 }
             }
         } finally {
@@ -1257,6 +1249,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             if (isGarminStyleRotorcraftHeader(firstLine)) {
                 dataTypes = processDataTypes(bufferedReader);
                 headers = processHeaders(bufferedReader);
+                skipGarminExtraHeaderRowIfPresent(bufferedReader);
             } else if (isAppareoCommentLine(firstLine) || isAppareoDataHeader(firstLine)) {
                 readAppareoHeadersAndUnits(bufferedReader, firstLine);
             } else if (isDirectGarminColumnHeader(firstLine)) {
