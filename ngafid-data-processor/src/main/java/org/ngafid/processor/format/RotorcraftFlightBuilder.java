@@ -16,6 +16,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     /** First pair with enough valid samples wins ({@link #promoteForPersistence}). */
     private static final String[][] POSITION_SOURCE_PAIRS = {
         {"GPS-NAV_LAT", "GPS-NAV_LNG"},
+        {"GPS.NAV_Latitude", "GPS.NAV_Longitude"},
+        {"GPS.PP_Latitude", "GPS.PP_Longitude"},
         {"GeneralPurpose-PP_LAT", "GeneralPurpose-PP_LNG"},
         {"Latitude (1)", "Longitude (1)"},
         {"GeneralPurpose-NAV_LAT", "GeneralPurpose-NAV_LNG"},
@@ -25,7 +27,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             Map.entry(Parameters.UNIX_TIME_SECONDS, Set.of("UNIX Time")),
             Map.entry(
                     Parameters.IAS,
-                    Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS", "IAS1", "IAS2")),
+                    Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS", "IAS1", "IAS2", "GP.CAS", "AP.IAS")),
             Map.entry(
                     Parameters.GND_SPD,
                     Set.of(
@@ -36,13 +38,16 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "PNAV_GndSpd",
                             "PNAV GndSpd",
                             "PNAV_Tru_A/S",
-                            "PNAV Tru A/S")),
+                            "PNAV Tru A/S",
+                            "GPS.Ground_Speed")),
             Map.entry(
                     Parameters.VSPD,
                     Set.of(
                             "Vertical Speed",
                             "Vertical Speed Inertial (AHRS)",
                             "GeneralPurpose-VS",
+                            "ANALOG.VS",
+                            "GYRO.Climb_Rate",
                             "Gyro-VS",
                             "Alt_Rate1",
                             "Alt Rate1",
@@ -62,13 +67,31 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "MagHdg-Bl-1",
                             "AFCS1 Mag Hdg (320)",
                             "AFCS2 Mag Hdg (320)",
-                            "EFIS Mag Hdg (320)")),
+                            "EFIS Mag Hdg (320)",
+                            "GPS.Magnetic_Heading",
+                            "ANALOG.Magnetic_Heading",
+                            "AP.Magnetic_Heading",
+                            "GYRO.Magnetic_Heading")),
             Map.entry(
                     Parameters.PITCH,
-                    Set.of("Pitch", "GeneralPurpose-PITCH", "Gyro-PITCH", "PtchAn-Bl-1", "PtchAn-In-1")),
+                    Set.of(
+                            "Pitch",
+                            "GeneralPurpose-PITCH",
+                            "ANALOG.Pitch",
+                            "GYRO.Pitch",
+                            "Gyro-PITCH",
+                            "PtchAn-Bl-1",
+                            "PtchAn-In-1")),
             Map.entry(
                     Parameters.ROLL,
-                    Set.of("Roll", "GeneralPurpose-ROLL", "Gyro-ROLL", "RollAn-Bl-1", "RollAn-In-1")),
+                    Set.of(
+                            "Roll",
+                            "GeneralPurpose-ROLL",
+                            "ANALOG.Roll",
+                            "GYRO.Roll",
+                            "Gyro-ROLL",
+                            "RollAn-Bl-1",
+                            "RollAn-In-1")),
             Map.entry(Parameters.YAW_RATE, Set.of("Yaw Rate", "Gyro-YAW_RATE")),
             Map.entry(
                     Parameters.ALT_AGL,
@@ -104,6 +127,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Latitude",
                             "Latitude (1)",
                             "GPS-NAV_LAT",
+                            "GPS.NAV_Latitude",
+                            "GPS.PP_Latitude",
                             "GeneralPurpose-PP_LAT",
                             "GeneralPurpose-NAV_LAT")),
             Map.entry(
@@ -112,6 +137,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Longitude",
                             "Longitude (1)",
                             "GPS-NAV_LNG",
+                            "GPS.NAV_Longitude",
+                            "GPS.PP_Longitude",
                             "GeneralPurpose-PP_LNG",
                             "GeneralPurpose-NAV_LNG")),
             Map.entry(

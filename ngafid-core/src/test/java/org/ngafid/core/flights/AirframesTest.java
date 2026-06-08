@@ -201,6 +201,7 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(Optional.of("EC130"), Airframes.resolveGarminRotorcraftAirframeCode("Airbus EC130"));
         assertEquals(Optional.of("AW119"), Airframes.resolveGarminRotorcraftAirframeCode("AW-119"));
         assertEquals(Optional.of("407"), Airframes.resolveGarminRotorcraftAirframeCode("407"));
+        assertEquals(Optional.of("R44"), Airframes.resolveGarminRotorcraftAirframeCode("Robinson R44 Cadet"));
         assertTrue(Airframes.resolveGarminRotorcraftAirframeCode("Cessna 172S").isEmpty());
     }
 
@@ -230,6 +231,7 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(aliases.containsKey(new Airframes.AliasKey("Garmin Flight Display", 1)));
         assertTrue(aliases.containsKey(new Airframes.AliasKey("Robinson R44 Raven I", 1)));
         assertTrue(aliases.containsKey(Airframes.defaultAlias("Robinson R44")));
+        assertTrue(aliases.containsKey(Airframes.defaultAlias("Robinson R44 Cadet")));
         assertTrue(aliases.containsKey(Airframes.defaultAlias("Cirrus SR22 (3600 GW)")));
 
         assertEquals("", aliases.get(Airframes.defaultAlias("Unknown Aircraft")));
@@ -237,6 +239,7 @@ public class AirframesTest extends TestWithConnection {
         assertEquals("R44", aliases.get(new Airframes.AliasKey("Garmin Flight Display", 1)));
         assertEquals("R44", aliases.get(new Airframes.AliasKey("Robinson R44 Raven I", 1)));
         assertEquals("R44", aliases.get(Airframes.defaultAlias("Robinson R44")));
+        assertEquals("R44", aliases.get(Airframes.defaultAlias("Robinson R44 Cadet")));
         assertEquals("Cirrus SR22", aliases.get(Airframes.defaultAlias("Cirrus SR22 (3600 GW)")));
     }
 

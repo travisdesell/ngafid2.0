@@ -87,6 +87,12 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
     static final String METRO_ANALOG_TIME_COLUMN = "Analog-time";
 
+    /** MPIO2 Metro OTL/HAA exports use {@code ANALOG.UTC} instead of {@code Analog-time}. */
+    static final String METRO_MPIO2_UTC_TIME_COLUMN = "ANALOG.UTC";
+
+    private static final List<String> METRO_TIME_COLUMNS =
+            List.of(METRO_ANALOG_TIME_COLUMN, METRO_MPIO2_UTC_TIME_COLUMN);
+
     private static final Pattern SYSTEM_ID_DATE_TIME =
             Pattern.compile("(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})");
 
@@ -836,7 +842,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, utcCanonical);
     }
 
-    /** Combines flight date from system id with each {@code Analog-time} sample (Metro OTL/HAA). */
+    /** Combines flight date from system id with each Metro time sample (legacy {@code Analog-time} or MPIO2 {@code ANALOG.UTC}). */
     static void addCanonicalTimeFromMetroAnalogTime(
             Map<String, DoubleTimeSeries> doubleTimeSeries,
             Map<String, StringTimeSeries> stringTimeSeries,
@@ -846,7 +852,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             return;
         }
 
-        StringTimeSeries analogTime = stringTimeSeries.get(METRO_ANALOG_TIME_COLUMN);
+        StringTimeSeries analogTime = findMetroTimeColumn(stringTimeSeries);
         if (analogTime == null) {
             return;
         }
@@ -883,6 +889,16 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
         doubleTimeSeries.put(Parameters.UNIX_TIME_SECONDS, unixCanonical);
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, utcCanonical);
+    }
+
+    static StringTimeSeries findMetroTimeColumn(Map<String, StringTimeSeries> stringTimeSeries) {
+        for (String column : METRO_TIME_COLUMNS) {
+            StringTimeSeries series = stringTimeSeries.get(column);
+            if (series != null) {
+                return series;
+            }
+        }
+        return null;
     }
 
     /** Builds canonical time from USCG {@code UTC_Day/Month/Year} and {@code UTC_Time} columns. */
