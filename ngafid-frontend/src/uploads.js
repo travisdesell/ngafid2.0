@@ -6,6 +6,7 @@ import { showErrorModal } from "./error_modal.js";
 import { showAjaxErrorModal } from './extract_ajax_error_message.js';
 import { Paginator } from "./paginator_component.tsx";
 import SignedInNavbar from "./signed_in_navbar.js";
+import { sanitizeUploadFilename } from "./upload_filename.js";
 
 import Button from "react-bootstrap/Button";
 import SparkMD5 from "spark-md5";
@@ -185,9 +186,9 @@ class Upload extends React.Component {
         const sizeText = `${(progressSize / 1000).toFixed(2).toLocaleString()  }/${  (totalSize / 1000).toFixed(2).toLocaleString()  } kB (${  width  }%)`;
 
 
-        const status = uploadInfo.status;
+        const status = resolveUploadDisplayStatus(uploadInfo);
 
-        console.log("[EX] Upload Status: ", status);
+        console.log("[EX] Upload Status: ", status, uploadInfo);
 
         /*
 
@@ -421,6 +422,33 @@ function getUploadeIdentifier(filename, size) {
     return (`${size  }-${  filename.replace(/[^0-9a-zA-Z_-]/img, '')}`);
 }
 
+/**
+ * Server uploads can be left as PROCESSED_OK when every flight in the zip failed; use flight counts for display.
+ */
+function resolveUploadDisplayStatus(uploadInfo) {
+    const status = uploadInfo.status;
+    if (status !== "PROCESSED_OK") {
+        return status;
+    }
+
+    const errorFlights = uploadInfo.errorFlights ?? 0;
+    const warningFlights = uploadInfo.warningFlights ?? 0;
+    const validFlights = uploadInfo.validFlights ?? 0;
+
+    if (errorFlights > 0 && validFlights === 0) {
+        return "FAILED_UNKNOWN";
+    }
+    if (errorFlights > 0 || warningFlights > 0) {
+        return "PROCESSED_WARNING";
+    }
+    return status;
+}
+
+function pendingUploadsNotOnServer(pendingUploads, serverUploads) {
+    const onServer = new Set(serverUploads.map((u) => u.identifier));
+    return pendingUploads.filter((p) => !onServer.has(p.identifier));
+}
+
 
 export class UploadsPage extends React.Component {
 
@@ -517,7 +545,7 @@ export class UploadsPage extends React.Component {
         // console.log(`Starting upload of file: ${file}`);
 
         //different versions of firefox have different field names
-        const filename = file.webkitRelativePath || file.fileName || file.name;
+        const filename = sanitizeUploadFilename(file.webkitRelativePath || file.fileName || file.name);
         const identifier = file.identifier;
         const position = file.position;
 
@@ -546,7 +574,7 @@ export class UploadsPage extends React.Component {
                 console.log("New upload response: ", xhr.responseText);
                 const response = JSON.parse(xhr.responseText);
 
-                const filename = (file.webkitRelativePath || file.fileName || file.name);
+                const filename = sanitizeUploadFilename(file.webkitRelativePath || file.fileName || file.name);
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
@@ -580,7 +608,7 @@ export class UploadsPage extends React.Component {
 
     addUpload(file) {
 
-        const filename = (file.webkitRelativePath || file.fileName || file.name);
+        const filename = sanitizeUploadFilename(file.webkitRelativePath || file.fileName || file.name);
         const progressSize = 0;
         const status = "HASHING";
         const totalSize = file.size;
@@ -778,9 +806,10 @@ export class UploadsPage extends React.Component {
 
                     console.log("Should be finished uploading...");
 
-                    const pendingUploads = [...this.state.pendingUploads];
-                    pendingUploads[uploadInfo.position] = uploadInfo;
-                    this.setState({ pendingUploads });
+                    const pendingUploads = this.state.pendingUploads.filter(
+                        (p) => p.identifier !== uploadInfo.identifier
+                    );
+                    this.setState({ pendingUploads }, () => this.submitFilter());
 
                 }
 
@@ -826,6 +855,10 @@ export class UploadsPage extends React.Component {
 
                 this.setState({
                     uploads: response.uploads,
+                    pendingUploads: pendingUploadsNotOnServer(
+                        this.state.pendingUploads,
+                        response.uploads
+                    ),
                     numberPages: response.numberPages,
                     currentPage: response.currentPage
                 });
@@ -877,7 +910,7 @@ export class UploadsPage extends React.Component {
                                     return (
                                         <Upload
                                             uploadInfo={uploadInfo}
-                                            key={uploadInfo.identifier}
+                                            key={`pending-${uploadInfo.identifier}`}
                                             removeUpload={(uploadInfo) => {
                                                 this.removePendingUpload(uploadInfo);
                                             }}
@@ -898,7 +931,7 @@ export class UploadsPage extends React.Component {
                                     return (
                                         <Upload
                                             uploadInfo={uploadInfo}
-                                            key={uploadInfo.identifier}
+                                            key={`upload-${uploadInfo.id ?? uploadInfo.identifier}`}
                                             removeUpload={(uploadInfo) => {
                                                 this.removeUploadProp(uploadInfo);
                                             }}

@@ -105,19 +105,22 @@ public class FlightBuilder {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
+        Set<String> existingDoubleColumns = getDoubleTimeSeriesKeySet();
+        Set<String> existingStringColumns = getStringTimeSeriesKeySet();
+
         ArrayList<ComputeStep> steps = Stream.concat(
                         PROCESS_STEPS.stream()
                                 .map(factory -> factory.create(connection, this))
                                 .filter(step -> step.getOutputColumns().stream()
-                                        .noneMatch(x ->
-                                                doubleTimeSeries.containsKey(x) || stringTimeSeries.containsKey(x))),
+                                        .noneMatch(x -> existingDoubleColumns.contains(x)
+                                                || existingStringColumns.contains(x))),
                         ComputeEvent.getAllApplicable(connection, this).stream())
                 .collect(Collectors.toCollection(ArrayList::new));
 
         // Some file processors will compute this, others will not. If we don't have UTC_DATE_TIME, add it as a required
         // step.
-        if (!doubleTimeSeries.containsKey(Parameters.UNIX_TIME_SECONDS)
-                || !stringTimeSeries.containsKey(Parameters.UTC_DATE_TIME)) {
+        if (!existingDoubleColumns.contains(Parameters.UNIX_TIME_SECONDS)
+                || !existingStringColumns.contains(Parameters.UTC_DATE_TIME)) {
             steps.add(required(ComputeUTCTime::new).create(connection, this));
         }
 
