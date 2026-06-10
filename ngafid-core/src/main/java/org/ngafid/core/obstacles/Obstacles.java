@@ -3,11 +3,25 @@ For the purpose of this class, since Lat./Lon. plus altitude if available is all
 This will just have Lat and Lon, and it will have a similar calculation to that of the Airports.java
 */
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.logging.Logger;
+
+import org.ngafid.core.airports.Airports;
+
 public final class Obstacles {
     private static final double FT_PER_KM = 3280.84;
-
+    private static final Logger LOG = Logger.getLogger(Obstacle.class.getName());
+    private static final HashMap<String, ArrayList<Obstacle>> GEO_HASH_TO_OBSTACLES;
+    private static final HashMap<Int, Obstacle> OBJECTID_TO_OBSTACLES;
     
+    private static final boolean TEST_MODE =
+        Boolean.getBoolean("testMode") || "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
 
+    private Obstacles() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
+    
     /**
      * Calculate the shortest distance between a point and a line segment
      * Modified from:
