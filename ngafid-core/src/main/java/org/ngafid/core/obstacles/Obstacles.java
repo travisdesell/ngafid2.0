@@ -21,6 +21,22 @@ public final class Obstacles {
     private Obstacles() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
+
+    static {
+        GEO_HASH_TO_OBSTACLES = new HashMap<>();
+        OBJECTID_TO_OBSTACLES = new HashMap<>();
+
+        if (TEST_MODE) {
+            LOG.info("TEST MODE: skipping reading airports and runways files");
+            return;
+        }
+
+        int maxHashSize = 0;
+        int numberUniqueObstacles = 0;
+
+        // Here is the code for the parsing of the Obstacles
+
+    }
     
     /**
      * Calculate the shortest distance between a point and a line segment
@@ -88,6 +104,11 @@ public final class Obstacles {
     }
 
     public static double calculateDistanceInFeet(double lat1, double lon1, double lat2, double lon2) {
-        return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * Airports.FT_PER_KM;
+        return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * Obstacles.FT_PER_KM;
+    }
+
+    public static boolean IsDoubleInRangeInclusive(double num, double bot, double top) {
+        if ((num >= bot) && (num <= top)) {return true;}
+        return false;
     }
 }

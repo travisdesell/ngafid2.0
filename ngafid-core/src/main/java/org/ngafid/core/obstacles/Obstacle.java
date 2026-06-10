@@ -1,3 +1,10 @@
+enum ObstacleRisk {
+    HIGH,
+    MEDIUM,
+    LOW,
+    NONE
+}
+
 public class Obstacle {
     private final int id;
     private final double latitude;
@@ -29,7 +36,21 @@ public class Obstacle {
     public int getAMSL() {return this.amsl;}
     public int getQuantity() {return this.quantity;}
 
+    public ObstacleRisk calculateRiskFromPoint(double latitude, double longitude, int agl) {
+        double horizontalDistance = Airports.calculateDistanceInFeet(this.latitude, this.longitude, latitude, longitude);
+        double verticalDistance = Math.abs(agl - this.agl);
+
+        if ((horizontalDistance <= 500) || (verticalDistance <= 75)) {return ObstacleRisk.HIGH;}
+        else if (((horizontalDistance <= 1000) && (Obstacles.IsDoubleInRangeInclusive(verticalDistance, 75, 200)))
+            || ((Obstacles.IsDoubleInRangeInclusive(horizontalDistance, 500, 1000)) && (verticalDistance <= 200))) {return ObstacleRisk.MEDIUM;}
+        else if (((horizontalDistance >= 500) && (horizontalDistance <= 1000))
+            && ((verticalDistance >= 75) && (verticalDistance <= 200))) {return ObstacleRisk.LOW;}
+        else {return ObstacleRisk.NONE;}
+    }
+
     public String toString() {
         return "[Obstacle " + id + ", " + type + ", " + latitude + ", " + longitude + ", " + agl + ", " + geoHash + "]";
     }
+
+    
 }
