@@ -79,9 +79,9 @@ public class EventStatistics {
             SELECT fleet_id, event_definition_id, airframe_id,
                 SUM(event_count) as event_count, SUM(flight_count) as flight_count
             FROM m_fleet_airframe_monthly_event_counts
-            WHERE """ + dateClause + """
+            WHERE %s
             GROUP BY fleet_id, event_definition_id, airframe_id
-        """;
+        """.formatted(dateClause);
 
         Map<Integer, String> idToAirframeNameMap = Airframes.getIdToNameMap(connection);
         Map<Integer, String> idToEventNameMap = EventDefinition.getEventDefinitionIdToNameMap(connection);
@@ -174,6 +174,21 @@ public class EventStatistics {
     public static Map<String, Map<String, MonthlyEventCounts>> getMonthlyEventCounts(
             Connection connection, int fleetId, LocalDate startDateNullable, LocalDate endDateNullable)
             throws SQLException {
+        Map<Integer, String> idToAirframeNameMap = Airframes.getIdToNameMap(connection);
+        Map<Integer, String> idToEventNameMap = EventDefinition.getEventDefinitionIdToNameMap(connection);
+
+        return getMonthlyEventCounts(
+                connection, fleetId, startDateNullable, endDateNullable, idToAirframeNameMap, idToEventNameMap);
+    }
+
+    static Map<String, Map<String, MonthlyEventCounts>> getMonthlyEventCounts(
+            Connection connection,
+            int fleetId,
+            LocalDate startDateNullable,
+            LocalDate endDateNullable,
+            Map<Integer, String> idToAirframeNameMap,
+            Map<Integer, String> idToEventNameMap)
+            throws SQLException {
         final LocalDate startDate = startDateNullable == null ? LocalDate.of(0, 1, 1) : startDateNullable;
         final LocalDate endDate = endDateNullable == null ? LocalDate.now() : endDateNullable;
 
@@ -186,10 +201,9 @@ public class EventStatistics {
                         + dateClause + " GROUP BY fleet_id, event_definition_id, airframe_id, year, month";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
-            Map<Integer, String> idToAirframeNameMap = Airframes.getIdToNameMap(connection);
-            Map<Integer, String> idToEventNameMap = EventDefinition.getEventDefinitionIdToNameMap(connection);
-
-            FlightCounts fc = getFlightCounts(connection, startDate, endDate);
+            Map<MonthlyCountKey, Integer> fleetMonthlyFlightCounts = getFleetMonthlyFlightCounts(connection, dateClause);
+            Map<MonthlyCountKey, Integer> aggregateMonthlyFlightCounts =
+                    getAggregateMonthlyFlightCounts(connection, dateClause);
             Map<String, Map<String, MonthlyEventCountsBuilder>> eventCounts = new HashMap<>();
 
             try (ResultSet result = statement.executeQuery()) {
@@ -201,7 +215,10 @@ public class EventStatistics {
                     final int airframeId = result.getInt("airframe_id");
                     final int month = result.getInt("month");
                     final int year = result.getInt("year");
-                    final int totalFlights = fc.getFleetCounts(fleet).get(airframeId);
+                    final int totalFlights = fleetMonthlyFlightCounts.getOrDefault(
+                            monthlyCountKey(fleet, airframeId, year, month), 0);
+                    final int aggregateTotalFlights = aggregateMonthlyFlightCounts.getOrDefault(
+                            monthlyCountKey(-1, airframeId, year, month), 0);
 
                     final String date = LocalDate.of(year, month, 1).toString();
                     final String eventName = idToEventNameMap.get(eventDefinitionId);
@@ -213,15 +230,239 @@ public class EventStatistics {
                                     airframeName,
                                     k -> new MonthlyEventCountsBuilder(airframeName, eventName, startDate, endDate));
 
-                    mec.updateAggregate(date, flightCount, totalFlights, eventCount);
-                    if (fleetId == fleet) mec.update(date, flightCount, totalFlights, eventCount);
+                    mec.updateAggregateWithTotalFlightsMax(date, flightCount, aggregateTotalFlights, eventCount);
+                    if (fleetId == fleet) mec.updateWithTotalFlightsMax(date, flightCount, totalFlights, eventCount);
                 }
             }
+
+            addAnyEventMonthlyCounts(
+                    connection,
+                    fleetId,
+                    startDate,
+                    endDate,
+                    dateClause,
+                    idToAirframeNameMap,
+                    fleetMonthlyFlightCounts,
+                    aggregateMonthlyFlightCounts,
+                    eventCounts);
+
+            seedMonthlyFlightDenominators(
+                    fleetId,
+                    startDate,
+                    endDate,
+                    idToAirframeNameMap,
+                    fleetMonthlyFlightCounts,
+                    aggregateMonthlyFlightCounts,
+                    eventCounts);
 
             return eventCounts.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().entrySet().stream()
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey, e -> e.getValue().build()))));
+        }
+    }
+
+    private record MonthlyCountKey(int fleetId, int airframeId, int year, int month) {}
+
+    private static MonthlyCountKey monthlyCountKey(int fleetId, int airframeId, int year, int month) {
+        return new MonthlyCountKey(fleetId, airframeId, year, month);
+    }
+
+    private static Map<MonthlyCountKey, Integer> getFleetMonthlyFlightCounts(Connection connection, String dateClause)
+            throws SQLException {
+        String query = """
+            SELECT fleet_id, airframe_id, year, month, SUM(count) AS flight_count
+            FROM m_fleet_monthly_flight_counts
+            WHERE %s
+            GROUP BY fleet_id, airframe_id, year, month
+        """.formatted(dateClause);
+
+        Map<MonthlyCountKey, Integer> counts = new HashMap<>();
+        try (PreparedStatement statement = connection.prepareStatement(query);
+                ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                counts.put(
+                        monthlyCountKey(
+                                result.getInt("fleet_id"),
+                                result.getInt("airframe_id"),
+                                result.getInt("year"),
+                                result.getInt("month")),
+                        result.getInt("flight_count"));
+            }
+        }
+        return counts;
+    }
+
+    private static Map<MonthlyCountKey, Integer> getAggregateMonthlyFlightCounts(Connection connection, String dateClause)
+            throws SQLException {
+        String query = """
+            SELECT airframe_id, year, month, SUM(count) AS flight_count
+            FROM m_fleet_monthly_flight_counts
+            WHERE %s
+            GROUP BY airframe_id, year, month
+        """.formatted(dateClause);
+
+        Map<MonthlyCountKey, Integer> counts = new HashMap<>();
+        try (PreparedStatement statement = connection.prepareStatement(query);
+                ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                counts.put(
+                        monthlyCountKey(
+                                -1,
+                                result.getInt("airframe_id"),
+                                result.getInt("year"),
+                                result.getInt("month")),
+                        result.getInt("flight_count"));
+            }
+        }
+        return counts;
+    }
+
+    private static void addAnyEventMonthlyCounts(
+            Connection connection,
+            int selectedFleetId,
+            LocalDate startDate,
+            LocalDate endDate,
+            String dateClause,
+            Map<Integer, String> idToAirframeNameMap,
+            Map<MonthlyCountKey, Integer> fleetMonthlyFlightCounts,
+            Map<MonthlyCountKey, Integer> aggregateMonthlyFlightCounts,
+            Map<String, Map<String, MonthlyEventCountsBuilder>> eventCounts)
+            throws SQLException {
+
+        final String anyEventName = "ANY Event";
+        Map<String, MonthlyEventCountsBuilder> anyEventCounts =
+                eventCounts.computeIfAbsent(anyEventName, k -> new HashMap<>());
+
+        if (selectedFleetId >= 0) {
+            String fleetQuery = """
+                SELECT fleet_id, airframe_id, year, month,
+                    COUNT(event_id) AS event_count,
+                    COUNT(DISTINCT flight_id) AS flight_count
+                FROM (
+                    SELECT e.fleet_id, f.airframe_id, YEAR(e.start_time) AS year, MONTH(e.start_time) AS month,
+                        e.id AS event_id, f.id AS flight_id
+                    FROM events e
+                    INNER JOIN flights f ON f.id = e.flight_id
+                    WHERE e.fleet_id = ?
+                ) monthly_events
+                WHERE %s
+                GROUP BY fleet_id, airframe_id, year, month
+            """.formatted(dateClause);
+
+            try (PreparedStatement statement = connection.prepareStatement(fleetQuery)) {
+                statement.setInt(1, selectedFleetId);
+
+                try (ResultSet result = statement.executeQuery()) {
+                    while (result.next()) {
+                        final int fleetId = result.getInt("fleet_id");
+                        final int airframeId = result.getInt("airframe_id");
+                        final int year = result.getInt("year");
+                        final int month = result.getInt("month");
+                        final String airframeName = idToAirframeNameMap.get(airframeId);
+                        if (airframeName == null) continue;
+
+                        final String date = LocalDate.of(year, month, 1).toString();
+                        final int totalFlights = fleetMonthlyFlightCounts.getOrDefault(
+                                monthlyCountKey(fleetId, airframeId, year, month), 0);
+
+                        MonthlyEventCountsBuilder builder = anyEventCounts.computeIfAbsent(
+                                airframeName,
+                                k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
+                        builder.updateWithTotalFlightsMax(
+                                date, result.getInt("flight_count"), totalFlights, result.getInt("event_count"));
+                    }
+                }
+            }
+        }
+
+        String aggregateQuery = """
+            SELECT airframe_id, year, month,
+                COUNT(event_id) AS event_count,
+                COUNT(DISTINCT flight_id) AS flight_count
+            FROM (
+                SELECT f.airframe_id, YEAR(e.start_time) AS year, MONTH(e.start_time) AS month,
+                    e.id AS event_id, f.id AS flight_id
+                FROM events e
+                INNER JOIN flights f ON f.id = e.flight_id
+            ) monthly_events
+            WHERE %s
+            GROUP BY airframe_id, year, month
+        """.formatted(dateClause);
+
+        try (PreparedStatement statement = connection.prepareStatement(aggregateQuery);
+                ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                final int airframeId = result.getInt("airframe_id");
+                final int year = result.getInt("year");
+                final int month = result.getInt("month");
+                final String airframeName = idToAirframeNameMap.get(airframeId);
+                if (airframeName == null) continue;
+
+                final String date = LocalDate.of(year, month, 1).toString();
+                final int totalFlights = aggregateMonthlyFlightCounts.getOrDefault(
+                        monthlyCountKey(-1, airframeId, year, month), 0);
+
+                MonthlyEventCountsBuilder builder = anyEventCounts.computeIfAbsent(
+                        airframeName,
+                        k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
+                builder.updateAggregate(
+                        date, result.getInt("flight_count"), totalFlights, result.getInt("event_count"));
+            }
+        }
+    }
+
+    private static void seedMonthlyFlightDenominators(
+            int selectedFleetId,
+            LocalDate startDate,
+            LocalDate endDate,
+            Map<Integer, String> idToAirframeNameMap,
+            Map<MonthlyCountKey, Integer> fleetMonthlyFlightCounts,
+            Map<MonthlyCountKey, Integer> aggregateMonthlyFlightCounts,
+            Map<String, Map<String, MonthlyEventCountsBuilder>> eventCounts) {
+
+        final String anyEventName = "ANY Event";
+        Map<String, MonthlyEventCountsBuilder> anyEventCounts =
+                eventCounts.computeIfAbsent(anyEventName, k -> new HashMap<>());
+
+        for (Map.Entry<MonthlyCountKey, Integer> entry : aggregateMonthlyFlightCounts.entrySet()) {
+            final MonthlyCountKey key = entry.getKey();
+            final String airframeName = idToAirframeNameMap.get(key.airframeId());
+            if (airframeName == null) continue;
+
+            anyEventCounts.computeIfAbsent(
+                    airframeName,
+                    k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
+
+            final String date = LocalDate.of(key.year(), key.month(), 1).toString();
+            for (Map<String, MonthlyEventCountsBuilder> countsByAirframe : eventCounts.values()) {
+                MonthlyEventCountsBuilder builder = countsByAirframe.get(airframeName);
+                if (builder != null) {
+                    builder.updateAggregateWithTotalFlightsMax(date, 0, entry.getValue(), 0);
+                }
+            }
+        }
+
+        if (selectedFleetId < 0) return;
+
+        for (Map.Entry<MonthlyCountKey, Integer> entry : fleetMonthlyFlightCounts.entrySet()) {
+            final MonthlyCountKey key = entry.getKey();
+            if (key.fleetId() != selectedFleetId) continue;
+
+            final String airframeName = idToAirframeNameMap.get(key.airframeId());
+            if (airframeName == null) continue;
+
+            anyEventCounts.computeIfAbsent(
+                    airframeName,
+                    k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
+
+            final String date = LocalDate.of(key.year(), key.month(), 1).toString();
+            for (Map<String, MonthlyEventCountsBuilder> countsByAirframe : eventCounts.values()) {
+                MonthlyEventCountsBuilder builder = countsByAirframe.get(airframeName);
+                if (builder != null) {
+                    builder.updateWithTotalFlightsMax(date, 0, entry.getValue(), 0);
+                }
+            }
         }
     }
 
@@ -799,11 +1040,28 @@ public class EventStatistics {
             totalEventsMap.merge(key, totalEvents, Integer::sum);
         }
 
+        public void updateWithTotalFlightsMax(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
+            keys.add(key);
+
+            flightsWithEventMap.merge(key, flightsWithEvent, Integer::sum);
+            totalFlightsMap.merge(key, totalFlights, Math::max);
+            totalEventsMap.merge(key, totalEvents, Integer::sum);
+        }
+
         public void updateAggregate(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
             keys.add(key);
 
             aggregateFlightsWithEventMap.merge(key, flightsWithEvent, Integer::sum);
             aggregateTotalFlightsMap.merge(key, totalFlights, Integer::sum);
+            aggregateTotalEventsMap.merge(key, totalEvents, Integer::sum);
+        }
+
+        public void updateAggregateWithTotalFlightsMax(
+                String key, int flightsWithEvent, int totalFlights, int totalEvents) {
+            keys.add(key);
+
+            aggregateFlightsWithEventMap.merge(key, flightsWithEvent, Integer::sum);
+            aggregateTotalFlightsMap.merge(key, totalFlights, Math::max);
             aggregateTotalEventsMap.merge(key, totalEvents, Integer::sum);
         }
     }
