@@ -6,6 +6,8 @@ This will just have Lat and Lon, and it will have a similar calculation to that 
 public final class Obstacles {
     private static final double FT_PER_KM = 3280.84;
 
+    
+
     /**
      * Calculate the shortest distance between a point and a line segment
      * Modified from:
