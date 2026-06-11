@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.nio.file.Paths ;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders
@@ -60,8 +59,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     private static final Pattern G3X_PART_NUMBER_REGEX = Pattern.compile("006-B1727-[A-Za-z\\d]{2}");
-    private static final Pattern TAILNUMBER_FILENAME_PATTERN =
-    Pattern.compile("^([A-Z0-9]+)_\\d{8}T\\d{6}_.*\\.csv$", Pattern.CASE_INSENSITIVE);
+
     /**
      * Scans first line of file for G3X part number.
      *
@@ -192,17 +190,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
         List<String[]> rows = extractFlightData();
-        
-        if (meta.getAirframe() != null 
-            && Airframes.AIRFRAME_AW119.equals(meta.getAirframe().getName())) {
-            String basename = Paths.get(filename).getFileName().toString();
-            java.util.regex.Matcher m = TAILNUMBER_FILENAME_PATTERN.matcher(basename);
-            if (m.matches()) {
-                String tail = m.group(1);
-                LOG.info("AW-119 detected, extracting tail number from filename: " + tail);
-                meta.setSuggestedTailNumber(tail);
-    }
-}
+
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
         return Stream.of(makeFlightBuilder(meta, doubleTimeSeries, stringTimeSeries));
