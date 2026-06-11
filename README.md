@@ -60,7 +60,7 @@ mysql> exit
 Bye
 ```
 
-We need to store these credentials in a file called `src/main/resources/liquibase.properties`, along with some other
+We need to store these credentials in a file called `ngafid-db/src/liquibase.properties`, along with some other
 information:
 
 ```
@@ -71,7 +71,7 @@ username=ngafid_user
 password=password
 ```
 
-Make a second file `src/main/resources/liquibase.docker.properties` that mirrors this, but change the url as shwon:
+Make a second file `ngafid-db/src/liquibase.docker.properties` that mirrors this, but change the url as shown:
 
 ```
 changeLogFile=changelog-root.xml
@@ -114,10 +114,10 @@ $NGAFID_DATA_FOLDER
 
 All configuration is now handled through a single properties file that works for both local development and Docker environments.
 
-Create a root `ngafid.properties` file and customize it for your environment.
+Create a root `ngafid.properties` file by copying the template and customize it for your environment.
 
 ```shell
-touch ngafid.properties
+cp ngafid.properties.local-template ngafid.properties
 ```
 
 Edit `ngafid.properties` and configure the following values (look for ⚠️ markers in the file):
@@ -126,11 +126,35 @@ Edit `ngafid.properties` and configure the following values (look for ⚠️ mar
 - `ngafid.azure.maps.key`: Your Azure Maps API key
 - Database credentials: in the file pointed to by `ngafid.db.info` (e.g. `ngafid-db/src/liquibase.properties`)
 - `ngafid.admin.emails`: Admin email addresses
-- `ngafid.smtp.*`: Email server configuration (if using email features)
+- `ngafid.email.enabled`: Set to `true` only when outbound email should be sent
+- `ngafid.email.info`: Path to the local email credentials file, usually `email_info.txt`
+
+At minimum, local email settings should include:
+
+```properties
+ngafid.admin.emails=admin@example.com
+ngafid.email.enabled=false
+ngafid.email.info=email_info.txt
+```
+
+Create the local email credentials file referenced by `ngafid.email.info`. For local development, the default is:
+
+```shell
+touch email_info.txt
+```
+
+If email is disabled, `email_info.txt` can remain empty or contain comment lines. To send email, put the sender account
+username on the first line and password on the second line:
+
+```text
+sender@example.com
+password
+```
+
 
 The application automatically detects whether it's running in Docker (by checking for `/.dockerenv`) and uses the appropriate settings. Docker-specific configurations use the `ngafid.docker.*` prefix in the properties file.
 
-## 5. Build Node Modules
+## 5. Build Node Modules and Java Artifacts
 
 Initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
 
@@ -145,11 +169,20 @@ whenever you change one of the files:
 ~/ngafid2.0/ngafid-frontend $ npm run watch
 ```
 
+You must also compile and package the Java code before running services:
+
+```shell
+~/ngafid2.0 $ run/build
+~/ngafid2.0 $ run/package
+```
+
 ## 6. Run Kafka
 
 Kafka is used by the ngafid for simple message passing between processes.
-Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart) to configure kafkas storage,
-using `ngafid2.0/resource/reconfig-server.properties`. Now, launch Kafka:
+Follow the instructions on the [Kafka quickstart](https://kafka.apache.org/quickstart) to configure Kafka storage,
+using `ngafid2.0/resources/reconfig-server.properties`.
+Make sure to edit this file and change `log.dirs` to an appropriate path for your system before launching.
+Now, launch Kafka:
 
 ```
 # Launch kafka kraft
@@ -204,7 +237,7 @@ The airsync importer (you shouldn't run this locally unless you are working dire
 
 ## 8. Launching with Docker on UND VM
 
-To build and run all requires services simultaneously, we can use docker. We build the java packages and then inject
+To build and run all required services simultaneously, we can use docker. We build the java packages and then inject
 them into docker containers:
 
 ```shell
@@ -291,7 +324,7 @@ dcl up -d
 
 ## 9. Workflow
 
-Note that these things should work regardless of whether you launching services directly or with docker so long as your
+Note that these things should work regardless of whether you are launching services directly or with docker so long as your
 configuration is correct.
 
 If you modify the upload processing code in some way and want to re-add an upload to the processing queue, you may use

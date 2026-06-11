@@ -192,7 +192,8 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
                     const responseObj = response as { [eventName: string]: { [airframeName: string]: TrendsData } };
 
                     const countsMerged: { [airframeName: string]: TrendsData } = {};
-                    for (const countsObject of Object.values(responseObj)) {
+                    const eventCountEntries = Object.entries(responseObj).filter(([eventName]) => eventName !== "ANY Event");
+                    for (const [, countsObject] of eventCountEntries) {
 
                         for (const airframeName of Object.keys(countsObject)) {
 
@@ -226,10 +227,16 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
                                     countsMerged[airframeName].aggregateFlightsWithEventCounts[i] += countsAirframe.aggregateFlightsWithEventCounts[i];
                                     countsMerged[airframeName].aggregateTotalEventsCounts[i] += countsAirframe.aggregateTotalEventsCounts[i];
-                                    countsMerged[airframeName].aggregateTotalFlightsCounts[i] += countsAirframe.aggregateTotalFlightsCounts[i];
+                                    countsMerged[airframeName].aggregateTotalFlightsCounts[i] = Math.max(
+                                        countsMerged[airframeName].aggregateTotalFlightsCounts[i],
+                                        countsAirframe.aggregateTotalFlightsCounts[i]
+                                    );
                                     countsMerged[airframeName].flightsWithEventCounts[i] += countsAirframe.flightsWithEventCounts[i];
                                     countsMerged[airframeName].totalEventsCounts[i] += countsAirframe.totalEventsCounts[i];
-                                    countsMerged[airframeName].totalFlightsCounts[i] += countsAirframe.totalFlightsCounts[i];
+                                    countsMerged[airframeName].totalFlightsCounts[i] = Math.max(
+                                        countsMerged[airframeName].totalFlightsCounts[i],
+                                        countsAirframe.totalFlightsCounts[i]
+                                    );
                                 }
 
                             }
@@ -240,7 +247,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
                     setEventCounts({
                         ...responseObj,
-                        ["ANY Event"]: countsMerged
+                        ["ANY Event"]: responseObj["ANY Event"] ?? countsMerged
                     });
 
                     resolve(response);

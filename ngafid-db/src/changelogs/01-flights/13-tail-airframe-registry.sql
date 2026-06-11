@@ -1,0 +1,557 @@
+--liquibase formatted sql
+
+--changeset roman:tail-airframe-registry-airframes labels:flights,airframes,tail-airframe-registry
+-- Seed rotorcraft airframe models referenced by tail_airframe_registry.csv
+
+INSERT INTO airframes (airframe, type_id)
+SELECT '407', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = '407');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'AS350', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'AS350');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'AW109', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'AW109');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'AW119', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'AW119');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'AW139', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'AW139');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'BK117', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'BK117');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'EC130', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'EC130');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'EC135', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'EC135');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'MH60', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'MH60');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'MH65', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'MH65');
+
+INSERT INTO airframes (airframe, type_id)
+SELECT 'R44', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
+  AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'R44');
+
+--changeset roman:tail-airframe-registry-table labels:flights,airframes,tail-airframe-registry
+CREATE TABLE IF NOT EXISTS tail_airframe_registry (
+    tail VARCHAR(16) NOT NULL,
+    airframe VARCHAR(64) NOT NULL,
+    PRIMARY KEY (tail),
+    FOREIGN KEY (airframe) REFERENCES airframes (airframe)
+);
+
+--changeset roman:tail-airframe-registry-data labels:flights,airframes,rotorcraft
+-- Tail -> airframe mapping (445 rows); source: operator_tail_registry_dynamoDB_20260506.csv
+DELETE FROM tail_airframe_registry;
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('0095', 'EC135'),
+    ('0130', 'EC135'),
+    ('0131', 'EC135'),
+    ('0132', 'EC135'),
+    ('0133', 'EC135'),
+    ('0134', 'EC135'),
+    ('0143', 'EC135'),
+    ('0144', 'EC135'),
+    ('0154', 'EC135'),
+    ('0157', 'EC135'),
+    ('0161', 'EC135'),
+    ('0167', 'EC135'),
+    ('0179', 'EC135'),
+    ('0249', 'EC135'),
+    ('0330', 'EC135'),
+    ('0414', 'EC135'),
+    ('0417', 'EC135'),
+    ('0451', 'EC135'),
+    ('0485', 'EC135'),
+    ('0491', 'EC135'),
+    ('0511', 'EC135'),
+    ('0541', 'EC135'),
+    ('0559', 'EC135'),
+    ('0562', 'EC135'),
+    ('0591', 'EC135'),
+    ('0598', 'EC135'),
+    ('0613', 'EC135'),
+    ('0641', 'EC135'),
+    ('0662', 'EC135'),
+    ('0667', 'EC135'),
+    ('0707', 'EC135'),
+    ('0713', 'EC135'),
+    ('0735', 'EC135'),
+    ('0740', 'EC135'),
+    ('0758', 'EC135'),
+    ('0763', 'EC135'),
+    ('0764', 'EC135'),
+    ('0817', 'EC135'),
+    ('0834', 'EC135'),
+    ('0849', 'EC135'),
+    ('0858', 'EC135'),
+    ('0862', 'EC135'),
+    ('0890', 'EC135'),
+    ('0897', 'EC135'),
+    ('0913', 'EC135'),
+    ('0942', 'EC135'),
+    ('0946', 'EC135'),
+    ('0972', 'EC135'),
+    ('1069', 'EC135'),
+    ('1093', 'EC135');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('1096', 'EC135'),
+    ('1105', 'EC135'),
+    ('1233', 'EC135'),
+    ('1245', 'EC135'),
+    ('250TH', 'R44'),
+    ('344Y', 'R44'),
+    ('3837', 'AS350'),
+    ('3962', 'AS350'),
+    ('53482', '407'),
+    ('53573', '407'),
+    ('53627', '407'),
+    ('53723', '407'),
+    ('53790', '407'),
+    ('53919', '407'),
+    ('54066', '407'),
+    ('54084', '407'),
+    ('54305', '407'),
+    ('54330', '407'),
+    ('54341', '407'),
+    ('54375', '407'),
+    ('54376', '407'),
+    ('54377', '407'),
+    ('54379', '407'),
+    ('54444', '407'),
+    ('54446', '407'),
+    ('54458', '407'),
+    ('54459', '407'),
+    ('54466', '407'),
+    ('6001', 'MH60'),
+    ('6002', 'MH60'),
+    ('6003', 'MH60'),
+    ('6004', 'MH60'),
+    ('6005', 'MH60'),
+    ('6006', 'MH60'),
+    ('6007', 'MH60'),
+    ('6008', 'MH60'),
+    ('6009', 'MH60'),
+    ('6010', 'MH60'),
+    ('6011', 'MH60'),
+    ('6013', 'MH60'),
+    ('6014', 'MH60'),
+    ('6015', 'MH60'),
+    ('6016', 'MH60'),
+    ('6018', 'MH60'),
+    ('6019', 'MH60'),
+    ('6021', 'MH60'),
+    ('6022', 'MH60'),
+    ('6023', 'MH60'),
+    ('6024', 'MH60'),
+    ('6025', 'MH60');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('6026', 'MH60'),
+    ('6027', 'MH60'),
+    ('6029', 'MH60'),
+    ('6030', 'MH60'),
+    ('6031', 'MH60'),
+    ('6032', 'MH60'),
+    ('6033', 'MH60'),
+    ('6034', 'MH60'),
+    ('6035', 'MH60'),
+    ('6036', 'MH60'),
+    ('6037', 'MH60'),
+    ('6038', 'MH60'),
+    ('6039', 'MH60'),
+    ('6040', 'MH60'),
+    ('6041', 'MH60'),
+    ('6042', 'MH60'),
+    ('6043', 'MH60'),
+    ('6044', 'MH60'),
+    ('6045', 'MH60'),
+    ('6046', 'MH60'),
+    ('6047', 'MH60'),
+    ('6048', 'MH60'),
+    ('6049', 'MH60'),
+    ('6050', 'MH60'),
+    ('6051', 'MH60'),
+    ('6052', 'MH60'),
+    ('6053', 'MH60'),
+    ('6054', 'MH60'),
+    ('6501', 'MH65'),
+    ('6502', 'MH65'),
+    ('6503', 'MH65'),
+    ('6504', 'MH65'),
+    ('6506', 'MH65'),
+    ('6507', 'MH65'),
+    ('6508', 'MH65'),
+    ('6509', 'MH65'),
+    ('6510', 'MH65'),
+    ('6511', 'MH65'),
+    ('6512', 'MH65'),
+    ('6513', 'MH65'),
+    ('6514', 'MH65'),
+    ('6516', 'MH65'),
+    ('6517', 'MH65'),
+    ('6518', 'MH65'),
+    ('6519', 'MH65'),
+    ('6520', 'MH65'),
+    ('6521', 'MH65'),
+    ('6524', 'MH65'),
+    ('6525', 'MH65'),
+    ('6526', 'MH65');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('6527', 'MH65'),
+    ('6528', 'MH65'),
+    ('6529', 'MH65'),
+    ('6530', 'MH65'),
+    ('6531', 'MH65'),
+    ('6532', 'MH65'),
+    ('6533', 'MH65'),
+    ('6534', 'MH65'),
+    ('6536', 'MH65'),
+    ('6537', 'MH65'),
+    ('6538', 'MH65'),
+    ('6539', 'MH65'),
+    ('6540', 'MH65'),
+    ('6542', 'MH65'),
+    ('6543', 'MH65'),
+    ('6544', 'MH65'),
+    ('6545', 'MH65'),
+    ('6547', 'MH65'),
+    ('6548', 'MH65'),
+    ('6550', 'MH65'),
+    ('6551', 'MH65'),
+    ('6552', 'MH65'),
+    ('6553', 'MH65'),
+    ('6554', 'MH65'),
+    ('6555', 'MH65'),
+    ('6556', 'MH65'),
+    ('6557', 'MH65'),
+    ('6558', 'MH65'),
+    ('6559', 'MH65'),
+    ('6560', 'MH65'),
+    ('6561', 'MH65'),
+    ('6562', 'MH65'),
+    ('6563', 'MH65'),
+    ('6564', 'MH65'),
+    ('6565', 'MH65'),
+    ('6566', 'MH65'),
+    ('6567', 'MH65'),
+    ('6568', 'MH65'),
+    ('6569', 'MH65'),
+    ('6570', 'MH65'),
+    ('6571', 'MH65'),
+    ('6572', 'MH65'),
+    ('6573', 'MH65'),
+    ('6574', 'MH65'),
+    ('6575', 'MH65'),
+    ('6576', 'MH65'),
+    ('6577', 'MH65'),
+    ('6578', 'MH65'),
+    ('6579', 'MH65'),
+    ('6580', 'MH65');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('6581', 'MH65'),
+    ('6582', 'MH65'),
+    ('6583', 'MH65'),
+    ('6584', 'MH65'),
+    ('6585', 'MH65'),
+    ('6586', 'MH65'),
+    ('6587', 'MH65'),
+    ('6588', 'MH65'),
+    ('6589', 'MH65'),
+    ('6590', 'MH65'),
+    ('6591', 'MH65'),
+    ('6592', 'MH65'),
+    ('6593', 'MH65'),
+    ('6594', 'MH65'),
+    ('6595', 'MH65'),
+    ('6596', 'MH65'),
+    ('6597', 'MH65'),
+    ('6598', 'MH65'),
+    ('6601', 'MH65'),
+    ('6603', 'MH65'),
+    ('6604', 'MH65'),
+    ('6605', 'MH65'),
+    ('6606', 'MH65'),
+    ('6607', 'MH65'),
+    ('6608', 'MH65'),
+    ('683R', 'R44'),
+    ('7017', 'EC130'),
+    ('7103', 'EC130'),
+    ('7132', 'EC130'),
+    ('7142', 'EC130'),
+    ('7167', 'EC130'),
+    ('7182', 'EC130'),
+    ('7190', 'EC130'),
+    ('7221', 'EC130'),
+    ('7490', 'EC130'),
+    ('7499', 'EC130'),
+    ('79RH', 'R44'),
+    ('9047', 'BK117'),
+    ('9067', 'BK117'),
+    ('9077', 'BK117'),
+    ('9089', 'BK117'),
+    ('9096', 'BK117'),
+    ('9099', 'BK117'),
+    ('9114', 'BK117'),
+    ('9115', 'BK117'),
+    ('9121', 'BK117'),
+    ('9158', 'BK117'),
+    ('9188', 'BK117'),
+    ('9209', 'BK117'),
+    ('9226', 'BK117');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('9228', 'BK117'),
+    ('9241', 'BK117'),
+    ('9250', 'BK117'),
+    ('9278', 'BK117'),
+    ('9281', 'BK117'),
+    ('9288', 'BK117'),
+    ('9301', 'BK117'),
+    ('9311', 'BK117'),
+    ('9319', 'BK117'),
+    ('9327', 'BK117'),
+    ('9348', 'BK117'),
+    ('9353', 'BK117'),
+    ('9357', 'BK117'),
+    ('9367', 'BK117'),
+    ('9421', 'BK117'),
+    ('9494', 'BK117'),
+    ('9529', 'BK117'),
+    ('9535', 'BK117'),
+    ('9542', 'BK117'),
+    ('9545', 'BK117'),
+    ('9556', 'BK117'),
+    ('9586', 'BK117'),
+    ('9601', 'BK117'),
+    ('9685', 'BK117'),
+    ('9729', 'BK117'),
+    ('9739', 'BK117'),
+    ('9760', 'BK117'),
+    ('9800', 'BK117'),
+    ('9827', 'BK117'),
+    ('9832', 'BK117'),
+    ('9837', 'BK117'),
+    ('9850', 'BK117'),
+    ('9852', 'BK117'),
+    ('9855', 'BK117'),
+    ('9862', 'BK117'),
+    ('9863', 'BK117'),
+    ('9864', 'BK117'),
+    ('9867', 'BK117'),
+    ('9868', 'BK117'),
+    ('9873', 'BK117'),
+    ('9874', 'BK117'),
+    ('9875', 'BK117'),
+    ('9876', 'BK117'),
+    ('9877', 'BK117'),
+    ('9879', 'BK117'),
+    ('9880', 'BK117'),
+    ('9881', 'BK117'),
+    ('9884', 'BK117'),
+    ('N106VU', 'EC130'),
+    ('N107VU', 'EC130');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N108LN', 'AS350'),
+    ('N118LN', 'AS350'),
+    ('N11UQ', 'EC130'),
+    ('N11XQ', 'EC130'),
+    ('N11YQ', 'EC130'),
+    ('N135AM', '407'),
+    ('N141NE', 'BK117'),
+    ('N142NE', 'BK117'),
+    ('N143NE', 'BK117'),
+    ('N144NE', 'BK117'),
+    ('N145NE', 'BK117'),
+    ('N147LM', 'AS350'),
+    ('N1984S', 'BK117'),
+    ('N208AM', '407'),
+    ('N214AM', '407'),
+    ('N216SH', 'EC130'),
+    ('N218AM', '407'),
+    ('N222SH', 'EC130'),
+    ('N230TJ', 'EC130'),
+    ('N237SH', 'EC130'),
+    ('N239SH', 'EC130'),
+    ('N240SH', 'EC130'),
+    ('N242SH', 'EC130'),
+    ('N244SH', 'EC130'),
+    ('N245CC', 'BK117'),
+    ('N246AM', '407'),
+    ('N246NE', 'BK117'),
+    ('N247NE', 'BK117'),
+    ('N253LF', 'AS350'),
+    ('N255LF', 'AS350'),
+    ('N257AM', 'AS350'),
+    ('N267AM', 'AS350'),
+    ('N278AM', '407'),
+    ('N279AM', 'AS350'),
+    ('N27RT', 'AW139'),
+    ('N284AM', '407'),
+    ('N292AM', '407'),
+    ('N293AM', '407'),
+    ('N29RT', 'AW139'),
+    ('N304ME', 'BK117'),
+    ('N306LG', 'AW119'),
+    ('N307ME', 'BK117'),
+    ('N308ME', 'EC135'),
+    ('N327CH', 'EC130'),
+    ('N338AM', '407'),
+    ('N350AM', 'AS350'),
+    ('N350LF', 'AS350'),
+    ('N350MV', 'AS350'),
+    ('N351LL', 'AW119'),
+    ('N352LL', 'AW119');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N353LL', 'AW119'),
+    ('N354CF', 'AS350'),
+    ('N354LL', 'AW119'),
+    ('N355LL', 'AW119'),
+    ('N356LL', 'AW119'),
+    ('N357AM', '407'),
+    ('N357LL', 'AW119'),
+    ('N358LL', 'AW119'),
+    ('N359LL', 'AW119'),
+    ('N360LL', 'AW119'),
+    ('N362AH', 'EC135'),
+    ('N363AH', 'EC135'),
+    ('N366AH', 'EC135'),
+    ('N370AM', '407'),
+    ('N372AM', '407'),
+    ('N3831', 'AS350'),
+    ('N383AM', '407'),
+    ('N391LG', 'AS350'),
+    ('N398AM', '407'),
+    ('N399LG', 'AS350'),
+    ('N404AM', '407'),
+    ('N407HC', '407'),
+    ('N408LM', '407'),
+    ('N408LN', '407'),
+    ('N408SH', '407'),
+    ('N409LM', '407'),
+    ('N410W', 'EC130'),
+    ('N418TY', 'AS350'),
+    ('N434AM', '407'),
+    ('N442ME', 'EC135'),
+    ('N445ME', 'EC135'),
+    ('N448ME', 'EC135'),
+    ('N4497Y', 'AS350'),
+    ('N450AM', '407'),
+    ('N458AM', '407'),
+    ('N459AM', '407'),
+    ('N470WC', '407'),
+    ('N490H', 'AS350'),
+    ('N491LG', 'AS350'),
+    ('N493LG', 'AS350'),
+    ('N494LG', 'AS350'),
+    ('N496LG', 'AS350'),
+    ('N507ME', 'BK117'),
+    ('N508AM', 'AS350'),
+    ('N520ME', 'EC135'),
+    ('N522ME', 'BK117'),
+    ('N527ME', 'EC135'),
+    ('N530ME', 'EC135'),
+    ('N536ME', 'EC135'),
+    ('N544AM', 'AS350');
+
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N574AM', 'AS350'),
+    ('N586TS', 'R44'),
+    ('N624EC', 'BK117'),
+    ('N625PA', '407'),
+    ('N639ME', 'EC135'),
+    ('N693AM', '407'),
+    ('N697AM', '407'),
+    ('N702SA', 'AS350'),
+    ('N710SB', 'AW109'),
+    ('N741AM', '407'),
+    ('N743AM', '407'),
+    ('N7940K', 'EC130'),
+    ('N798AC', 'EC130'),
+    ('N805LF', 'AS350'),
+    ('N807LF', 'AS350'),
+    ('N808LF', 'AS350'),
+    ('N808SA', 'AS350'),
+    ('N810LF', 'AS350'),
+    ('N811ME', 'EC135'),
+    ('N831ME', 'EC135'),
+    ('N845ME', 'EC135'),
+    ('N855CH', 'EC130'),
+    ('N855ME', 'EC135'),
+    ('N87ME', 'BK117'),
+    ('N884ME', 'EC135'),
+    ('N8CP', 'AW139'),
+    ('N901LF', 'AW109'),
+    ('N901NM', '407'),
+    ('N901WM', 'AW109'),
+    ('N901XM', 'AW109'),
+    ('N913SM', 'AS350'),
+    ('N914SM', 'AS350'),
+    ('N915ME', 'EC135'),
+    ('N925MD', '407'),
+    ('N927AM', '407'),
+    ('N930U', 'EC130'),
+    ('N932ME', 'EC135'),
+    ('N941AM', '407'),
+    ('N944ME', 'EC135'),
+    ('N947MD', '407'),
+    ('N956AM', '407'),
+    ('N963SA', 'AS350'),
+    ('N972AC', 'BK117'),
+    ('N975SC', '407'),
+    ('N9CP', 'AW139');
+
+--changeset roman:tail-airframe-registry-n272mj labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe)
+VALUES ('N272MJ', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-n158-n159-am labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N158AM', '407'),
+    ('N159AM', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-air-methods-cf labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N902CF', '407'),
+    ('N903CF', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-air-methods-batch labels:flights,airframes,rotorcraft
+-- Idempotent batch for Air Methods uploads (Garmin 407 + Appareo CF tails)
+INSERT INTO tail_airframe_registry (tail, airframe) VALUES
+    ('N272MJ', '407'),
+    ('N158AM', '407'),
+    ('N159AM', '407'),
+    ('N404AM', '407'),
+    ('N450AM', '407'),
+    ('N902CF', '407'),
+    ('N903CF', '407')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+
+--changeset roman:tail-airframe-registry-lifelink-n365ll labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe)
+VALUES ('N365LL', 'AW119')
+ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+

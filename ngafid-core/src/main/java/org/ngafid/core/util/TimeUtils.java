@@ -64,6 +64,45 @@ public final class TimeUtils {
         return offset;
     }
 
+    /**
+     * Returns a {@link ZoneOffset} id (e.g. {@code -06:00}) after {@link #updateBadOffset(String)}, or null when the
+     * value is empty or a Garmin placeholder ({@code -} / {@code +} with no offset).
+     */
+    public static String normalizeUtcOffsetForParsing(String offset) {
+        if (offset == null) {
+            return null;
+        }
+        String trimmed = offset.trim();
+        if (trimmed.isEmpty() || trimmed.equals("-") || trimmed.equals("+")) {
+            return null;
+        }
+        trimmed = updateBadOffset(trimmed);
+        try {
+            ZoneOffset.of(trimmed);
+            return trimmed;
+        } catch (DateTimeException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Garmin and similar logs sometimes emit {@code HH:mm} without seconds (e.g. touch-down footer rows).
+     * Appends {@code :00} when the time has hours and minutes only.
+     */
+    public static String normalizeLocalTimeForParsing(String time) {
+        if (time == null) {
+            return null;
+        }
+        String trimmed = time.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+        if (trimmed.matches("^\\d{1,2}:\\d{2}$")) {
+            return trimmed + ":00";
+        }
+        return trimmed;
+    }
+
     private static DateTimeFormatter STANDARD_FORMAT = DateTimeFormatter.ofPattern("yyyy-M-d H:m:s");
 
     public static String toString(OffsetDateTime offsetDateTime) {

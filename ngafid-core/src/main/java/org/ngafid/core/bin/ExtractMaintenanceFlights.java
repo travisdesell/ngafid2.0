@@ -44,11 +44,13 @@ public final class ExtractMaintenanceFlights {
     private static final double CRUISE_ALTITUDE_AGL_FT = 600.0;
 
     /** Days to look before maintenance open and after maintenance close. */
-    private static final int WINDOW_DAYS_BEFORE = 10;
-    private static final int WINDOW_DAYS_AFTER = 10;
+    private static final int WINDOW_DAYS_BEFORE = 30;
+    private static final int WINDOW_DAYS_AFTER = 30;
+    /** Maximum day-by-day search depth for selecting before/after flights. */
+    private static final int MAX_SEARCH_DAYS = 30;
     /** Max flights to extract: before (closest to open) and after (closest to close). */
-    private static final int MAX_BEFORE_FLIGHTS = 10;
-    private static final int MAX_AFTER_FLIGHTS = 10;
+    private static final int MAX_BEFORE_FLIGHTS = 5;
+    private static final int MAX_AFTER_FLIGHTS = 5;
 
     /** Log file for per-workorder time trace; all dates in GMT. */
     private static PrintWriter timeLogWriter = null;
@@ -757,137 +759,77 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Mark up to N before/after flights around each maintenance period.
-     * Ground runs are excluded.
+     * Select the N flights by walking day-by-day around the workorder:
+     * - before: from open date backward
+     * - after: from day after close forward
+     * Ground runs do not count toward the limit. Search is capped at MAX_SEARCH_DAYS.
      */
-    private static void setFlightsToNextFlights(Connection connection, List<AircraftTimeline> timeline) throws SQLException {
-        for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
-            AircraftTimeline ac = timeline.get(currentAircraft);
+    private static void selectClosestBeforeAfterFlights(Connection connection, List<AircraftTimeline> timeline,
+                                                        MaintenanceRecord record) throws SQLException {
+        LocalDateTime openGmt = record.getOpenDateTime();
+        LocalDateTime closeGmt = record.getCloseDateTime();
+        LocalDate openDate = record.getOpenDate();
+        LocalDate afterStartDate = record.getCloseDate().plusDays(1);
 
-            // Trigger counting when: 
-            // 1. Flight is during maintenance (between open and close; daysToNext==0 or daysSincePrevious==0)
-            // 2. OR when transitioning between maintenance events (nextEvent changes from previous flight)
-            boolean isOnMaintenanceDay = ac.getDaysToNext() == 0 || ac.getDaysSincePrevious() == 0;
-            boolean isAfterMaintenanceGap = false;
-            
-            if (!isOnMaintenanceDay && currentAircraft > 0 && ac.getNextEvent() != null) {
-                AircraftTimeline prev = timeline.get(currentAircraft - 1);
-                // Check if this is the first flight after a maintenance event (next event changed)
-                isAfterMaintenanceGap = prev.getNextEvent() != ac.getNextEvent();
-            }
-            
-            if (isOnMaintenanceDay || isAfterMaintenanceGap) {
-                MaintenanceRecord recordForBefore = ac.getNextEvent(); // during or transition: record for "before" count
-                MaintenanceRecord recordForAfter = ac.getPreviousEvent(); // during or transition: record for "after" count
+        for (AircraftTimeline ac : timeline) {
+            ac.setFlightsToNext(-1);
+            ac.setFlightsSincePrevious(-1);
+        }
 
-                int i = 1;
-                int flightCount = 0;
-                while ((currentAircraft - i) >= 0 && flightCount < MAX_BEFORE_FLIGHTS) {
-                    AircraftTimeline a = timeline.get(currentAircraft - i);
-                    if (a.getDaysToNext() == 0) {
-                        // True during = both events set and same; reclassified first-day has only nextEvent
-                        boolean isTrueDuring = a.getPreviousEvent() != null && a.getNextEvent() != null
-                                && a.getPreviousEvent() == a.getNextEvent();
-                        if (isTrueDuring) {
-                            a.setFlightsToNext(-1); // -1 means during
-                            i++;
-                            continue;
-                        }
-                    }
-                    // Only count flights that are "before" for the same record
-                    if (recordForBefore == null || a.getNextEvent() != recordForBefore) {
-                        i++;
-                        continue;
-                    }
-
-                    if (!flightTookOff(connection, a.getFlightId())) {
-                        a.setFlightsToNext(-2); // -2 means ground run, don't extract
-                        i++;
-                        continue;
-                    }
-
-                    a.setFlightsToNext(flightCount);
-                    i++;
-                    flightCount++;
+        Map<Long, List<AircraftTimeline>> beforeByDay = new HashMap<>();
+        Map<Long, List<AircraftTimeline>> afterByDay = new HashMap<>();
+        for (AircraftTimeline ac : timeline) {
+            String phase = computeMaintenancePhase(ac.getStartDateTime(), openGmt, closeGmt);
+            if (PHASE_BEFORE.equals(phase)) {
+                long dayOffset = ChronoUnit.DAYS.between(ac.getStartTime(), openDate);
+                if (dayOffset >= 0 && dayOffset <= MAX_SEARCH_DAYS) {
+                    beforeByDay.computeIfAbsent(dayOffset, k -> new ArrayList<>()).add(ac);
                 }
-
-                i = 1;
-                flightCount = 0;
-
-                while ((currentAircraft + i) < timeline.size() && flightCount < MAX_AFTER_FLIGHTS) {
-                    AircraftTimeline a = timeline.get(currentAircraft + i);
-                    if (a.getDaysSincePrevious() == 0) {
-                        // True during = both events set and same; reclassified last-day has only previousEvent
-                        boolean isTrueDuring = a.getPreviousEvent() != null && a.getNextEvent() != null
-                                && a.getPreviousEvent() == a.getNextEvent();
-                        if (isTrueDuring) {
-                            a.setFlightsSincePrevious(-1); // -1 means during
-                            i++;
-                            continue;
-                        }
-                    }
-                    // Only count flights that are "after" for the same record
-                    if (recordForAfter == null || a.getPreviousEvent() != recordForAfter) {
-                        i++;
-                        continue;
-                    }
-
-                    if (!flightTookOff(connection, a.getFlightId())) {
-                        a.setFlightsSincePrevious(-2); // -2 means ground run, don't extract
-                        i++;
-                        continue;
-                    }
-
-                    a.setFlightsSincePrevious(flightCount);
-                    i++;
-                    flightCount++;
+            } else if (PHASE_AFTER.equals(phase)) {
+                long dayOffset = ChronoUnit.DAYS.between(afterStartDate, ac.getStartTime());
+                if (dayOffset >= 0 && dayOffset <= MAX_SEARCH_DAYS) {
+                    afterByDay.computeIfAbsent(dayOffset, k -> new ArrayList<>()).add(ac);
                 }
             }
         }
-        
-        // Second pass: Handle maintenance events that had no flights on their day
-        // Find flights that have nextEvent or previousEvent set but no flightsToNext/flightsSincePrevious counted
-        for (int i = 0; i < timeline.size(); i++) {
-            AircraftTimeline ac = timeline.get(i);
-            
-            // Check if this flight has a nextEvent but flightsToNext was never set
-            if (ac.getNextEvent() != null && ac.getFlightsToNext() < 0 && ac.getDaysToNext() > 0) {
-                // Find other flights with the same nextEvent and set their flightsToNext
-                MaintenanceRecord nextEvent = ac.getNextEvent();
-                int flightCount = 0;
-                for (int j = i; j >= 0 && flightCount < MAX_BEFORE_FLIGHTS; j--) {
-                    AircraftTimeline a = timeline.get(j);
-                    if (a.getNextEvent() == nextEvent && a.getDaysToNext() > 0) {
-                        if (!flightTookOff(connection, a.getFlightId())) {
-                            a.setFlightsToNext(-2);
-                        } else if (a.getFlightsToNext() < 0) {
-                            a.setFlightsToNext(flightCount);
-                            flightCount++;
-                        }
-                    } else if (a.getNextEvent() != nextEvent) {
-                        break; // Stop when we hit flights pointing to a different event
-                    }
-                }
+
+        int beforeRank = 0;
+        for (int day = 0; day <= MAX_SEARCH_DAYS && beforeRank < MAX_BEFORE_FLIGHTS; day++) {
+            List<AircraftTimeline> dayFlights = beforeByDay.get((long) day);
+            if (dayFlights == null || dayFlights.isEmpty()) {
+                continue;
             }
-            
-            // Check if this flight has a previousEvent but flightsSincePrevious was never set
-            if (ac.getPreviousEvent() != null && ac.getFlightsSincePrevious() < 0 && ac.getDaysSincePrevious() > 0) {
-                // Find other flights with the same previousEvent and set their flightsSincePrevious
-                MaintenanceRecord prevEvent = ac.getPreviousEvent();
-                int flightCount = 0;
-                for (int j = i; j < timeline.size() && flightCount < MAX_AFTER_FLIGHTS; j++) {
-                    AircraftTimeline a = timeline.get(j);
-                    if (a.getPreviousEvent() == prevEvent && a.getDaysSincePrevious() > 0) {
-                        if (!flightTookOff(connection, a.getFlightId())) {
-                            a.setFlightsSincePrevious(-2);
-                        } else if (a.getFlightsSincePrevious() < 0) {
-                            a.setFlightsSincePrevious(flightCount);
-                            flightCount++;
-                        }
-                    } else if (a.getPreviousEvent() != prevEvent) {
-                        break; // Stop when we hit flights pointing to a different event
-                    }
+            // On each day, keep the flights closest to open first.
+            dayFlights.sort((a, b) -> b.getStartDateTime().compareTo(a.getStartDateTime()));
+            for (AircraftTimeline ac : dayFlights) {
+                if (beforeRank >= MAX_BEFORE_FLIGHTS) {
+                    break;
                 }
+                if (!flightTookOff(connection, ac.getFlightId())) {
+                    ac.setFlightsToNext(-2);
+                    continue;
+                }
+                ac.setFlightsToNext(beforeRank++);
+            }
+        }
+
+        int afterRank = 0;
+        for (int day = 0; day <= MAX_SEARCH_DAYS && afterRank < MAX_AFTER_FLIGHTS; day++) {
+            List<AircraftTimeline> dayFlights = afterByDay.get((long) day);
+            if (dayFlights == null || dayFlights.isEmpty()) {
+                continue;
+            }
+            // On each day, keep earlier flights first.
+            dayFlights.sort(Comparator.comparing(AircraftTimeline::getStartDateTime));
+            for (AircraftTimeline ac : dayFlights) {
+                if (afterRank >= MAX_AFTER_FLIGHTS) {
+                    break;
+                }
+                if (!flightTookOff(connection, ac.getFlightId())) {
+                    ac.setFlightsSincePrevious(-2);
+                    continue;
+                }
+                ac.setFlightsSincePrevious(afterRank++);
             }
         }
     }
@@ -1142,33 +1084,12 @@ public final class ExtractMaintenanceFlights {
         for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
             AircraftTimeline ac = timeline.get(currentAircraft);
 
-            // Extract flights if:
-            // 1. During: flight between open and close inclusive (daysSincePrevious >= 0 AND daysToNext >= 0)
-            // 2. Before: one of MAX_BEFORE_FLIGHTS closest to open (flightsToNext 0..N-1)
-            // 3. After: one of MAX_AFTER_FLIGHTS closest to close (flightsSincePrevious 0..N-1), unless nearby maintenance
+            // During: open <= flight < day after close. Before/after: closest N by selectClosestBeforeAfterFlights.
             boolean isDuringMaintenance = ac.getDaysSincePrevious() >= 0 && ac.getDaysToNext() >= 0;
             boolean isBeforeMaintenance = ac.getFlightsToNext() >= 0 && ac.getFlightsToNext() < MAX_BEFORE_FLIGHTS;
             boolean isAfterMaintenance = ac.getFlightsSincePrevious() >= 0 && ac.getFlightsSincePrevious() < MAX_AFTER_FLIGHTS;
-            
-            // Check if there's another maintenance event within 10 days after current event
-            boolean hasNearbyNextMaintenance = false;
-            if (isAfterMaintenance && ac.getPreviousEvent() != null) {
-                // Look ahead to see if there's another maintenance event soon
-                for (int i = currentAircraft + 1; i < timeline.size(); i++) {
-                    AircraftTimeline futureAc = timeline.get(i);
-                    if (futureAc.getDaysSincePrevious() == 0 && futureAc.getPreviousEvent() != ac.getPreviousEvent()) {
-                        // Found another maintenance event
-                        long daysBetween = ChronoUnit.DAYS.between(ac.getPreviousEvent().getCloseDate(), 
-                                                                   futureAc.getPreviousEvent().getOpenDate());
-                        if (daysBetween <= 10) {
-                            hasNearbyNextMaintenance = true;
-                            break;
-                        }
-                    }
-                }
-            }
 
-            if (isDuringMaintenance || isBeforeMaintenance || (isAfterMaintenance && !hasNearbyNextMaintenance)) {
+            if (isDuringMaintenance || isBeforeMaintenance || isAfterMaintenance) {
 
                 Flight flight = Flight.getFlight(connection, ac.getFlightId());
 
@@ -1249,7 +1170,7 @@ public final class ExtractMaintenanceFlights {
                     // Flight is between open and close (maintenance period)
                     event = ac.getPreviousEvent();
                     when = "_during";
-                } else if (isAfterMaintenance && !hasNearbyNextMaintenance) {
+                } else if (isAfterMaintenance) {
                     event = ac.getPreviousEvent();
                     when = "_after_" + ac.getFlightsSincePrevious();
                 } else if (isBeforeMaintenance) {
@@ -1705,7 +1626,7 @@ public final class ExtractMaintenanceFlights {
                     Collections.sort(timeline);
 
                     assignFlightsToPhases(timeline, record);
-                    setFlightsToNextFlights(connection, timeline);
+                    selectClosestBeforeAfterFlights(connection, timeline, record);
 
                     int extracted = exportFiles(connection, timeline, labelId, outputDirectory, debugPhases);
                     extractedFlightsTotal += extracted;
