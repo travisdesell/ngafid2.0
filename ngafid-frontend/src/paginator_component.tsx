@@ -4,6 +4,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Pagination from 'react-bootstrap/Pagination';
 import { showErrorModal } from "./error_modal.js";
+import { sanitizeUploadFilename } from "./upload_filename.js";
 import { PaginationSorter } from './sorter_component.js';
 import { UploadsPage } from './uploads.js';
 
@@ -127,23 +128,27 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
 
             console.log(`Paginator - Got ${input.files.length} files selected:`, input.files);
             const file = input.files[0];
-            const filename = file.webkitRelativePath || file.name;
+            const rawFilename = file.webkitRelativePath || file.name;
+            const filename = sanitizeUploadFilename(rawFilename);
 
             const isZip = file['type'].includes("zip");
             const isParquet = filename.endsWith(".parquet");
             console.log(`Paginator - isZip: ${isZip}, isParquet: ${isParquet}`);
 
-            //Bad file name -> Error
-            if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
-                showErrorModal("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+            if (rawFilename !== filename) {
+                console.log(`Paginator - sanitized filename '${rawFilename}' -> '${filename}'`);
+            }
 
             //Bad file type -> Error
-            } else if (!isZip && !isParquet) {
+            if (!isZip && !isParquet) {
                 showErrorModal("Malformed Filename", "Uploaded files must be zip files or a parquet file. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
 
-            //All good, add the upload
+            //All good, add the upload (use sanitized name for the archive on disk)
             } else {
-                uploadsPageRef.addUpload(file);
+                const uploadFile = rawFilename === filename
+                    ? file
+                    : new File([file], filename, { type: file.type, lastModified: file.lastModified });
+                uploadsPageRef.addUpload(uploadFile);
             }
 
         });

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.UnknownHostException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -27,6 +29,18 @@ public class EventObserver {
 
     private EventObserver() {}
 
+    private static boolean isRotorcraftType(Connection connection, Integer airframeTypeId) throws SQLException {
+        if (airframeTypeId == null) return false;
+
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT name = 'Rotorcraft' FROM airframe_types WHERE id = ?")) {
+            statement.setInt(1, airframeTypeId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() && resultSet.getBoolean(1);
+            }
+        }
+    }
+
     private static List<Flight> getApplicableFlightsWithoutEvent(Connection connection, EventDefinition event)
             throws SQLException {
         StringBuilder condition = new StringBuilder();
@@ -41,6 +55,17 @@ public class EventObserver {
                     .append(event.getAirframeNameId())
                     .append(" ");
         }
+
+        // Rotorcraft event definitions should only run on rotorcraft flights.
+        // All other definitions (legacy null type or non-rotor type) should run only on non-rotor flights.
+        if (!condition.isEmpty()) condition.append("AND ");
+        boolean isRotorcraftDefinition = isRotorcraftType(connection, event.getAirframeTypeId());
+        condition.append(
+                        " airframe_id IN (SELECT a.id FROM airframes a "
+                                + "LEFT JOIN airframe_types t ON t.id = a.type_id "
+                                + "WHERE ")
+                .append(isRotorcraftDefinition ? "t.name = 'Rotorcraft'" : "(t.name <> 'Rotorcraft' OR t.name IS NULL)")
+                .append(") ");
 
         if (!condition.isEmpty()) condition.append(" AND ");
         condition.append("""

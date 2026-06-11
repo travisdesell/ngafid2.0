@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.nio.file.Paths ;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders
@@ -59,7 +60,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     private static final Pattern G3X_PART_NUMBER_REGEX = Pattern.compile("006-B1727-[A-Za-z\\d]{2}");
-
+    private static final Pattern TAILNUMBER_FILENAME_PATTERN =
+    Pattern.compile("^([A-Z0-9]+)_\\d{8}T\\d{6}_.*\\.csv$", Pattern.CASE_INSENSITIVE);
     /**
      * Scans first line of file for G3X part number.
      *
@@ -135,18 +137,22 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Factory factory = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis, StandardCharsets.UTF_8))) {
-            List<String> headerLines = extractHeaderLines(reader);
-            String firstLine = reader.readLine();
-            if (firstLine == null) throw new IOException("Encountered end of stream prematurely in file " + filename);
-
-            String[] values = firstLine.split(",");
-
-            if (airframeIsG5(headerLines) || airframeIsG3X(headerLines)) {
-                factory = G5CSVFileProcessor::new;
-            } else if (airframeIsScanEagle(headerLines.get(0))) {
-                factory = ScanEagleCSVFileProcessor::new;
+            if (RotorcraftCSVFileProcessor.isRotorcraftUpload(connection, filename, reader)) {
+                factory = RotorcraftCSVFileProcessor::new;
             } else {
-                factory = CSVFileProcessor::new;
+                List<String> headerLines = extractHeaderLines(reader);
+                String nextLine = reader.readLine();
+                if (nextLine == null) {
+                    throw new IOException("Encountered end of stream prematurely in file " + filename);
+                }
+
+                if (airframeIsG5(headerLines) || airframeIsG3X(headerLines)) {
+                    factory = G5CSVFileProcessor::new;
+                } else if (airframeIsScanEagle(headerLines.get(0))) {
+                    factory = ScanEagleCSVFileProcessor::new;
+                } else {
+                    factory = CSVFileProcessor::new;
+                }
             }
         }
 
@@ -186,7 +192,17 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
         List<String[]> rows = extractFlightData();
-
+        
+        if (meta.getAirframe() != null 
+            && Airframes.AIRFRAME_AW119.equals(meta.getAirframe().getName())) {
+            String basename = Paths.get(filename).getFileName().toString();
+            java.util.regex.Matcher m = TAILNUMBER_FILENAME_PATTERN.matcher(basename);
+            if (m.matches()) {
+                String tail = m.group(1);
+                LOG.info("AW-119 detected, extracting tail number from filename: " + tail);
+                meta.setSuggestedTailNumber(tail);
+    }
+}
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
         return Stream.of(makeFlightBuilder(meta, doubleTimeSeries, stringTimeSeries));
@@ -211,6 +227,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             processMetaData(bufferedReader);
             dataTypes = processDataTypes(bufferedReader);
             headers = processHeaders(bufferedReader);
+            skipGarminExtraHeaderRowIfPresent(bufferedReader);
 
             CSVReader csvReader = new CSVReader(bufferedReader);
             return new ArrayList<>(csvReader.readAll());
@@ -288,7 +305,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } catch (IOException e) {
             throw new FatalFlightFileException("Stream ended prematurely -- cannot process file.", e);
         }
-
         String[] infoParts = fileInformation.split(",");
 
         HashMap<String, String> values = new HashMap<>(infoParts.length * 2);
@@ -354,11 +370,31 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
     }
 
+    /**
+     * Some Garmin logs (especially GIFD) repeat the {@code Lcl Date,...} header row before numeric data. Ingesting
+     * that row makes {@code ComputeUTCTime} try to parse the literal strings {@code Lcl Date} and {@code Lcl Time}.
+     * When the next line still looks like a header, drop it; otherwise leave the stream unchanged for older logs.
+     */
+    protected static void skipGarminExtraHeaderRowIfPresent(BufferedReader reader)
+            throws IOException, FatalFlightFileException {
+        reader.mark(256 * 1024);
+        try {
+            String line = reader.readLine();
+            if (line != null && line.strip().startsWith("Lcl Date")) {
+                return;
+            }
+            reader.reset();
+        } catch (IOException e) {
+            throw new FatalFlightFileException("Could not read Garmin CSV row after column headers.", e);
+        }
+    }
+
     private static List<String> splitCommaSeparated(String line) {
         return Arrays.stream(line.split(",", -1)).map(String::strip).collect(Collectors.toList());
     }
 
     private void setAirframeName(String name) throws FatalFlightFileException {
+        name = name.strip();
         var fleetKey = new AliasKey(name, pipeline.getUpload().getFleetId());
         var defaultKey = Airframes.defaultAlias(name);
 
@@ -367,6 +403,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
             airframeName = Airframes.AIRFRAME_ALIASES.get(fleetKey);
         } else {
             airframeName = Airframes.AIRFRAME_ALIASES.getOrDefault(defaultKey, name);
+        }
+
+        if (!Airframes.FIXED_WING_AIRFRAMES.contains(airframeName)
+                && !airframeName.contains("Garmin")
+                && !Airframes.ROTORCRAFT.contains(airframeName)) {
+            airframeName =
+                    Airframes.resolveGarminRotorcraftAirframeCode(name).orElse(airframeName);
         }
 
         String airframeType = null;

@@ -26,6 +26,18 @@ import java.util.logging.Level
 
 object UploadRoutes : RouteProvider() {
     private const val DEFAULT_PAGE_SIZE = 10
+    private val ALLOWED_UPLOAD_FILENAME = Regex("^[a-zA-Z0-9_.-]*$")
+
+    /**
+     * Normalizes upload archive names (e.g. USCG exports with spaces or parentheses in the zip name).
+     */
+    internal fun sanitizeUploadFilename(filename: String): String {
+        val sanitized = filename
+            .replace(" ", "_")
+            .replace(Regex("[^a-zA-Z0-9_.-]"), "_")
+            .replace(Regex("_+"), "_")
+        return sanitized.ifEmpty { "upload" }
+    }
 
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
@@ -114,7 +126,8 @@ object UploadRoutes : RouteProvider() {
         val user = SessionUtility.getUser(ctx)
         val uploaderId = user.id
         val fleetId = user.fleetId
-        val filename = ctx.formParam("filename")!!.replace(" ".toRegex(), "_")
+        val rawFilename = ctx.formParam("filename")!!
+        val filename = sanitizeUploadFilename(rawFilename)
         val identifier = ctx.formParam("identifier")
         val numberChunks = ctx.formParam("numberChunks")!!.toInt()
         val sizeBytes = ctx.formParam("sizeBytes")!!.toLong()
@@ -122,12 +135,18 @@ object UploadRoutes : RouteProvider() {
 
         ctx.attribute("org.eclipse.jetty.multipartConfig", MultipartConfigElement("/mnt/ngafid/temp"))
 
-        if (!filename.matches("^[a-zA-Z0-9_.-]*$".toRegex())) {
-            ImportUploadJavalinRoutes.LOG.info("ERROR! malformed filename")
+        if (rawFilename != filename) {
+            ImportUploadJavalinRoutes.LOG.info(
+                "Sanitized upload filename '$rawFilename' -> '$filename'"
+            )
+        }
+
+        if (!filename.matches(ALLOWED_UPLOAD_FILENAME)) {
+            ImportUploadJavalinRoutes.LOG.info("ERROR! malformed filename after sanitization: '$filename'")
 
             val errorResponse = ErrorResponse(
                 "File Upload Failure",
-                "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods."
+                "Upload zip filename contains unsupported characters. NGAFID only allows letters (A-Z), digits (0-9), dashes ('-'), underscores ('_'), and periods ('.'). Characters such as spaces (' ') and parentheses ('(' or ')') are not accepted. Rename the zip and retry."
             )
 
             ctx.json(errorResponse)
