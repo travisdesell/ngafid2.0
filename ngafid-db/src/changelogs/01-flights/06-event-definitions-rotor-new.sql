@@ -43,3 +43,36 @@ VALUES
     (102,0, 0, 2, 'High Roll Below 300ft', 4, 1, '["AltAGL","Roll"]',
      '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL","<","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">=","55"]},{"type":"RULE","inputs":["Roll","<=","-55"]}]}]}',
      '["Roll"]', 'MAX_ABS', NULL);
+
+
+--changeset pujan:rotor-event-definitions-absolute-values labels:messages
+-- Pitch/roll glossary limits use absolute values, so both positive and negative excursions must trigger.
+UPDATE event_definitions
+SET condition_json = '{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Pitch",">","30"]},{"type":"RULE","inputs":["Pitch","<","-30"]}]}',
+    severity_type = 'MAX_ABS'
+WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
+  AND name IN ('PITCH_EXCESSIVE::HIGH', 'High Pitch Excessive');
+
+UPDATE event_definitions
+SET condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll",">=","40"]},{"type":"RULE","inputs":["Roll","<","50"]}]},{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll","<=","-40"]},{"type":"RULE","inputs":["Roll",">","-50"]}]}]}]}',
+    severity_type = 'MAX_ABS'
+WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
+  AND name IN ('ROLL_ABOVE_300FT::LOW', 'Low Roll Above 300ft');
+
+UPDATE event_definitions
+SET condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll",">=","50"]},{"type":"RULE","inputs":["Roll","<","55"]}]},{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll","<=","-50"]},{"type":"RULE","inputs":["Roll",">","-55"]}]}]}]}',
+    severity_type = 'MAX_ABS'
+WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
+  AND name IN ('ROLL_ABOVE_300FT::MEDIUM', 'Medium Roll Above 300ft');
+
+UPDATE event_definitions
+SET condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">=","55"]},{"type":"RULE","inputs":["Roll","<=","-55"]}]}]}',
+    severity_type = 'MAX_ABS'
+WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
+  AND name IN ('ROLL_ABOVE_300FT::HIGH', 'High Roll Above 300ft');
+
+UPDATE event_definitions
+SET condition_json = '{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">","60"]},{"type":"RULE","inputs":["Roll","<","-60"]}]}',
+    severity_type = 'MAX_ABS'
+WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
+  AND name IN ('ROLL_EXCESSIVE::HIGH', 'High Roll Excessive');

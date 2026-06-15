@@ -32,20 +32,20 @@ VALUES
      '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL","<","100"]},{"type":"RULE","inputs":["GndSpd",">=","110"]}]}',
      '["GndSpd"]', 'MAX', NULL),
     (82,0, 0, 2, 'High Pitch Excessive', 3, 1, '["Pitch"]',
-     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Pitch",">","30"]}]}',
-     '["Pitch"]', 'MAX', NULL),
+     '{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Pitch",">","30"]},{"type":"RULE","inputs":["Pitch","<","-30"]}]}',
+     '["Pitch"]', 'MAX_ABS', NULL),
     (83,0, 0, 2, 'Low Roll Above 300ft', 4, 1, '["AltAGL","Roll"]',
-     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"RULE","inputs":["Roll",">=","40"]},{"type":"RULE","inputs":["Roll","<","50"]}]}',
-     '["Roll"]', 'MAX', NULL),
+     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll",">=","40"]},{"type":"RULE","inputs":["Roll","<","50"]}]},{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll","<=","-40"]},{"type":"RULE","inputs":["Roll",">","-50"]}]}]}]}',
+     '["Roll"]', 'MAX_ABS', NULL),
     (84,0, 0, 2, 'Medium Roll Above 300ft', 4, 1, '["AltAGL","Roll"]',
-     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"RULE","inputs":["Roll",">=","50"]},{"type":"RULE","inputs":["Roll","<","55"]}]}',
-     '["Roll"]', 'MAX', NULL),
+     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll",">=","50"]},{"type":"RULE","inputs":["Roll","<","55"]}]},{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll","<=","-50"]},{"type":"RULE","inputs":["Roll",">","-55"]}]}]}]}',
+     '["Roll"]', 'MAX_ABS', NULL),
     (85,0, 0, 2, 'High Roll Above 300ft', 4, 1, '["AltAGL","Roll"]',
-     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"RULE","inputs":["Roll",">=","55"]}]}',
-     '["Roll"]', 'MAX', NULL),
+     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">=","55"]},{"type":"RULE","inputs":["Roll","<=","-55"]}]}]}',
+     '["Roll"]', 'MAX_ABS', NULL),
     (86,0, 0, 2, 'High Roll Excessive', 1, 1, '["Roll"]',
-     '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll",">=","60"]}]}',
-     '["Roll"]', 'MAX', NULL),
+     '{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">","60"]},{"type":"RULE","inputs":["Roll","<","-60"]}]}',
+     '["Roll"]', 'MAX_ABS', NULL),
     (87,0, 0, 2, 'Low Yaw Rate', 3, 1, '["Yaw Rate"]',
      '{"type":"GROUP","condition":"OR","filters":[{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Yaw Rate",">=","5"]},{"type":"RULE","inputs":["Yaw Rate","<","10"]}]},{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Yaw Rate","<=","-5"]},{"type":"RULE","inputs":["Yaw Rate",">","-10"]}]}]}',
      '["Yaw Rate"]', 'MAX_ABS', NULL),
@@ -116,23 +116,25 @@ WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraf
 
 UPDATE event_definitions
 SET name = 'Low Roll Above 300ft',
-    condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"RULE","inputs":["Roll",">=","40"]},{"type":"RULE","inputs":["Roll","<","50"]}]}'
-WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
+    condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll",">=","40"]},{"type":"RULE","inputs":["Roll","<","50"]}]},{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll","<=","-40"]},{"type":"RULE","inputs":["Roll",">","-50"]}]}]}]}'
+    WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
   AND name IN ('ROLL_ABOVE_300FT::LOW', 'Low Roll Above 300ft');
 
 UPDATE event_definitions
 SET name = 'Medium Roll Above 300ft',
-    condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"RULE","inputs":["Roll",">=","50"]},{"type":"RULE","inputs":["Roll","<","55"]}]}'
-WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
+    condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll",">=","50"]},{"type":"RULE","inputs":["Roll","<","55"]}]},{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["Roll","<=","-50"]},{"type":"RULE","inputs":["Roll",">","-55"]}]}]}]}'
+    WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
   AND name IN ('ROLL_ABOVE_300FT::MEDIUM', 'Medium Roll Above 300ft');
 
 UPDATE event_definitions
 SET name = 'High Roll Above 300ft'
+    condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">=","55"]},{"type":"RULE","inputs":["Roll","<=","-55"]}]}]}'
 WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
   AND name IN ('ROLL_ABOVE_300FT::HIGH', 'High Roll Above 300ft');
 
 UPDATE event_definitions
 SET name = 'High Roll Excessive'
+    condition_json = '{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">","60"]},{"type":"RULE","inputs":["Roll","<","-60"]}]}'
 WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
   AND name IN ('ROLL_EXCESSIVE::HIGH', 'High Roll Excessive');
 
