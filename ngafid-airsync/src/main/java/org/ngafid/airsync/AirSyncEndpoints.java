@@ -18,6 +18,7 @@ public interface AirSyncEndpoints {
     // Logs with format arguments (aircraft_id, page_num, num_results)
 
     String SINGLE_LOG = AIRSYNC_ROOT + "/logs/%d";
+    String CONFIRM_LOG = AIRSYNC_ROOT + "/logs/%d/confirm?partner_key=%s";
     String ALL_LOGS = AIRSYNC_ROOT + "/aircraft/%d/logs?page=%d&number_of_results=%d";
     String ALL_LOGS_BY_TIME = AIRSYNC_ROOT + "/aircraft/%d/logs?page=%d&number_of_results=%d&timestamp_uploaded=%s,%s";
 
