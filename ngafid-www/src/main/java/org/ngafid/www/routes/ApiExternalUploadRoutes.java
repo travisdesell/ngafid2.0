@@ -13,6 +13,8 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,16 +48,42 @@ public final class ApiExternalUploadRoutes {
     }
 
     private static void postUpload(Context ctx) {
-        final User user     = Objects.requireNonNull(ctx.attribute("user"));
-        final int uploaderId = user.getId();
-        final int fleetId    = user.getFleetId();
+    final User user = Objects.requireNonNull(ctx.attribute("user"));
+    final int uploaderId = user.getId();
 
-        if (!user.hasUploadAccess(fleetId)) {
-            ctx.status(403).json(new ApiTokenAuth.ApiError(
-                    "Insufficient access level for fleet " + fleetId
-                    + ". Need MANAGER or UPLOAD; have " + user.getFleetAccessType() + "."));
+    // Get fleet by fleet_name ( unique in the table)
+    final int fleetId;
+    String fleetNameParam = ctx.formParam("fleetName");
+    if (fleetNameParam != null && !fleetNameParam.isBlank()) {
+        String fleetName = fleetNameParam.trim();
+        try (Connection connection = Database.getConnection();
+             PreparedStatement ps = connection.prepareStatement(
+                 "SELECT id FROM fleet WHERE fleet_name = ?")) {
+            ps.setString(1, fleetName);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    ctx.status(404).json(new ApiTokenAuth.ApiError(
+                        "No fleet named '" + fleetName + "'"));
+                    return;
+                }
+                fleetId = rs.getInt("id");
+            }
+        } catch (SQLException e) {
+            LOG.log(Level.SEVERE, "fleet name lookup failed", e);
+            ctx.status(500).json(new ApiTokenAuth.ApiError("Internal error"));
             return;
         }
+    } else {
+        fleetId = user.getFleetId();
+    }
+
+    // Check if user has upload access
+    if (!user.hasUploadAccess(fleetId)) {
+        ctx.status(403).json(new ApiTokenAuth.ApiError(
+            "No upload access to fleet '" + fleetNameParam + "'. "
+            + "Need MANAGER or UPLOAD."));
+        return;
+    }
 
         UploadedFile file = ctx.uploadedFile(FILE_PART);
         if (file == null) {
