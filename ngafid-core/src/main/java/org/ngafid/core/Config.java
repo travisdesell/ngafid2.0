@@ -1,8 +1,8 @@
 package org.ngafid.core;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FileInputStream;
 import java.util.Properties;
 
 public final class Config {
@@ -78,7 +78,8 @@ public final class Config {
                     resolveVariableSubstitutions();
                     return;
                 } catch (IOException e) {
-                    System.err.println("Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
+                    System.err.println(
+                            "Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
                 }
             }
 
@@ -105,8 +106,7 @@ public final class Config {
                     resolveVariableSubstitutions();
                     return;
                 } catch (IOException e) {
-                    System.err.println(
-                            "Error loading Docker config file " + dockerConfig + ": " + e.getMessage());
+                    System.err.println("Error loading Docker config file " + dockerConfig + ": " + e.getMessage());
                 }
             }
         }

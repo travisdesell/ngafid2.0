@@ -21,6 +21,7 @@ public class FlightLabelSection {
     public Timestamp endTime;
     /** Raw datetime string from DB (preserves value, no timezone conversion). */
     public String startTimeRaw;
+
     public String endTimeRaw;
     public Double startValue;
     public Double endValue;
@@ -28,10 +29,10 @@ public class FlightLabelSection {
     public List<String> parameterNames = new ArrayList<>();
     /** When set, insert uses this literal string instead of Timestamp (preserves value). */
     public String startTimeStr;
+
     public String endTimeStr;
 
-    public FlightLabelSection() {
-    }
+    public FlightLabelSection() {}
 
     private static void fillFromRow(FlightLabelSection s, ResultSet rs) throws SQLException {
         s.id = rs.getInt("id");
@@ -49,7 +50,8 @@ public class FlightLabelSection {
         s.labelText = rs.getString("label_text");
     }
 
-    private static List<FlightLabelSection> fetchSections(Connection connection, String sql, int param) throws SQLException {
+    private static List<FlightLabelSection> fetchSections(Connection connection, String sql, int param)
+            throws SQLException {
         List<FlightLabelSection> result = new ArrayList<>();
         FlightLabelSection current = null;
         int currentId = -1;
@@ -128,10 +130,14 @@ public class FlightLabelSection {
             stmt.setString(3, airframe);
             stmt.setInt(4, in.startIndex);
             stmt.setInt(5, in.endIndex);
-            if (in.startTimeStr != null) stmt.setString(6, in.startTimeStr); else stmt.setTimestamp(6, in.startTime);
-            if (in.endTimeStr != null) stmt.setString(7, in.endTimeStr); else stmt.setTimestamp(7, in.endTime);
-            if (in.startValue != null) stmt.setDouble(8, in.startValue); else stmt.setNull(8, Types.DOUBLE);
-            if (in.endValue != null) stmt.setDouble(9, in.endValue); else stmt.setNull(9, Types.DOUBLE);
+            if (in.startTimeStr != null) stmt.setString(6, in.startTimeStr);
+            else stmt.setTimestamp(6, in.startTime);
+            if (in.endTimeStr != null) stmt.setString(7, in.endTimeStr);
+            else stmt.setTimestamp(7, in.endTime);
+            if (in.startValue != null) stmt.setDouble(8, in.startValue);
+            else stmt.setNull(8, Types.DOUBLE);
+            if (in.endValue != null) stmt.setDouble(9, in.endValue);
+            else stmt.setNull(9, Types.DOUBLE);
             stmt.setString(10, in.labelText);
             stmt.executeUpdate();
             try (ResultSet keys = stmt.getGeneratedKeys()) {
@@ -143,7 +149,7 @@ public class FlightLabelSection {
 
         if (in.parameterNames != null && !in.parameterNames.isEmpty()) {
             try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO flight_label_section_param (label_section_id, parameter_name) VALUES (?, ?)")) {
+                    "INSERT INTO flight_label_section_param (label_section_id, parameter_name) VALUES (?, ?)")) {
                 for (String p : in.parameterNames) {
                     ps.setInt(1, in.id);
                     ps.setString(2, p);
@@ -158,7 +164,8 @@ public class FlightLabelSection {
 
     /** Returns the flight_id for a label section, or null if not found. */
     public static Integer getFlightIdForLabel(Connection connection, int labelId) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement("SELECT flight_id FROM flight_label_section WHERE id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT flight_id FROM flight_label_section WHERE id = ?")) {
             stmt.setInt(1, labelId);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? rs.getInt("flight_id") : null;
@@ -167,8 +174,8 @@ public class FlightLabelSection {
     }
 
     public static void updateLabelText(Connection connection, int id, String labelText) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "UPDATE flight_label_section SET label_text = ? WHERE id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("UPDATE flight_label_section SET label_text = ? WHERE id = ?")) {
             stmt.setString(1, labelText);
             stmt.setInt(2, id);
             stmt.executeUpdate();
@@ -176,19 +183,17 @@ public class FlightLabelSection {
     }
 
     public static void delete(Connection connection, int id) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM flight_label_section WHERE id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM flight_label_section WHERE id = ?")) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         }
     }
 
     public static void deleteByFlight(Connection connection, int flightId) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM flight_label_section WHERE flight_id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM flight_label_section WHERE flight_id = ?")) {
             stmt.setInt(1, flightId);
             stmt.executeUpdate();
         }
     }
 }
-

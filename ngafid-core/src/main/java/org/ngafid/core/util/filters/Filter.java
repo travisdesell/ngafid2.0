@@ -52,14 +52,16 @@ public class Filter {
     public void getColumnNamesHelper(Filter filter, TreeSet<String> columnNames) {
         LOG.info(() -> "getting column filter for " + filter.type);
 
-        if (!filter.type.equals("RULE")) if (filter.type.equals("GROUP")) {
-            for (int i = 0; i < filter.filters.size(); i++) {
-                getColumnNamesHelper(filter.filters.get(i), columnNames);
+        if (!filter.type.equals("RULE"))
+            if (filter.type.equals("GROUP")) {
+                for (int i = 0; i < filter.filters.size(); i++) {
+                    getColumnNamesHelper(filter.filters.get(i), columnNames);
+                }
+            } else {
+                LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
+                System.exit(1);
             }
-        } else {
-            LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            System.exit(1);
-        } else {
+        else {
             LOG.info(filter.inputs.toString());
             columnNames.add(filter.inputs.get(0));
         }
@@ -141,7 +143,8 @@ public class Filter {
      */
     public static String getOffsetDateTime(String datetime, String longOffset) {
         String offset = longOffset.substring(4, 10);
-        OffsetDateTime odt = LocalDateTime.parse(normalizeDateTimeInput(datetime), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        OffsetDateTime odt = LocalDateTime.parse(
+                        normalizeDateTimeInput(datetime), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 .atOffset(ZoneOffset.of(offset));
         String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00"))
                 .format(DateTimeFormatter.ofPattern("yyyy" + "-MM-dd HH:mm:ss"));
@@ -153,8 +156,7 @@ public class Filter {
         String normalized = datetime.trim().replace('T', ' ');
 
         // Input is in the form "yyyy-MM-dd HH:mm", append ":00" to make it "yyyy-MM-dd HH:mm:ss"
-        if (normalized.length() == 16)
-            return normalized + ":00";
+        if (normalized.length() == 16) return normalized + ":00";
 
         return normalized;
     }
@@ -162,7 +164,7 @@ public class Filter {
     /**
      * Helper function to build an Event Definition ID subquery
      * for an event (without a specified airframe).
-     * 
+     *
      * @param fleetId
      * @param parameters
      * @param eventName
@@ -179,14 +181,15 @@ public class Filter {
     /**
      * Helper function to build an Event Definition ID subquery
      * for an event with a specified airframe.
-     * 
+     *
      * @param fleetId
      * @param parameters
      * @param eventName
      * @param airframeName
      * @return
      */
-    private String getEventDefinitionIdSubquery(int fleetId, ArrayList<Object> parameters, String eventName, String airframeName) {
+    private String getEventDefinitionIdSubquery(
+            int fleetId, ArrayList<Object> parameters, String eventName, String airframeName) {
         parameters.add(eventName);
         parameters.add(airframeName);
         parameters.add(fleetId);
@@ -293,9 +296,7 @@ public class Filter {
 
             case "Start Time", "End Time" -> {
                 parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
-                String columnName = inputs.get(0).equals("Start Time")
-                    ? "flights.start_time"
-                    : "flights.end_time";
+                String columnName = inputs.get(0).equals("Start Time") ? "flights.start_time" : "flights.end_time";
                 return "TIME(" + columnName + ") " + checkOperator(inputs.get(1)) + " ?";
             }
 
@@ -351,9 +352,9 @@ public class Filter {
 
                     return " (SELECT COUNT(*) FROM events e "
                             + " WHERE e.flight_id = flights.id "
-                        + " AND e.event_definition_id IN ( "
-                        + eventDefinitionIdSubquery
-                        + " )) " + cond + " ? ";
+                            + " AND e.event_definition_id IN ( "
+                            + eventDefinitionIdSubquery
+                            + " )) " + cond + " ? ";
                 }
 
                 // Otherwise, use specified airframe
@@ -362,13 +363,13 @@ public class Filter {
                 eventName = eventName.substring(0, separatorIndex);
 
                 String eventDefinitionIdSubquery =
-                    getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
+                        getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
                 parameters.add(countTarget);
 
                 return " (SELECT COUNT(*) FROM events e "
                         + " WHERE e.flight_id = flights.id "
-                    + " AND e.event_definition_id IN ( "
-                    + eventDefinitionIdSubquery
+                        + " AND e.event_definition_id IN ( "
+                        + eventDefinitionIdSubquery
                         + " )) " + cond + " ? ";
             }
 
@@ -382,18 +383,18 @@ public class Filter {
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND events.severity "
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND events.severity "
                             + cond + " ?)";
                 } else {
                     String airframeName = eventName.substring(separatorIndex + 3);
                     eventName = eventName.substring(0, separatorIndex);
 
                     String eventDefinitionIdSubquery =
-                        getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
+                            getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
                             + " events.severity "
                             + cond + " ?)";
                 }
@@ -409,8 +410,8 @@ public class Filter {
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ")"
-                        + " AND ((events.end_line - events.start_line) + 1)"
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ")"
+                            + " AND ((events.end_line - events.start_line) + 1)"
                             + " "
                             + cond + " ?)";
                 } else {
@@ -418,11 +419,11 @@ public class Filter {
                     eventName = eventName.substring(0, separatorIndex);
 
                     String eventDefinitionIdSubquery =
-                        getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
+                            getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
                             + " ((events.end_line - events.start_line) + 1) "
                             + cond + " ?)";
                 }
@@ -504,9 +505,8 @@ public class Filter {
                     if (i > 0) string.append(" ");
                     string.append(inputs.get(i));
                 }
-                
+
                 return string.toString();
-                
             }
             case "GROUP" -> {
                 StringBuilder string = new StringBuilder();
@@ -514,9 +514,8 @@ public class Filter {
                     if (i > 0) string.append(" ").append(condition).append(" ");
                     string.append(filters.get(i).toHumanReadable());
                 }
-                
+
                 return "(" + string + ")";
-                
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
@@ -533,7 +532,7 @@ public class Filter {
      */
     @Override
     public String toString() {
-        
+
         switch (type) {
             case "RULE" -> {
                 String string = "";
@@ -541,9 +540,8 @@ public class Filter {
                     if (i > 0) string += " ";
                     string += "'" + inputs.get(i) + "'";
                 }
-                
+
                 return "(" + string + ")";
-                
             }
             case "GROUP" -> {
                 String string = "";
@@ -551,9 +549,8 @@ public class Filter {
                     if (i > 0) string += " " + condition + " ";
                     string += filters.get(i).toString();
                 }
-                
+
                 return "(" + string + ")";
-                
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");

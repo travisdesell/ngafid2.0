@@ -194,14 +194,14 @@ public class EventStatistics {
 
         final String dateClause = buildDateClause(startDate, endDate);
 
-        String query =
-                "SELECT year, month, fleet_id, event_definition_id, airframe_id, "
-                        + "SUM(event_count) as event_count, SUM(flight_count) as flight_count "
-                        + "FROM m_fleet_airframe_monthly_event_counts WHERE "
-                        + dateClause + " GROUP BY fleet_id, event_definition_id, airframe_id, year, month";
+        String query = "SELECT year, month, fleet_id, event_definition_id, airframe_id, "
+                + "SUM(event_count) as event_count, SUM(flight_count) as flight_count "
+                + "FROM m_fleet_airframe_monthly_event_counts WHERE "
+                + dateClause + " GROUP BY fleet_id, event_definition_id, airframe_id, year, month";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
-            Map<MonthlyCountKey, Integer> fleetMonthlyFlightCounts = getFleetMonthlyFlightCounts(connection, dateClause);
+            Map<MonthlyCountKey, Integer> fleetMonthlyFlightCounts =
+                    getFleetMonthlyFlightCounts(connection, dateClause);
             Map<MonthlyCountKey, Integer> aggregateMonthlyFlightCounts =
                     getAggregateMonthlyFlightCounts(connection, dateClause);
             Map<String, Map<String, MonthlyEventCountsBuilder>> eventCounts = new HashMap<>();
@@ -215,10 +215,10 @@ public class EventStatistics {
                     final int airframeId = result.getInt("airframe_id");
                     final int month = result.getInt("month");
                     final int year = result.getInt("year");
-                    final int totalFlights = fleetMonthlyFlightCounts.getOrDefault(
-                            monthlyCountKey(fleet, airframeId, year, month), 0);
-                    final int aggregateTotalFlights = aggregateMonthlyFlightCounts.getOrDefault(
-                            monthlyCountKey(-1, airframeId, year, month), 0);
+                    final int totalFlights =
+                            fleetMonthlyFlightCounts.getOrDefault(monthlyCountKey(fleet, airframeId, year, month), 0);
+                    final int aggregateTotalFlights =
+                            aggregateMonthlyFlightCounts.getOrDefault(monthlyCountKey(-1, airframeId, year, month), 0);
 
                     final String date = LocalDate.of(year, month, 1).toString();
                     final String eventName = idToEventNameMap.get(eventDefinitionId);
@@ -293,8 +293,8 @@ public class EventStatistics {
         return counts;
     }
 
-    private static Map<MonthlyCountKey, Integer> getAggregateMonthlyFlightCounts(Connection connection, String dateClause)
-            throws SQLException {
+    private static Map<MonthlyCountKey, Integer> getAggregateMonthlyFlightCounts(
+            Connection connection, String dateClause) throws SQLException {
         String query = """
             SELECT airframe_id, year, month, SUM(count) AS flight_count
             FROM m_fleet_monthly_flight_counts
@@ -308,10 +308,7 @@ public class EventStatistics {
             while (result.next()) {
                 counts.put(
                         monthlyCountKey(
-                                -1,
-                                result.getInt("airframe_id"),
-                                result.getInt("year"),
-                                result.getInt("month")),
+                                -1, result.getInt("airframe_id"), result.getInt("year"), result.getInt("month")),
                         result.getInt("flight_count"));
             }
         }
@@ -400,8 +397,8 @@ public class EventStatistics {
                 if (airframeName == null) continue;
 
                 final String date = LocalDate.of(year, month, 1).toString();
-                final int totalFlights = aggregateMonthlyFlightCounts.getOrDefault(
-                        monthlyCountKey(-1, airframeId, year, month), 0);
+                final int totalFlights =
+                        aggregateMonthlyFlightCounts.getOrDefault(monthlyCountKey(-1, airframeId, year, month), 0);
 
                 MonthlyEventCountsBuilder builder = anyEventCounts.computeIfAbsent(
                         airframeName,
@@ -431,8 +428,7 @@ public class EventStatistics {
             if (airframeName == null) continue;
 
             anyEventCounts.computeIfAbsent(
-                    airframeName,
-                    k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
+                    airframeName, k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
 
             final String date = LocalDate.of(key.year(), key.month(), 1).toString();
             for (Map<String, MonthlyEventCountsBuilder> countsByAirframe : eventCounts.values()) {
@@ -453,8 +449,7 @@ public class EventStatistics {
             if (airframeName == null) continue;
 
             anyEventCounts.computeIfAbsent(
-                    airframeName,
-                    k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
+                    airframeName, k -> new MonthlyEventCountsBuilder(airframeName, anyEventName, startDate, endDate));
 
             final String date = LocalDate.of(key.year(), key.month(), 1).toString();
             for (Map<String, MonthlyEventCountsBuilder> countsByAirframe : eventCounts.values()) {
@@ -683,9 +678,8 @@ public class EventStatistics {
         private double aggMinSeverity;
         private double aggMaxSeverity;
 
-        private static final String COLUMNS =
-                "event_count, flight_count, min_duration, avg_duration, max_duration, "
-                        + "min_severity, avg_severity, max_severity";
+        private static final String COLUMNS = "event_count, flight_count, min_duration, avg_duration, max_duration, "
+                + "min_severity, avg_severity, max_severity";
 
         /**
          * Creates an event row for the given fleet and event id and any additional specified conditions,

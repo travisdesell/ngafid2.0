@@ -1,12 +1,12 @@
 package org.ngafid.core.util.filters;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class FilterTest {
@@ -73,7 +73,8 @@ class FilterTest {
         parameters.clear();
         String isNotQuery = filterOf("Airframe", "is not", "C172S").getRuleQuery(5, parameters);
 
-        assertEquals("flights.airframe_id != (SELECT id FROM airframes WHERE fleet_id = ? AND airframe = ?)", isNotQuery);
+        assertEquals(
+                "flights.airframe_id != (SELECT id FROM airframes WHERE fleet_id = ? AND airframe = ?)", isNotQuery);
         assertParameters(parameters, 5, "C172S");
     }
 
@@ -88,7 +89,9 @@ class FilterTest {
         parameters.clear();
         String tailIsNotQuery = filterOf("Tail Number", "is not", "N12345").getRuleQuery(8, parameters);
 
-        assertEquals("flights.system_id not in (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)", tailIsNotQuery);
+        assertEquals(
+                "flights.system_id not in (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)",
+                tailIsNotQuery);
         assertParameters(parameters, 8, "N12345");
 
         parameters.clear();
@@ -154,13 +157,15 @@ class FilterTest {
     @Test
     void startAndEndTimeRulesTargetCorrectColumns() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String startTimeQuery = filterOf("Start Time", "<", "12:34:56", EASTERN_TIME).getRuleQuery(1, parameters);
+        String startTimeQuery =
+                filterOf("Start Time", "<", "12:34:56", EASTERN_TIME).getRuleQuery(1, parameters);
 
         assertEquals("TIME(flights.start_time) < ?", startTimeQuery);
         assertParameters(parameters, "17:34:56");
 
         parameters.clear();
-        String endTimeQuery = filterOf("End Time", ">", "12:34:56", EASTERN_TIME).getRuleQuery(1, parameters);
+        String endTimeQuery =
+                filterOf("End Time", ">", "12:34:56", EASTERN_TIME).getRuleQuery(1, parameters);
 
         assertEquals("TIME(flights.end_time) > ?", endTimeQuery);
         assertParameters(parameters, "17:34:56");
@@ -170,7 +175,8 @@ class FilterTest {
     void parameterRuleSupportsAllStatistics() {
         for (String statistic : List.of("min", "avg", "max")) {
             ArrayList<Object> parameters = new ArrayList<>();
-            String query = filterOf("Parameter", statistic, "Altitude", ">=", "42.5").getRuleQuery(2, parameters);
+            String query =
+                    filterOf("Parameter", statistic, "Altitude", ">=", "42.5").getRuleQuery(2, parameters);
 
             assertContainsAll(
                     query,
@@ -184,14 +190,15 @@ class FilterTest {
     @Test
     void airportAndRunwayRulesSupportVisitedAndNotVisited() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String airportVisitedQuery = filterOf("Airport", "GFK - Grand Forks", "visited").getRuleQuery(1, parameters);
+        String airportVisitedQuery =
+                filterOf("Airport", "GFK - Grand Forks", "visited").getRuleQuery(1, parameters);
 
         assertContainsAll(airportVisitedQuery, "EXISTS", "itinerary.airport = ?");
         assertParameters(parameters, "GFK");
 
         parameters.clear();
-        String airportNotVisitedQuery = filterOf("Airport", "GFK - Grand Forks", "not visited")
-                .getRuleQuery(1, parameters);
+        String airportNotVisitedQuery =
+                filterOf("Airport", "GFK - Grand Forks", "not visited").getRuleQuery(1, parameters);
 
         assertContainsAll(airportNotVisitedQuery, "NOT EXISTS", "itinerary.airport = ?");
         assertParameters(parameters, "GFK");
@@ -203,7 +210,8 @@ class FilterTest {
         assertParameters(parameters, "GFK", "35L");
 
         parameters.clear();
-        String runwayNotVisitedQuery = filterOf("Runway", "GFK - 35L", "not visited").getRuleQuery(1, parameters);
+        String runwayNotVisitedQuery =
+                filterOf("Runway", "GFK - 35L", "not visited").getRuleQuery(1, parameters);
 
         assertContainsAll(runwayNotVisitedQuery, "NOT EXISTS", "itinerary.airport = ?", "itinerary.runway = ?");
         assertParameters(parameters, "GFK", "35L");
@@ -212,13 +220,20 @@ class FilterTest {
     @Test
     void eventCountRuleSupportsGenericAndAirframeSpecificEvents() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String genericQuery = filterOf("Event Count", "Example Event", ">=", "1").getRuleQuery(7, parameters);
+        String genericQuery =
+                filterOf("Event Count", "Example Event", ">=", "1").getRuleQuery(7, parameters);
 
-        assertContainsAll(genericQuery, "SELECT COUNT(*) FROM events e", "e.event_definition_id IN", "ed.airframe_id = 0", ")) >= ?");
+        assertContainsAll(
+                genericQuery,
+                "SELECT COUNT(*) FROM events e",
+                "e.event_definition_id IN",
+                "ed.airframe_id = 0",
+                ")) >= ?");
         assertParameters(parameters, "Example Event", 7, 1);
 
         parameters.clear();
-        String airframeQuery = filterOf("Event Count", "Example Event - C172S", "<=", "2").getRuleQuery(7, parameters);
+        String airframeQuery =
+                filterOf("Event Count", "Example Event - C172S", "<=", "2").getRuleQuery(7, parameters);
 
         assertContainsAll(
                 airframeQuery,
@@ -233,14 +248,15 @@ class FilterTest {
     @Test
     void eventSeverityRuleSupportsGenericAndAirframeSpecificEvents() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String genericQuery = filterOf("Event Severity", "Example Event", "=", "2.5").getRuleQuery(11, parameters);
+        String genericQuery =
+                filterOf("Event Severity", "Example Event", "=", "2.5").getRuleQuery(11, parameters);
 
         assertContainsAll(genericQuery, "events.flight_id", "events.event_definition_id IN", "events.severity = ?");
         assertParameters(parameters, "Example Event", 11, "2.5");
 
         parameters.clear();
-        String airframeQuery = filterOf("Event Severity", "Example Event - C172S", ">=", "2.5")
-                .getRuleQuery(11, parameters);
+        String airframeQuery =
+                filterOf("Event Severity", "Example Event - C172S", ">=", "2.5").getRuleQuery(11, parameters);
 
         assertContainsAll(
                 airframeQuery,
@@ -254,14 +270,16 @@ class FilterTest {
     @Test
     void eventDurationRuleSupportsGenericAndAirframeSpecificEvents() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String genericQuery = filterOf("Event Duration", "Example Event", ">", "10").getRuleQuery(4, parameters);
+        String genericQuery =
+                filterOf("Event Duration", "Example Event", ">", "10").getRuleQuery(4, parameters);
 
-        assertContainsAll(genericQuery, "events.event_definition_id IN", "((events.end_line - events.start_line) + 1) > ?");
+        assertContainsAll(
+                genericQuery, "events.event_definition_id IN", "((events.end_line - events.start_line) + 1) > ?");
         assertParameters(parameters, "Example Event", 4, "10");
 
         parameters.clear();
-        String airframeQuery = filterOf("Event Duration", "Example Event - C172S", "<", "10")
-                .getRuleQuery(4, parameters);
+        String airframeQuery =
+                filterOf("Event Duration", "Example Event - C172S", "<", "10").getRuleQuery(4, parameters);
 
         assertContainsAll(
                 airframeQuery,
@@ -280,7 +298,8 @@ class FilterTest {
         assertParameters(parameters, 3, "Checkride");
 
         parameters.clear();
-        String notAssociatedQuery = filterOf("Tag", "Checkride", "Is Not Associated").getRuleQuery(3, parameters);
+        String notAssociatedQuery =
+                filterOf("Tag", "Checkride", "Is Not Associated").getRuleQuery(3, parameters);
 
         assertContainsAll(notAssociatedQuery, "NOT EXISTS", "flight_tags WHERE fleet_id = ? AND name = ?");
         assertParameters(parameters, 3, "Checkride");
@@ -295,7 +314,8 @@ class FilterTest {
         ArrayList<Object> parameters = new ArrayList<>();
         String query = group.toQueryString(13, parameters);
 
-        assertContainsAll(query, "(DATE(flights.start_time) >= ?)", " OR ", "(flights.fleet_id = ? AND flights.id < ?)");
+        assertContainsAll(
+                query, "(DATE(flights.start_time) >= ?)", " OR ", "(flights.fleet_id = ? AND flights.id < ?)");
         assertParameters(parameters, "2026-03-09", 13, "100");
     }
 }

@@ -58,30 +58,55 @@ public final class ApiToken implements Serializable {
             this.plaintext = plaintext;
         }
 
-        public ApiToken getToken() { return token; }
-        public String getPlaintext() { return plaintext; }
+        public ApiToken getToken() {
+            return token;
+        }
+
+        public String getPlaintext() {
+            return plaintext;
+        }
     }
 
     private ApiToken() {}
 
     private ApiToken(ResultSet rs) throws SQLException {
-        this.id         = rs.getInt(1);
-        this.userId     = rs.getInt(2);
-        this.tokenHash  = rs.getString(3);
-        this.tokenName  = rs.getString(4);
-        this.createdAt  = rs.getTimestamp(5);
-        this.expiresAt  = rs.getTimestamp(6);
-        this.revokedAt  = rs.getTimestamp(7);
+        this.id = rs.getInt(1);
+        this.userId = rs.getInt(2);
+        this.tokenHash = rs.getString(3);
+        this.tokenName = rs.getString(4);
+        this.createdAt = rs.getTimestamp(5);
+        this.expiresAt = rs.getTimestamp(6);
+        this.revokedAt = rs.getTimestamp(7);
         this.lastUsedAt = rs.getTimestamp(8);
     }
 
-    public int getId()               { return id; }
-    public int getUserId()           { return userId; }
-    public String getTokenName()     { return tokenName; }
-    public Timestamp getCreatedAt()  { return createdAt; }
-    public Timestamp getExpiresAt()  { return expiresAt; }
-    public Timestamp getRevokedAt()  { return revokedAt; }
-    public Timestamp getLastUsedAt() { return lastUsedAt; }
+    public int getId() {
+        return id;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public String getTokenName() {
+        return tokenName;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public Timestamp getExpiresAt() {
+        return expiresAt;
+    }
+
+    public Timestamp getRevokedAt() {
+        return revokedAt;
+    }
+
+    public Timestamp getLastUsedAt() {
+        return lastUsedAt;
+    }
 
     /** Returns true if the token hasn't been revoked and hasn't expired. */
     public boolean isActive() {
@@ -91,8 +116,8 @@ public final class ApiToken implements Serializable {
     }
 
     /** Creates a new token, stores its hash, and returns both the record and the plaintext. */
-    public static CreatedApiToken create(Connection connection, int userId,
-                                         String tokenName, Timestamp expiresAt) throws SQLException {
+    public static CreatedApiToken create(Connection connection, int userId, String tokenName, Timestamp expiresAt)
+            throws SQLException {
         String plaintext = generatePlaintextToken();
         String hash = sha256Hex(plaintext);
 
@@ -126,8 +151,8 @@ public final class ApiToken implements Serializable {
         if (plaintext == null || plaintext.isBlank()) return null;
         String hash = sha256Hex(plaintext);
 
-        try (PreparedStatement query = connection.prepareStatement(
-                "SELECT " + DEFAULT_COLUMNS + " FROM api_token WHERE token_hash = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("SELECT " + DEFAULT_COLUMNS + " FROM api_token WHERE token_hash = ?")) {
             query.setString(1, hash);
             try (ResultSet rs = query.executeQuery()) {
                 if (rs.next()) return new ApiToken(rs);
@@ -137,8 +162,8 @@ public final class ApiToken implements Serializable {
     }
 
     public static ApiToken getById(Connection connection, int id) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement(
-                "SELECT " + DEFAULT_COLUMNS + " FROM api_token WHERE id = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("SELECT " + DEFAULT_COLUMNS + " FROM api_token WHERE id = ?")) {
             query.setInt(1, id);
             try (ResultSet rs = query.executeQuery()) {
                 if (rs.next()) return new ApiToken(rs);
@@ -173,8 +198,8 @@ public final class ApiToken implements Serializable {
 
     /** Updates last_used_at to now. Failure here is non-fatal. */
     public void touchLastUsed(Connection connection) throws SQLException {
-        try (PreparedStatement query = connection.prepareStatement(
-                "UPDATE api_token SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+        try (PreparedStatement query =
+                connection.prepareStatement("UPDATE api_token SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?")) {
             query.setInt(1, id);
             query.executeUpdate();
         }

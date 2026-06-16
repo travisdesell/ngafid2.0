@@ -426,7 +426,7 @@ object FlightRoutes : RouteProvider() {
             val flight = Flight.getFlight(connection, flightId)
             if (flight == null || flight.fleetId != user.fleetId)
                 throw NotFoundResponse("Flight with id $flightId not found.")
-                
+
             FlightLabelSection.deleteByFlight(connection, flightId)
             ctx.status(204)
         }

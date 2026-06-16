@@ -9,15 +9,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,13 +26,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.ngafid.core.flights.Airframes;
@@ -96,8 +96,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     private static final Pattern SYSTEM_ID_DATE_TIME =
             Pattern.compile("(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})");
 
-    private static final DateTimeFormatter METRO_ANALOG_TIME =
-            DateTimeFormatter.ofPattern("H:mm:ss");
+    private static final DateTimeFormatter METRO_ANALOG_TIME = DateTimeFormatter.ofPattern("H:mm:ss");
 
     private static final String USCG_IGS_FIRST_LINE_PREFIX = "IGS v,";
     private static final String USCG_AIRCRAFT_SERIAL_KEY = "Aircraft Serial Number";
@@ -110,8 +109,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     static final String USCG_PNAV_LAT = "PNAV_Lat";
     static final String USCG_PNAV_LONG = "PNAV_Long";
 
-    private static final Pattern USCG_FILENAME_DATE_TIME =
-            Pattern.compile("(\\d{8})-(\\d{6})");
+    private static final Pattern USCG_FILENAME_DATE_TIME = Pattern.compile("(\\d{8})-(\\d{6})");
 
     private static final DateTimeFormatter USCG_UTC_TIME_OF_DAY =
             DateTimeFormatter.ofPattern("H:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]");
@@ -119,8 +117,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     private final ParsedFilename parsed;
 
     /** Resolves tail/system id from USCG metadata or filename, then loads airframe from the registry. */
-    public RotorcraftCSVFileProcessor(
-            Connection connection, InputStream stream, String filename, Pipeline pipeline)
+    public RotorcraftCSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException, FatalFlightFileException, SQLException {
         super(connection, stream, filename, pipeline);
         Optional<String> garminAirframeName = peekGarminAirframeName(stream);
@@ -141,7 +138,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             reader.mark(512 * 1024);
             try {
                 String firstLine = reader.readLine();
-                if (resolveUscgRotorcraftIdentity(connection, reader, firstLine, filename).isPresent()) {
+                if (resolveUscgRotorcraftIdentity(connection, reader, firstLine, filename)
+                        .isPresent()) {
                     return true;
                 }
                 if (isUscgFormat(firstLine)) {
@@ -149,7 +147,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 }
                 if (parsed.isPresent()) {
                     String tail = parsed.get().tail();
-                    if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail).isPresent()) {
+                    if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail)
+                            .isPresent()) {
                         return true;
                     }
                 }
@@ -158,7 +157,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             }
         }
         if (parsed.isPresent()
-                && RotorcraftTailAirframeRegistry.findRotorcraft(connection, parsed.get().tail()).isPresent()) {
+                && RotorcraftTailAirframeRegistry.findRotorcraft(
+                                connection, parsed.get().tail())
+                        .isPresent()) {
             return true;
         }
         if (parsed.isPresent()) {
@@ -201,19 +202,16 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
      * Error when the filename tail is missing from {@code tail_airframe_registry} for a known rotorcraft CSV layout.
      */
     static FatalFlightFileException fatalTailRegistryMiss(
-            String tail,
-            String filename,
-            Optional<String> recorderAirframeName,
-            Optional<String> layoutDescription) {
-        StringBuilder message = new StringBuilder("Filename tail prefix '")
-                .append(tail)
-                .append("'");
+            String tail, String filename, Optional<String> recorderAirframeName, Optional<String> layoutDescription) {
+        StringBuilder message =
+                new StringBuilder("Filename tail prefix '").append(tail).append("'");
         if (filename != null && !filename.isBlank()) {
             message.append(" from '").append(filename).append("'");
         }
         message.append(" is not in tail_airframe_registry as a Rotorcraft aircraft.");
-        layoutDescription.ifPresent(
-                layout -> message.append(" Detected rotorcraft CSV layout: ").append(layout).append("."));
+        layoutDescription.ifPresent(layout -> message.append(" Detected rotorcraft CSV layout: ")
+                .append(layout)
+                .append("."));
         recorderAirframeName.ifPresent(
                 name -> message.append(" File airframe_name is '").append(name).append("'."));
         recorderAirframeName
@@ -224,7 +222,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                         .append("', '")
                         .append(code)
                         .append("');"));
-        if (recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode).isEmpty()) {
+        if (recorderAirframeName
+                .flatMap(Airframes::resolveGarminRotorcraftAirframeCode)
+                .isEmpty()) {
             message.append(" Add: INSERT INTO tail_airframe_registry (tail, airframe) VALUES ('")
                     .append(tail)
                     .append("', '<airframe_code>');");
@@ -274,7 +274,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     public static boolean isRotorcraftFilenameInRegistry(Connection connection, String filename) throws SQLException {
         Optional<ParsedFilename> parsed = parseFilename(filename);
         return parsed.isPresent()
-                && RotorcraftTailAirframeRegistry.findRotorcraft(connection, parsed.get().tail()).isPresent();
+                && RotorcraftTailAirframeRegistry.findRotorcraft(
+                                connection, parsed.get().tail())
+                        .isPresent();
     }
 
     /** True when the first line is a USCG IGS export ({@code IGS v,...}). */
@@ -415,8 +417,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         }
     }
 
-    private static Optional<ParsedFilename> lookupUscgRegistryTail(
-            Connection connection, String tail, String filename) throws SQLException {
+    private static Optional<ParsedFilename> lookupUscgRegistryTail(Connection connection, String tail, String filename)
+            throws SQLException {
         return RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail)
                 .map(entry -> new ParsedFilename(entry.tail(), parseUscgSystemIdFromFilename(filename)));
     }
@@ -462,7 +464,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             Optional<ParsedFilename> fromFilename = parseFilename(filename);
             if (fromFilename.isPresent()) {
                 String tail = fromFilename.get().tail();
-                if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail).isPresent()) {
+                if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail)
+                        .isPresent()) {
                     return fromFilename.get();
                 }
             }
@@ -606,32 +609,21 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
     /** Sets {@link FlightMeta} tail, stored system id, and airframe from a registry lookup. */
     private static void applyRegistryIdentity(
-            Connection connection,
-            FlightMeta meta,
-            ParsedFilename parsed,
-            Optional<String> recorderAirframeName)
+            Connection connection, FlightMeta meta, ParsedFilename parsed, Optional<String> recorderAirframeName)
             throws FatalFlightFileException, SQLException {
-        Optional<String> airframeFromFile = recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode);
+        Optional<String> airframeFromFile =
+                recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode);
         Optional<RotorcraftTailAirframeRegistry.Entry> entry =
                 RotorcraftTailAirframeRegistry.findRotorcraft(connection, parsed.tail());
         if (entry.isEmpty()) {
-            throw fatalTailRegistryMiss(
-                    parsed.tail(),
-                    meta.getFilename(),
-                    recorderAirframeName,
-                    Optional.empty());
+            throw fatalTailRegistryMiss(parsed.tail(), meta.getFilename(), recorderAirframeName, Optional.empty());
         }
         airframeFromFile.ifPresent(csvCode -> {
             if (!csvCode.equals(entry.get().airframe())) {
                 LOG.log(
                         Level.WARNING,
                         "Registry airframe ''{0}'' for tail ''{1}'' differs from file ''{2}'' (resolved to ''{3}'')",
-                        new Object[] {
-                            entry.get().airframe(),
-                            parsed.tail(),
-                            recorderAirframeName.orElse(""),
-                            csvCode
-                        });
+                        new Object[] {entry.get().airframe(), parsed.tail(), recorderAirframeName.orElse(""), csvCode});
             }
         });
         // For rotorcraft uploads, we store the operator tail (registry tail) as the system id.
@@ -644,7 +636,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         meta.setSystemId(systemId);
         meta.setSuggestedTailNumber(entry.get().tail());
         meta.setAirframe(new Airframes.Airframe(
-                connection, entry.get().airframe(), new Airframes.Type(entry.get().airframeType())));
+                connection,
+                entry.get().airframe(),
+                new Airframes.Type(entry.get().airframeType())));
     }
 
     /**
@@ -719,8 +713,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
         DoubleTimeSeries unixCanonical =
                 new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
-        StringTimeSeries utcCanonical = new StringTimeSeries(
-                Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
+        StringTimeSeries utcCanonical =
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
 
         for (int i = 0; i < dates.size(); i++) {
             String date = dates.get(i);
@@ -777,8 +771,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
         DoubleTimeSeries unixCanonical =
                 new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
-        StringTimeSeries utcCanonical = new StringTimeSeries(
-                Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
+        StringTimeSeries utcCanonical =
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
 
         for (int i = 0; i < unixSource.size(); i++) {
             double raw = unixSource.get(i);
@@ -816,8 +810,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
         DoubleTimeSeries unixCanonical =
                 new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
-        StringTimeSeries utcCanonical = new StringTimeSeries(
-                Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
+        StringTimeSeries utcCanonical =
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
 
         for (int i = 0; i < month.size(); i++) {
             if (!hasCalendarSample(month, day, year, hour, minute, second, i)) {
@@ -864,8 +858,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
         DoubleTimeSeries unixCanonical =
                 new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
-        StringTimeSeries utcCanonical = new StringTimeSeries(
-                Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
+        StringTimeSeries utcCanonical =
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
 
         for (int i = 0; i < analogTime.size(); i++) {
             String sample = analogTime.get(i);
@@ -916,8 +910,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
         DoubleTimeSeries unixCanonical =
                 new DoubleTimeSeries(Parameters.UNIX_TIME_SECONDS, Parameters.Unit.SECONDS.toString());
-        StringTimeSeries utcCanonical = new StringTimeSeries(
-                Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
+        StringTimeSeries utcCanonical =
+                new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
 
         for (int i = 0; i < size; i++) {
             OptionalInt day = uscgCalendarComponent(doubleTimeSeries, stringTimeSeries, USCG_UTC_DAY, i);
@@ -945,8 +939,13 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             try {
                 LocalTime time = LocalTime.parse(sample.trim(), USCG_UTC_TIME_OF_DAY);
                 LocalDateTime local = LocalDateTime.of(
-                        yearValue, monthValue, dayValue,
-                        time.getHour(), time.getMinute(), time.getSecond(), time.getNano());
+                        yearValue,
+                        monthValue,
+                        dayValue,
+                        time.getHour(),
+                        time.getMinute(),
+                        time.getSecond(),
+                        time.getNano());
                 OffsetDateTime utc = OffsetDateTime.of(local, ZoneOffset.UTC);
                 unixCanonical.add(utc.toEpochSecond());
                 utcCanonical.add(utc.format(TimeUtils.ISO_8601_FORMAT));
@@ -977,10 +976,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     }
 
     private static OptionalInt uscgCalendarComponent(
-            Map<String, DoubleTimeSeries> doubles,
-            Map<String, StringTimeSeries> strings,
-            String column,
-            int index) {
+            Map<String, DoubleTimeSeries> doubles, Map<String, StringTimeSeries> strings, String column, int index) {
         DoubleTimeSeries numeric = resolveDoubleSeries(doubles, column);
         if (numeric != null) {
             double value = numeric.get(index);
@@ -1038,10 +1034,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             return;
         }
 
-        DoubleTimeSeries latitude =
-                new DoubleTimeSeries(Parameters.LATITUDE, Parameters.Unit.DEGREES.toString());
-        DoubleTimeSeries longitude =
-                new DoubleTimeSeries(Parameters.LONGITUDE, Parameters.Unit.DEGREES.toString());
+        DoubleTimeSeries latitude = new DoubleTimeSeries(Parameters.LATITUDE, Parameters.Unit.DEGREES.toString());
+        DoubleTimeSeries longitude = new DoubleTimeSeries(Parameters.LONGITUDE, Parameters.Unit.DEGREES.toString());
         int validPoints = 0;
 
         for (int i = 0; i < latSource.size(); i++) {
@@ -1293,8 +1287,8 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             }
 
             if (headers.size() != dataTypes.size()) {
-                throw new FlightProcessingException(new FatalFlightFileException(
-                        "Rotorcraft CSV header column count does not match units row."));
+                throw new FlightProcessingException(
+                        new FatalFlightFileException("Rotorcraft CSV header column count does not match units row."));
             }
 
             CSVReader csvReader = new CSVReader(bufferedReader);

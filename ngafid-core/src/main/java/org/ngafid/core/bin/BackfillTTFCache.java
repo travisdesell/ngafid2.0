@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.TurnToFinal;
@@ -79,8 +78,8 @@ public final class BackfillTTFCache {
     private static int updateVersionOnly(Connection connection) throws SQLException {
         long currentVersion = TurnToFinal.serialVersionUID;
         System.out.println("Updating version to " + currentVersion + " for all rows...");
-        try (PreparedStatement ps = connection.prepareStatement(
-                "UPDATE turn_to_final SET version = ? WHERE version != ?")) {
+        try (PreparedStatement ps =
+                connection.prepareStatement("UPDATE turn_to_final SET version = ? WHERE version != ?")) {
             ps.setLong(1, currentVersion);
             ps.setLong(2, currentVersion);
             int updated = ps.executeUpdate();
@@ -94,7 +93,8 @@ public final class BackfillTTFCache {
         int errors;
     }
 
-    public static BackfillResult backfill(Connection connection, int batchSize, Integer limit, boolean dryRun, boolean full)
+    public static BackfillResult backfill(
+            Connection connection, int batchSize, Integer limit, boolean dryRun, boolean full)
             throws SQLException, IOException, ClassNotFoundException {
         BackfillResult result = new BackfillResult();
 
@@ -126,7 +126,8 @@ public final class BackfillTTFCache {
                 }
             }
             if (flightIds.isEmpty()) {
-                System.out.println("turn_to_final is empty. Using flights from itinerary (flights with approach data).");
+                System.out.println(
+                        "turn_to_final is empty. Using flights from itinerary (flights with approach data).");
                 String sql = "SELECT DISTINCT flight_id FROM itinerary ORDER BY flight_id";
                 if (limit != null) {
                     sql += " LIMIT " + limit;
@@ -155,7 +156,8 @@ public final class BackfillTTFCache {
                 }
             } else {
                 for (int i = 0; i < toDelete; i++) {
-                    try (PreparedStatement ps = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?")) {
+                    try (PreparedStatement ps =
+                            connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?")) {
                         ps.setInt(1, flightIds.get(i));
                         ps.executeUpdate();
                     }

@@ -17,7 +17,7 @@ public final class RotorcraftTailAirframeRegistry {
     public record Entry(String tail, String airframe, String airframeType) {}
 
     /**
-     * @param tail operator tail from filename or USCG {@code Aircraft Serial Number} metadata 
+     * @param tail operator tail from filename or USCG {@code Aircraft Serial Number} metadata
      * @return registry row when tail exists and {@code airframe_types.name} is Rotorcraft
      */
     public static Optional<Entry> findRotorcraft(Connection connection, String tail) throws SQLException {
@@ -35,8 +35,8 @@ public final class RotorcraftTailAirframeRegistry {
             query.setString(1, tail);
             try (ResultSet rs = query.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(new Entry(
-                            rs.getString("tail"), rs.getString("airframe"), rs.getString("airframe_type")));
+                    return Optional.of(
+                            new Entry(rs.getString("tail"), rs.getString("airframe"), rs.getString("airframe_type")));
                 }
             }
         }

@@ -146,8 +146,7 @@ public final class Upload {
             // We don't want to add this upload to the kafka queue while it is still locked, because then processing
             // could fail if it is read from the queue too fast while we still have the lock.
             if (markedComplete) {
-                if (producer == null)
-                    producer = new KafkaProducer<>(Configuration.getUploadProperties());
+                if (producer == null) producer = new KafkaProducer<>(Configuration.getUploadProperties());
 
                 // Key upload id so the default partitioner spreads messages across topic partitions
                 // (null-key produces can skew onto one partition and under-use parallel consumers).
@@ -631,7 +630,8 @@ public final class Upload {
         }
     }
 
-    public static int getNumUploadsByStatus(Connection connection, int fleetId, Upload.Status[] types) throws SQLException {
+    public static int getNumUploadsByStatus(Connection connection, int fleetId, Upload.Status[] types)
+            throws SQLException {
 
         String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
 
@@ -696,14 +696,13 @@ public final class Upload {
             for (int i = 0; i < types.length; i++) {
                 uploadQuery.setString(i + 3, types[i].toString());
             }
-            
+
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
                 uploads = new ArrayList<>();
                 while (resultSet.next()) {
                     uploads.add(new Upload(resultSet));
                 }
             }
-
         }
 
         return uploads;
@@ -728,20 +727,19 @@ public final class Upload {
 
         ArrayList<Upload> uploads;
         try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
-            
+
             uploadQuery.setInt(1, fleetId);
             uploadQuery.setInt(2, -1);
             for (int i = 0; i < types.length; i++) {
                 uploadQuery.setString(i + 3, types[i].toString());
             }
-            
+
             try (ResultSet resultSet = uploadQuery.executeQuery()) {
                 uploads = new ArrayList<>();
                 while (resultSet.next()) {
                     uploads.add(new Upload(resultSet));
                 }
             }
-
         }
 
         return uploads;
@@ -816,7 +814,6 @@ public final class Upload {
         zos.setMethod(ZipArchiveOutputStream.DEFLATED);
         zos.setUseZip64(Zip64Mode.Always);
         return zos;
-        
     }
 
     public int getFleetId() {

@@ -24,8 +24,9 @@ public class EventDefinition {
             new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
-    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, airframe_type_id, "
-            + "condition_json, column_names, severity_column_names, severity_type";
+    private static final String SQL_FIELDS =
+            "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, airframe_type_id, "
+                    + "condition_json, column_names, severity_column_names, severity_type";
 
     /*
      * Caches event definitions by name. Events are rarely added anyways...
@@ -104,16 +105,7 @@ public class EventDefinition {
             Filter filter,
             TreeSet<String> severityColumnNames,
             SeverityType severityType) {
-        this(
-                fleetId,
-                name,
-                startBuffer,
-                stopBuffer,
-                airframeNameId,
-                null,
-                filter,
-                severityColumnNames,
-                severityType);
+        this(fleetId, name, startBuffer, stopBuffer, airframeNameId, null, filter, severityColumnNames, severityType);
     }
 
     public EventDefinition(
@@ -173,7 +165,8 @@ public class EventDefinition {
         }
 
         this.columnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {}.getType());
-        this.severityColumnNames = GSON.fromJson(resultSet.getString(10), new TypeToken<TreeSet<String>>() {}.getType());
+        this.severityColumnNames =
+                GSON.fromJson(resultSet.getString(10), new TypeToken<TreeSet<String>>() {}.getType());
 
         String severityTypeStr = resultSet.getString(11);
         severityTypeStr = severityTypeStr.toUpperCase();
@@ -436,20 +429,24 @@ public class EventDefinition {
             String airframe,
             String filterJson,
             String severityColumnNamesJson,
-            String severityType
-    ) throws SQLException {
+            String severityType)
+            throws SQLException {
         insert(
-                connection, fleetId, name, startBuffer, stopBuffer, airframe, null, filterJson, severityColumnNamesJson, severityType);
+                connection,
+                fleetId,
+                name,
+                startBuffer,
+                stopBuffer,
+                airframe,
+                null,
+                filterJson,
+                severityColumnNamesJson,
+                severityType);
     }
 
     public static void insert(
-            Connection connection,
-            int id,
-            String name,
-            int startBuffer,
-            int stopBuffer,
-            int airframeId
-    ) throws SQLException {
+            Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId)
+            throws SQLException {
         insert(connection, id, name, startBuffer, stopBuffer, airframeId, null);
     }
 
@@ -466,7 +463,13 @@ public class EventDefinition {
      * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(
-            Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId, Integer airframeTypeId)
+            Connection connection,
+            int id,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            int airframeId,
+            Integer airframeTypeId)
             throws SQLException {
         if (id > 0) {
             LOG.info("Passed a positive ID to special event insertion.");

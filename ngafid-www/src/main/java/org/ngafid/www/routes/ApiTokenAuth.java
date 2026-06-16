@@ -1,14 +1,12 @@
 package org.ngafid.www.routes;
 
 import io.javalin.http.Context;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.AccountException;
 import org.ngafid.core.accounts.ApiToken;
@@ -60,8 +58,10 @@ public final class ApiTokenAuth {
                 return;
             }
 
-            try { token.touchLastUsed(connection); }
-            catch (SQLException ignored) {}
+            try {
+                token.touchLastUsed(connection);
+            } catch (SQLException ignored) {
+            }
 
             ctx.attribute("user", user);
             ctx.attribute("apiToken", token);
@@ -83,8 +83,7 @@ public final class ApiTokenAuth {
     private static User resolveUserWithSelectedFleet(Connection connection, int userId)
             throws SQLException, AccountException {
         int selectedFleetId;
-        try (PreparedStatement q = connection.prepareStatement(
-                "SELECT fleet_selected FROM user WHERE id = ?")) {
+        try (PreparedStatement q = connection.prepareStatement("SELECT fleet_selected FROM user WHERE id = ?")) {
             q.setInt(1, userId);
             try (ResultSet rs = q.executeQuery()) {
                 if (!rs.next()) return null;
@@ -104,6 +103,9 @@ public final class ApiTokenAuth {
 
     public static final class ApiError {
         public final String error;
-        public ApiError(String error) { this.error = error; }
+
+        public ApiError(String error) {
+            this.error = error;
+        }
     }
 }

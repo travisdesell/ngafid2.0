@@ -2,7 +2,6 @@ package org.ngafid.www.routes;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -11,7 +10,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.ApiToken;
 import org.ngafid.core.accounts.User;
@@ -26,11 +24,13 @@ import org.ngafid.www.ErrorResponse;
  */
 public final class ApiTokenManagementRoutes {
 
-    private ApiTokenManagementRoutes() { /* utility */ }
+    private ApiTokenManagementRoutes() {
+        /* utility */
+    }
 
     public static void bindRoutes(Javalin app) {
-        app.post  ("/protected/api_tokens",           ApiTokenManagementRoutes::createToken);
-        app.get   ("/protected/api_tokens",           ApiTokenManagementRoutes::listTokens);
+        app.post("/protected/api_tokens", ApiTokenManagementRoutes::createToken);
+        app.get("/protected/api_tokens", ApiTokenManagementRoutes::listTokens);
         app.delete("/protected/api_tokens/{tokenId}", ApiTokenManagementRoutes::revokeToken);
     }
 
@@ -60,16 +60,16 @@ public final class ApiTokenManagementRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            ApiToken.CreatedApiToken created =
-                    ApiToken.create(connection, user.getId(), req.name, expiresAt);
+            ApiToken.CreatedApiToken created = ApiToken.create(connection, user.getId(), req.name, expiresAt);
 
-            ctx.status(201).json(new CreatedTokenResponse(
-                    created.getToken().getId(),
-                    created.getPlaintext(),  // shown ONCE
-                    created.getToken().getTokenName(),
-                    created.getToken().getCreatedAt(),
-                    created.getToken().getExpiresAt(),
-                    "Store this token somewhere safe -- it will NOT be shown again."));
+            ctx.status(201)
+                    .json(new CreatedTokenResponse(
+                            created.getToken().getId(),
+                            created.getPlaintext(), // shown ONCE
+                            created.getToken().getTokenName(),
+                            created.getToken().getCreatedAt(),
+                            created.getToken().getExpiresAt(),
+                            "Store this token somewhere safe -- it will NOT be shown again."));
         } catch (SQLException e) {
             ctx.status(500).json(new ErrorResponse(e));
         }
@@ -83,9 +83,12 @@ public final class ApiTokenManagementRoutes {
             List<TokenSummary> out = new ArrayList<>(tokens.size());
             for (ApiToken t : tokens) {
                 out.add(new TokenSummary(
-                        t.getId(), t.getTokenName(),
-                        t.getCreatedAt(), t.getExpiresAt(),
-                        t.getRevokedAt(), t.getLastUsedAt(),
+                        t.getId(),
+                        t.getTokenName(),
+                        t.getCreatedAt(),
+                        t.getExpiresAt(),
+                        t.getRevokedAt(),
+                        t.getLastUsedAt(),
                         t.isActive()));
             }
             ctx.json(out);
@@ -98,8 +101,9 @@ public final class ApiTokenManagementRoutes {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
         int tokenId;
-        try { tokenId = Integer.parseInt(ctx.pathParam("tokenId")); }
-        catch (NumberFormatException e) {
+        try {
+            tokenId = Integer.parseInt(ctx.pathParam("tokenId"));
+        } catch (NumberFormatException e) {
             ctx.status(400).json(new ApiTokenAuth.ApiError("tokenId must be an integer"));
             return;
         }
@@ -121,20 +125,25 @@ public final class ApiTokenManagementRoutes {
     // -- DTOs ------------------------------------------------------------
     public static final class CreateTokenRequest {
         public String name;
-        public Integer expiresInDays;  // optional; null = never expires
+        public Integer expiresInDays; // optional; null = never expires
     }
 
     public static final class CreatedTokenResponse {
         public final int id;
-        public final String token;           // PLAINTEXT -- only returned here, once
+        public final String token; // PLAINTEXT -- only returned here, once
         public final String name;
         public final Timestamp createdAt;
         public final Timestamp expiresAt;
         public final String warning;
-        public CreatedTokenResponse(int id, String token, String name,
-                                    Timestamp createdAt, Timestamp expiresAt, String warning) {
-            this.id = id; this.token = token; this.name = name;
-            this.createdAt = createdAt; this.expiresAt = expiresAt; this.warning = warning;
+
+        public CreatedTokenResponse(
+                int id, String token, String name, Timestamp createdAt, Timestamp expiresAt, String warning) {
+            this.id = id;
+            this.token = token;
+            this.name = name;
+            this.createdAt = createdAt;
+            this.expiresAt = expiresAt;
+            this.warning = warning;
         }
     }
 
@@ -146,11 +155,22 @@ public final class ApiTokenManagementRoutes {
         public final Timestamp revokedAt;
         public final Timestamp lastUsedAt;
         public final boolean active;
-        public TokenSummary(int id, String name, Timestamp createdAt, Timestamp expiresAt,
-                            Timestamp revokedAt, Timestamp lastUsedAt, boolean active) {
-            this.id = id; this.name = name; this.createdAt = createdAt;
-            this.expiresAt = expiresAt; this.revokedAt = revokedAt;
-            this.lastUsedAt = lastUsedAt; this.active = active;
+
+        public TokenSummary(
+                int id,
+                String name,
+                Timestamp createdAt,
+                Timestamp expiresAt,
+                Timestamp revokedAt,
+                Timestamp lastUsedAt,
+                boolean active) {
+            this.id = id;
+            this.name = name;
+            this.createdAt = createdAt;
+            this.expiresAt = expiresAt;
+            this.revokedAt = revokedAt;
+            this.lastUsedAt = lastUsedAt;
+            this.active = active;
         }
     }
 }

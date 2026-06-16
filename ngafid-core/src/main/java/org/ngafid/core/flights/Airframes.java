@@ -107,8 +107,8 @@ public final class Airframes {
     // CHECKSTYLE:ON
 
     /** Canonical rotorcraft codes in {@code tail_airframe_registry} / {@code airframes}. */
-    public static final Set<String> ROTORCRAFT_AIRFRAME_CODES = Set.of(
-            "407", "AS350", "AW109", "AW119", "AW139", "BK117", "EC130", "EC135", "MH60", "MH65", "R44");
+    public static final Set<String> ROTORCRAFT_AIRFRAME_CODES =
+            Set.of("407", "AS350", "AW109", "AW119", "AW139", "BK117", "EC130", "EC135", "MH60", "MH65", "R44");
 
     /**
      * Garmin {@code #airframe_info} {@code airframe_name} values mapped to {@link #ROTORCRAFT_AIRFRAME_CODES}.
