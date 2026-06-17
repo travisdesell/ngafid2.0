@@ -17,10 +17,12 @@ import org.ngafid.www.ErrorResponse;
 
 /**
  * Session-authenticated routes for managing the current user's API tokens.
- * <p>
- * NOTE: These routes are session-authed (cookie), NOT token-authed -- a user
- * must be logged in via the normal web UI to create or revoke tokens.
- * That prevents a stolen token from minting more tokens.
+ *
+ * These routes are session-authed (cookie), NOT token-authed -- a user must be logged in
+ * via the normal web UI to create or revoke tokens. That prevents a stolen token from
+ * minting more tokens.
+ *
+ * Wire up with: {@code ApiTokenManagementRoutes.bindRoutes(app)}
  */
 public final class ApiTokenManagementRoutes {
 
@@ -28,13 +30,26 @@ public final class ApiTokenManagementRoutes {
         /* utility */
     }
 
+    /**
+     * Registers the token management routes under {@code /protected/api_tokens}.
+     */
     public static void bindRoutes(Javalin app) {
         app.post("/protected/api_tokens", ApiTokenManagementRoutes::createToken);
         app.get("/protected/api_tokens", ApiTokenManagementRoutes::listTokens);
         app.delete("/protected/api_tokens/{tokenId}", ApiTokenManagementRoutes::revokeToken);
     }
 
-    /** Body: {@code { "name": "...", "expiresInDays": 90 (optional) }} */
+    /**
+     * Handles {@code POST /protected/api_tokens}: creates a new API token for the
+     * logged-in user and returns the plaintext value exactly once.
+     *
+     * Body: {@code { "name": "...", "expiresInDays": 90 (optional) }}. A null or
+     * non-positive {@code expiresInDays} produces a token that never expires.
+     *
+     * Returns 201 with a {@link CreatedTokenResponse} (whose {@code token} field is the
+     * only chance to read the plaintext value), 400 for an invalid body or missing/oversized
+     * name, and 500 on database errors.
+     */
     private static void createToken(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
@@ -75,6 +90,16 @@ public final class ApiTokenManagementRoutes {
         }
     }
 
+    /**
+     * Handles {@code GET /protected/api_tokens}: returns every token owned by the
+     * logged-in user as a list of {@link TokenSummary}.
+     *
+     * Plaintext token values are never included -- only metadata (id, name, timestamps,
+     * active flag) is returned. Revoked and expired tokens are included with
+     * {@code active = false} so the UI can render them as struck-through history.
+     *
+     * Returns 500 on database errors.
+     */
     private static void listTokens(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
@@ -97,6 +122,14 @@ public final class ApiTokenManagementRoutes {
         }
     }
 
+    /**
+     * Handles {@code DELETE /protected/api_tokens/{tokenId}}: revokes a token owned by
+     * the logged-in user.
+     *
+     * Returns 204 on success, 400 for a non-integer {@code tokenId}, 404 when the token
+     * does not exist or belongs to another user (404 rather than 403 to avoid leaking
+     * the existence of other users' tokens), and 500 on database errors.
+     */
     private static void revokeToken(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
@@ -123,11 +156,14 @@ public final class ApiTokenManagementRoutes {
     }
 
     // -- DTOs ------------------------------------------------------------
+
+    /** Request body for token creation. {@code expiresInDays} is optional; null means the token never expires. */
     public static final class CreateTokenRequest {
         public String name;
         public Integer expiresInDays; // optional; null = never expires
     }
 
+    /** Response body for a successful token creation. The {@code token} field is the only time the plaintext is exposed. */
     public static final class CreatedTokenResponse {
         public final int id;
         public final String token; // PLAINTEXT -- only returned here, once
@@ -147,6 +183,7 @@ public final class ApiTokenManagementRoutes {
         }
     }
 
+    /** Metadata-only view of a token, returned in list responses. Never contains the plaintext value. */
     public static final class TokenSummary {
         public final int id;
         public final String name;

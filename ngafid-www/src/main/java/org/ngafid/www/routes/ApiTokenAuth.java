@@ -30,6 +30,21 @@ public final class ApiTokenAuth {
 
     private ApiTokenAuth() {}
 
+    /**
+     * Validates the {@code Authorization} header on the incoming request and, on success,
+     * attaches the resolved {@link User} and {@link ApiToken} as Javalin context
+     * attributes for downstream handlers to read.
+     *
+     * Authentication failures (missing header, malformed scheme, empty value, unknown or
+     * inactive token, no usable fleet) all respond 401 with a generic message — the
+     * specific cause is not exposed to the caller to avoid leaking which condition failed.
+     * Database errors during lookup respond 500. In either failure path the remaining
+     * handlers are skipped so the route body never runs.
+     *
+     * The token's {@code last_used_at} timestamp is updated as a side effect; failures
+     * here are swallowed so a transient write error does not block an otherwise valid
+     * request.
+     */
     public static void requireApiToken(Context ctx) {
         String header = ctx.header(AUTH_HEADER);
         if (header == null || !header.startsWith(BEARER_PREFIX)) {
@@ -77,8 +92,12 @@ public final class ApiTokenAuth {
     }
 
     /**
-     * Loads the user with their currently-selected fleet, verifying the fleet
-     * exists and the user still has a fleet_access row for it.
+     * Loads the user with their currently-selected fleet, verifying the fleet exists and
+     * the user still has a {@code fleet_access} row for it.
+     *
+     * Returns {@code null} if the user no longer exists, has no selected fleet, or has
+     * had their fleet access revoked. This is treated as an authentication failure rather
+     * than a server error.
      */
     private static User resolveUserWithSelectedFleet(Connection connection, int userId)
             throws SQLException, AccountException {
@@ -96,11 +115,16 @@ public final class ApiTokenAuth {
         return User.get(connection, userId, selectedFleetId);
     }
 
+    /**
+     * Writes a JSON error body with the given status and skips remaining handlers so the
+     * route body does not execute.
+     */
     private static void reject(Context ctx, int status, String message) {
         ctx.status(status).json(new ApiError(message));
         ctx.skipRemainingHandlers();
     }
 
+    /** Generic JSON error body used by every failure path in this package. */
     public static final class ApiError {
         public final String error;
 
