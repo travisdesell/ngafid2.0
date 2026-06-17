@@ -361,12 +361,16 @@ public class AirSyncFleet extends Fleet {
      */
     public AirSyncAuth getAuth() {
         if (this.authCreds.isOutdated()) {
-            LOG.info("Bearer token is out of date. Requesting a new one.");
-            AirSyncAuth.Companion.refreshInstance();
-            this.authCreds = AirSyncAuth.Companion.getInstance();
+            refreshAuth();
         }
 
         return this.authCreds;
+    }
+
+    public void refreshAuth() {
+        LOG.info("Refreshing AirSync bearer token");
+        AirSyncAuth.Companion.refreshInstance();
+        this.authCreds = AirSyncAuth.Companion.getInstance();
     }
 
     /**
@@ -480,7 +484,7 @@ public class AirSyncFleet extends Fleet {
 
     class AirSyncFleetUpdater implements AutoCloseable {
         private static final int DOWNLOAD_BATCH_SIZE = 32;
-        private static final int ARCHIVE_MAX_SIZE = 128;
+        private static final int ARCHIVE_MAX_SIZE = 1000;
 
         // CHECKSTYLE:OFF
         Upload upload = null;
@@ -600,6 +604,7 @@ public class AirSyncFleet extends Fleet {
                         var data = downloads.get(i);
 
                         addFileToUpload(connection, imp, data);
+                        imp.confirmReceived();
                     }
 
                     AirSyncImport.batchCreateImport(connection, chunk, null);

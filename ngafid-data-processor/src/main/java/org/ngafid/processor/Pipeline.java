@@ -89,6 +89,7 @@ public class Pipeline implements AutoCloseable {
     // additional delegation if a single file extension may actually map to multiple significantly different schemas.
     private static final Map<String, FlightFileProcessor.Factory> FACTORIES = Map.of(
             "csv", CSVFileProcessor::factory,
+            "tel", CSVFileProcessor::factory, // Scan Eagle telemetry (DID_* columns; same format as .tel.csv)
             "dat", DATFileProcessor::new,
             "json", JSONFileProcessor::new,
             "gpx", GPXFileProcessor::new);
@@ -262,7 +263,17 @@ public class Pipeline implements AutoCloseable {
         return StreamSupport.stream(
                         Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED), false)
                 .filter(z -> !z.getName().contains("__MACOSX"))
-                .filter(z -> !z.isDirectory());
+                .filter(z -> !z.isDirectory())
+                .filter(z -> !isSkippedNonFlightFile(z.getName()));
+    }
+
+    /** Mission/software logs bundled in Scan Eagle zips are not flight recordings. */
+    private static boolean isSkippedNonFlightFile(String filename) {
+        int index = filename.lastIndexOf('.');
+        if (index < 0) {
+            return false;
+        }
+        return "log".equals(filename.substring(index + 1).toLowerCase());
     }
 
     // private Stream<FlightFileProcessor> getFlightFileProcessorStream() {

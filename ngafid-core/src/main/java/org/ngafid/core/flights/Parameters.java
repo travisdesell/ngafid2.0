@@ -88,6 +88,8 @@ public interface Parameters {
     String LCL_DATE = "Lcl Date";
     String LCL_TIME = "Lcl Time";
     String UTC_OFFSET = "UTCOfst";
+    String ENGINE_1_TORQUE = "Engine 1 Torque";
+    String ENGINE_2_TORQUE = "Engine 2 Torque";
 
     /**
      * Column name used for our derived UTC timestamp which uses the ISO 8601 format.

@@ -101,6 +101,24 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "RollAn-In-1")),
             Map.entry(Parameters.YAW_RATE, Set.of("Yaw Rate", "Gyro-YAW_RATE")),
             Map.entry(
+                    Parameters.ENGINE_1_TORQUE,
+                    Set.of(
+                            "TRQ_1",
+                            "E1 Torq",
+                            "Eng (1) Torque",
+                            "Eng 1 Torque",
+                            "1_Torque",
+                            "Torque 1(%)")),
+            Map.entry(
+                    Parameters.ENGINE_2_TORQUE,
+                    Set.of(
+                            "TRQ_2",
+                            "E2 torque",
+                            "Eng (2) Torque",
+                            "Eng 2 Torque",
+                            "2_Torque",
+                            "Torque 2(%)")),
+            Map.entry(
                     Parameters.ALT_AGL,
                     Set.of(
                             "Height Above Airfield",

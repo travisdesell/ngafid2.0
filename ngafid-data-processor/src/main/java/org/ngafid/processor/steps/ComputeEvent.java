@@ -178,7 +178,8 @@ public class ComputeEvent extends ComputeStep {
     @Override
     public boolean airframeIsValid(Airframes.Airframe airframe) {
         // While we could technically create events for non-fixed wing aircraft, we haven't yet!
-        return builder.meta.getAirframe().getType().getName().equals("Fixed Wing");
+        String airframeType =  builder.meta.getAirframe().getType().getName();
+        return airframeType.equals("Fixed Wing") || airframeType.equals("Rotorcraft");
     }
 
     /**
