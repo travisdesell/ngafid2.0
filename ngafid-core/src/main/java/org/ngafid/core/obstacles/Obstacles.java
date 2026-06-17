@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import org.ngafid.core.airports.Airports;
+import org.ngafid.core.airports.GeoHash;
 
 public final class Obstacles {
     private static final double FT_PER_KM = 3280.84;
@@ -36,6 +37,35 @@ public final class Obstacles {
 
         // Here is the code for the parsing of the Obstacles
 
+        
+
+    }
+
+    public static Obstacle getNearestObstacleWithin(
+            double latitude, double longitude, double maxDistanceFt, MutableDouble obstacleDistance) {
+        String[] geoHashes = GeoHash.getNearbyGeoHashes(latitude, longitude);
+
+        double minDistance = maxDistanceFt;
+        Obstacle nearestObstacle = null;
+        
+        for (String geoHash : geoHashes) {
+            ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.get(geoHash);
+
+            if (hashedAirports != null) {
+
+                for (Obstacle obstacle : hashedObstacles) {
+                    double distanceFt = calculateDistanceInFeet(latitude, longitude, obstacle.getLatitude(), obstacle.getLongitude());
+
+                    if (distanceFt < minDistance) {
+                        nearestObstacle = obstacle;
+                        minDistance = distanceFt;
+                        obstacleDistance.setValue(minDistance);
+                    }
+                }
+            }
+        }
+
+        return nearestObstacle;
     }
     
     /**
