@@ -52,6 +52,8 @@ public final class Config {
 
         AIRPORTS_FILE = getStringProperty("ngafid.airports.file");
         RUNWAYS_FILE = getStringProperty("ngafid.runways.file");
+        OBSTACLES_FILE = getStringProperty("ngafid.obstacles.file");
+
         NGAFID_UPLOAD_DIR = getStringProperty("ngafid.upload.dir");
         NGAFID_ARCHIVE_DIR = getStringProperty("ngafid.archive.dir");
         NGAFID_STATIC_DIR = getStringProperty("ngafid.static.dir");
