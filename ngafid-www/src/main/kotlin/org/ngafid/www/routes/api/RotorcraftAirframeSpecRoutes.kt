@@ -72,7 +72,7 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         try {
             Database.getConnection().use { connection ->
                 val created = RotorcraftAirframeSpecs.insert(connection, spec)
-                RotorcraftAirframeSpecs.getById(connection, created.id, true)?.let { ctx.json(it) } ?: ctx.json(created)
+                RotorcraftAirframeSpecs.getById(connection, created.id)?.let { ctx.json(it) } ?: ctx.json(created)
             }
         } catch (e: SQLException) {
             LOG.severe(e.toString())
@@ -93,17 +93,12 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         spec.id = specId
         try {
             Database.getConnection().use { connection ->
-                val updated = RotorcraftAirframeSpecs.update(connection, spec, true)
+                val updated = RotorcraftAirframeSpecs.update(connection, spec)
                 ctx.json(updated)
             }
         } catch (e: SQLException) {
             LOG.severe(e.toString())
-            val status = if (e.message?.contains("Not authorized", ignoreCase = true) == true) {
-                HttpStatus.UNAUTHORIZED
-            } else {
-                HttpStatus.BAD_REQUEST
-            }
-            ctx.status(status)
+            ctx.status(HttpStatus.BAD_REQUEST)
             ctx.result(e.message ?: "Could not update spec")
         }
     }

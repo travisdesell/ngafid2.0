@@ -9,7 +9,6 @@ import SignedInNavbar from "./signed_in_navbar.js";
 const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 10;
 const HAS_VIEW_ACCESS = typeof rotorcraftSpecsView !== "undefined" && rotorcraftSpecsView;
-const HAS_EDIT_ACCESS = typeof rotorcraftSpecsEdit !== "undefined" && rotorcraftSpecsEdit;
 
 const SPEC_FIELDS = [
     {key: "manufacturer", label: "Manufacturer", type: "text", required: true},
@@ -163,15 +162,10 @@ function cloneSpec(spec) {
 }
 
 function specPayloadForSave(spec) {
-    const payload = cloneSpec(spec);
-    delete payload.canEdit;
-    return payload;
+    return cloneSpec(spec);
 }
 
 function parseFieldValue(field, raw) {
-    if (field.type === "boolean") {
-        return !!raw;
-    }
     if (field.type === "number") {
         if (raw === "" || raw === null || raw === undefined) {
             return null;
@@ -197,7 +191,7 @@ class AirframeSpecsPage extends React.Component {
             currentPage: 0,
             pageSize: DEFAULT_PAGE_SIZE,
             totalCount: 0,
-            canEdit: HAS_EDIT_ACCESS,
+            canEdit: false,
             showAddSpecPanel: false,
         };
     }
@@ -371,17 +365,6 @@ class AirframeSpecsPage extends React.Component {
     }
 
     renderFieldInput(field, value, onChange, disabled) {
-        if (field.type === "boolean") {
-            return (
-                <input
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={!!value}
-                    disabled={disabled}
-                    onChange={(event) => onChange(event.target.checked)}
-                />
-            );
-        }
         const displayValue = value ?? "";
         return (
             <input

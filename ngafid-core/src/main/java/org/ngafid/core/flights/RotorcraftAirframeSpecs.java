@@ -93,9 +93,6 @@ public final class RotorcraftAirframeSpecs {
         public Double approachEpndb;
         public Double lbPerShp;
         public Double lbPerFt2;
-
-        /** UI hint: current user may edit rows. */
-        public boolean canEdit;
     }
 
     private static final String SELECT_COLUMNS = """
@@ -164,16 +161,14 @@ public final class RotorcraftAirframeSpecs {
             query.setInt(2, page * pageSize);
             try (ResultSet rs = query.executeQuery()) {
                 while (rs.next()) {
-                    Spec spec = readSpec(rs);
-                    spec.canEdit = userCanEdit;
-                    result.specs.add(spec);
+                    result.specs.add(readSpec(rs));
                 }
             }
         }
         return result;
     }
 
-    public static Spec getById(Connection connection, int specId, boolean userCanEdit) throws SQLException {
+    public static Spec getById(Connection connection, int specId) throws SQLException {
         String sql = "SELECT " + SELECT_COLUMNS + " FROM rotorcraft_airframe_specs s WHERE s.id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, specId);
@@ -181,9 +176,7 @@ public final class RotorcraftAirframeSpecs {
                 if (!rs.next()) {
                     return null;
                 }
-                Spec spec = readSpec(rs);
-                spec.canEdit = userCanEdit;
-                return spec;
+                return readSpec(rs);
             }
         }
     }
@@ -319,18 +312,10 @@ public final class RotorcraftAirframeSpecs {
                 }
             }
         }
-        spec.canEdit = true;
         return spec;
     }
 
-    public static Spec update(Connection connection, Spec spec, boolean userCanEdit) throws SQLException {
-        if (!userCanEdit) {
-            throw new SQLException("Not authorized to edit rotorcraft airframe specs.");
-        }
-        Spec existing = getById(connection, spec.id, true);
-        if (existing == null) {
-            throw new SQLException("Spec not found.");
-        }
+    public static Spec update(Connection connection, Spec spec) throws SQLException {
         if (spec.series == null) {
             spec.series = "";
         }
@@ -439,11 +424,10 @@ public final class RotorcraftAirframeSpecs {
 
             int updated = query.executeUpdate();
             if (updated == 0) {
-                throw new SQLException("Spec update failed.");
+                throw new SQLException("Spec not found.");
             }
         }
 
-        spec.canEdit = true;
         return spec;
     }
 
