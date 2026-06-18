@@ -49,6 +49,8 @@ public final class ApiExternalUploadRoutes {
     /**
      * Registers the external upload routes and installs the bearer-token filter on every
      * {@code /api/external/*} path so the token is validated before any handler runs.
+     *
+     * @param app the Javalin application to register routes on
      */
     public static void bindRoutes(Javalin app) {
         app.before("/api/external/*", ApiTokenAuth::requireApiToken);
@@ -78,6 +80,8 @@ public final class ApiExternalUploadRoutes {
      * with the same MD5 is returned, 400 for a missing/empty file or unsafe filename,
      * 403 for insufficient access, 404 for an unknown {@code fleetName}, 409 when an
      * already-finalized duplicate exists, and 500 on internal errors.
+     *
+     * @param ctx the Javalin request context
      */
     private static void postUpload(Context ctx) {
         final User user = Objects.requireNonNull(ctx.attribute("user"));
@@ -260,6 +264,8 @@ public final class ApiExternalUploadRoutes {
      * Supports {@code page} (zero-based, default 0) and {@code pageSize} (default 25,
      * max 100) query parameters. Returns 403 if the user lacks view access, 500 on
      * database errors.
+     *
+     * @param ctx the Javalin request context
      */
     private static void listUploads(Context ctx) {
         final User user = Objects.requireNonNull(ctx.attribute("user"));
@@ -297,6 +303,8 @@ public final class ApiExternalUploadRoutes {
      *
      * Returns 404 (not 403) when the upload exists but belongs to a different fleet, to
      * avoid leaking its existence.
+     *
+     * @param ctx the Javalin request context
      */
     private static void getUpload(Context ctx) {
         final User user = Objects.requireNonNull(ctx.attribute("user"));
@@ -339,6 +347,10 @@ public final class ApiExternalUploadRoutes {
     /**
      * Parses {@code s} as a non-negative integer, returning {@code dflt} if {@code s} is
      * null or not parseable. Negative parsed values are clamped to 0.
+     *
+     * @param s the string to parse (may be null)
+     * @param dflt the default value to return when {@code s} is null or not parseable
+     * @return the parsed non-negative integer, or {@code dflt} on failure
      */
     private static int parseIntOrDefault(String s, int dflt) {
         if (s == null) return dflt;
@@ -352,6 +364,7 @@ public final class ApiExternalUploadRoutes {
     // DTOs — public fields serialized by Gson
 
     /** Response body for a successful upload (201 Created) or a retryable existing upload (200 OK). */
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class UploadResponse {
         public final int uploadId;
         public final String status;
@@ -372,6 +385,7 @@ public final class ApiExternalUploadRoutes {
     }
 
     /** Response body for 409 Conflict when the user already uploaded a finalized file with the same MD5. */
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class DuplicateUploadResponse {
         public final int existingUploadId;
         public final String existingStatus;
@@ -387,6 +401,7 @@ public final class ApiExternalUploadRoutes {
     }
 
     /** Summary view of an upload, returned in list responses. */
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class UploadSummary {
         public final int id;
         public final String filename;
@@ -404,6 +419,7 @@ public final class ApiExternalUploadRoutes {
     }
 
     /** Detailed view of a single upload, returned by the single-upload endpoint. */
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class UploadDetail {
         public final int id;
         public final String filename;
@@ -426,6 +442,7 @@ public final class ApiExternalUploadRoutes {
     }
 
     /** Generic page wrapper for list responses. */
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class PagedResponse<T> {
         public final List<T> items;
         public final int page;
