@@ -24,6 +24,8 @@ public final class RotorcraftAirframeSpecs {
     public static final class Spec {
         public int id;
         public int ownerFleetId;
+        /** Resolved from {@code fleet.fleet_name} for display; not persisted. */
+        public String ownerFleetName;
         public boolean isPublic;
         public Integer airframeId;
         public String manufacturer = "";
@@ -106,8 +108,11 @@ public final class RotorcraftAirframeSpecs {
         public List<Integer> sharedFleetIds = new ArrayList<>();
     }
 
+    private static final String SELECT_FROM =
+            " FROM rotorcraft_airframe_specs s JOIN fleet f ON f.id = s.owner_fleet_id";
+
     private static final String SELECT_COLUMNS = """
-            s.id, s.owner_fleet_id, s.is_public, s.airframe_id,
+            s.id, s.owner_fleet_id, f.fleet_name AS owner_fleet_name, s.is_public, s.airframe_id,
             s.manufacturer, s.model, s.series, s.year, s.usage_type, s.helicopter_type, s.seats, s.landing_gear,
             s.max_gross_weight_lbs, s.min_flying_weight_lbs, s.empty_weight_lbs,
             s.mr_type, s.mr_number_blades, s.mr_diameter_in, s.mr_inboard_blade_chord_in, s.mr_outboard_blade_chord_in,
@@ -181,12 +186,11 @@ public final class RotorcraftAirframeSpecs {
         }
 
         String sql = """
-                SELECT %s
-                FROM rotorcraft_airframe_specs s
+                SELECT %s%s
                 WHERE %s
                 ORDER BY s.manufacturer, s.model, s.series, s.id
                 LIMIT ? OFFSET ?
-                """.formatted(SELECT_COLUMNS, VISIBLE_WHERE);
+                """.formatted(SELECT_COLUMNS, SELECT_FROM, VISIBLE_WHERE);
 
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, isAdmin ? 1 : 0);
@@ -213,7 +217,7 @@ public final class RotorcraftAirframeSpecs {
     public static Spec getById(
             Connection connection, int specId, int fleetId, boolean isAdmin, boolean hasManagerAccess)
             throws SQLException {
-        String sql = "SELECT " + SELECT_COLUMNS + " FROM rotorcraft_airframe_specs s WHERE s.id = ?";
+        String sql = "SELECT " + SELECT_COLUMNS + SELECT_FROM + " WHERE s.id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, specId);
             try (ResultSet rs = query.executeQuery()) {
@@ -510,6 +514,7 @@ public final class RotorcraftAirframeSpecs {
         }
 
         spec.ownerFleetId = existing.ownerFleetId;
+        spec.ownerFleetName = existing.ownerFleetName;
         applyPermissions(spec, fleetId, isAdmin, hasManagerAccess);
         return spec;
     }
@@ -589,7 +594,7 @@ public final class RotorcraftAirframeSpecs {
     }
 
     private static Spec getRaw(Connection connection, int specId) throws SQLException {
-        String sql = "SELECT " + SELECT_COLUMNS + " FROM rotorcraft_airframe_specs s WHERE s.id = ?";
+        String sql = "SELECT " + SELECT_COLUMNS + SELECT_FROM + " WHERE s.id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, specId);
             try (ResultSet rs = query.executeQuery()) {
@@ -628,6 +633,7 @@ public final class RotorcraftAirframeSpecs {
         Spec spec = new Spec();
         spec.id = rs.getInt("id");
         spec.ownerFleetId = rs.getInt("owner_fleet_id");
+        spec.ownerFleetName = rs.getString("owner_fleet_name");
         spec.isPublic = rs.getBoolean("is_public");
         spec.airframeId = getInteger(rs, "airframe_id");
         spec.manufacturer = rs.getString("manufacturer");

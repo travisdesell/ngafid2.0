@@ -218,16 +218,17 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 name -> message.append(" File airframe_name is '").append(name).append("'."));
         recorderAirframeName
                 .flatMap(Airframes::resolveGarminRotorcraftAirframeCode)
-                .ifPresent(code -> message.append(" Suggested: INSERT INTO tail_airframe_registry (tail, airframe)")
-                        .append(" VALUES ('")
+                .ifPresent(code -> message.append(" Suggested: INSERT INTO tail_airframe_registry (tail, airframe_id)")
+                        .append(" SELECT '")
                         .append(tail)
-                        .append("', '")
+                        .append("', a.id FROM airframes a WHERE a.airframe = '")
                         .append(code)
-                        .append("');"));
+                        .append("';"));
         if (recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode).isEmpty()) {
-            message.append(" Add: INSERT INTO tail_airframe_registry (tail, airframe) VALUES ('")
+            message.append(" Add: INSERT INTO tail_airframe_registry (tail, airframe_id)")
+                    .append(" SELECT '")
                     .append(tail)
-                    .append("', '<airframe_code>');");
+                    .append("', a.id FROM airframes a WHERE a.airframe = '<airframe_code>';");
         }
         return new FatalFlightFileException(message.toString());
     }

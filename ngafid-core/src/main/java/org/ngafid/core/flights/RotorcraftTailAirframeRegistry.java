@@ -27,7 +27,7 @@ public final class RotorcraftTailAirframeRegistry {
         String sql = """
                 SELECT r.tail, a.airframe, t.name AS airframe_type
                 FROM tail_airframe_registry r
-                INNER JOIN airframes a ON a.airframe = r.airframe
+                INNER JOIN airframes a ON a.id = r.airframe_id
                 INNER JOIN airframe_types t ON t.id = a.type_id
                 WHERE r.tail = ? AND t.name = 'Rotorcraft'
                 """;

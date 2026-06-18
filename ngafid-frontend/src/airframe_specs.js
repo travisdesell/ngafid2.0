@@ -10,12 +10,11 @@ const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 10;
 
 const SPEC_FIELDS = [
-    {key: "ownerFleetId", label: "Owner Fleet", type: "readonly"},
-    {key: "isPublic", label: "Access", type: "access"},
-    {key: "sharedFleetIds", label: "Shared Fleet IDs", type: "fleetIds"},
-    {key: "airframeId", label: "NGAFID Airframe ID", type: "number"},
     {key: "manufacturer", label: "Manufacturer", type: "text", required: true},
     {key: "model", label: "Model", type: "text", required: true},
+    {key: "ownerFleetName", label: "Owner Fleet", type: "ownerFleet"},
+    {key: "isPublic", label: "Access", type: "access"},
+    {key: "sharedFleetIds", label: "Shared Fleet IDs", type: "fleetIds"},
     {key: "series", label: "Series", type: "text"},
     {key: "year", label: "Year", type: "number"},
     {key: "usageType", label: "Usage", type: "text"},
@@ -88,25 +87,19 @@ const SPEC_FIELDS = [
     {key: "lbPerFt2", label: "lb/ft2", type: "number"},
 ];
 
-const ACTIONS_WIDTH_PX = 90;
+const ACTIONS_WIDTH_PX = 100;
 
 const STICKY_FIELD_KEYS = [
-    "ownerFleetId",
-    "isPublic",
-    "sharedFleetIds",
-    "airframeId",
     "manufacturer",
     "model",
-    "series",
 ];
 
 const COLUMN_WIDTH_PX = {
-    ownerFleetId: 90,
-    isPublic: 175,
-    sharedFleetIds: 165,
-    airframeId: 185,
     manufacturer: 135,
     model: 135,
+    ownerFleetName: 185,
+    isPublic: 150,
+    sharedFleetIds: 165,
     series: 115,
 };
 
@@ -130,7 +123,7 @@ function getStickyLeftPx(fieldKey) {
 
 function columnCellStyle(field, backgroundColor, zIndex = 1) {
     const width = COLUMN_WIDTH_PX[field.key] || 120;
-    const allowOverflow = field.type === "access" || field.type === "fleetIds";
+    const allowOverflow = field.type === "fleetIds";
     const style = {
         minWidth: `${width}px`,
         maxWidth: `${width}px`,
@@ -140,6 +133,11 @@ function columnCellStyle(field, backgroundColor, zIndex = 1) {
         textOverflow: allowOverflow ? "clip" : "ellipsis",
         boxSizing: "border-box",
     };
+    if (field.key === "isPublic") {
+        style.textAlign = "center";
+        style.paddingLeft = "0.35rem";
+        style.paddingRight = "0.35rem";
+    }
     const left = getStickyLeftPx(field.key);
     if (left !== null) {
         style.position = "sticky";
@@ -183,7 +181,6 @@ function emptySpec() {
         series: "",
         isPublic: true,
         sharedFleetIds: [],
-        airframeId: null,
     };
 }
 
@@ -195,6 +192,7 @@ function specPayloadForSave(spec) {
     const payload = cloneSpec(spec);
     delete payload.canEdit;
     delete payload.canManageSharing;
+    delete payload.ownerFleetName;
     if (payload.isPublic) {
         payload.sharedFleetIds = [];
     }
@@ -216,6 +214,16 @@ function parseFieldValue(field, raw) {
         return parseFleetIdsString(raw);
     }
     return raw;
+}
+
+function formatOwnerFleetLabel(fleetName, fleetId) {
+    if (!fleetName) {
+        return fleetId != null ? `(id: ${fleetId})` : "";
+    }
+    if (fleetId == null) {
+        return fleetName;
+    }
+    return `${fleetName} (id: ${fleetId})`;
 }
 
 function formatDisplayValue(field, value) {
@@ -256,8 +264,20 @@ class AirframeSpecsPage extends React.Component {
         this.loadSpecs(0);
     }
 
-    toggleAddSpecPanel() {
-        this.setState({showAddSpecPanel: !this.state.showAddSpecPanel});
+    openAddSpecPanel() {
+        this.setState({
+            showAddSpecPanel: true,
+            newSpec: emptySpec(),
+            fleetIdsText: {},
+        });
+    }
+
+    closeAddSpecPanel() {
+        this.setState({
+            showAddSpecPanel: false,
+            newSpec: emptySpec(),
+            fleetIdsText: {},
+        });
     }
 
     getTotalPages() {
@@ -419,10 +439,8 @@ class AirframeSpecsPage extends React.Component {
                 return response.json();
             })
             .then(() => {
-                this.setState({
-                    newSpec: emptySpec(),
-                    showAddSpecPanel: false,
-                }, () => this.loadSpecs(0));
+                this.closeAddSpecPanel();
+                this.loadSpecs(0);
             })
             .catch((error) => {
                 showErrorModal("Error Creating Airframe Spec", error.message);
@@ -458,10 +476,10 @@ class AirframeSpecsPage extends React.Component {
 
         return (
             <div
-                className="btn-group btn-group-sm"
+                className="btn-group btn-group-sm d-inline-flex"
                 role="group"
                 aria-label="Access visibility"
-                style={{whiteSpace: "nowrap"}}
+                style={{whiteSpace: "nowrap", fontSize: "0.75rem"}}
             >
                 <button
                     type="button"
@@ -484,6 +502,13 @@ class AirframeSpecsPage extends React.Component {
     }
 
     renderFieldInput(field, value, onChange, disabled, options = {}) {
+        if (field.type === "ownerFleet") {
+            return (
+                <span title={formatOwnerFleetLabel(value, options.ownerFleetId)}>
+                    {formatOwnerFleetLabel(value, options.ownerFleetId)}
+                </span>
+            );
+        }
         if (field.type === "readonly") {
             return <span>{formatDisplayValue(field, value)}</span>;
         }
@@ -514,12 +539,12 @@ class AirframeSpecsPage extends React.Component {
                 />
             );
         }
-        const inputType = field.type === "number" ? "number" : "text";
         const displayValue = value ?? "";
         return (
             <input
-                type={inputType}
+                type="text"
                 className="form-control form-control-sm"
+                inputMode={field.type === "number" ? "decimal" : undefined}
                 value={displayValue}
                 disabled={disabled}
                 onChange={(event) => onChange(event.target.value)}
@@ -527,93 +552,85 @@ class AirframeSpecsPage extends React.Component {
         );
     }
 
-    renderCollapsibleHeader(title, subtitle, expanded, onToggle) {
+    renderAddSpecButton() {
         return (
-            <button
-                type="button"
-                className="card-header d-flex justify-content-between align-items-center w-100 text-left"
-                onClick={onToggle}
-                style={{
-                    cursor: "pointer",
-                    border: "none",
-                    backgroundColor: "var(--c_navbar_bg)",
-                    color: "var(--c_text)",
-                }}
-            >
-                <div>
-                    <strong>{title}</strong>
-                    {subtitle && <div className="small text-muted mt-1">{subtitle}</div>}
-                </div>
-                <i className={`fa fa-chevron-${expanded ? "up" : "down"} ml-2`}/>
-            </button>
+            <div className="m-2 mb-3">
+                <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    style={{backgroundColor: "var(--c_confirm)", borderColor: "var(--c_confirm)"}}
+                    onClick={() => this.openAddSpecPanel()}
+                >
+                    <i className="fa fa-plus mr-1"/> Add Airframe Spec
+                </button>
+            </div>
         );
     }
 
-    renderNewSpecCard() {
-        const {showAddSpecPanel} = this.state;
+    renderAddSpecForm() {
         return (
             <div
-                className="card m-0 border-top"
+                className="m-2"
                 style={{
-                    flex: "0 0 auto",
-                    borderRadius: 0,
+                    border: "1px solid var(--c_border, #ccc)",
                     backgroundColor: "var(--c_row_bg)",
+                    padding: "1rem",
                 }}
             >
-                {this.renderCollapsibleHeader(
-                    "Add Airframe Spec",
-                    "Expand to enter POH limit parameters for a new row",
-                    showAddSpecPanel,
-                    () => this.toggleAddSpecPanel(),
-                )}
-                {showAddSpecPanel && (
-                    <div className="card-body">
-                        <p className="mb-2" style={{color: "var(--c_text)"}}>
-                            New rows are owned by your fleet. Public specs are visible to all fleets; private specs can
-                            grant access via shared fleet IDs.
-                        </p>
-                        <div className="row">
-                            {SPEC_FIELDS.filter((field) => field.type !== "readonly").map((field) => (
-                                <div
-                                    className={field.type === "access" ? "col-md-4 col-sm-12 mb-2" : "col-md-3 col-sm-6 mb-2"}
-                                    key={`new-${field.key}`}
-                                >
-                                    <label className="small mb-1">{field.label}</label>
-                                    {field.type === "access" && (
-                                        <div className="small text-muted mb-1">
-                                            Public specs are visible to all fleets.
-                                        </div>
-                                    )}
-                                    {field.type === "fleetIds" && (
-                                        <div className="small text-muted mb-1">
-                                            Comma-separated fleet IDs, e.g. 3, 5, 7
-                                        </div>
-                                    )}
-                                    {this.renderFieldInput(
-                                        field,
-                                        this.state.newSpec[field.key],
-                                        (value) => (field.type === "fleetIds"
-                                            ? this.updateFleetIdsField("new", null, field, value)
-                                            : this.updateNewSpecField(field, value)),
-                                        false,
-                                        field.type === "fleetIds" ? {
-                                            textValue: this.getFleetIdsText("new", field, this.state.newSpec[field.key]),
-                                            onBlur: () => this.clearFleetIdsText("new"),
-                                        } : {},
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <button
-                            type="button"
-                            className="btn btn-primary mt-2"
-                            style={{backgroundColor: "var(--c_confirm)", borderColor: "var(--c_confirm)"}}
-                            onClick={() => this.createSpec()}
+                <h5 className="mb-2" style={{color: "var(--c_text)"}}>Add Airframe Spec</h5>
+                <p className="mb-3 small" style={{color: "var(--c_text)"}}>
+                    New rows are owned by your fleet. Public specs are visible to all fleets; private specs can
+                    grant access via shared fleet IDs.
+                </p>
+                <div className="row">
+                    {SPEC_FIELDS.filter((field) => field.type !== "readonly" && field.type !== "ownerFleet").map((field) => (
+                        <div
+                            className={field.type === "access" ? "col-md-4 col-sm-12 mb-2" : "col-md-3 col-sm-6 mb-2"}
+                            key={`new-${field.key}`}
                         >
-                            <i className="fa fa-plus"/> Add Spec
-                        </button>
-                    </div>
-                )}
+                            <label className="small mb-1">{field.label}</label>
+                            {field.type === "access" && (
+                                <div className="small text-muted mb-1">
+                                    Public specs are visible to all fleets.
+                                </div>
+                            )}
+                            {field.type === "fleetIds" && (
+                                <div className="small text-muted mb-1">
+                                    Comma-separated fleet IDs, e.g. 3, 5, 7
+                                </div>
+                            )}
+                            {this.renderFieldInput(
+                                field,
+                                this.state.newSpec[field.key],
+                                (value) => (field.type === "fleetIds"
+                                    ? this.updateFleetIdsField("new", null, field, value)
+                                    : this.updateNewSpecField(field, value)),
+                                false,
+                                field.type === "fleetIds" ? {
+                                    textValue: this.getFleetIdsText("new", field, this.state.newSpec[field.key]),
+                                    onBlur: () => this.clearFleetIdsText("new"),
+                                } : {},
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-3">
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm mr-2"
+                        style={{backgroundColor: "var(--c_confirm)", borderColor: "var(--c_confirm)"}}
+                        onClick={() => this.createSpec()}
+                    >
+                        <i className="fa fa-check mr-1"/> Confirm
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-outline-secondary btn-sm"
+                        onClick={() => this.closeAddSpecPanel()}
+                    >
+                        Cancel
+                    </button>
+                </div>
             </div>
         );
     }
@@ -697,7 +714,6 @@ class AirframeSpecsPage extends React.Component {
 
         return (
             <div>
-                {this.renderPagination()}
                 <div
                     className="m-2"
                     style={{
@@ -755,9 +771,9 @@ class AirframeSpecsPage extends React.Component {
                                                     borderColor: "var(--c_confirm)",
                                                 }}
                                                 onClick={() => this.saveSpec(spec)}
-                                                title="Save changes"
+                                                title="Confirm changes"
                                             >
-                                                <i className="fa fa-check"/>
+                                                Confirm
                                             </button>
                                         )}
                                         {!editable && <span className="text-muted small">Read only</span>}
@@ -766,9 +782,20 @@ class AirframeSpecsPage extends React.Component {
                                         const fieldDisabled = !editable
                                             || (field.key === "isPublic" && !canManageSharing)
                                             || (field.key === "sharedFleetIds" && (!canManageSharing || spec.isPublic))
-                                            || field.type === "readonly";
+                                            || field.type === "readonly"
+                                            || field.type === "ownerFleet";
                                         const cellStyle = columnCellStyle(field, "var(--c_row_bg)");
                                         const draftKey = String(spec.id);
+                                        const fieldOptions = field.type === "fleetIds" ? {
+                                            textValue: this.getFleetIdsText(
+                                                draftKey,
+                                                field,
+                                                spec[field.key],
+                                            ),
+                                            onBlur: () => this.clearFleetIdsText(draftKey),
+                                        } : field.type === "ownerFleet" ? {
+                                            ownerFleetId: spec.ownerFleetId,
+                                        } : {};
                                         return (
                                             <td key={`${spec.id}-${field.key}`} style={cellStyle}>
                                                 {this.renderFieldInput(
@@ -778,14 +805,7 @@ class AirframeSpecsPage extends React.Component {
                                                         ? this.updateFleetIdsField(draftKey, spec.id, field, value)
                                                         : this.updateSpecField(spec.id, field, value)),
                                                     fieldDisabled,
-                                                    field.type === "fleetIds" ? {
-                                                        textValue: this.getFleetIdsText(
-                                                            draftKey,
-                                                            field,
-                                                            spec[field.key],
-                                                        ),
-                                                        onBlur: () => this.clearFleetIdsText(draftKey),
-                                                    } : {},
+                                                    fieldOptions,
                                                 )}
                                             </td>
                                         );
@@ -823,10 +843,16 @@ class AirframeSpecsPage extends React.Component {
                             Rows are filtered by your fleet access (public, owned, or shared private specs).
                             You can edit rows owned by your fleet.
                         </p>
-                        {this.renderTable()}
+                        {this.state.showAddSpecPanel ? (
+                            this.renderAddSpecForm()
+                        ) : (
+                            <>
+                                {this.renderAddSpecButton()}
+                                {this.renderTable()}
+                            </>
+                        )}
                     </div>
                 </div>
-                {this.renderNewSpecCard()}
             </div>
         );
     }
