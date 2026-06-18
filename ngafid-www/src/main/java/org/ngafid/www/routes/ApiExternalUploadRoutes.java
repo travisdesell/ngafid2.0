@@ -361,17 +361,16 @@ public final class ApiExternalUploadRoutes {
         }
     }
 
-    // DTOs — public fields serialized by Gson
+    // DTOs — private fields serialized by Gson via reflection on field names
 
     /** Response body for a successful upload (201 Created) or a retryable existing upload (200 OK). */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class UploadResponse {
-        public final int uploadId;
-        public final String status;
-        public final String filename;
-        public final String md5Hash;
-        public final long sizeBytes;
-        public final int fleetId;
+        private final int uploadId;
+        private final String status;
+        private final String filename;
+        private final String md5Hash;
+        private final long sizeBytes;
+        private final int fleetId;
 
         public UploadResponse(
                 int uploadId, String status, String filename, String md5Hash, long sizeBytes, int fleetId) {
@@ -382,15 +381,38 @@ public final class ApiExternalUploadRoutes {
             this.sizeBytes = sizeBytes;
             this.fleetId = fleetId;
         }
+
+        public int getUploadId() {
+            return uploadId;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public String getMd5Hash() {
+            return md5Hash;
+        }
+
+        public long getSizeBytes() {
+            return sizeBytes;
+        }
+
+        public int getFleetId() {
+            return fleetId;
+        }
     }
 
     /** Response body for 409 Conflict when the user already uploaded a finalized file with the same MD5. */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class DuplicateUploadResponse {
-        public final int existingUploadId;
-        public final String existingStatus;
-        public final String existingFilename;
-        public final String error;
+        private final int existingUploadId;
+        private final String existingStatus;
+        private final String existingFilename;
+        private final String error;
 
         public DuplicateUploadResponse(int id, String status, String filename, String error) {
             this.existingUploadId = id;
@@ -398,16 +420,31 @@ public final class ApiExternalUploadRoutes {
             this.existingFilename = filename;
             this.error = error;
         }
+
+        public int getExistingUploadId() {
+            return existingUploadId;
+        }
+
+        public String getExistingStatus() {
+            return existingStatus;
+        }
+
+        public String getExistingFilename() {
+            return existingFilename;
+        }
+
+        public String getError() {
+            return error;
+        }
     }
 
     /** Summary view of an upload, returned in list responses. */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class UploadSummary {
-        public final int id;
-        public final String filename;
-        public final String status;
-        public final String startTime;
-        public final String endTime;
+        private final int id;
+        private final String filename;
+        private final String status;
+        private final String startTime;
+        private final String endTime;
 
         public UploadSummary(int id, String filename, String status, String startTime, String endTime) {
             this.id = id;
@@ -416,18 +453,37 @@ public final class ApiExternalUploadRoutes {
             this.startTime = startTime;
             this.endTime = endTime;
         }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
     }
 
     /** Detailed view of a single upload, returned by the single-upload endpoint. */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class UploadDetail {
-        public final int id;
-        public final String filename;
-        public final String status;
-        public final String md5Hash;
-        public final String startTime;
-        public final String endTime;
-        public final int fleetId;
+        private final int id;
+        private final String filename;
+        private final String status;
+        private final String md5Hash;
+        private final String startTime;
+        private final String endTime;
+        private final int fleetId;
 
         public UploadDetail(
                 int id, String filename, String status, String md5Hash, String startTime, String endTime, int fleetId) {
@@ -439,21 +495,64 @@ public final class ApiExternalUploadRoutes {
             this.endTime = endTime;
             this.fleetId = fleetId;
         }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String getMd5Hash() {
+            return md5Hash;
+        }
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
+
+        public int getFleetId() {
+            return fleetId;
+        }
     }
 
     /** Generic page wrapper for list responses. */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class PagedResponse<T> {
-        public final List<T> items;
-        public final int page;
-        public final int pageSize;
-        public final int total;
+        private final List<T> items;
+        private final int page;
+        private final int pageSize;
+        private final int total;
 
         public PagedResponse(List<T> items, int page, int pageSize, int total) {
             this.items = items;
             this.page = page;
             this.pageSize = pageSize;
             this.total = total;
+        }
+
+        public List<T> getItems() {
+            return items;
+        }
+
+        public int getPage() {
+            return page;
+        }
+
+        public int getPageSize() {
+            return pageSize;
+        }
+
+        public int getTotal() {
+            return total;
         }
     }
 }
