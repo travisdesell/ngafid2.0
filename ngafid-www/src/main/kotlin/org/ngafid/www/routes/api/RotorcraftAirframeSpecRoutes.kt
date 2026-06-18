@@ -5,7 +5,9 @@ import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.HttpStatus
+import io.javalin.http.UnauthorizedResponse
 import org.ngafid.core.Database
+import org.ngafid.core.accounts.User
 import org.ngafid.core.flights.RotorcraftAirframeSpecs
 import org.ngafid.www.WebServer
 import org.ngafid.www.routes.Role
@@ -29,17 +31,28 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         }
     }
 
+    private fun requireViewAccess(user: User) {
+        if (!user.hasRotorcraftSpecsView()) {
+            throw UnauthorizedResponse("You do not have access to rotorcraft airframe specs.")
+        }
+    }
+
+    private fun requireEditAccess(user: User) {
+        if (!user.hasRotorcraftSpecsEdit()) {
+            throw UnauthorizedResponse("You do not have permission to edit rotorcraft airframe specs.")
+        }
+    }
+
     private fun listSpecs(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
+        requireViewAccess(user)
         val page = ctx.queryParam("page")?.toIntOrNull() ?: 0
         val pageSize = ctx.queryParam("pageSize")?.toIntOrNull() ?: 10
 
         Database.getConnection().use { connection ->
-            val result = RotorcraftAirframeSpecs.listVisiblePage(
+            val result = RotorcraftAirframeSpecs.listPage(
                 connection,
-                user.fleetId,
-                user.isAdmin,
-                user.managesFleet(user.fleetId),
+                user.hasRotorcraftSpecsEdit(),
                 page,
                 pageSize,
             )
@@ -49,6 +62,7 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
 
     private fun createSpec(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
+        requireEditAccess(user)
         val spec = GSON.fromJson(ctx.body(), RotorcraftAirframeSpecs.Spec::class.java)
         if (spec.manufacturer.isNullOrBlank() || spec.model.isNullOrBlank()) {
             ctx.status(HttpStatus.BAD_REQUEST)
@@ -57,14 +71,8 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         }
         try {
             Database.getConnection().use { connection ->
-                val created = RotorcraftAirframeSpecs.insert(connection, spec, user.fleetId)
-                RotorcraftAirframeSpecs.getById(
-                    connection,
-                    created.id,
-                    user.fleetId,
-                    user.isAdmin,
-                    user.managesFleet(user.fleetId),
-                )?.let { ctx.json(it) } ?: ctx.json(created)
+                val created = RotorcraftAirframeSpecs.insert(connection, spec)
+                RotorcraftAirframeSpecs.getById(connection, created.id, true)?.let { ctx.json(it) } ?: ctx.json(created)
             }
         } catch (e: SQLException) {
             LOG.severe(e.toString())
@@ -75,6 +83,7 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
 
     private fun updateSpec(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
+        requireEditAccess(user)
         val specId = ctx.pathParam("id").toIntOrNull()
         if (specId == null) {
             ctx.status(HttpStatus.BAD_REQUEST)
@@ -84,13 +93,7 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         spec.id = specId
         try {
             Database.getConnection().use { connection ->
-                val updated = RotorcraftAirframeSpecs.update(
-                    connection,
-                    spec,
-                    user.fleetId,
-                    user.isAdmin,
-                    user.managesFleet(user.fleetId),
-                )
+                val updated = RotorcraftAirframeSpecs.update(connection, spec, true)
                 ctx.json(updated)
             }
         } catch (e: SQLException) {

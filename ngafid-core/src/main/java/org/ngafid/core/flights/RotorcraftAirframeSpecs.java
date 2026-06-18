@@ -7,15 +7,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
- * CRUD and visibility for {@code rotorcraft_airframe_specs} and fleet sharing grants.
+ * CRUD for {@code rotorcraft_airframe_specs}. Access is controlled by per-user flags on {@code user},
+ * not by fleet ownership.
  */
 public final class RotorcraftAirframeSpecs {
 
@@ -23,10 +20,6 @@ public final class RotorcraftAirframeSpecs {
 
     public static final class Spec {
         public int id;
-        public int ownerFleetId;
-        /** Resolved from {@code fleet.fleet_name} for display; not persisted. */
-        public String ownerFleetName;
-        public boolean isPublic;
         public Integer airframeId;
         public String manufacturer = "";
         public String model = "";
@@ -101,18 +94,12 @@ public final class RotorcraftAirframeSpecs {
         public Double lbPerShp;
         public Double lbPerFt2;
 
-        /** UI hint: current user may edit this row. */
+        /** UI hint: current user may edit rows. */
         public boolean canEdit;
-        /** UI hint: current user may change is_public and fleet grants. */
-        public boolean canManageSharing;
-        public List<Integer> sharedFleetIds = new ArrayList<>();
     }
 
-    private static final String SELECT_FROM =
-            " FROM rotorcraft_airframe_specs s JOIN fleet f ON f.id = s.owner_fleet_id";
-
     private static final String SELECT_COLUMNS = """
-            s.id, s.owner_fleet_id, f.fleet_name AS owner_fleet_name, s.is_public, s.airframe_id,
+            s.id, s.airframe_id,
             s.manufacturer, s.model, s.series, s.year, s.usage_type, s.helicopter_type, s.seats, s.landing_gear,
             s.max_gross_weight_lbs, s.min_flying_weight_lbs, s.empty_weight_lbs,
             s.mr_type, s.mr_number_blades, s.mr_diameter_in, s.mr_inboard_blade_chord_in, s.mr_outboard_blade_chord_in,
@@ -129,35 +116,18 @@ public final class RotorcraftAirframeSpecs {
             s.max_continuous_rating_shp, s.max_fuel_pressure_psi, s.turbine_outlet_temp_aeo_max_continuous_c,
             s.max_operational_pressure_altitude_ft, s.max_pressure_altitude_takeoff_landing_ft,
             s.min_sl_operation_air_temp_c, s.max_sl_operation_air_temp_c,
-            s.takeoff_epndb, s.flyover_epndb, s.approach_epndb, s.lb_per_shp, s.lb_per_ft2,
-            (SELECT GROUP_CONCAT(a.fleet_id ORDER BY a.fleet_id)
-             FROM rotorcraft_airframe_spec_fleet_access a WHERE a.spec_id = s.id) AS shared_fleet_ids
-            """;
-
-    private static final String VISIBLE_WHERE = """
-            (? = 1
-               OR s.is_public = 1
-               OR s.owner_fleet_id = ?
-               OR EXISTS (
-                    SELECT 1 FROM rotorcraft_airframe_spec_fleet_access a
-                    WHERE a.spec_id = s.id AND a.fleet_id = ?
-               ))
+            s.takeoff_epndb, s.flyover_epndb, s.approach_epndb, s.lb_per_shp, s.lb_per_ft2
             """;
 
     public static final class Page {
         public int total;
         public int page;
         public int pageSize;
+        public boolean canEdit;
         public List<Spec> specs = new ArrayList<>();
     }
 
-    public static Page listVisiblePage(
-            Connection connection,
-            int fleetId,
-            boolean isAdmin,
-            boolean hasManagerAccess,
-            int page,
-            int pageSize)
+    public static Page listPage(Connection connection, boolean userCanEdit, int page, int pageSize)
             throws SQLException {
         if (page < 0) {
             page = 0;
@@ -172,36 +142,30 @@ public final class RotorcraftAirframeSpecs {
         Page result = new Page();
         result.page = page;
         result.pageSize = pageSize;
+        result.canEdit = userCanEdit;
 
-        String countSql = "SELECT COUNT(*) FROM rotorcraft_airframe_specs s WHERE " + VISIBLE_WHERE;
-        try (PreparedStatement countQuery = connection.prepareStatement(countSql)) {
-            countQuery.setInt(1, isAdmin ? 1 : 0);
-            countQuery.setInt(2, fleetId);
-            countQuery.setInt(3, fleetId);
-            try (ResultSet rs = countQuery.executeQuery()) {
-                if (rs.next()) {
-                    result.total = rs.getInt(1);
-                }
+        try (PreparedStatement countQuery =
+                connection.prepareStatement("SELECT COUNT(*) FROM rotorcraft_airframe_specs");
+                ResultSet rs = countQuery.executeQuery()) {
+            if (rs.next()) {
+                result.total = rs.getInt(1);
             }
         }
 
         String sql = """
-                SELECT %s%s
-                WHERE %s
+                SELECT %s
+                FROM rotorcraft_airframe_specs s
                 ORDER BY s.manufacturer, s.model, s.series, s.id
                 LIMIT ? OFFSET ?
-                """.formatted(SELECT_COLUMNS, SELECT_FROM, VISIBLE_WHERE);
+                """.formatted(SELECT_COLUMNS);
 
         try (PreparedStatement query = connection.prepareStatement(sql)) {
-            query.setInt(1, isAdmin ? 1 : 0);
-            query.setInt(2, fleetId);
-            query.setInt(3, fleetId);
-            query.setInt(4, pageSize);
-            query.setInt(5, page * pageSize);
+            query.setInt(1, pageSize);
+            query.setInt(2, page * pageSize);
             try (ResultSet rs = query.executeQuery()) {
                 while (rs.next()) {
                     Spec spec = readSpec(rs);
-                    applyPermissions(spec, fleetId, isAdmin, hasManagerAccess);
+                    spec.canEdit = userCanEdit;
                     result.specs.add(spec);
                 }
             }
@@ -209,15 +173,8 @@ public final class RotorcraftAirframeSpecs {
         return result;
     }
 
-    public static List<Spec> listVisible(
-            Connection connection, int fleetId, boolean isAdmin, boolean hasManagerAccess) throws SQLException {
-        return listVisiblePage(connection, fleetId, isAdmin, hasManagerAccess, 0, Integer.MAX_VALUE).specs;
-    }
-
-    public static Spec getById(
-            Connection connection, int specId, int fleetId, boolean isAdmin, boolean hasManagerAccess)
-            throws SQLException {
-        String sql = "SELECT " + SELECT_COLUMNS + SELECT_FROM + " WHERE s.id = ?";
+    public static Spec getById(Connection connection, int specId, boolean userCanEdit) throws SQLException {
+        String sql = "SELECT " + SELECT_COLUMNS + " FROM rotorcraft_airframe_specs s WHERE s.id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, specId);
             try (ResultSet rs = query.executeQuery()) {
@@ -225,16 +182,13 @@ public final class RotorcraftAirframeSpecs {
                     return null;
                 }
                 Spec spec = readSpec(rs);
-                if (!isVisible(spec, fleetId, isAdmin)) {
-                    return null;
-                }
-                applyPermissions(spec, fleetId, isAdmin, hasManagerAccess);
+                spec.canEdit = userCanEdit;
                 return spec;
             }
         }
     }
 
-    public static Spec insert(Connection connection, Spec spec, int ownerFleetId) throws SQLException {
+    public static Spec insert(Connection connection, Spec spec) throws SQLException {
         Objects.requireNonNull(spec.manufacturer, "manufacturer");
         Objects.requireNonNull(spec.model, "model");
         if (spec.series == null) {
@@ -243,7 +197,7 @@ public final class RotorcraftAirframeSpecs {
 
         String sql = """
                 INSERT INTO rotorcraft_airframe_specs (
-                    owner_fleet_id, is_public, airframe_id,
+                    airframe_id,
                     manufacturer, model, series, year, usage_type, helicopter_type, seats, landing_gear,
                     max_gross_weight_lbs, min_flying_weight_lbs, empty_weight_lbs,
                     mr_type, mr_number_blades, mr_diameter_in, mr_inboard_blade_chord_in, mr_outboard_blade_chord_in,
@@ -262,7 +216,7 @@ public final class RotorcraftAirframeSpecs {
                     min_sl_operation_air_temp_c, max_sl_operation_air_temp_c,
                     takeoff_epndb, flyover_epndb, approach_epndb, lb_per_shp, lb_per_ft2
                 ) VALUES (
-                    ?, ?, ?,
+                    ?,
                     ?, ?, ?, ?, ?, ?, ?, ?,
                     ?, ?, ?,
                     ?, ?, ?, ?, ?,
@@ -284,8 +238,6 @@ public final class RotorcraftAirframeSpecs {
 
         try (PreparedStatement query = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             int i = 1;
-            query.setInt(i++, ownerFleetId);
-            query.setBoolean(i++, spec.isPublic);
             setInteger(query, i++, spec.airframeId);
             query.setString(i++, spec.manufacturer);
             query.setString(i++, spec.model);
@@ -367,36 +319,25 @@ public final class RotorcraftAirframeSpecs {
                 }
             }
         }
-        spec.ownerFleetId = ownerFleetId;
-        if (!spec.isPublic && spec.sharedFleetIds != null && !spec.sharedFleetIds.isEmpty()) {
-            replaceFleetAccess(connection, spec.id, ownerFleetId, false, spec.sharedFleetIds);
-        }
+        spec.canEdit = true;
         return spec;
     }
 
-    public static Spec update(
-            Connection connection, Spec spec, int fleetId, boolean isAdmin, boolean hasManagerAccess)
-            throws SQLException {
-        Spec existing = getById(connection, spec.id, fleetId, isAdmin, hasManagerAccess);
-        if (existing == null) {
-            throw new SQLException("Spec not found or not visible.");
+    public static Spec update(Connection connection, Spec spec, boolean userCanEdit) throws SQLException {
+        if (!userCanEdit) {
+            throw new SQLException("Not authorized to edit rotorcraft airframe specs.");
         }
-        if (!canEdit(existing, fleetId, isAdmin, hasManagerAccess)) {
-            throw new SQLException("Not authorized to edit this spec.");
+        Spec existing = getById(connection, spec.id, true);
+        if (existing == null) {
+            throw new SQLException("Spec not found.");
         }
         if (spec.series == null) {
             spec.series = "";
         }
 
-        boolean manageSharing = canManageSharing(existing, fleetId, isAdmin, hasManagerAccess);
-        if (!manageSharing) {
-            spec.isPublic = existing.isPublic;
-            spec.sharedFleetIds = existing.sharedFleetIds;
-        }
-
         String sql = """
                 UPDATE rotorcraft_airframe_specs SET
-                    is_public = ?, airframe_id = ?,
+                    airframe_id = ?,
                     manufacturer = ?, model = ?, series = ?, year = ?, usage_type = ?, helicopter_type = ?, seats = ?,
                     landing_gear = ?,
                     max_gross_weight_lbs = ?, min_flying_weight_lbs = ?, empty_weight_lbs = ?,
@@ -416,12 +357,11 @@ public final class RotorcraftAirframeSpecs {
                     max_operational_pressure_altitude_ft = ?, max_pressure_altitude_takeoff_landing_ft = ?,
                     min_sl_operation_air_temp_c = ?, max_sl_operation_air_temp_c = ?,
                     takeoff_epndb = ?, flyover_epndb = ?, approach_epndb = ?, lb_per_shp = ?, lb_per_ft2 = ?
-                WHERE id = ? AND owner_fleet_id = ?
+                WHERE id = ?
                 """;
 
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             int i = 1;
-            query.setBoolean(i++, spec.isPublic);
             setInteger(query, i++, spec.airframeId);
             query.setString(i++, spec.manufacturer);
             query.setString(i++, spec.model);
@@ -495,8 +435,7 @@ public final class RotorcraftAirframeSpecs {
             setDouble(query, i++, spec.approachEpndb);
             setDouble(query, i++, spec.lbPerShp);
             setDouble(query, i++, spec.lbPerFt2);
-            query.setInt(i++, spec.id);
-            query.setInt(i, existing.ownerFleetId);
+            query.setInt(i, spec.id);
 
             int updated = query.executeUpdate();
             if (updated == 0) {
@@ -504,137 +443,13 @@ public final class RotorcraftAirframeSpecs {
             }
         }
 
-        if (manageSharing) {
-            if (spec.isPublic) {
-                clearFleetAccess(connection, spec.id);
-                spec.sharedFleetIds = new ArrayList<>();
-            } else {
-                replaceFleetAccess(connection, spec.id, existing.ownerFleetId, isAdmin, spec.sharedFleetIds);
-            }
-        }
-
-        spec.ownerFleetId = existing.ownerFleetId;
-        spec.ownerFleetName = existing.ownerFleetName;
-        applyPermissions(spec, fleetId, isAdmin, hasManagerAccess);
+        spec.canEdit = true;
         return spec;
-    }
-
-    public static void replaceFleetAccess(
-            Connection connection,
-            int specId,
-            int ownerFleetId,
-            boolean isAdmin,
-            List<Integer> fleetIds)
-            throws SQLException {
-        Spec existing = getRaw(connection, specId);
-        if (existing == null) {
-            throw new SQLException("Spec not found.");
-        }
-        if (!isAdmin && existing.ownerFleetId != ownerFleetId) {
-            throw new SQLException("Not authorized to manage fleet access.");
-        }
-        clearFleetAccess(connection, specId);
-        if (fleetIds == null || fleetIds.isEmpty()) {
-            return;
-        }
-        List<Integer> validFleetIds = resolveExistingFleetIds(connection, fleetIds, existing.ownerFleetId);
-        if (validFleetIds.isEmpty()) {
-            return;
-        }
-        String sql = "INSERT INTO rotorcraft_airframe_spec_fleet_access (spec_id, fleet_id) VALUES (?, ?)";
-        try (PreparedStatement query = connection.prepareStatement(sql)) {
-            for (Integer fleetId : validFleetIds) {
-                query.setInt(1, specId);
-                query.setInt(2, fleetId);
-                query.addBatch();
-            }
-            query.executeBatch();
-        }
-    }
-
-    /**
-     * Returns fleet IDs that exist in {@code fleet}, excluding the owner fleet and duplicates.
-     * Throws if any requested ID is not a valid fleet.
-     */
-    private static List<Integer> resolveExistingFleetIds(
-            Connection connection, List<Integer> fleetIds, int ownerFleetId) throws SQLException {
-        Set<Integer> unique = new HashSet<>();
-        List<Integer> ordered = new ArrayList<>();
-        for (Integer fleetId : fleetIds) {
-            if (fleetId == null || fleetId <= 0 || fleetId == ownerFleetId) {
-                continue;
-            }
-            if (!unique.add(fleetId)) {
-                continue;
-            }
-            if (!fleetExists(connection, fleetId)) {
-                throw new SQLException("Unknown fleet ID: " + fleetId);
-            }
-            ordered.add(fleetId);
-        }
-        return ordered;
-    }
-
-    private static boolean fleetExists(Connection connection, int fleetId) throws SQLException {
-        String sql = "SELECT 1 FROM fleet WHERE id = ? LIMIT 1";
-        try (PreparedStatement query = connection.prepareStatement(sql)) {
-            query.setInt(1, fleetId);
-            try (ResultSet rs = query.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    private static void clearFleetAccess(Connection connection, int specId) throws SQLException {
-        try (PreparedStatement query =
-                connection.prepareStatement("DELETE FROM rotorcraft_airframe_spec_fleet_access WHERE spec_id = ?")) {
-            query.setInt(1, specId);
-            query.executeUpdate();
-        }
-    }
-
-    private static Spec getRaw(Connection connection, int specId) throws SQLException {
-        String sql = "SELECT " + SELECT_COLUMNS + SELECT_FROM + " WHERE s.id = ?";
-        try (PreparedStatement query = connection.prepareStatement(sql)) {
-            query.setInt(1, specId);
-            try (ResultSet rs = query.executeQuery()) {
-                if (rs.next()) {
-                    return readSpec(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static boolean isVisible(Spec spec, int fleetId, boolean isAdmin) {
-        if (isAdmin || spec.isPublic || spec.ownerFleetId == fleetId) {
-            return true;
-        }
-        return spec.sharedFleetIds != null && spec.sharedFleetIds.contains(fleetId);
-    }
-
-    private static boolean canEdit(Spec spec, int fleetId, boolean isAdmin, boolean hasManagerAccess) {
-        if (isAdmin) {
-            return true;
-        }
-        return spec.ownerFleetId == fleetId;
-    }
-
-    private static boolean canManageSharing(Spec spec, int fleetId, boolean isAdmin, boolean hasManagerAccess) {
-        return canEdit(spec, fleetId, isAdmin, hasManagerAccess);
-    }
-
-    private static void applyPermissions(Spec spec, int fleetId, boolean isAdmin, boolean hasManagerAccess) {
-        spec.canEdit = canEdit(spec, fleetId, isAdmin, hasManagerAccess);
-        spec.canManageSharing = canManageSharing(spec, fleetId, isAdmin, hasManagerAccess);
     }
 
     private static Spec readSpec(ResultSet rs) throws SQLException {
         Spec spec = new Spec();
         spec.id = rs.getInt("id");
-        spec.ownerFleetId = rs.getInt("owner_fleet_id");
-        spec.ownerFleetName = rs.getString("owner_fleet_name");
-        spec.isPublic = rs.getBoolean("is_public");
         spec.airframeId = getInteger(rs, "airframe_id");
         spec.manufacturer = rs.getString("manufacturer");
         spec.model = rs.getString("model");
@@ -708,15 +523,6 @@ public final class RotorcraftAirframeSpecs {
         spec.approachEpndb = getDouble(rs, "approach_epndb");
         spec.lbPerShp = getDouble(rs, "lb_per_shp");
         spec.lbPerFt2 = getDouble(rs, "lb_per_ft2");
-
-        String shared = rs.getString("shared_fleet_ids");
-        if (shared != null && !shared.isBlank()) {
-            spec.sharedFleetIds = Arrays.stream(shared.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .map(Integer::parseInt)
-                    .collect(Collectors.toCollection(ArrayList::new));
-        }
         return spec;
     }
 
