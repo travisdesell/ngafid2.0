@@ -145,7 +145,7 @@ public final class ApiExternalUploadRoutes {
         boolean committed = false;
         try {
             // Stream the upload body to a temp file, then hash with the shared MD5 util.
-            tempFile = Files.createTempFile("ngafid-api-upload-", ".tmp");
+            tempFile = Files.createTempFile("ngafid-api-" + sanitizedName + "-", ".tmp");
             try (InputStream in = file.content()) {
                 Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
             }
