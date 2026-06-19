@@ -3,10 +3,13 @@ For the purpose of this class, since Lat./Lon. plus altitude if available is all
 This will just have Lat and Lon, and it will have a similar calculation to that of the Airports.java
 */
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import org.ngafid.core.Config;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.GeoHash;
 
@@ -32,13 +35,41 @@ public final class Obstacles {
             return;
         }
 
+        LOG.info("Obstacle Class was ran");
+
         int maxHashSize = 0;
         int numberUniqueObstacles = 0;
 
         // Here is the code for the parsing of the Obstacles
 
-        
+        try (BufferedReader obstaclesReader = new BufferedReader(new FileReader(Config.OBSTACLES_FILE));) {
+            String line;
 
+            while ((line = obstaclesReader.readLine()) != null) {
+                String[] values = line.split(",");
+                int id = Integer.parseInt(values[2]);
+                Double lat = Double.parseDouble(values[10]);
+                Double lon = Double.parseDouble(values[11]);
+                int agl = Integer.parseInt(values[14]);
+                int amsl = Integer.parseInt(values[15]);
+                String type = values[12];
+                int quantity = Integer.parseInt(values[13]);
+
+                Obstacle obstacle = new Obstacle(id, lat, lon, type, agl, amsl, quantity);
+
+                ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
+                hashedObstacles.add(obstacle);
+                OBJECTID_TO_OBSTACLES.put(obstacle.getID(), obstacle);
+
+                if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
+                numberUniqueObstacles++;
+
+            }
+        }
+
+        LOG.info("Read "+ numberUniqueObstacles + " obstacles.");
+        LOG.info("obstacles HashMap size: " + GEO_HASH_TO_OBSTACLES.size());
+        LOG.info("max obstacle ArrayList: " + maxHashSize);
     }
 
     public static Obstacle getNearestObstacleWithin(

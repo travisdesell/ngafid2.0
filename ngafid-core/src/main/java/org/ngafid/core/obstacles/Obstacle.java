@@ -35,6 +35,7 @@ public class Obstacle {
     public int getAGL() {return this.agl;}
     public int getAMSL() {return this.amsl;}
     public int getQuantity() {return this.quantity;}
+    public String getGeoHash() {return this.geoHash;}
 
     public ObstacleRisk calculateRiskFromPoint(double latitude, double longitude, int agl) {
         double horizontalDistance = Airports.calculateDistanceInFeet(this.latitude, this.longitude, latitude, longitude);

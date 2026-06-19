@@ -15,6 +15,8 @@ import org.ngafid.core.flights.*;
 import org.ngafid.processor.DependencyGraph;
 import org.ngafid.processor.steps.*;
 
+import main.java.org.ngafid.processor.steps.ComputeObstacleProximity;
+
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic
  * meta information like the type of aircraft, the start and end time of the flight, etc. The actual flight data is
@@ -32,6 +34,7 @@ public class FlightBuilder {
     private static final List<ComputeStep.Factory> PROCESS_STEPS = List.of(
             required(ComputeStartEndTime::new),
             ComputeAirportProximity::new,
+            ComputeObstacleProximity::new,
             ComputeLaggedAltMSL::new,
             ComputeStallIndex::new,
             ComputeTotalFuel::new,

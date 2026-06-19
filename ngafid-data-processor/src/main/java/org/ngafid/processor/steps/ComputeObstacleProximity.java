@@ -33,6 +33,8 @@ public class ComputeObstacleProximity extends ComputeStep {
         DoubleTimeSeries nearestObstacleTS = new DoubleTimeSeries(NEAREST_OBSTACLE, Unit.OBSTACLE_ID, sizeHint);
         DoubleTimeSeries obstacleDistanceTS = new DoubleTimeSeries(OBSTACLE_DISTANCE, Unit.FT, sizeHint);
 
+        LOG.info("Obstacle Compute Proximity Class was ran");
+
         for (int i = 0; i < latitudeTS.size(); i++) {
             double latitude = latitudeTS.get(i);
             double longitude = longitudeTS.get(i);

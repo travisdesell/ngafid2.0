@@ -27,6 +27,7 @@ public final class Config {
     public static final String MUSTACHE_TEMPLATE_DIR;
     public static final String AIRPORTS_FILE;
     public static final String RUNWAYS_FILE;
+    public static final String OBSTACLES_FILE;
     public static final String KAFKA_CONFIG_FILE;
     public static final String EMAIL_INFO_FILE;
     public static final String NGAFID_ADMIN_EMAILS;
