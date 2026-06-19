@@ -50,7 +50,7 @@ SELECT 'R44', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
 --changeset roman:tail-airframe-registry-table labels:flights,airframes,tail-airframe-registry
 CREATE TABLE IF NOT EXISTS tail_airframe_registry (
     tail VARCHAR(16) NOT NULL,
-    airframe VARCHAR(64) NOT NULL,
+    airframe VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
     PRIMARY KEY (tail),
     FOREIGN KEY (airframe) REFERENCES airframes (airframe)
 );
