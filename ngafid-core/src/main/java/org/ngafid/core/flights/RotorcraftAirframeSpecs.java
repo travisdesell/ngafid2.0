@@ -393,6 +393,10 @@ public final class RotorcraftAirframeSpecs {
         public Double getLbPerFt2() {
             return lbPerFt2;
         }
+
+        public void setId(int id) {
+            this.id = id;
+        }
     }
 
     private static final String SELECT_COLUMNS = """

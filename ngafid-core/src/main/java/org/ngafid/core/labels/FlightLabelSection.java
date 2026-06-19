@@ -97,6 +97,70 @@ public class FlightLabelSection {
         return endTimeStr;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setFlightId(int flightId) {
+        this.flightId = flightId;
+    }
+
+    public void setTailNumber(String tailNumber) {
+        this.tailNumber = tailNumber;
+    }
+
+    public void setAirframe(String airframe) {
+        this.airframe = airframe;
+    }
+
+    public void setStartIndex(int startIndex) {
+        this.startIndex = startIndex;
+    }
+
+    public void setEndIndex(int endIndex) {
+        this.endIndex = endIndex;
+    }
+
+    public void setStartTime(Timestamp startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setEndTime(Timestamp endTime) {
+        this.endTime = endTime;
+    }
+
+    public void setStartTimeRaw(String startTimeRaw) {
+        this.startTimeRaw = startTimeRaw;
+    }
+
+    public void setEndTimeRaw(String endTimeRaw) {
+        this.endTimeRaw = endTimeRaw;
+    }
+
+    public void setStartValue(Double startValue) {
+        this.startValue = startValue;
+    }
+
+    public void setEndValue(Double endValue) {
+        this.endValue = endValue;
+    }
+
+    public void setLabelText(String labelText) {
+        this.labelText = labelText;
+    }
+
+    public void setParameterNames(List<String> parameterNames) {
+        this.parameterNames = parameterNames;
+    }
+
+    public void setStartTimeStr(String startTimeStr) {
+        this.startTimeStr = startTimeStr;
+    }
+
+    public void setEndTimeStr(String endTimeStr) {
+        this.endTimeStr = endTimeStr;
+    }
+
     private static void fillFromRow(FlightLabelSection section, ResultSet rs) throws SQLException {
         section.id = rs.getInt("id");
         section.flightId = rs.getInt("flight_id");

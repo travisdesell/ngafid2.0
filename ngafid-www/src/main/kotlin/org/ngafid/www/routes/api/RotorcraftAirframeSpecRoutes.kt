@@ -133,7 +133,7 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
             return
         }
         val spec = GSON.fromJson(ctx.body(), RotorcraftAirframeSpecs.Spec::class.java)
-        spec.id = specId
+        spec.setId(specId)
         try {
             Database.getConnection().use { connection ->
                 val updated = RotorcraftAirframeSpecs.update(connection, spec)
