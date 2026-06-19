@@ -16,11 +16,21 @@ import org.ngafid.www.routes.SessionUtility
 import java.sql.SQLException
 import java.util.logging.Logger
 
+/**
+ * REST API for {@code rotorcraft_airframe_specs}. View and edit access are enforced via
+ * {@link User#hasRotorcraftSpecsView()} and {@link User#hasRotorcraftSpecsEdit()}.
+ */
 object RotorcraftAirframeSpecRoutes : RouteProvider() {
 
     private val LOG: Logger = Logger.getLogger(RotorcraftAirframeSpecRoutes::class.java.name)
     private val GSON: Gson = WebServer.GSON
 
+    /**
+     * Registers {@code GET}, {@code POST}, and {@code PATCH} handlers under
+     * {@code /api/aircraft/rotorcraft-airframe-specs}.
+     *
+     * @param app Javalin application configuration
+     */
     override fun bind(app: JavalinConfig) {
         app.router.apiBuilder {
             path("/api/aircraft/rotorcraft-airframe-specs") {
@@ -31,18 +41,37 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         }
     }
 
+    /**
+     * Ensures the user may read rotorcraft airframe specs.
+     *
+     * @param user authenticated session user
+     * @throws UnauthorizedResponse when view access is not granted
+     */
     private fun requireViewAccess(user: User) {
         if (!user.hasRotorcraftSpecsView()) {
             throw UnauthorizedResponse("You do not have access to rotorcraft airframe specs.")
         }
     }
 
+    /**
+     * Ensures the user may create or update rotorcraft airframe specs.
+     *
+     * @param user authenticated session user
+     * @throws UnauthorizedResponse when edit access is not granted
+     */
     private fun requireEditAccess(user: User) {
         if (!user.hasRotorcraftSpecsEdit()) {
             throw UnauthorizedResponse("You do not have permission to edit rotorcraft airframe specs.")
         }
     }
 
+    /**
+     * Returns a paginated list of specs. Query parameters {@code page} (default 0) and
+     * {@code pageSize} (default 10) control pagination.
+     *
+     * @param ctx Javalin request context
+     * @throws UnauthorizedResponse when view access is not granted
+     */
     private fun listSpecs(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         requireViewAccess(user)
@@ -60,6 +89,13 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         }
     }
 
+    /**
+     * Inserts a new spec from the JSON request body. {@code manufacturer} and {@code model}
+     * are required.
+     *
+     * @param ctx Javalin request context
+     * @throws UnauthorizedResponse when edit access is not granted
+     */
     private fun createSpec(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         requireEditAccess(user)
@@ -81,6 +117,13 @@ object RotorcraftAirframeSpecRoutes : RouteProvider() {
         }
     }
 
+    /**
+     * Updates an existing spec identified by the {@code id} path parameter. The request body
+     * is merged with that id before persistence.
+     *
+     * @param ctx Javalin request context
+     * @throws UnauthorizedResponse when edit access is not granted
+     */
     private fun updateSpec(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
         requireEditAccess(user)

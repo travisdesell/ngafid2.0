@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset roman:rotorcraft-airframe-specs labels:flights,rotorcraft,airframe-specs
+--changeset ngafid:rotorcraft-airframe-specs labels:flights,rotorcraft,airframe-specs
 -- Per-variant rotorcraft POH/reference limits for exceedance calculation.
 CREATE TABLE rotorcraft_airframe_specs (
     id INT NOT NULL AUTO_INCREMENT,
@@ -92,7 +92,7 @@ CREATE TABLE rotorcraft_airframe_specs (
         FOREIGN KEY (airframe_id) REFERENCES airframes (id)
 );
 
---changeset roman:rotorcraft-airframe-specs-seed labels:flights,rotorcraft,airframe-specs
+--changeset ngafid:rotorcraft-airframe-specs-seed labels:flights,rotorcraft,airframe-specs
 -- Seed helispec reference data (169 rows); source: helispec.csv
 -- Runs once only: never DELETE/re-insert on later liquibase updates (preserves user edits).
 --preconditions onFail:MARK_RAN onError:HALT

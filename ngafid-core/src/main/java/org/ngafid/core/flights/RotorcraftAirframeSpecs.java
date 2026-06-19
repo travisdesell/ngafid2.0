@@ -18,6 +18,10 @@ public final class RotorcraftAirframeSpecs {
 
     private RotorcraftAirframeSpecs() {}
 
+    /**
+     * One row from {@code rotorcraft_airframe_specs}. Field names match the JSON/API camelCase
+     * convention used by the specs editor.
+     */
     public static final class Spec {
         public int id;
         public Integer airframeId;
@@ -116,6 +120,9 @@ public final class RotorcraftAirframeSpecs {
             s.takeoff_epndb, s.flyover_epndb, s.approach_epndb, s.lb_per_shp, s.lb_per_ft2
             """;
 
+    /**
+     * Paginated list response for the rotorcraft specs API.
+     */
     public static final class Page {
         public int total;
         public int page;
@@ -124,6 +131,16 @@ public final class RotorcraftAirframeSpecs {
         public List<Spec> specs = new ArrayList<>();
     }
 
+    /**
+     * Returns one page of specs ordered by manufacturer, model, series, and id.
+     *
+     * @param connection   the database connection
+     * @param userCanEdit  whether the caller may edit specs (exposed to the UI as {@link Page#canEdit})
+     * @param page         zero-based page index; values below 0 are treated as 0
+     * @param pageSize     rows per page; clamped to 1–50 (defaults to 10 when below 1)
+     * @return a page of specs and pagination metadata
+     * @throws SQLException if a query fails
+     */
     public static Page listPage(Connection connection, boolean userCanEdit, int page, int pageSize)
             throws SQLException {
         if (page < 0) {
@@ -168,6 +185,14 @@ public final class RotorcraftAirframeSpecs {
         return result;
     }
 
+    /**
+     * Loads a single spec by primary key.
+     *
+     * @param connection the database connection
+     * @param specId     {@code rotorcraft_airframe_specs.id}
+     * @return the spec, or {@code null} if no row exists
+     * @throws SQLException if a query fails
+     */
     public static Spec getById(Connection connection, int specId) throws SQLException {
         String sql = "SELECT " + SELECT_COLUMNS + " FROM rotorcraft_airframe_specs s WHERE s.id = ?";
         try (PreparedStatement query = connection.prepareStatement(sql)) {
@@ -181,6 +206,15 @@ public final class RotorcraftAirframeSpecs {
         }
     }
 
+    /**
+     * Inserts a new spec row. {@code manufacturer} and {@code model} are required;
+     * a null {@code series} is stored as an empty string.
+     *
+     * @param connection the database connection
+     * @param spec       field values to insert; {@code spec.id} is set from generated keys on success
+     * @return the same {@code spec} instance with {@code id} populated
+     * @throws SQLException if the insert fails (for example duplicate manufacturer/model/series)
+     */
     public static Spec insert(Connection connection, Spec spec) throws SQLException {
         Objects.requireNonNull(spec.manufacturer, "manufacturer");
         Objects.requireNonNull(spec.model, "model");
@@ -315,6 +349,14 @@ public final class RotorcraftAirframeSpecs {
         return spec;
     }
 
+    /**
+     * Updates an existing spec row. A null {@code series} is stored as an empty string.
+     *
+     * @param connection the database connection
+     * @param spec       field values to write; {@code spec.id} identifies the row
+     * @return the same {@code spec} instance that was updated
+     * @throws SQLException if no row matches {@code spec.id} or the update fails
+     */
     public static Spec update(Connection connection, Spec spec) throws SQLException {
         if (spec.series == null) {
             spec.series = "";
@@ -431,6 +473,13 @@ public final class RotorcraftAirframeSpecs {
         return spec;
     }
 
+    /**
+     * Maps the current {@link ResultSet} row to a {@link Spec}.
+     *
+     * @param rs result set positioned on a spec row
+     * @return populated spec
+     * @throws SQLException if a column cannot be read
+     */
     private static Spec readSpec(ResultSet rs) throws SQLException {
         Spec spec = new Spec();
         spec.id = rs.getInt("id");
@@ -510,16 +559,40 @@ public final class RotorcraftAirframeSpecs {
         return spec;
     }
 
+    /**
+     * Reads a nullable integer column from a result set.
+     *
+     * @param rs     result set
+     * @param column column label
+     * @return the column value, or {@code null} when SQL NULL
+     * @throws SQLException if the column cannot be read
+     */
     private static Integer getInteger(ResultSet rs, String column) throws SQLException {
         int value = rs.getInt(column);
         return rs.wasNull() ? null : value;
     }
 
+    /**
+     * Reads a nullable double column from a result set.
+     *
+     * @param rs     result set
+     * @param column column label
+     * @return the column value, or {@code null} when SQL NULL
+     * @throws SQLException if the column cannot be read
+     */
     private static Double getDouble(ResultSet rs, String column) throws SQLException {
         double value = rs.getDouble(column);
         return rs.wasNull() ? null : value;
     }
 
+    /**
+     * Binds a nullable integer parameter.
+     *
+     * @param query prepared statement
+     * @param index one-based parameter index
+     * @param value value to bind, or {@code null} for SQL NULL
+     * @throws SQLException if the parameter cannot be set
+     */
     private static void setInteger(PreparedStatement query, int index, Integer value) throws SQLException {
         if (value == null) {
             query.setNull(index, Types.INTEGER);
@@ -528,6 +601,14 @@ public final class RotorcraftAirframeSpecs {
         }
     }
 
+    /**
+     * Binds a nullable double parameter.
+     *
+     * @param query prepared statement
+     * @param index one-based parameter index
+     * @param value value to bind, or {@code null} for SQL NULL
+     * @throws SQLException if the parameter cannot be set
+     */
     private static void setDouble(PreparedStatement query, int index, Double value) throws SQLException {
         if (value == null) {
             query.setNull(index, Types.DOUBLE);

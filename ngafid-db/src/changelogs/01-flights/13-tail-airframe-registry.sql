@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset roman:tail-airframe-registry-airframes labels:flights,airframes,tail-airframe-registry
+--changeset ngafid:tail-airframe-registry-airframes labels:flights,airframes,tail-airframe-registry
 -- Seed rotorcraft airframe models referenced by tail_airframe_registry.csv
 
 INSERT INTO airframes (airframe, type_id)
@@ -47,7 +47,7 @@ INSERT INTO airframes (airframe, type_id)
 SELECT 'R44', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
   AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'R44');
 
---changeset roman:tail-airframe-registry-table labels:flights,airframes,tail-airframe-registry
+--changeset ngafid:tail-airframe-registry-table labels:flights,airframes,tail-airframe-registry
 CREATE TABLE IF NOT EXISTS tail_airframe_registry (
     tail VARCHAR(16) NOT NULL,
     airframe_id INT NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS tail_airframe_registry (
         FOREIGN KEY (airframe_id) REFERENCES airframes (id)
 );
 
---changeset roman:tail-airframe-registry-data labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-data labels:flights,airframes,rotorcraft
 -- Tail -> airframe mapping (445 rows); source: operator_tail_registry_dynamoDB_20260506.csv
 DELETE FROM tail_airframe_registry;
 INSERT INTO tail_airframe_registry (tail, airframe_id)
@@ -994,12 +994,12 @@ FROM (
 ) AS v
 INNER JOIN airframes a ON a.airframe = v.airframe;
 
---changeset roman:tail-airframe-registry-n272mj labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-n272mj labels:flights,airframes,rotorcraft
 INSERT INTO tail_airframe_registry (tail, airframe_id)
 SELECT 'N272MJ', a.id FROM airframes a WHERE a.airframe = '407'
 ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-n158-n159-am labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-n158-n159-am labels:flights,airframes,rotorcraft
 INSERT INTO tail_airframe_registry (tail, airframe_id)
 SELECT v.tail, a.id
 FROM (
@@ -1010,7 +1010,7 @@ FROM (
 INNER JOIN airframes a ON a.airframe = v.airframe
 ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-air-methods-cf labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-air-methods-cf labels:flights,airframes,rotorcraft
 INSERT INTO tail_airframe_registry (tail, airframe_id)
 SELECT v.tail, a.id
 FROM (
@@ -1021,7 +1021,7 @@ FROM (
 INNER JOIN airframes a ON a.airframe = v.airframe
 ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-air-methods-batch labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-air-methods-batch labels:flights,airframes,rotorcraft
 -- Idempotent batch for Air Methods uploads (Garmin 407 + Appareo CF tails)
 INSERT INTO tail_airframe_registry (tail, airframe_id)
 SELECT v.tail, a.id
@@ -1043,12 +1043,12 @@ FROM (
 INNER JOIN airframes a ON a.airframe = v.airframe
 ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-lifelink-n365ll labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-lifelink-n365ll labels:flights,airframes,rotorcraft
 INSERT INTO tail_airframe_registry (tail, airframe_id)
 SELECT 'N365LL', a.id FROM airframes a WHERE a.airframe = 'AW119'
 ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-airframe-id-migrate labels:flights,airframes,tail-airframe-registry
+--changeset ngafid:tail-airframe-registry-airframe-id-migrate labels:flights,airframes,tail-airframe-registry
 --precondition-sql-check expectedResult:1 SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tail_airframe_registry' AND COLUMN_NAME = 'airframe'
 --precondition-on-fail:MARK_RAN
 --comment Migrate legacy varchar airframe FK to airframe_id (MySQL charset/FK compatibility)
