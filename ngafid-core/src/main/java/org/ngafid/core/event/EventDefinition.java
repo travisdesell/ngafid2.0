@@ -24,7 +24,8 @@ public class EventDefinition {
             new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
-    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, airframe_type_id, "
+    private static final String SQL_FIELDS =
+            "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, airframe_type_id, "
             + "condition_json, column_names, severity_column_names, severity_type";
 
     /*
@@ -172,8 +173,9 @@ public class EventDefinition {
             }
         }
 
-        this.columnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {}.getType());
-        this.severityColumnNames = GSON.fromJson(resultSet.getString(10), new TypeToken<TreeSet<String>>() {}.getType());
+        this.columnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() { }.getType());
+        java.lang.reflect.Type treeSetType = new TypeToken<TreeSet<String>>() { }.getType();
+        this.severityColumnNames = GSON.fromJson(resultSet.getString(10), treeSetType);
 
         String severityTypeStr = resultSet.getString(11);
         severityTypeStr = severityTypeStr.toUpperCase();
@@ -304,6 +306,7 @@ public class EventDefinition {
      * @param startBuffer             the start buffer
      * @param stopBuffer              the stop buffer
      * @param airframeNameID          the airframe id
+     * @param airframeTypeId          the airframe type id
      * @param filterJson              the filter json
      * @param severityColumnNamesJson the severity column names json
      * @param severityType            the severity type
@@ -332,8 +335,8 @@ public class EventDefinition {
         }
 
         String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, "
-                + "airframe_id = ?, airframe_type_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? "
-                + "WHERE id = ?";
+                + "airframe_id = ?, airframe_type_id = ?, condition_json = ?, column_names = ?, "
+                + "severity_column_names = ?, severity_type = ? WHERE id = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
@@ -385,8 +388,8 @@ public class EventDefinition {
 
         if (airframe.equals("All Airframes")) {
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, "
-                    + "stop_buffer = ?, airframe_id = ?, airframe_type_id = ?,  condition_json = ?, column_names = ?, severity_column_names = "
-                    + "?," + " severity_type = ?";
+                    + "stop_buffer = ?, airframe_id = ?, airframe_type_id = ?,  condition_json = ?, "
+                    + "column_names = ?, severity_column_names = ?, severity_type = ?";
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, fleetId);
@@ -406,8 +409,8 @@ public class EventDefinition {
         } else {
             int airframeNameId = new Airframes.Airframe(connection, airframe, null).getId();
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, "
-                    + "stop_buffer = ?, airframe_id = ?, airframe_type_id = ?, condition_json = ?, column_names = ?, severity_column_names = "
-                    + "?," + " severity_type = ?";
+                    + "stop_buffer = ?, airframe_id = ?, airframe_type_id = ?, condition_json = ?, "
+                    + "column_names = ?, severity_column_names = ?, severity_type = ?";
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, fleetId);
@@ -439,7 +442,8 @@ public class EventDefinition {
             String severityType
     ) throws SQLException {
         insert(
-                connection, fleetId, name, startBuffer, stopBuffer, airframe, null, filterJson, severityColumnNamesJson, severityType);
+                connection, fleetId, name, startBuffer, stopBuffer, airframe, null,
+                filterJson, severityColumnNamesJson, severityType);
     }
 
     public static void insert(
@@ -457,16 +461,18 @@ public class EventDefinition {
      * Inserts this event definition into the database.
      * This is meant for special events (those that have a negative ID).
      *
-     * @param connection  is the connection to the database.
-     * @param id          the id of the event definition
-     * @param name        the name of the event definition
-     * @param startBuffer the start buffer
-     * @param stopBuffer  the stop buffer
-     * @param airframeId  the airframe id
+     * @param connection     is the connection to the database.
+     * @param id             the id of the event definition
+     * @param name           the name of the event definition
+     * @param startBuffer    the start buffer
+     * @param stopBuffer     the stop buffer
+     * @param airframeId     the airframe id
+     * @param airframeTypeId the airframe type id
      * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(
-            Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId, Integer airframeTypeId)
+            Connection connection, int id, String name, int startBuffer, int stopBuffer,
+            int airframeId, Integer airframeTypeId)
             throws SQLException {
         if (id > 0) {
             LOG.info("Passed a positive ID to special event insertion.");

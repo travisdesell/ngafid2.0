@@ -61,9 +61,9 @@ public final class BackfillTTFCache {
                     System.out.println("DRY RUN - no changes will be made");
                 }
                 BackfillResult result = backfill(connection, batchSize, limit, dryRun, full);
-                System.out.println("Done. recomputed=" + result.recomputed
-                        + " skipped=" + result.skipped
-                        + " errors=" + result.errors);
+                System.out.println("Done. recomputed=" + result.getRecomputed()
+                        + " skipped=" + result.getSkipped()
+                        + " errors=" + result.getErrors());
             }
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -75,6 +75,9 @@ public final class BackfillTTFCache {
     /**
      * Fast path: UPDATE version column only. Use when only serialVersionUID changed, not the class structure.
      * If deserialization fails on TTF page after this, run full backfill.
+     *
+     * @param connection the database connection
+     * @return number of rows updated
      */
     private static int updateVersionOnly(Connection connection) throws SQLException {
         long currentVersion = TurnToFinal.serialVersionUID;
@@ -89,12 +92,50 @@ public final class BackfillTTFCache {
     }
 
     static final class BackfillResult {
-        int recomputed;
-        int skipped;
-        int errors;
+        private int recomputed;
+        private int skipped;
+        private int errors;
+
+        int getRecomputed() {
+            return recomputed;
+        }
+
+        int getSkipped() {
+            return skipped;
+        }
+
+        int getErrors() {
+            return errors;
+        }
+
+        void incrementRecomputed() {
+            recomputed++;
+        }
+
+        void incrementSkipped() {
+            skipped++;
+        }
+
+        void incrementErrors() {
+            errors++;
+        }
     }
 
-    public static BackfillResult backfill(Connection connection, int batchSize, Integer limit, boolean dryRun, boolean full)
+    /**
+     * Backfills the turn_to_final cache by deleting outdated entries and recomputing TTF data.
+     *
+     * @param connection the database connection
+     * @param batchSize  number of flights to process per batch
+     * @param limit      maximum number of flights to process (or null for all)
+     * @param dryRun     if true, no changes will be made
+     * @param full       if true, pre-populate from itinerary (all flights with approach data)
+     * @return the backfill result
+     * @throws SQLException           if there is a database error
+     * @throws IOException            if there is an IO error
+     * @throws ClassNotFoundException if a class cannot be found during deserialization
+     */
+    public static BackfillResult backfill(
+            Connection connection, int batchSize, Integer limit, boolean dryRun, boolean full)
             throws SQLException, IOException, ClassNotFoundException {
         BackfillResult result = new BackfillResult();
 
@@ -126,7 +167,8 @@ public final class BackfillTTFCache {
                 }
             }
             if (flightIds.isEmpty()) {
-                System.out.println("turn_to_final is empty. Using flights from itinerary (flights with approach data).");
+                System.out.println(
+                        "turn_to_final is empty. Using flights from itinerary (flights with approach data).");
                 String sql = "SELECT DISTINCT flight_id FROM itinerary ORDER BY flight_id";
                 if (limit != null) {
                     sql += " LIMIT " + limit;
@@ -155,7 +197,8 @@ public final class BackfillTTFCache {
                 }
             } else {
                 for (int i = 0; i < toDelete; i++) {
-                    try (PreparedStatement ps = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?")) {
+                    try (PreparedStatement ps = connection.prepareStatement(
+                            "DELETE FROM turn_to_final WHERE flight_id = ?")) {
                         ps.setInt(1, flightIds.get(i));
                         ps.executeUpdate();
                     }
@@ -171,30 +214,30 @@ public final class BackfillTTFCache {
             try {
                 Flight flight = Flight.getFlight(connection, flightId);
                 if (flight == null) {
-                    result.skipped++;
+                    result.incrementSkipped();
                     continue;
                 }
                 if (dryRun) {
-                    result.recomputed++;
+                    result.incrementRecomputed();
                 } else {
                     var ttfs = TurnToFinal.getTurnToFinal(connection, flight, null);
                     if (ttfs != null && !ttfs.isEmpty()) {
-                        result.recomputed++;
+                        result.incrementRecomputed();
                     } else {
-                        result.skipped++;
+                        result.incrementSkipped();
                     }
                 }
             } catch (Exception e) {
                 LOG.warning("Failed flight " + flightId + ": " + e.getMessage());
-                result.errors++;
+                result.incrementErrors();
             }
             int n = i + 1;
             boolean shouldPrint = n <= 10 || n % 100 == 0;
             if (shouldPrint) {
                 long elapsed = (System.currentTimeMillis() - start) / 1000;
                 System.out.println("flight_id=" + flightId + " " + n + "/" + flightIds.size()
-                        + " recomputed=" + result.recomputed + " skipped=" + result.skipped
-                        + " errors=" + result.errors + " (" + elapsed + "s elapsed)");
+                        + " recomputed=" + result.getRecomputed() + " skipped=" + result.getSkipped()
+                        + " errors=" + result.getErrors() + " (" + elapsed + "s elapsed)");
             }
         }
         return result;

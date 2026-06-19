@@ -78,7 +78,8 @@ public final class Config {
                     resolveVariableSubstitutions();
                     return;
                 } catch (IOException e) {
-                    System.err.println("Error loading custom properties file " + customPropertiesFile + ": " + e.getMessage());
+                    System.err.println("Error loading custom properties file "
+                            + customPropertiesFile + ": " + e.getMessage());
                 }
             }
 
