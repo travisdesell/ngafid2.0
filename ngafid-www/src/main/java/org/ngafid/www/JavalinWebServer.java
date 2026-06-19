@@ -53,6 +53,7 @@ import org.ngafid.www.routes.api.EventRoutes;
 import org.ngafid.www.routes.api.FilterRoutes;
 import org.ngafid.www.routes.api.FleetRoutes;
 import org.ngafid.www.routes.api.FlightRoutes;
+import org.ngafid.www.routes.api.RotorcraftAirframeSpecRoutes;
 import org.ngafid.www.routes.api.TagRoutes;
 import org.ngafid.www.routes.api.UploadRoutes;
 import org.ngafid.www.routes.api.UserRoutes;
@@ -88,6 +89,7 @@ public class JavalinWebServer extends WebServer {
             FilterRoutes.INSTANCE.bind(config);
             FleetRoutes.INSTANCE.bind(config);
             FlightRoutes.INSTANCE.bind(config);
+            RotorcraftAirframeSpecRoutes.INSTANCE.bind(config);
             TagRoutes.INSTANCE.bind(config);
             UploadRoutes.INSTANCE.bind(config);
             UserRoutes.INSTANCE.bind(config);

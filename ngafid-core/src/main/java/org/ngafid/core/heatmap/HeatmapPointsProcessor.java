@@ -427,6 +427,10 @@ public class HeatmapPointsProcessor {
     /**
      * Fetches heatmap points for a single chunk of event IDs.
      * Groups rows by (event_id, flight_id) and returns one map per pair.
+     * @param connection the database connection
+     * @param eventIds the event ids to load
+     * @return the grouped heatmap point results for the chunk
+     * @throws SQLException if a database error occurs
      */
     private static List<Map<String, Object>> getCoordinatesForEventIdsChunk(
             Connection connection, List<Integer> eventIds) throws SQLException {

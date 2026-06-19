@@ -90,8 +90,17 @@ public class AircraftFleetTailsJavalinRoutes {
         }
     }
 
+    private static void getAirframeSpecs(Context ctx) {
+        final String templateFile = "airframe_specs.html";
+        Map<String, Object> scopes = new HashMap<String, Object>();
+        scopes.put("navbar_js", Navbar.getJavascript(ctx));
+        ctx.header("Content-Type", "text/html; charset=UTF-8");
+        ctx.render(templateFile, scopes);
+    }
+
     public static void bindRoutes(Javalin app) {
         app.get("/protected/manage_fleet", AircraftFleetTailsJavalinRoutes::getManageFleet);
         app.get("/protected/system_ids", AircraftFleetTailsJavalinRoutes::getSystemIds);
+        app.get("/protected/airframe_specs", AircraftFleetTailsJavalinRoutes::getAirframeSpecs);
     }
 }

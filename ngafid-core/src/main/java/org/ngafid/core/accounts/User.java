@@ -39,6 +39,9 @@ public final class User implements Serializable {
     private String backupCodes;
     private boolean twoFactorSetupComplete = false;
 
+    private boolean rotorcraftSpecsView = false;
+    private boolean rotorcraftSpecsEdit = false;
+
     private UserEmailPreferences userEmailPreferences;
 
     /**
@@ -144,6 +147,16 @@ public final class User implements Serializable {
         } catch (SQLException e) {
             LOG.log(Level.INFO, "2FA columns not found in database schema, using default values: {0}", e.getMessage());
         }
+
+        try {
+            rotorcraftSpecsView = resultSet.getBoolean(19);
+            rotorcraftSpecsEdit = resultSet.getBoolean(20);
+        } catch (SQLException e) {
+            LOG.log(
+                    Level.INFO,
+                    "Rotorcraft specs permission columns not found in database schema, using default values: {0}",
+                    e.getMessage());
+        }
     }
 
     /**
@@ -179,6 +192,20 @@ public final class User implements Serializable {
      */
     public boolean hasAggregateView() {
         return aggregateView;
+    }
+
+    /**
+     * @return true if the user may view rotorcraft airframe specs.
+     */
+    public boolean hasRotorcraftSpecsView() {
+        return admin || rotorcraftSpecsView || rotorcraftSpecsEdit;
+    }
+
+    /**
+     * @return true if the user may edit rotorcraft airframe specs.
+     */
+    public boolean hasRotorcraftSpecsEdit() {
+        return admin || rotorcraftSpecsEdit;
     }
 
     /**
@@ -311,7 +338,8 @@ public final class User implements Serializable {
                     id, email, first_name, last_name, country, state, city,
                     address, phone_number, zip_code, admin, aggregate_view, password_token,
                     fleet_selected,
-                    two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete
+                    two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete,
+                    rotorcraft_specs_view, rotorcraft_specs_edit
                 FROM
                     user
             """;

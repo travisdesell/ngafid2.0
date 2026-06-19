@@ -341,6 +341,12 @@ public class TurnToFinal implements Serializable {
     /**
      * Batch lookup of TTF cache for multiple flights. One DB query instead of N.
      * Returns map of flight_id -> cached TTFs. Missing or invalid entries are omitted (caller treats as cache miss).
+     * @param connection the database connection
+     * @param flightIds the flight ids to load
+     * @return the cached turn-to-final results keyed by flight id
+     * @throws SQLException if a database error occurs
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be resolved
      */
     public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalFromCacheBatch(
             Connection connection, List<Integer> flightIds) throws SQLException, IOException, ClassNotFoundException {
@@ -387,6 +393,13 @@ public class TurnToFinal implements Serializable {
     /**
      * Batch variant using flight IDs only. Avoids loading full Flight objects (Tails, Itinerary, Tags)
      * for cache hits. Only loads full Flight for cache misses.
+     * @param connection the database connection
+     * @param flightIds the flight ids to load
+     * @param airportIataCode the airport IATA code
+     * @return the turn-to-final results keyed by flight id
+     * @throws SQLException if a database error occurs
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be resolved
      */
     public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(
             Connection connection, List<Integer> flightIds, String airportIataCode)

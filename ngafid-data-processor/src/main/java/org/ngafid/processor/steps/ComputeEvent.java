@@ -80,8 +80,7 @@ public class ComputeEvent extends ComputeStep {
                 .filter(def -> def.getAirframeNameId() == 0
                         || def.getAirframeNameId() == fb.meta.getAirframe().getId())
                 .filter(def -> def.getAirframeTypeId() == null
-                        || def.getAirframeTypeId()
-                                == fb.meta.getAirframe().getType().getId())
+                        || def.getAirframeTypeId() == fb.meta.getAirframe().getType().getId())
                 .toList();
         return applicableEvents.stream()
                 .map(def -> factory(connection, fb, def))

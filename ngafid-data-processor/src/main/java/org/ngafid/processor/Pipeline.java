@@ -117,6 +117,7 @@ public class Pipeline implements AutoCloseable {
 
     /**
      * Closes the derivedFileSystem if there is one.
+     * @throws IOException if an I/O error occurs
      */
     @Override
     public void close() throws IOException {
@@ -267,7 +268,11 @@ public class Pipeline implements AutoCloseable {
                 .filter(z -> !isSkippedNonFlightFile(z.getName()));
     }
 
-    /** Mission/software logs bundled in Scan Eagle zips are not flight recordings. */
+    /**
+     * Mission/software logs bundled in Scan Eagle zips are not flight recordings.
+     * @param filename the filename to inspect
+     * @return true if the filename should be skipped as a non-flight log
+     */
     private static boolean isSkippedNonFlightFile(String filename) {
         int index = filename.lastIndexOf('.');
         if (index < 0) {
@@ -286,7 +291,9 @@ public class Pipeline implements AutoCloseable {
      *
      * @param entry The zip entry to create a FlightFileProcessor for.
      * @return A FlightFileProcessor if the file extension is supported, otherwise `null`.
-     * @throws Exception TODO this should be a specific set of exceptions.
+     * @throws IOException if an I/O error occurs
+     * @throws SQLException if a database error occurs
+     * @throws FatalFlightFileException if the file format is invalid or the airframe cannot be resolved
      */
     private FlightFileProcessor create(ZipArchiveEntry entry)
             throws IOException, SQLException, FatalFlightFileException {

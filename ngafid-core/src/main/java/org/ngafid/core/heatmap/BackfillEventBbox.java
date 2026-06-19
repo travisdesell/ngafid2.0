@@ -69,10 +69,26 @@ public final class BackfillEventBbox {
     }
 
     static final class BackfillResult {
-        int updated;
-        int skippedNoSeries;
-        int skippedNoValidCoords;
-        int errors;
+        private int updated;
+        private int skippedNoSeries;
+        private int skippedNoValidCoords;
+        private int errors;
+
+        public int getUpdated() {
+            return updated;
+        }
+
+        public int getSkippedNoSeries() {
+            return skippedNoSeries;
+        }
+
+        public int getSkippedNoValidCoords() {
+            return skippedNoValidCoords;
+        }
+
+        public int getErrors() {
+            return errors;
+        }
     }
 
     public static BackfillResult backfill(Connection connection, int batchSize, Integer limit) throws SQLException {
@@ -114,7 +130,10 @@ public final class BackfillEventBbox {
                     continue;
                 }
                 double[] bbox = bboxResult.bbox;
-                double minLat = bbox[0], maxLat = bbox[1], minLon = bbox[2], maxLon = bbox[3];
+                double minLat = bbox[0];
+                double maxLat = bbox[1];
+                double minLon = bbox[2];
+                double maxLon = bbox[3];
                 try {
                     update.setDouble(1, minLat);
                     update.setDouble(2, maxLat);
@@ -129,12 +148,13 @@ public final class BackfillEventBbox {
                     LOG.warning("Failed to update event " + row.id + ": " + e.getMessage());
                     result.errors++;
                 }
-                if ((result.updated + result.skippedNoSeries + result.skippedNoValidCoords + result.errors) % batchSize
-                        == 0) {
+                if ((result.updated + result.skippedNoSeries + result.skippedNoValidCoords + result.errors)
+                        % batchSize == 0) {
                     connection.commit();
-                    System.out.println("Updated " + result.updated + ", skipped "
-                            + (result.skippedNoSeries + result.skippedNoValidCoords) + ", errors " + result.errors
-                            + " so far.");
+                    System.out.println(
+                            "Updated " + result.updated
+                                    + ", skipped " + (result.skippedNoSeries + result.skippedNoValidCoords)
+                                    + ", errors " + result.errors + " so far.");
                 }
             }
             connection.commit();
@@ -171,6 +191,11 @@ public final class BackfillEventBbox {
 
     /**
      * Returns bbox { minLat, maxLat, minLon, maxLon } or a skip reason.
+     *
+     * @param connection the database connection used to load latitude and longitude time series
+     * @param row the event row to compute a bounding box for
+     * @return the computed bounding box or a skip reason
+     * @throws SQLException if loading the time series fails
      */
     private static BboxResult computeBbox(Connection connection, EventRow row) throws SQLException {
         DoubleTimeSeries latSeries =
@@ -208,6 +233,6 @@ public final class BackfillEventBbox {
                 || maxLon == Double.NEGATIVE_INFINITY) {
             return new BboxResult(SkipReason.NO_VALID_COORDS);
         }
-        return new BboxResult(new double[] {minLat, maxLat, minLon, maxLon});
+        return new BboxResult(new double[]{minLat, maxLat, minLon, maxLon});
     }
 }

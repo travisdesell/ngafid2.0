@@ -305,17 +305,17 @@ object FlightRoutes : RouteProvider() {
                     row[paramNamesIdx].split("|").map { it.trim() }.filter { it.isNotEmpty() }
                 } else emptyList()
                 val section = FlightLabelSection().apply {
-                    this.flightId = flightId
-                    this.startIndex = startIndex
-                    this.endIndex = endIndex
-                    startTime = Timestamp(startTimeSec * 1000)
-                    endTime = Timestamp(endTimeSec * 1000)
-                    this.startTimeStr = startTimeStr
-                    this.endTimeStr = endTimeStr
-                    this.startValue = startValue
-                    this.endValue = endValue
-                    this.labelText = labelText
-                    parameterNames = paramNames.toMutableList()
+                    setFlightId(flightId)
+                    setStartIndex(startIndex)
+                    setEndIndex(endIndex)
+                    setStartTime(Timestamp(startTimeSec * 1000))
+                    setEndTime(Timestamp(endTimeSec * 1000))
+                    setStartTimeStr(startTimeStr)
+                    setEndTimeStr(endTimeStr)
+                    setStartValue(startValue)
+                    setEndValue(endValue)
+                    setLabelText(labelText)
+                    setParameterNames(paramNames.toMutableList())
                 }
                 FlightLabelSection.insert(connection, section)
                 imported++
@@ -342,17 +342,17 @@ object FlightRoutes : RouteProvider() {
             val startDisplayStr = formatTimestampForDisplay(startTs)
             val endDisplayStr = formatTimestampForDisplay(endTs)
             val s = FlightLabelSection().apply {
-                this.flightId = flightId
-                startIndex = dto.startIndex
-                endIndex = dto.endIndex
-                startTime = startTs
-                endTime = endTs
-                startTimeStr = startDisplayStr
-                endTimeStr = endDisplayStr
-                startValue = dto.startValue
-                endValue = dto.endValue
-                labelText = dto.labelText
-                parameterNames = dto.parameterNames.toMutableList()
+                setFlightId(flightId)
+                setStartIndex(dto.startIndex)
+                setEndIndex(dto.endIndex)
+                setStartTime(startTs)
+                setEndTime(endTs)
+                setStartTimeStr(startDisplayStr)
+                setEndTimeStr(endDisplayStr)
+                setStartValue(dto.startValue)
+                setEndValue(dto.endValue)
+                setLabelText(dto.labelText)
+                setParameterNames(dto.parameterNames.toMutableList())
             }
 
             val saved = FlightLabelSection.insert(connection, s)

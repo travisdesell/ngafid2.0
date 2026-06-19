@@ -294,7 +294,8 @@ public class EventStatistics {
     }
 
     private static Map<MonthlyCountKey, Integer> getAggregateMonthlyFlightCounts(
-            Connection connection, String dateClause) throws SQLException {
+            Connection connection, String dateClause)
+            throws SQLException {
         String query = """
             SELECT airframe_id, year, month, SUM(count) AS flight_count
             FROM m_fleet_monthly_flight_counts
@@ -469,7 +470,8 @@ public class EventStatistics {
      * @param startDate  is the earliest date to count flights from
      * @param endDate    is the latest date to count flights from
      * @return Flight counts
-     **/
+     * @throws SQLException if the query fails
+     */
     public static FlightCounts getFlightCounts(Connection connection, LocalDate startDate, LocalDate endDate)
             throws SQLException {
         if (startDate == null) startDate = LocalDate.of(0, 1, 1);

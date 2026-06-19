@@ -361,6 +361,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * Some Garmin logs (especially GIFD) repeat the {@code Lcl Date,...} header row before numeric data. Ingesting
      * that row makes {@code ComputeUTCTime} try to parse the literal strings {@code Lcl Date} and {@code Lcl Time}.
      * When the next line still looks like a header, drop it; otherwise leave the stream unchanged for older logs.
+     * @param reader the reader to inspect
+     * @throws IOException if an I/O error occurs
+     * @throws FatalFlightFileException if the file format is invalid or the airframe cannot be resolved
      */
     protected static void skipGarminExtraHeaderRowIfPresent(BufferedReader reader)
             throws IOException, FatalFlightFileException {

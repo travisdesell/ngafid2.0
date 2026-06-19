@@ -17,6 +17,7 @@ public final class RotorcraftTailAirframeRegistry {
     public record Entry(String tail, String airframe, String airframeType) {}
 
     /**
+     * @param connection the database connection
      * @param tail operator tail from filename or USCG {@code Aircraft Serial Number} metadata
      * @return registry row when tail exists and {@code airframe_types.name} is Rotorcraft
      */
@@ -27,7 +28,7 @@ public final class RotorcraftTailAirframeRegistry {
         String sql = """
                 SELECT r.tail, a.airframe, t.name AS airframe_type
                 FROM tail_airframe_registry r
-                INNER JOIN airframes a ON a.airframe = r.airframe
+                INNER JOIN airframes a ON a.id = r.airframe_id
                 INNER JOIN airframe_types t ON t.id = a.type_id
                 WHERE r.tail = ? AND t.name = 'Rotorcraft'
                 """;

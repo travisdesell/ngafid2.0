@@ -112,6 +112,7 @@ module.exports = {
         severities: "./src/severities.tsx",
         signed_in_navbar: "./src/signed_in_navbar.js",
         status: "./src/status_page.tsx",
+        airframe_specs: "./src/airframe_specs.js",
         system_ids: "./src/system_ids.js",
         theme_preload: "./src/theme_preload.js",
         time_zones: "./src/time_zones.js",

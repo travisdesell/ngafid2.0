@@ -167,6 +167,14 @@ public class Flight {
 
     /**
      * Like getFlightsWithinDateRangeFromAirport but with offset for chunked loading.
+     * @param connection the database connection
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param airportIataCode the airport IATA code
+     * @param limit the maximum number of flights to return
+     * @param offset the query offset
+     * @return the matching flights
+     * @throws SQLException if a database error occurs
      */
     public static List<Flight> getFlightsWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
@@ -177,6 +185,14 @@ public class Flight {
 
     /**
      * Returns flight IDs only (no Tails, Itinerary, Tags) for TTF batch loading. Avoids 3 queries per flight.
+     * @param connection the database connection
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param airportIataCode the airport IATA code
+     * @param limit the maximum number of flights to return
+     * @param offset the query offset
+     * @return the matching flight ids
+     * @throws SQLException if a database error occurs
      */
     public static List<Integer> getFlightIdsWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
@@ -198,6 +214,12 @@ public class Flight {
 
     /**
      * Returns total count of flights matching the same condition as getFlightsWithinDateRangeFromAirport.
+     * @param connection the database connection
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param airportIataCode the airport IATA code
+     * @return the number of matching flights
+     * @throws SQLException if a database error occurs
      */
     public static int getFlightsCountWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode) throws SQLException {
@@ -267,6 +289,7 @@ public class Flight {
      * @param filter     the filter to select the flights, can be null.
      * @return the number of flights for the fleet, given the specified filter (or
      * no filter if the filter is null).
+     * @throws SQLException if a database error occurs
      */
     public static int getNumFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
@@ -439,6 +462,7 @@ public class Flight {
      * @param filter      the filter used to query flights
      * @param constraints the additional query constraints appended to the query
      * @return an {@link ArrayList} of flights
+     * @throws SQLException if a database error occurs
      */
     private static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, String constraints)
             throws SQLException {
@@ -515,6 +539,11 @@ public class Flight {
     /**
      * Returns flights matching the extra condition. When limit > 0, orders by id DESC so the most
      * recent flights are returned first (e.g. TTF tool fetches up to 10k most recent for cache efficiency).
+     * @param connection the database connection
+     * @param extraCondition the SQL condition to apply
+     * @param limit the maximum number of flights to return
+     * @return the matching flights
+     * @throws SQLException if a database error occurs
      */
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit)
             throws SQLException {
@@ -523,6 +552,12 @@ public class Flight {
 
     /**
      * Returns flights matching the extra condition with limit and offset for chunked loading.
+     * @param connection the database connection
+     * @param extraCondition the SQL condition to apply
+     * @param limit the maximum number of flights to return
+     * @param offset the query offset
+     * @return the matching flights
+     * @throws SQLException if a database error occurs
      */
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit, int offset)
             throws SQLException {
@@ -1140,6 +1175,7 @@ public class Flight {
      * Only updates if the flight status is SUCCESS or WARNING. Do we need to add failed as well?
      * @param connection Connection to the database
      * @param flight the flight to update the aggregate hours for
+     * @throws SQLException if a database error occurs
      */
     public static void updateAggregateFlightHoursByAirframe(Connection connection, Flight flight) throws SQLException {
         // Clarify if we need this
@@ -1403,6 +1439,8 @@ public class Flight {
      *
      * @param connection is a connection to the database.
      * @param fname      is the output filename.
+     * @throws IOException if an I/O error occurs
+     * @throws SQLException if a database error occurs
      */
     public void writeToFile(Connection connection, String fname) throws IOException, SQLException {
         ArrayList<DoubleTimeSeries> series = DoubleTimeSeries.getAllDoubleTimeSeries(connection, id);

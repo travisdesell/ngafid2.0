@@ -11,47 +11,173 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FlightLabelSection {
-    public int id;
-    public int flightId;
-    public String tailNumber;
-    public String airframe;
-    public int startIndex;
-    public int endIndex;
-    public Timestamp startTime;
-    public Timestamp endTime;
+    private int id;
+    private int flightId;
+    private String tailNumber;
+    private String airframe;
+    private int startIndex;
+    private int endIndex;
+    private Timestamp startTime;
+    private Timestamp endTime;
     /** Raw datetime string from DB (preserves value, no timezone conversion). */
-    public String startTimeRaw;
-
-    public String endTimeRaw;
-    public Double startValue;
-    public Double endValue;
-    public String labelText;
-    public List<String> parameterNames = new ArrayList<>();
+    private String startTimeRaw;
+    private String endTimeRaw;
+    private Double startValue;
+    private Double endValue;
+    private String labelText;
+    private List<String> parameterNames = new ArrayList<>();
     /** When set, insert uses this literal string instead of Timestamp (preserves value). */
-    public String startTimeStr;
-
-    public String endTimeStr;
+    private String startTimeStr;
+    private String endTimeStr;
 
     public FlightLabelSection() {}
 
-    private static void fillFromRow(FlightLabelSection s, ResultSet rs) throws SQLException {
-        s.id = rs.getInt("id");
-        s.flightId = rs.getInt("flight_id");
-        s.tailNumber = rs.getString("tail_number");
-        s.airframe = rs.getString("airframe");
-        s.startIndex = rs.getInt("start_index");
-        s.endIndex = rs.getInt("end_index");
-        s.startTime = rs.getTimestamp("start_time");
-        s.endTime = rs.getTimestamp("end_time");
-        s.startTimeRaw = rs.getString("start_time_str");
-        s.endTimeRaw = rs.getString("end_time_str");
-        s.startValue = (Double) rs.getObject("start_value");
-        s.endValue = (Double) rs.getObject("end_value");
-        s.labelText = rs.getString("label_text");
+    public int getId() {
+        return id;
     }
 
-    private static List<FlightLabelSection> fetchSections(Connection connection, String sql, int param)
-            throws SQLException {
+    public int getFlightId() {
+        return flightId;
+    }
+
+    public String getTailNumber() {
+        return tailNumber;
+    }
+
+    public String getAirframe() {
+        return airframe;
+    }
+
+    public int getStartIndex() {
+        return startIndex;
+    }
+
+    public int getEndIndex() {
+        return endIndex;
+    }
+
+    public Timestamp getStartTime() {
+        return startTime;
+    }
+
+    public Timestamp getEndTime() {
+        return endTime;
+    }
+
+    public String getStartTimeRaw() {
+        return startTimeRaw;
+    }
+
+    public String getEndTimeRaw() {
+        return endTimeRaw;
+    }
+
+    public Double getStartValue() {
+        return startValue;
+    }
+
+    public Double getEndValue() {
+        return endValue;
+    }
+
+    public String getLabelText() {
+        return labelText;
+    }
+
+    public List<String> getParameterNames() {
+        return parameterNames;
+    }
+
+    public String getStartTimeStr() {
+        return startTimeStr;
+    }
+
+    public String getEndTimeStr() {
+        return endTimeStr;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setFlightId(int flightId) {
+        this.flightId = flightId;
+    }
+
+    public void setTailNumber(String tailNumber) {
+        this.tailNumber = tailNumber;
+    }
+
+    public void setAirframe(String airframe) {
+        this.airframe = airframe;
+    }
+
+    public void setStartIndex(int startIndex) {
+        this.startIndex = startIndex;
+    }
+
+    public void setEndIndex(int endIndex) {
+        this.endIndex = endIndex;
+    }
+
+    public void setStartTime(Timestamp startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setEndTime(Timestamp endTime) {
+        this.endTime = endTime;
+    }
+
+    public void setStartTimeRaw(String startTimeRaw) {
+        this.startTimeRaw = startTimeRaw;
+    }
+
+    public void setEndTimeRaw(String endTimeRaw) {
+        this.endTimeRaw = endTimeRaw;
+    }
+
+    public void setStartValue(Double startValue) {
+        this.startValue = startValue;
+    }
+
+    public void setEndValue(Double endValue) {
+        this.endValue = endValue;
+    }
+
+    public void setLabelText(String labelText) {
+        this.labelText = labelText;
+    }
+
+    public void setParameterNames(List<String> parameterNames) {
+        this.parameterNames = parameterNames;
+    }
+
+    public void setStartTimeStr(String startTimeStr) {
+        this.startTimeStr = startTimeStr;
+    }
+
+    public void setEndTimeStr(String endTimeStr) {
+        this.endTimeStr = endTimeStr;
+    }
+
+    private static void fillFromRow(FlightLabelSection section, ResultSet rs) throws SQLException {
+        section.id = rs.getInt("id");
+        section.flightId = rs.getInt("flight_id");
+        section.tailNumber = rs.getString("tail_number");
+        section.airframe = rs.getString("airframe");
+        section.startIndex = rs.getInt("start_index");
+        section.endIndex = rs.getInt("end_index");
+        section.startTime = rs.getTimestamp("start_time");
+        section.endTime = rs.getTimestamp("end_time");
+        section.startTimeRaw = rs.getString("start_time_str");
+        section.endTimeRaw = rs.getString("end_time_str");
+        section.startValue = (Double) rs.getObject("start_value");
+        section.endValue = (Double) rs.getObject("end_value");
+        section.labelText = rs.getString("label_text");
+    }
+
+    private static List<FlightLabelSection> fetchSections(
+            Connection connection, String sql, int param) throws SQLException {
         List<FlightLabelSection> result = new ArrayList<>();
         FlightLabelSection current = null;
         int currentId = -1;
@@ -67,8 +193,8 @@ public class FlightLabelSection {
                         result.add(current);
                         currentId = id;
                     }
-                    String p = rs.getString("parameter_name");
-                    if (p != null) current.parameterNames.add(p);
+                    String parameterName = rs.getString("parameter_name");
+                    if (parameterName != null) current.parameterNames.add(parameterName);
                 }
             }
         }
@@ -89,7 +215,14 @@ public class FlightLabelSection {
         return fetchSections(connection, SECTION_SELECT + " WHERE s.flight_id = ? ORDER BY s.id", flightId);
     }
 
-    /** Returns all label sections for flights in the given fleet (for CSV export). */
+    /**
+     * Returns all label sections for flights in the given fleet (for CSV export).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose sections should be loaded
+     * @return the label sections for all flights in the fleet
+     * @throws SQLException if the query fails
+     */
     public static List<FlightLabelSection> getByFleet(Connection connection, int fleetId) throws SQLException {
         String sql = SECTION_SELECT + """
             JOIN flights f ON s.flight_id = f.id AND f.fleet_id = ?
@@ -120,7 +253,8 @@ public class FlightLabelSection {
 
         String sql = """
             INSERT INTO flight_label_section
-                (flight_id, tail_number, airframe, start_index, end_index, start_time, end_time, start_value, end_value, label_text)
+                (flight_id, tail_number, airframe, start_index, end_index, start_time, end_time,
+                 start_value, end_value, label_text)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
@@ -130,14 +264,26 @@ public class FlightLabelSection {
             stmt.setString(3, airframe);
             stmt.setInt(4, in.startIndex);
             stmt.setInt(5, in.endIndex);
-            if (in.startTimeStr != null) stmt.setString(6, in.startTimeStr);
-            else stmt.setTimestamp(6, in.startTime);
-            if (in.endTimeStr != null) stmt.setString(7, in.endTimeStr);
-            else stmt.setTimestamp(7, in.endTime);
-            if (in.startValue != null) stmt.setDouble(8, in.startValue);
-            else stmt.setNull(8, Types.DOUBLE);
-            if (in.endValue != null) stmt.setDouble(9, in.endValue);
-            else stmt.setNull(9, Types.DOUBLE);
+            if (in.startTimeStr != null) {
+                stmt.setString(6, in.startTimeStr);
+            } else {
+                stmt.setTimestamp(6, in.startTime);
+            }
+            if (in.endTimeStr != null) {
+                stmt.setString(7, in.endTimeStr);
+            } else {
+                stmt.setTimestamp(7, in.endTime);
+            }
+            if (in.startValue != null) {
+                stmt.setDouble(8, in.startValue);
+            } else {
+                stmt.setNull(8, Types.DOUBLE);
+            }
+            if (in.endValue != null) {
+                stmt.setDouble(9, in.endValue);
+            } else {
+                stmt.setNull(9, Types.DOUBLE);
+            }
             stmt.setString(10, in.labelText);
             stmt.executeUpdate();
             try (ResultSet keys = stmt.getGeneratedKeys()) {
@@ -150,9 +296,9 @@ public class FlightLabelSection {
         if (in.parameterNames != null && !in.parameterNames.isEmpty()) {
             try (PreparedStatement ps = connection.prepareStatement(
                     "INSERT INTO flight_label_section_param (label_section_id, parameter_name) VALUES (?, ?)")) {
-                for (String p : in.parameterNames) {
+                for (String parameterName : in.parameterNames) {
                     ps.setInt(1, in.id);
-                    ps.setString(2, p);
+                    ps.setString(2, parameterName);
                     ps.addBatch();
                 }
                 ps.executeBatch();
@@ -162,10 +308,17 @@ public class FlightLabelSection {
         return in;
     }
 
-    /** Returns the flight_id for a label section, or null if not found. */
+    /**
+     * Returns the flight_id for a label section, or null if not found.
+     *
+     * @param connection the database connection
+     * @param labelId the label section ID
+     * @return the owning flight ID, or null when the label section does not exist
+     * @throws SQLException if the lookup fails
+     */
     public static Integer getFlightIdForLabel(Connection connection, int labelId) throws SQLException {
-        try (PreparedStatement stmt =
-                connection.prepareStatement("SELECT flight_id FROM flight_label_section WHERE id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT flight_id FROM flight_label_section WHERE id = ?")) {
             stmt.setInt(1, labelId);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? rs.getInt("flight_id") : null;
