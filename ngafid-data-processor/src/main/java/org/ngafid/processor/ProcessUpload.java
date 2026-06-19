@@ -348,6 +348,10 @@ public final class ProcessUpload {
     /**
      * Zip/parquet ingestion starts as {@link Upload.Status#PROCESSED_OK}; adjust when individual flights
      * failed or produced warnings.
+     * @param validFlights the number of valid flights
+     * @param warningFlights the number of warning flights
+     * @param errorFlights the number of failed flights
+     * @return the upload status derived from the flight counts
      */
     static Upload.Status resolveStatusFromFlightCounts(int validFlights, int warningFlights, int errorFlights) {
         if (validFlights == 0 && errorFlights > 0) {

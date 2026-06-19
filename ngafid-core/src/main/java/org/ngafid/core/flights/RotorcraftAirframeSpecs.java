@@ -23,82 +23,376 @@ public final class RotorcraftAirframeSpecs {
      * convention used by the specs editor.
      */
     public static final class Spec {
-        // CHECKSTYLE:OFF VisibilityModifier
-        public int id;
-        public Integer airframeId;
-        public String manufacturer = "";
-        public String model = "";
-        public String series = "";
-        public Integer year;
-        public String usageType;
-        public String helicopterType;
-        public Integer seats;
-        public String landingGear;
-        public Double maxGrossWeightLbs;
-        public Double minFlyingWeightLbs;
-        public Double emptyWeightLbs;
-        public String mrType;
-        public Integer mrNumberBlades;
-        public Double mrDiameterIn;
-        public Double mrInboardBladeChordIn;
-        public Double mrOutboardBladeChordIn;
-        public Double mrBladeTwistDeg;
-        public Double mrTipSpeed102pctRpmFps;
-        public String mrAirfoil;
-        public String mrPowerOnMaxContinuousPct;
-        public Double mrPowerOnMaxContinuousRpm;
-        public String mrPowerOnMinContinuousPct;
-        public Double mrPowerOnMinContinuousRpm;
-        public String mrPowerOffMaxContinuousPct;
-        public Double mrPowerOffMaxContinuousRpm;
-        public String mrPowerOffMinContinuousPct;
-        public String mrHubMaterial;
-        public String mrBladeMaterial;
-        public Double mrBladeAreaFt2;
-        public Double mrDiskAreaFt2;
-        public String trType;
-        public Integer trNumberBlades;
-        public Double trDiameterIn;
-        public Double trPowerOnMaxContinuousRpm;
-        public Double trBladeChordIn;
-        public Double trBladeTwistDeg;
-        public Double trTipSpeed102pctRpmFps;
-        public Double distanceMrToTrIn;
-        public String trBladeMaterial;
-        public Double trBladeAreaFt2;
-        public Double trDiskAreaFt2;
-        public Double spanIn;
-        public Double areaFt2;
-        public String vneKias;
-        public String vmaKias;
-        public String vgKias;
-        public String vyKias;
-        public String vtoKias;
-        public String vcKias;
-        public String vappKias;
-        public String vautoKias;
-        public String vturbKias;
-        public String vloKias;
-        public String vleKias;
-        public String vtdKias;
-        public String engineMade;
-        public String engineModel;
-        public Integer engineNumber;
-        public Double takeoffPower;
-        public Double manufacturersRatingShp;
-        public Double maxContinuousRatingShp;
-        public Double maxFuelPressurePsi;
-        public Double turbineOutletTempAeoMaxContinuousC;
-        public Double maxOperationalPressureAltitudeFt;
-        public Double maxPressureAltitudeTakeoffLandingFt;
-        public Double minSlOperationAirTempC;
-        public Double maxSlOperationAirTempC;
-        public Double takeoffEpndb;
-        public Double flyoverEpndb;
-        public Double approachEpndb;
-        public Double lbPerShp;
-        public Double lbPerFt2;
-        // CHECKSTYLE:ON VisibilityModifier
+        private int id;
+        private Integer airframeId;
+        private String manufacturer = "";
+        private String model = "";
+        private String series = "";
+        private Integer year;
+        private String usageType;
+        private String helicopterType;
+        private Integer seats;
+        private String landingGear;
+        private Double maxGrossWeightLbs;
+        private Double minFlyingWeightLbs;
+        private Double emptyWeightLbs;
+        private String mrType;
+        private Integer mrNumberBlades;
+        private Double mrDiameterIn;
+        private Double mrInboardBladeChordIn;
+        private Double mrOutboardBladeChordIn;
+        private Double mrBladeTwistDeg;
+        private Double mrTipSpeed102pctRpmFps;
+        private String mrAirfoil;
+        private String mrPowerOnMaxContinuousPct;
+        private Double mrPowerOnMaxContinuousRpm;
+        private String mrPowerOnMinContinuousPct;
+        private Double mrPowerOnMinContinuousRpm;
+        private String mrPowerOffMaxContinuousPct;
+        private Double mrPowerOffMaxContinuousRpm;
+        private String mrPowerOffMinContinuousPct;
+        private String mrHubMaterial;
+        private String mrBladeMaterial;
+        private Double mrBladeAreaFt2;
+        private Double mrDiskAreaFt2;
+        private String trType;
+        private Integer trNumberBlades;
+        private Double trDiameterIn;
+        private Double trPowerOnMaxContinuousRpm;
+        private Double trBladeChordIn;
+        private Double trBladeTwistDeg;
+        private Double trTipSpeed102pctRpmFps;
+        private Double distanceMrToTrIn;
+        private String trBladeMaterial;
+        private Double trBladeAreaFt2;
+        private Double trDiskAreaFt2;
+        private Double spanIn;
+        private Double areaFt2;
+        private String vneKias;
+        private String vmaKias;
+        private String vgKias;
+        private String vyKias;
+        private String vtoKias;
+        private String vcKias;
+        private String vappKias;
+        private String vautoKias;
+        private String vturbKias;
+        private String vloKias;
+        private String vleKias;
+        private String vtdKias;
+        private String engineMade;
+        private String engineModel;
+        private Integer engineNumber;
+        private Double takeoffPower;
+        private Double manufacturersRatingShp;
+        private Double maxContinuousRatingShp;
+        private Double maxFuelPressurePsi;
+        private Double turbineOutletTempAeoMaxContinuousC;
+        private Double maxOperationalPressureAltitudeFt;
+        private Double maxPressureAltitudeTakeoffLandingFt;
+        private Double minSlOperationAirTempC;
+        private Double maxSlOperationAirTempC;
+        private Double takeoffEpndb;
+        private Double flyoverEpndb;
+        private Double approachEpndb;
+        private Double lbPerShp;
+        private Double lbPerFt2;
+
+        public int getId() {
+            return id;
+        }
+
+        public Integer getAirframeId() {
+            return airframeId;
+        }
+
+        public String getManufacturer() {
+            return manufacturer;
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public String getSeries() {
+            return series;
+        }
+
+        public Integer getYear() {
+            return year;
+        }
+
+        public String getUsageType() {
+            return usageType;
+        }
+
+        public String getHelicopterType() {
+            return helicopterType;
+        }
+
+        public Integer getSeats() {
+            return seats;
+        }
+
+        public String getLandingGear() {
+            return landingGear;
+        }
+
+        public Double getMaxGrossWeightLbs() {
+            return maxGrossWeightLbs;
+        }
+
+        public Double getMinFlyingWeightLbs() {
+            return minFlyingWeightLbs;
+        }
+
+        public Double getEmptyWeightLbs() {
+            return emptyWeightLbs;
+        }
+
+        public String getMrType() {
+            return mrType;
+        }
+
+        public Integer getMrNumberBlades() {
+            return mrNumberBlades;
+        }
+
+        public Double getMrDiameterIn() {
+            return mrDiameterIn;
+        }
+
+        public Double getMrInboardBladeChordIn() {
+            return mrInboardBladeChordIn;
+        }
+
+        public Double getMrOutboardBladeChordIn() {
+            return mrOutboardBladeChordIn;
+        }
+
+        public Double getMrBladeTwistDeg() {
+            return mrBladeTwistDeg;
+        }
+
+        public Double getMrTipSpeed102pctRpmFps() {
+            return mrTipSpeed102pctRpmFps;
+        }
+
+        public String getMrAirfoil() {
+            return mrAirfoil;
+        }
+
+        public String getMrPowerOnMaxContinuousPct() {
+            return mrPowerOnMaxContinuousPct;
+        }
+
+        public Double getMrPowerOnMaxContinuousRpm() {
+            return mrPowerOnMaxContinuousRpm;
+        }
+
+        public String getMrPowerOnMinContinuousPct() {
+            return mrPowerOnMinContinuousPct;
+        }
+
+        public Double getMrPowerOnMinContinuousRpm() {
+            return mrPowerOnMinContinuousRpm;
+        }
+
+        public String getMrPowerOffMaxContinuousPct() {
+            return mrPowerOffMaxContinuousPct;
+        }
+
+        public Double getMrPowerOffMaxContinuousRpm() {
+            return mrPowerOffMaxContinuousRpm;
+        }
+
+        public String getMrPowerOffMinContinuousPct() {
+            return mrPowerOffMinContinuousPct;
+        }
+
+        public String getMrHubMaterial() {
+            return mrHubMaterial;
+        }
+
+        public String getMrBladeMaterial() {
+            return mrBladeMaterial;
+        }
+
+        public Double getMrBladeAreaFt2() {
+            return mrBladeAreaFt2;
+        }
+
+        public Double getMrDiskAreaFt2() {
+            return mrDiskAreaFt2;
+        }
+
+        public String getTrType() {
+            return trType;
+        }
+
+        public Integer getTrNumberBlades() {
+            return trNumberBlades;
+        }
+
+        public Double getTrDiameterIn() {
+            return trDiameterIn;
+        }
+
+        public Double getTrPowerOnMaxContinuousRpm() {
+            return trPowerOnMaxContinuousRpm;
+        }
+
+        public Double getTrBladeChordIn() {
+            return trBladeChordIn;
+        }
+
+        public Double getTrBladeTwistDeg() {
+            return trBladeTwistDeg;
+        }
+
+        public Double getTrTipSpeed102pctRpmFps() {
+            return trTipSpeed102pctRpmFps;
+        }
+
+        public Double getDistanceMrToTrIn() {
+            return distanceMrToTrIn;
+        }
+
+        public String getTrBladeMaterial() {
+            return trBladeMaterial;
+        }
+
+        public Double getTrBladeAreaFt2() {
+            return trBladeAreaFt2;
+        }
+
+        public Double getTrDiskAreaFt2() {
+            return trDiskAreaFt2;
+        }
+
+        public Double getSpanIn() {
+            return spanIn;
+        }
+
+        public Double getAreaFt2() {
+            return areaFt2;
+        }
+
+        public String getVneKias() {
+            return vneKias;
+        }
+
+        public String getVmaKias() {
+            return vmaKias;
+        }
+
+        public String getVgKias() {
+            return vgKias;
+        }
+
+        public String getVyKias() {
+            return vyKias;
+        }
+
+        public String getVtoKias() {
+            return vtoKias;
+        }
+
+        public String getVcKias() {
+            return vcKias;
+        }
+
+        public String getVappKias() {
+            return vappKias;
+        }
+
+        public String getVautoKias() {
+            return vautoKias;
+        }
+
+        public String getVturbKias() {
+            return vturbKias;
+        }
+
+        public String getVloKias() {
+            return vloKias;
+        }
+
+        public String getVleKias() {
+            return vleKias;
+        }
+
+        public String getVtdKias() {
+            return vtdKias;
+        }
+
+        public String getEngineMade() {
+            return engineMade;
+        }
+
+        public String getEngineModel() {
+            return engineModel;
+        }
+
+        public Integer getEngineNumber() {
+            return engineNumber;
+        }
+
+        public Double getTakeoffPower() {
+            return takeoffPower;
+        }
+
+        public Double getManufacturersRatingShp() {
+            return manufacturersRatingShp;
+        }
+
+        public Double getMaxContinuousRatingShp() {
+            return maxContinuousRatingShp;
+        }
+
+        public Double getMaxFuelPressurePsi() {
+            return maxFuelPressurePsi;
+        }
+
+        public Double getTurbineOutletTempAeoMaxContinuousC() {
+            return turbineOutletTempAeoMaxContinuousC;
+        }
+
+        public Double getMaxOperationalPressureAltitudeFt() {
+            return maxOperationalPressureAltitudeFt;
+        }
+
+        public Double getMaxPressureAltitudeTakeoffLandingFt() {
+            return maxPressureAltitudeTakeoffLandingFt;
+        }
+
+        public Double getMinSlOperationAirTempC() {
+            return minSlOperationAirTempC;
+        }
+
+        public Double getMaxSlOperationAirTempC() {
+            return maxSlOperationAirTempC;
+        }
+
+        public Double getTakeoffEpndb() {
+            return takeoffEpndb;
+        }
+
+        public Double getFlyoverEpndb() {
+            return flyoverEpndb;
+        }
+
+        public Double getApproachEpndb() {
+            return approachEpndb;
+        }
+
+        public Double getLbPerShp() {
+            return lbPerShp;
+        }
+
+        public Double getLbPerFt2() {
+            return lbPerFt2;
+        }
     }
 
     private static final String SELECT_COLUMNS = """
@@ -127,20 +421,38 @@ public final class RotorcraftAirframeSpecs {
      * Paginated list response for the rotorcraft specs API.
      */
     public static final class Page {
-        // CHECKSTYLE:OFF VisibilityModifier
-        public int total;
-        public int page;
-        public int pageSize;
-        public boolean canEdit;
-        public List<Spec> specs = new ArrayList<>();
-        // CHECKSTYLE:ON VisibilityModifier
+        private int total;
+        private int page;
+        private int pageSize;
+        private boolean canEdit;
+        private List<Spec> specs = new ArrayList<>();
+
+        public int getTotal() {
+            return total;
+        }
+
+        public int getPage() {
+            return page;
+        }
+
+        public int getPageSize() {
+            return pageSize;
+        }
+
+        public boolean isCanEdit() {
+            return canEdit;
+        }
+
+        public List<Spec> getSpecs() {
+            return specs;
+        }
     }
 
     /**
      * Returns one page of specs ordered by manufacturer, model, series, and id.
      *
      * @param connection   the database connection
-     * @param userCanEdit  whether the caller may edit specs (exposed to the UI as {@link Page#canEdit})
+     * @param userCanEdit  whether the caller may edit specs (exposed to the UI as {@link Page#isCanEdit()})
      * @param page         zero-based page index; values below 0 are treated as 0
      * @param pageSize     rows per page; clamped to 1–50 (defaults to 10 when below 1)
      * @return a page of specs and pagination metadata

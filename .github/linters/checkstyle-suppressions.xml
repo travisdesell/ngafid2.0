@@ -4,42 +4,4 @@
   "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
   <suppress checks="FileLength" files=".*FlightTest\.java"/>
-
-  <!-- Pre-existing style issues in ported source files -->
-  <suppress checks="JavadocMethod" files=".*FlightPhaseProcessor\.java"/>
-  <suppress checks="LineLength" files=".*FlightPhaseProcessor\.java"/>
-  <suppress checks="LineLength" files=".*UploadHelper\.java"/>
-  <suppress checks="JavadocMethod" files=".*Flight\.java"/>
-  <suppress checks="JavadocMethod" files=".*TurnToFinal\.java"/>
-  <suppress checks="JavadocMethod" files=".*AircraftTimeline\.java"/>
-  <suppress checks="JavadocMethod" files=".*MaintenanceRecord\.java"/>
-  <suppress checks="LineLength" files=".*MaintenanceRecord\.java"/>
-  <suppress checks="VisibilityModifier" files=".*BackfillEventBbox\.java"/>
-  <suppress checks="MultipleVariableDeclarations" files=".*BackfillEventBbox\.java"/>
-  <suppress checks="LineLength" files=".*BackfillEventBbox\.java"/>
-  <suppress checks="NoWhitespaceAfter" files=".*BackfillEventBbox\.java"/>
-  <suppress checks="JavadocMethod" files=".*BackfillEventBbox\.java"/>
-  <suppress checks="JavadocMethod" files=".*HeatmapPointsProcessor\.java"/>
-  <suppress checks="LineLength" files=".*HeatmapPointsProcessor\.java"/>
-  <suppress checks="VisibilityModifier" files=".*FleetLabel\.java"/>
-  <suppress checks="LineLength" files=".*FleetLabel\.java"/>
-  <suppress checks="JavadocMethod" files=".*FleetLabel\.java"/>
-  <suppress checks="VisibilityModifier" files=".*FlightLabelSection\.java"/>
-  <suppress checks="JavadocMethod" files=".*FlightLabelSection\.java"/>
-  <suppress checks="LineLength" files=".*Upload\.java"/>
-  <suppress checks="RegexpSingleline" files=".*Upload\.java"/>
-  <suppress checks="JavadocMethod" files=".*TimeUtils\.java"/>
-  <suppress checks="RightCurly" files=".*Filter\.java"/>
-  <suppress checks="LineLength" files=".*Filter\.java"/>
-  <suppress checks="RegexpSingleline" files=".*Filter\.java"/>
-  <suppress checks="JavadocMethod" files=".*Filter\.java"/>
-  <suppress checks="NewlineAtEndOfFile" files=".*FilterTest\.java"/>
-  <suppress checks="LineLength" files=".*FilterTest\.java"/>
-  <suppress checks="JavadocMethod" files=".*Pipeline\.java"/>
-  <suppress checks="JavadocMethod" files=".*ProcessUpload\.java"/>
-  <suppress checks="JavadocMethod" files=".*CSVFileProcessor\.java"/>
-  <suppress checks="JavadocMethod" files=".*RotorcraftCSVFileProcessor\.java"/>
-  <suppress checks="LineLength" files=".*ComputeEvent\.java"/>
-  <suppress checks="LineLength" files=".*EventStatistics\.java"/>
-  <suppress checks="JavadocMethod" files=".*AnalysisJavalinRoutes\.java"/>
 </suppressions>
