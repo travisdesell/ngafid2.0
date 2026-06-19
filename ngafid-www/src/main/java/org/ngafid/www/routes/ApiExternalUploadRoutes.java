@@ -361,7 +361,7 @@ public final class ApiExternalUploadRoutes {
         }
     }
 
-    // DTOs — private fields serialized by Gson via reflection on field names
+    
 
     /** Response body for a successful upload (201 Created) or a retryable existing upload (200 OK). */
     public static final class UploadResponse {

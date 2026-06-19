@@ -32,6 +32,8 @@ public final class ApiTokenManagementRoutes {
 
     /**
      * Registers the token management routes under {@code /protected/api_tokens}.
+     *
+     * @param app the Javalin application to register routes on
      */
     public static void bindRoutes(Javalin app) {
         app.post("/protected/api_tokens", ApiTokenManagementRoutes::createToken);
@@ -49,6 +51,8 @@ public final class ApiTokenManagementRoutes {
      * Returns 201 with a {@link CreatedTokenResponse} (whose {@code token} field is the
      * only chance to read the plaintext value), 400 for an invalid body or missing/oversized
      * name, and 500 on database errors.
+     *
+     * @param ctx the Javalin request context
      */
     private static void createToken(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -60,22 +64,22 @@ public final class ApiTokenManagementRoutes {
             ctx.status(400).json(new ApiTokenAuth.ApiError("Invalid JSON body"));
             return;
         }
-        if (req == null || req.name == null || req.name.isBlank()) {
+        if (req == null || req.getName() == null || req.getName().isBlank()) {
             ctx.status(400).json(new ApiTokenAuth.ApiError("Token name is required"));
             return;
         }
-        if (req.name.length() > 128) {
+        if (req.getName().length() > 128) {
             ctx.status(400).json(new ApiTokenAuth.ApiError("Token name too long (max 128 chars)"));
             return;
         }
 
         Timestamp expiresAt = null;
-        if (req.expiresInDays != null && req.expiresInDays > 0) {
-            expiresAt = Timestamp.from(Instant.now().plus(req.expiresInDays, ChronoUnit.DAYS));
+        if (req.getExpiresInDays() != null && req.getExpiresInDays() > 0) {
+            expiresAt = Timestamp.from(Instant.now().plus(req.getExpiresInDays(), ChronoUnit.DAYS));
         }
 
         try (Connection connection = Database.getConnection()) {
-            ApiToken.CreatedApiToken created = ApiToken.create(connection, user.getId(), req.name, expiresAt);
+            ApiToken.CreatedApiToken created = ApiToken.create(connection, user.getId(), req.getName(), expiresAt);
 
             ctx.status(201)
                     .json(new CreatedTokenResponse(
@@ -99,6 +103,8 @@ public final class ApiTokenManagementRoutes {
      * {@code active = false} so the UI can render them as struck-through history.
      *
      * Returns 500 on database errors.
+     *
+     * @param ctx the Javalin request context
      */
     private static void listTokens(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -129,6 +135,8 @@ public final class ApiTokenManagementRoutes {
      * Returns 204 on success, 400 for a non-integer {@code tokenId}, 404 when the token
      * does not exist or belongs to another user (404 rather than 403 to avoid leaking
      * the existence of other users' tokens), and 500 on database errors.
+     *
+     * @param ctx the Javalin request context
      */
     private static void revokeToken(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -157,20 +165,42 @@ public final class ApiTokenManagementRoutes {
 
     // -- DTOs ------------------------------------------------------------
 
-    /** Request body for token creation. {@code expiresInDays} is optional; null means the token never expires. */
+    /**
+     * Request body for token creation. {@code expiresInDays} is optional; null means the
+     * token never expires.
+     */
     public static final class CreateTokenRequest {
-        public String name;
-        public Integer expiresInDays; // optional; null = never expires
+        private String name;
+        private Integer expiresInDays; // optional; null = never expires
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Integer getExpiresInDays() {
+            return expiresInDays;
+        }
+
+        public void setExpiresInDays(Integer expiresInDays) {
+            this.expiresInDays = expiresInDays;
+        }
     }
 
-    /** Response body for a successful token creation. The {@code token} field is the only time the plaintext is exposed. */
+    /**
+     * Response body for a successful token creation. The {@code token} field is the only
+     * time the plaintext is exposed.
+     */
     public static final class CreatedTokenResponse {
-        public final int id;
-        public final String token; // PLAINTEXT -- only returned here, once
-        public final String name;
-        public final Timestamp createdAt;
-        public final Timestamp expiresAt;
-        public final String warning;
+        private final int id;
+        private final String token; // PLAINTEXT -- only returned here, once
+        private final String name;
+        private final Timestamp createdAt;
+        private final Timestamp expiresAt;
+        private final String warning;
 
         public CreatedTokenResponse(
                 int id, String token, String name, Timestamp createdAt, Timestamp expiresAt, String warning) {
@@ -181,17 +211,41 @@ public final class ApiTokenManagementRoutes {
             this.expiresAt = expiresAt;
             this.warning = warning;
         }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getToken() {
+            return token;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Timestamp getCreatedAt() {
+            return createdAt;
+        }
+
+        public Timestamp getExpiresAt() {
+            return expiresAt;
+        }
+
+        public String getWarning() {
+            return warning;
+        }
     }
 
     /** Metadata-only view of a token, returned in list responses. Never contains the plaintext value. */
     public static final class TokenSummary {
-        public final int id;
-        public final String name;
-        public final Timestamp createdAt;
-        public final Timestamp expiresAt;
-        public final Timestamp revokedAt;
-        public final Timestamp lastUsedAt;
-        public final boolean active;
+        private final int id;
+        private final String name;
+        private final Timestamp createdAt;
+        private final Timestamp expiresAt;
+        private final Timestamp revokedAt;
+        private final Timestamp lastUsedAt;
+        private final boolean active;
 
         public TokenSummary(
                 int id,
@@ -208,6 +262,34 @@ public final class ApiTokenManagementRoutes {
             this.revokedAt = revokedAt;
             this.lastUsedAt = lastUsedAt;
             this.active = active;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Timestamp getCreatedAt() {
+            return createdAt;
+        }
+
+        public Timestamp getExpiresAt() {
+            return expiresAt;
+        }
+
+        public Timestamp getRevokedAt() {
+            return revokedAt;
+        }
+
+        public Timestamp getLastUsedAt() {
+            return lastUsedAt;
+        }
+
+        public boolean isActive() {
+            return active;
         }
     }
 }

@@ -44,6 +44,8 @@ public final class ApiTokenAuth {
      * The token's {@code last_used_at} timestamp is updated as a side effect; failures
      * here are swallowed so a transient write error does not block an otherwise valid
      * request.
+     *
+     * @param ctx the Javalin request context
      */
     public static void requireApiToken(Context ctx) {
         String header = ctx.header(AUTH_HEADER);
@@ -98,6 +100,13 @@ public final class ApiTokenAuth {
      * Returns {@code null} if the user no longer exists, has no selected fleet, or has
      * had their fleet access revoked. This is treated as an authentication failure rather
      * than a server error.
+     *
+     * @param connection an open database connection
+     * @param userId the id of the user to resolve
+     * @return the resolved {@link User} with their selected fleet, or {@code null} when
+     *         the user is missing, has no selected fleet, or has lost fleet access
+     * @throws SQLException if the database query fails
+     * @throws AccountException if user resolution fails for account-specific reasons
      */
     private static User resolveUserWithSelectedFleet(Connection connection, int userId)
             throws SQLException, AccountException {
@@ -118,6 +127,10 @@ public final class ApiTokenAuth {
     /**
      * Writes a JSON error body with the given status and skips remaining handlers so the
      * route body does not execute.
+     *
+     * @param ctx the Javalin request context
+     * @param status the HTTP status code to respond with
+     * @param message the client-facing error message to include in the JSON body
      */
     private static void reject(Context ctx, int status, String message) {
         ctx.status(status).json(new ApiError(message));
@@ -126,10 +139,14 @@ public final class ApiTokenAuth {
 
     /** Generic JSON error body used by every failure path in this package. */
     public static final class ApiError {
-        public final String error;
+        private final String error;
 
         public ApiError(String error) {
             this.error = error;
+        }
+
+        public String getError() {
+            return error;
         }
     }
 }
