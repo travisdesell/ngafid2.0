@@ -17,7 +17,8 @@ public final class RotorcraftTailAirframeRegistry {
     public record Entry(String tail, String airframe, String airframeType) {}
 
     /**
-     * @param tail operator tail from filename or USCG {@code Aircraft Serial Number} metadata 
+     * @param connection the database connection
+     * @param tail operator tail from filename or USCG {@code Aircraft Serial Number} metadata
      * @return registry row when tail exists and {@code airframe_types.name} is Rotorcraft
      */
     public static Optional<Entry> findRotorcraft(Connection connection, String tail) throws SQLException {

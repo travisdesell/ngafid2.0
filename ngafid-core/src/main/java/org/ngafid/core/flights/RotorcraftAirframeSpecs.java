@@ -23,6 +23,7 @@ public final class RotorcraftAirframeSpecs {
      * convention used by the specs editor.
      */
     public static final class Spec {
+        // CHECKSTYLE:OFF VisibilityModifier
         public int id;
         public Integer airframeId;
         public String manufacturer = "";
@@ -97,6 +98,7 @@ public final class RotorcraftAirframeSpecs {
         public Double approachEpndb;
         public Double lbPerShp;
         public Double lbPerFt2;
+        // CHECKSTYLE:ON VisibilityModifier
     }
 
     private static final String SELECT_COLUMNS = """
@@ -107,7 +109,8 @@ public final class RotorcraftAirframeSpecs {
             s.mr_blade_twist_deg, s.mr_tip_speed_102pct_rpm_fps, s.mr_airfoil,
             s.mr_power_on_max_continuous_pct, s.mr_power_on_max_continuous_rpm, s.mr_power_on_min_continuous_pct,
             s.mr_power_on_min_continuous_rpm, s.mr_power_off_max_continuous_pct, s.mr_power_off_max_continuous_rpm,
-            s.mr_power_off_min_continuous_pct, s.mr_hub_material, s.mr_blade_material, s.mr_blade_area_ft2, s.mr_disk_area_ft2,
+            s.mr_power_off_min_continuous_pct, s.mr_hub_material, s.mr_blade_material,
+            s.mr_blade_area_ft2, s.mr_disk_area_ft2,
             s.tr_type, s.tr_number_blades, s.tr_diameter_in, s.tr_power_on_max_continuous_rpm, s.tr_blade_chord_in,
             s.tr_blade_twist_deg, s.tr_tip_speed_102pct_rpm_fps, s.distance_mr_to_tr_in, s.tr_blade_material,
             s.tr_blade_area_ft2, s.tr_disk_area_ft2, s.span_in, s.area_ft2,
@@ -124,11 +127,13 @@ public final class RotorcraftAirframeSpecs {
      * Paginated list response for the rotorcraft specs API.
      */
     public static final class Page {
+        // CHECKSTYLE:OFF VisibilityModifier
         public int total;
         public int page;
         public int pageSize;
         public boolean canEdit;
         public List<Spec> specs = new ArrayList<>();
+        // CHECKSTYLE:ON VisibilityModifier
     }
 
     /**
@@ -231,7 +236,8 @@ public final class RotorcraftAirframeSpecs {
                     mr_blade_twist_deg, mr_tip_speed_102pct_rpm_fps, mr_airfoil,
                     mr_power_on_max_continuous_pct, mr_power_on_max_continuous_rpm, mr_power_on_min_continuous_pct,
                     mr_power_on_min_continuous_rpm, mr_power_off_max_continuous_pct, mr_power_off_max_continuous_rpm,
-                    mr_power_off_min_continuous_pct, mr_hub_material, mr_blade_material, mr_blade_area_ft2, mr_disk_area_ft2,
+                    mr_power_off_min_continuous_pct, mr_hub_material, mr_blade_material,
+                    mr_blade_area_ft2, mr_disk_area_ft2,
                     tr_type, tr_number_blades, tr_diameter_in, tr_power_on_max_continuous_rpm, tr_blade_chord_in,
                     tr_blade_twist_deg, tr_tip_speed_102pct_rpm_fps, distance_mr_to_tr_in, tr_blade_material,
                     tr_blade_area_ft2, tr_disk_area_ft2, span_in, area_ft2,
@@ -369,18 +375,25 @@ public final class RotorcraftAirframeSpecs {
                     landing_gear = ?,
                     max_gross_weight_lbs = ?, min_flying_weight_lbs = ?, empty_weight_lbs = ?,
                     mr_type = ?, mr_number_blades = ?, mr_diameter_in = ?, mr_inboard_blade_chord_in = ?,
-                    mr_outboard_blade_chord_in = ?, mr_blade_twist_deg = ?, mr_tip_speed_102pct_rpm_fps = ?, mr_airfoil = ?,
-                    mr_power_on_max_continuous_pct = ?, mr_power_on_max_continuous_rpm = ?, mr_power_on_min_continuous_pct = ?,
-                    mr_power_on_min_continuous_rpm = ?, mr_power_off_max_continuous_pct = ?, mr_power_off_max_continuous_rpm = ?,
-                    mr_power_off_min_continuous_pct = ?, mr_hub_material = ?, mr_blade_material = ?, mr_blade_area_ft2 = ?,
+                    mr_outboard_blade_chord_in = ?, mr_blade_twist_deg = ?,
+                    mr_tip_speed_102pct_rpm_fps = ?, mr_airfoil = ?,
+                    mr_power_on_max_continuous_pct = ?, mr_power_on_max_continuous_rpm = ?,
+                    mr_power_on_min_continuous_pct = ?,
+                    mr_power_on_min_continuous_rpm = ?, mr_power_off_max_continuous_pct = ?,
+                    mr_power_off_max_continuous_rpm = ?,
+                    mr_power_off_min_continuous_pct = ?, mr_hub_material = ?,
+                    mr_blade_material = ?, mr_blade_area_ft2 = ?,
                     mr_disk_area_ft2 = ?,
                     tr_type = ?, tr_number_blades = ?, tr_diameter_in = ?, tr_power_on_max_continuous_rpm = ?,
-                    tr_blade_chord_in = ?, tr_blade_twist_deg = ?, tr_tip_speed_102pct_rpm_fps = ?, distance_mr_to_tr_in = ?,
+                    tr_blade_chord_in = ?, tr_blade_twist_deg = ?,
+                    tr_tip_speed_102pct_rpm_fps = ?, distance_mr_to_tr_in = ?,
                     tr_blade_material = ?, tr_blade_area_ft2 = ?, tr_disk_area_ft2 = ?, span_in = ?, area_ft2 = ?,
                     vne_kias = ?, vma_kias = ?, vg_kias = ?, vy_kias = ?, vto_kias = ?, vc_kias = ?, vapp_kias = ?,
                     vauto_kias = ?, vturb_kias = ?, vlo_kias = ?, vle_kias = ?, vtd_kias = ?,
-                    engine_made = ?, engine_model = ?, engine_number = ?, takeoff_power = ?, manufacturers_rating_shp = ?,
-                    max_continuous_rating_shp = ?, max_fuel_pressure_psi = ?, turbine_outlet_temp_aeo_max_continuous_c = ?,
+                    engine_made = ?, engine_model = ?, engine_number = ?, takeoff_power = ?,
+                    manufacturers_rating_shp = ?,
+                    max_continuous_rating_shp = ?, max_fuel_pressure_psi = ?,
+                    turbine_outlet_temp_aeo_max_continuous_c = ?,
                     max_operational_pressure_altitude_ft = ?, max_pressure_altitude_takeoff_landing_ft = ?,
                     min_sl_operation_air_temp_c = ?, max_sl_operation_air_temp_c = ?,
                     takeoff_epndb = ?, flyover_epndb = ?, approach_epndb = ?, lb_per_shp = ?, lb_per_ft2 = ?
