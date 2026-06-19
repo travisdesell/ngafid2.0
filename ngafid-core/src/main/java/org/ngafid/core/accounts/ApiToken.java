@@ -108,14 +108,30 @@ public final class ApiToken implements Serializable {
         return lastUsedAt;
     }
 
-    /** Returns true if the token hasn't been revoked and hasn't expired. */
+    /**
+     * Returns true if the token hasn't been revoked and hasn't expired.
+     *
+     * @return {@code true} when the token is neither revoked nor past its expiration,
+     *         {@code false} otherwise
+     */
     public boolean isActive() {
         if (revokedAt != null) return false;
         if (expiresAt != null && expiresAt.before(Timestamp.from(Instant.now()))) return false;
         return true;
     }
 
-    /** Creates a new token, stores its hash, and returns both the record and the plaintext. */
+    /**
+     * Creates a new token, stores its hash, and returns both the record and the plaintext.
+     *
+     * @param connection an open database connection
+     * @param userId the id of the user the token belongs to
+     * @param tokenName a human-readable label for the token
+     * @param expiresAt the token's expiration timestamp, or {@code null} for a token that
+     *                  never expires
+     * @return a {@link CreatedApiToken} carrying both the persisted record and the
+     *         one-time plaintext value
+     * @throws SQLException if the insert or follow-up lookup fails
+     */
     public static CreatedApiToken create(Connection connection, int userId, String tokenName, Timestamp expiresAt)
             throws SQLException {
         String plaintext = generatePlaintextToken();
@@ -146,6 +162,12 @@ public final class ApiToken implements Serializable {
     /**
      * Looks up a token by its plaintext value. The input is hashed before querying —
      * the plaintext never touches the SQL string. Callers must check {@link #isActive()}.
+     *
+     * @param connection an open database connection
+     * @param plaintext the plaintext token value supplied by the client
+     * @return the matching {@link ApiToken}, or {@code null} when no row matches the hash
+     *         or {@code plaintext} is null/blank
+     * @throws SQLException if the database query fails
      */
     public static ApiToken findByPlaintextToken(Connection connection, String plaintext) throws SQLException {
         if (plaintext == null || plaintext.isBlank()) return null;
@@ -172,7 +194,15 @@ public final class ApiToken implements Serializable {
         }
     }
 
-    /** Returns all tokens for a user (active, revoked, and expired), newest first. */
+    /**
+     * Returns all tokens for a user (active, revoked, and expired), newest first.
+     *
+     * @param connection an open database connection
+     * @param userId the id of the user whose tokens to list
+     * @return every {@link ApiToken} owned by the user, ordered by {@code created_at}
+     *         descending; never null
+     * @throws SQLException if the database query fails
+     */
     public static List<ApiToken> listForUser(Connection connection, int userId) throws SQLException {
         ArrayList<ApiToken> tokens = new ArrayList<>();
         try (PreparedStatement query = connection.prepareStatement(
@@ -185,7 +215,12 @@ public final class ApiToken implements Serializable {
         return tokens;
     }
 
-    /** Revokes the token. Safe to call multiple times — does nothing if already revoked. */
+    /**
+     * Revokes the token. Safe to call multiple times — does nothing if already revoked.
+     *
+     * @param connection an open database connection
+     * @throws SQLException if the update fails
+     */
     public void revoke(Connection connection) throws SQLException {
         if (revokedAt != null) return;
         try (PreparedStatement query = connection.prepareStatement(
@@ -196,7 +231,12 @@ public final class ApiToken implements Serializable {
         this.revokedAt = Timestamp.from(Instant.now());
     }
 
-    /** Updates last_used_at to now. Failure here is non-fatal. */
+    /**
+     * Updates last_used_at to now. Failure here is non-fatal.
+     *
+     * @param connection an open database connection
+     * @throws SQLException if the update fails
+     */
     public void touchLastUsed(Connection connection) throws SQLException {
         try (PreparedStatement query =
                 connection.prepareStatement("UPDATE api_token SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?")) {
