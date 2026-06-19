@@ -4,9 +4,9 @@ import React from "react";
 import {createRoot} from 'react-dom/client';
 
 import {showErrorModal} from "./error_modal.js";
+import {Paginator} from "./paginator_component.tsx";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 10;
 const HAS_VIEW_ACCESS = typeof rotorcraftSpecsView !== "undefined" && rotorcraftSpecsView;
 
@@ -216,8 +216,15 @@ class AirframeSpecsPage extends React.Component {
         });
     }
 
+    getNumberPages() {
+        if (this.state.totalCount === 0) {
+            return 0;
+        }
+        return Math.ceil(this.state.totalCount / this.state.pageSize);
+    }
+
     getTotalPages() {
-        return Math.max(1, Math.ceil(this.state.totalCount / this.state.pageSize));
+        return Math.max(1, this.getNumberPages());
     }
 
     loadSpecs(page = this.state.currentPage) {
@@ -507,74 +514,30 @@ class AirframeSpecsPage extends React.Component {
         );
     }
 
-    renderPagination() {
-        const {currentPage, pageSize, totalCount} = this.state;
-        const totalPages = this.getTotalPages();
-        const startRow = totalCount === 0 ? 0 : currentPage * pageSize + 1;
-        const endRow = Math.min(totalCount, (currentPage + 1) * pageSize);
-
+    renderPaginator() {
         return (
-            <div className="d-flex flex-wrap align-items-center justify-content-between m-2 mb-3">
-                <div className="d-flex align-items-center mb-2 mb-md-0">
-                    <span className="mr-2" style={{color: "var(--c_text)"}}>Rows per page:</span>
-                    <select
-                        className="form-control form-control-sm"
-                        style={{width: "80px"}}
-                        value={pageSize}
-                        onChange={(event) => this.changePageSize(Number(event.target.value))}
-                    >
-                        {ROWS_PER_PAGE_OPTIONS.map((size) => (
-                            <option key={size} value={size}>{size}</option>
-                        ))}
-                    </select>
-                    <span className="ml-3 small" style={{color: "var(--c_text)"}}>
-                        {startRow}–{endRow} of {totalCount}
-                    </span>
-                </div>
-                <div className="btn-group">
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        disabled={currentPage <= 0}
-                        onClick={() => this.goToPage(0)}
-                        title="First page"
-                    >
-                        <i className="fa fa-angle-double-left"/>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        disabled={currentPage <= 0}
-                        onClick={() => this.goToPage(currentPage - 1)}
-                        title="Previous page"
-                    >
-                        <i className="fa fa-angle-left"/>
-                    </button>
-                    <span
-                        className="btn btn-sm btn-outline-secondary disabled"
-                        style={{pointerEvents: "none", color: "var(--c_text)"}}
-                    >
-                        Page {currentPage + 1} of {totalPages}
-                    </span>
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        disabled={currentPage >= totalPages - 1}
-                        onClick={() => this.goToPage(currentPage + 1)}
-                        title="Next page"
-                    >
-                        <i className="fa fa-angle-right"/>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        disabled={currentPage >= totalPages - 1}
-                        onClick={() => this.goToPage(totalPages - 1)}
-                        title="Last page"
-                    >
-                        <i className="fa fa-angle-double-right"/>
-                    </button>
-                </div>
+            <div style={{
+                bottom: "0",
+                width: "99%",
+                paddingLeft: "0.5em",
+                paddingBottom: "1.0em",
+                paddingRight: "1.00em",
+                position: "fixed",
+                alignSelf: "center",
+            }}>
+                <Paginator
+                    items={this.state.specs}
+                    itemName="specs"
+                    currentPage={this.state.currentPage}
+                    numberPages={this.getNumberPages()}
+                    pageSize={this.state.pageSize}
+                    updateCurrentPage={(currentPage) => {
+                        this.goToPage(currentPage);
+                    }}
+                    updateItemsPerPage={(pageSize) => {
+                        this.changePageSize(pageSize);
+                    }}
+                />
             </div>
         );
     }
@@ -663,7 +626,6 @@ class AirframeSpecsPage extends React.Component {
                     </tbody>
                 </table>
                 </div>
-                {this.renderPagination()}
             </div>
         );
     }
@@ -697,7 +659,7 @@ class AirframeSpecsPage extends React.Component {
                     />
                 </div>
 
-                <div style={{overflowY: "auto", flex: "1 1 auto"}}>
+                <div style={{overflowY: "auto", flex: "1 1 auto", paddingBottom: HAS_VIEW_ACCESS ? "5em" : "0"}}>
                     <div className="container-fluid py-2 pb-0">
                         <h4 className="ml-2 mb-1" style={{color: "var(--c_text)"}}>Manage Airframe Specs</h4>
                         {HAS_VIEW_ACCESS && (
@@ -711,6 +673,7 @@ class AirframeSpecsPage extends React.Component {
                         {this.renderContent()}
                     </div>
                 </div>
+                {HAS_VIEW_ACCESS && !this.state.showAddSpecPanel && this.renderPaginator()}
             </div>
         );
     }
