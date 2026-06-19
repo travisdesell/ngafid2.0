@@ -145,8 +145,8 @@ public class UploadHelper {
                             while (resultSet.next()) {
                                 int uploadId = resultSet.getInt(1);
                                 LOG.info("Added upload id = " + uploadId + " to `upload` topic.");
-                                producer.send(
-                                        new ProducerRecord<>(Topic.UPLOAD.toString(), String.valueOf(uploadId), uploadId));
+                                producer.send(new ProducerRecord<>(
+                                        Topic.UPLOAD.toString(), String.valueOf(uploadId), uploadId));
                                 idCursor = Math.max(uploadId, idCursor);
                                 nRows += 1;
                             }

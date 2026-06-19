@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset roman:tail-airframe-registry-airframes labels:flights,airframes,tail-airframe-registry
+--changeset ngafid:tail-airframe-registry-airframes labels:flights,airframes,tail-airframe-registry
 -- Seed rotorcraft airframe models referenced by tail_airframe_registry.csv
 
 INSERT INTO airframes (airframe, type_id)
@@ -47,511 +47,1019 @@ INSERT INTO airframes (airframe, type_id)
 SELECT 'R44', t.id FROM airframe_types t WHERE t.name = 'Rotorcraft'
   AND NOT EXISTS (SELECT 1 FROM airframes a WHERE a.airframe = 'R44');
 
---changeset roman:tail-airframe-registry-table labels:flights,airframes,tail-airframe-registry
+--changeset ngafid:tail-airframe-registry-table labels:flights,airframes,tail-airframe-registry
 CREATE TABLE IF NOT EXISTS tail_airframe_registry (
     tail VARCHAR(16) NOT NULL,
-    airframe VARCHAR(64) NOT NULL,
+    airframe_id INT NOT NULL,
     PRIMARY KEY (tail),
-    FOREIGN KEY (airframe) REFERENCES airframes (airframe)
+    CONSTRAINT tail_airframe_registry_airframe_fk
+        FOREIGN KEY (airframe_id) REFERENCES airframes (id)
 );
 
---changeset roman:tail-airframe-registry-data labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-data labels:flights,airframes,rotorcraft
 -- Tail -> airframe mapping (445 rows); source: operator_tail_registry_dynamoDB_20260506.csv
 DELETE FROM tail_airframe_registry;
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('0095', 'EC135'),
-    ('0130', 'EC135'),
-    ('0131', 'EC135'),
-    ('0132', 'EC135'),
-    ('0133', 'EC135'),
-    ('0134', 'EC135'),
-    ('0143', 'EC135'),
-    ('0144', 'EC135'),
-    ('0154', 'EC135'),
-    ('0157', 'EC135'),
-    ('0161', 'EC135'),
-    ('0167', 'EC135'),
-    ('0179', 'EC135'),
-    ('0249', 'EC135'),
-    ('0330', 'EC135'),
-    ('0414', 'EC135'),
-    ('0417', 'EC135'),
-    ('0451', 'EC135'),
-    ('0485', 'EC135'),
-    ('0491', 'EC135'),
-    ('0511', 'EC135'),
-    ('0541', 'EC135'),
-    ('0559', 'EC135'),
-    ('0562', 'EC135'),
-    ('0591', 'EC135'),
-    ('0598', 'EC135'),
-    ('0613', 'EC135'),
-    ('0641', 'EC135'),
-    ('0662', 'EC135'),
-    ('0667', 'EC135'),
-    ('0707', 'EC135'),
-    ('0713', 'EC135'),
-    ('0735', 'EC135'),
-    ('0740', 'EC135'),
-    ('0758', 'EC135'),
-    ('0763', 'EC135'),
-    ('0764', 'EC135'),
-    ('0817', 'EC135'),
-    ('0834', 'EC135'),
-    ('0849', 'EC135'),
-    ('0858', 'EC135'),
-    ('0862', 'EC135'),
-    ('0890', 'EC135'),
-    ('0897', 'EC135'),
-    ('0913', 'EC135'),
-    ('0942', 'EC135'),
-    ('0946', 'EC135'),
-    ('0972', 'EC135'),
-    ('1069', 'EC135'),
-    ('1093', 'EC135');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT '0095' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0130' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0131' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0132' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0133' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0134' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0143' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0144' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0154' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0157' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0161' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0167' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0179' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0249' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0330' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0414' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0417' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0451' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0485' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0491' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0511' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0541' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0559' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0562' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0591' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0598' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0613' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0641' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0662' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0667' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0707' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0713' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0735' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0740' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0758' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0763' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0764' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0817' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0834' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0849' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0858' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0862' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0890' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0897' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0913' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0942' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0946' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '0972' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '1069' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '1093' AS tail, 'EC135' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('1096', 'EC135'),
-    ('1105', 'EC135'),
-    ('1233', 'EC135'),
-    ('1245', 'EC135'),
-    ('250TH', 'R44'),
-    ('344Y', 'R44'),
-    ('3837', 'AS350'),
-    ('3962', 'AS350'),
-    ('53482', '407'),
-    ('53573', '407'),
-    ('53627', '407'),
-    ('53723', '407'),
-    ('53790', '407'),
-    ('53919', '407'),
-    ('54066', '407'),
-    ('54084', '407'),
-    ('54305', '407'),
-    ('54330', '407'),
-    ('54341', '407'),
-    ('54375', '407'),
-    ('54376', '407'),
-    ('54377', '407'),
-    ('54379', '407'),
-    ('54444', '407'),
-    ('54446', '407'),
-    ('54458', '407'),
-    ('54459', '407'),
-    ('54466', '407'),
-    ('6001', 'MH60'),
-    ('6002', 'MH60'),
-    ('6003', 'MH60'),
-    ('6004', 'MH60'),
-    ('6005', 'MH60'),
-    ('6006', 'MH60'),
-    ('6007', 'MH60'),
-    ('6008', 'MH60'),
-    ('6009', 'MH60'),
-    ('6010', 'MH60'),
-    ('6011', 'MH60'),
-    ('6013', 'MH60'),
-    ('6014', 'MH60'),
-    ('6015', 'MH60'),
-    ('6016', 'MH60'),
-    ('6018', 'MH60'),
-    ('6019', 'MH60'),
-    ('6021', 'MH60'),
-    ('6022', 'MH60'),
-    ('6023', 'MH60'),
-    ('6024', 'MH60'),
-    ('6025', 'MH60');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT '1096' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '1105' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '1233' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '1245' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT '250TH' AS tail, 'R44' AS airframe
+  UNION ALL
+    SELECT '344Y' AS tail, 'R44' AS airframe
+  UNION ALL
+    SELECT '3837' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT '3962' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT '53482' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '53573' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '53627' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '53723' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '53790' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '53919' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54066' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54084' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54305' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54330' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54341' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54375' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54376' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54377' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54379' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54444' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54446' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54458' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54459' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '54466' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT '6001' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6002' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6003' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6004' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6005' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6006' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6007' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6008' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6009' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6010' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6011' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6013' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6014' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6015' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6016' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6018' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6019' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6021' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6022' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6023' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6024' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6025' AS tail, 'MH60' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('6026', 'MH60'),
-    ('6027', 'MH60'),
-    ('6029', 'MH60'),
-    ('6030', 'MH60'),
-    ('6031', 'MH60'),
-    ('6032', 'MH60'),
-    ('6033', 'MH60'),
-    ('6034', 'MH60'),
-    ('6035', 'MH60'),
-    ('6036', 'MH60'),
-    ('6037', 'MH60'),
-    ('6038', 'MH60'),
-    ('6039', 'MH60'),
-    ('6040', 'MH60'),
-    ('6041', 'MH60'),
-    ('6042', 'MH60'),
-    ('6043', 'MH60'),
-    ('6044', 'MH60'),
-    ('6045', 'MH60'),
-    ('6046', 'MH60'),
-    ('6047', 'MH60'),
-    ('6048', 'MH60'),
-    ('6049', 'MH60'),
-    ('6050', 'MH60'),
-    ('6051', 'MH60'),
-    ('6052', 'MH60'),
-    ('6053', 'MH60'),
-    ('6054', 'MH60'),
-    ('6501', 'MH65'),
-    ('6502', 'MH65'),
-    ('6503', 'MH65'),
-    ('6504', 'MH65'),
-    ('6506', 'MH65'),
-    ('6507', 'MH65'),
-    ('6508', 'MH65'),
-    ('6509', 'MH65'),
-    ('6510', 'MH65'),
-    ('6511', 'MH65'),
-    ('6512', 'MH65'),
-    ('6513', 'MH65'),
-    ('6514', 'MH65'),
-    ('6516', 'MH65'),
-    ('6517', 'MH65'),
-    ('6518', 'MH65'),
-    ('6519', 'MH65'),
-    ('6520', 'MH65'),
-    ('6521', 'MH65'),
-    ('6524', 'MH65'),
-    ('6525', 'MH65'),
-    ('6526', 'MH65');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT '6026' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6027' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6029' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6030' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6031' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6032' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6033' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6034' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6035' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6036' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6037' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6038' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6039' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6040' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6041' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6042' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6043' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6044' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6045' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6046' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6047' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6048' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6049' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6050' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6051' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6052' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6053' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6054' AS tail, 'MH60' AS airframe
+  UNION ALL
+    SELECT '6501' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6502' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6503' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6504' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6506' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6507' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6508' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6509' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6510' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6511' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6512' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6513' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6514' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6516' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6517' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6518' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6519' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6520' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6521' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6524' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6525' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6526' AS tail, 'MH65' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('6527', 'MH65'),
-    ('6528', 'MH65'),
-    ('6529', 'MH65'),
-    ('6530', 'MH65'),
-    ('6531', 'MH65'),
-    ('6532', 'MH65'),
-    ('6533', 'MH65'),
-    ('6534', 'MH65'),
-    ('6536', 'MH65'),
-    ('6537', 'MH65'),
-    ('6538', 'MH65'),
-    ('6539', 'MH65'),
-    ('6540', 'MH65'),
-    ('6542', 'MH65'),
-    ('6543', 'MH65'),
-    ('6544', 'MH65'),
-    ('6545', 'MH65'),
-    ('6547', 'MH65'),
-    ('6548', 'MH65'),
-    ('6550', 'MH65'),
-    ('6551', 'MH65'),
-    ('6552', 'MH65'),
-    ('6553', 'MH65'),
-    ('6554', 'MH65'),
-    ('6555', 'MH65'),
-    ('6556', 'MH65'),
-    ('6557', 'MH65'),
-    ('6558', 'MH65'),
-    ('6559', 'MH65'),
-    ('6560', 'MH65'),
-    ('6561', 'MH65'),
-    ('6562', 'MH65'),
-    ('6563', 'MH65'),
-    ('6564', 'MH65'),
-    ('6565', 'MH65'),
-    ('6566', 'MH65'),
-    ('6567', 'MH65'),
-    ('6568', 'MH65'),
-    ('6569', 'MH65'),
-    ('6570', 'MH65'),
-    ('6571', 'MH65'),
-    ('6572', 'MH65'),
-    ('6573', 'MH65'),
-    ('6574', 'MH65'),
-    ('6575', 'MH65'),
-    ('6576', 'MH65'),
-    ('6577', 'MH65'),
-    ('6578', 'MH65'),
-    ('6579', 'MH65'),
-    ('6580', 'MH65');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT '6527' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6528' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6529' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6530' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6531' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6532' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6533' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6534' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6536' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6537' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6538' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6539' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6540' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6542' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6543' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6544' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6545' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6547' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6548' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6550' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6551' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6552' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6553' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6554' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6555' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6556' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6557' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6558' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6559' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6560' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6561' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6562' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6563' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6564' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6565' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6566' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6567' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6568' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6569' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6570' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6571' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6572' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6573' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6574' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6575' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6576' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6577' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6578' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6579' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6580' AS tail, 'MH65' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('6581', 'MH65'),
-    ('6582', 'MH65'),
-    ('6583', 'MH65'),
-    ('6584', 'MH65'),
-    ('6585', 'MH65'),
-    ('6586', 'MH65'),
-    ('6587', 'MH65'),
-    ('6588', 'MH65'),
-    ('6589', 'MH65'),
-    ('6590', 'MH65'),
-    ('6591', 'MH65'),
-    ('6592', 'MH65'),
-    ('6593', 'MH65'),
-    ('6594', 'MH65'),
-    ('6595', 'MH65'),
-    ('6596', 'MH65'),
-    ('6597', 'MH65'),
-    ('6598', 'MH65'),
-    ('6601', 'MH65'),
-    ('6603', 'MH65'),
-    ('6604', 'MH65'),
-    ('6605', 'MH65'),
-    ('6606', 'MH65'),
-    ('6607', 'MH65'),
-    ('6608', 'MH65'),
-    ('683R', 'R44'),
-    ('7017', 'EC130'),
-    ('7103', 'EC130'),
-    ('7132', 'EC130'),
-    ('7142', 'EC130'),
-    ('7167', 'EC130'),
-    ('7182', 'EC130'),
-    ('7190', 'EC130'),
-    ('7221', 'EC130'),
-    ('7490', 'EC130'),
-    ('7499', 'EC130'),
-    ('79RH', 'R44'),
-    ('9047', 'BK117'),
-    ('9067', 'BK117'),
-    ('9077', 'BK117'),
-    ('9089', 'BK117'),
-    ('9096', 'BK117'),
-    ('9099', 'BK117'),
-    ('9114', 'BK117'),
-    ('9115', 'BK117'),
-    ('9121', 'BK117'),
-    ('9158', 'BK117'),
-    ('9188', 'BK117'),
-    ('9209', 'BK117'),
-    ('9226', 'BK117');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT '6581' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6582' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6583' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6584' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6585' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6586' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6587' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6588' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6589' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6590' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6591' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6592' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6593' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6594' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6595' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6596' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6597' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6598' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6601' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6603' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6604' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6605' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6606' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6607' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '6608' AS tail, 'MH65' AS airframe
+  UNION ALL
+    SELECT '683R' AS tail, 'R44' AS airframe
+  UNION ALL
+    SELECT '7017' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7103' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7132' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7142' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7167' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7182' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7190' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7221' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7490' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '7499' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT '79RH' AS tail, 'R44' AS airframe
+  UNION ALL
+    SELECT '9047' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9067' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9077' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9089' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9096' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9099' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9114' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9115' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9121' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9158' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9188' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9209' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9226' AS tail, 'BK117' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('9228', 'BK117'),
-    ('9241', 'BK117'),
-    ('9250', 'BK117'),
-    ('9278', 'BK117'),
-    ('9281', 'BK117'),
-    ('9288', 'BK117'),
-    ('9301', 'BK117'),
-    ('9311', 'BK117'),
-    ('9319', 'BK117'),
-    ('9327', 'BK117'),
-    ('9348', 'BK117'),
-    ('9353', 'BK117'),
-    ('9357', 'BK117'),
-    ('9367', 'BK117'),
-    ('9421', 'BK117'),
-    ('9494', 'BK117'),
-    ('9529', 'BK117'),
-    ('9535', 'BK117'),
-    ('9542', 'BK117'),
-    ('9545', 'BK117'),
-    ('9556', 'BK117'),
-    ('9586', 'BK117'),
-    ('9601', 'BK117'),
-    ('9685', 'BK117'),
-    ('9729', 'BK117'),
-    ('9739', 'BK117'),
-    ('9760', 'BK117'),
-    ('9800', 'BK117'),
-    ('9827', 'BK117'),
-    ('9832', 'BK117'),
-    ('9837', 'BK117'),
-    ('9850', 'BK117'),
-    ('9852', 'BK117'),
-    ('9855', 'BK117'),
-    ('9862', 'BK117'),
-    ('9863', 'BK117'),
-    ('9864', 'BK117'),
-    ('9867', 'BK117'),
-    ('9868', 'BK117'),
-    ('9873', 'BK117'),
-    ('9874', 'BK117'),
-    ('9875', 'BK117'),
-    ('9876', 'BK117'),
-    ('9877', 'BK117'),
-    ('9879', 'BK117'),
-    ('9880', 'BK117'),
-    ('9881', 'BK117'),
-    ('9884', 'BK117'),
-    ('N106VU', 'EC130'),
-    ('N107VU', 'EC130');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT '9228' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9241' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9250' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9278' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9281' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9288' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9301' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9311' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9319' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9327' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9348' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9353' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9357' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9367' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9421' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9494' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9529' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9535' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9542' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9545' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9556' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9586' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9601' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9685' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9729' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9739' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9760' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9800' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9827' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9832' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9837' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9850' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9852' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9855' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9862' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9863' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9864' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9867' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9868' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9873' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9874' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9875' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9876' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9877' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9879' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9880' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9881' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT '9884' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N106VU' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N107VU' AS tail, 'EC130' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('N108LN', 'AS350'),
-    ('N118LN', 'AS350'),
-    ('N11UQ', 'EC130'),
-    ('N11XQ', 'EC130'),
-    ('N11YQ', 'EC130'),
-    ('N135AM', '407'),
-    ('N141NE', 'BK117'),
-    ('N142NE', 'BK117'),
-    ('N143NE', 'BK117'),
-    ('N144NE', 'BK117'),
-    ('N145NE', 'BK117'),
-    ('N147LM', 'AS350'),
-    ('N1984S', 'BK117'),
-    ('N208AM', '407'),
-    ('N214AM', '407'),
-    ('N216SH', 'EC130'),
-    ('N218AM', '407'),
-    ('N222SH', 'EC130'),
-    ('N230TJ', 'EC130'),
-    ('N237SH', 'EC130'),
-    ('N239SH', 'EC130'),
-    ('N240SH', 'EC130'),
-    ('N242SH', 'EC130'),
-    ('N244SH', 'EC130'),
-    ('N245CC', 'BK117'),
-    ('N246AM', '407'),
-    ('N246NE', 'BK117'),
-    ('N247NE', 'BK117'),
-    ('N253LF', 'AS350'),
-    ('N255LF', 'AS350'),
-    ('N257AM', 'AS350'),
-    ('N267AM', 'AS350'),
-    ('N278AM', '407'),
-    ('N279AM', 'AS350'),
-    ('N27RT', 'AW139'),
-    ('N284AM', '407'),
-    ('N292AM', '407'),
-    ('N293AM', '407'),
-    ('N29RT', 'AW139'),
-    ('N304ME', 'BK117'),
-    ('N306LG', 'AW119'),
-    ('N307ME', 'BK117'),
-    ('N308ME', 'EC135'),
-    ('N327CH', 'EC130'),
-    ('N338AM', '407'),
-    ('N350AM', 'AS350'),
-    ('N350LF', 'AS350'),
-    ('N350MV', 'AS350'),
-    ('N351LL', 'AW119'),
-    ('N352LL', 'AW119');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT 'N108LN' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N118LN' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N11UQ' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N11XQ' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N11YQ' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N135AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N141NE' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N142NE' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N143NE' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N144NE' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N145NE' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N147LM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N1984S' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N208AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N214AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N216SH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N218AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N222SH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N230TJ' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N237SH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N239SH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N240SH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N242SH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N244SH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N245CC' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N246AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N246NE' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N247NE' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N253LF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N255LF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N257AM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N267AM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N278AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N279AM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N27RT' AS tail, 'AW139' AS airframe
+  UNION ALL
+    SELECT 'N284AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N292AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N293AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N29RT' AS tail, 'AW139' AS airframe
+  UNION ALL
+    SELECT 'N304ME' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N306LG' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N307ME' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N308ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N327CH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N338AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N350AM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N350LF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N350MV' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N351LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N352LL' AS tail, 'AW119' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('N353LL', 'AW119'),
-    ('N354CF', 'AS350'),
-    ('N354LL', 'AW119'),
-    ('N355LL', 'AW119'),
-    ('N356LL', 'AW119'),
-    ('N357AM', '407'),
-    ('N357LL', 'AW119'),
-    ('N358LL', 'AW119'),
-    ('N359LL', 'AW119'),
-    ('N360LL', 'AW119'),
-    ('N362AH', 'EC135'),
-    ('N363AH', 'EC135'),
-    ('N366AH', 'EC135'),
-    ('N370AM', '407'),
-    ('N372AM', '407'),
-    ('N3831', 'AS350'),
-    ('N383AM', '407'),
-    ('N391LG', 'AS350'),
-    ('N398AM', '407'),
-    ('N399LG', 'AS350'),
-    ('N404AM', '407'),
-    ('N407HC', '407'),
-    ('N408LM', '407'),
-    ('N408LN', '407'),
-    ('N408SH', '407'),
-    ('N409LM', '407'),
-    ('N410W', 'EC130'),
-    ('N418TY', 'AS350'),
-    ('N434AM', '407'),
-    ('N442ME', 'EC135'),
-    ('N445ME', 'EC135'),
-    ('N448ME', 'EC135'),
-    ('N4497Y', 'AS350'),
-    ('N450AM', '407'),
-    ('N458AM', '407'),
-    ('N459AM', '407'),
-    ('N470WC', '407'),
-    ('N490H', 'AS350'),
-    ('N491LG', 'AS350'),
-    ('N493LG', 'AS350'),
-    ('N494LG', 'AS350'),
-    ('N496LG', 'AS350'),
-    ('N507ME', 'BK117'),
-    ('N508AM', 'AS350'),
-    ('N520ME', 'EC135'),
-    ('N522ME', 'BK117'),
-    ('N527ME', 'EC135'),
-    ('N530ME', 'EC135'),
-    ('N536ME', 'EC135'),
-    ('N544AM', 'AS350');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT 'N353LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N354CF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N354LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N355LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N356LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N357AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N357LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N358LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N359LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N360LL' AS tail, 'AW119' AS airframe
+  UNION ALL
+    SELECT 'N362AH' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N363AH' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N366AH' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N370AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N372AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N3831' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N383AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N391LG' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N398AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N399LG' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N404AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N407HC' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N408LM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N408LN' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N408SH' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N409LM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N410W' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N418TY' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N434AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N442ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N445ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N448ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N4497Y' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N450AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N458AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N459AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N470WC' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N490H' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N491LG' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N493LG' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N494LG' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N496LG' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N507ME' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N508AM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N520ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N522ME' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N527ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N530ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N536ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N544AM' AS tail, 'AS350' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('N574AM', 'AS350'),
-    ('N586TS', 'R44'),
-    ('N624EC', 'BK117'),
-    ('N625PA', '407'),
-    ('N639ME', 'EC135'),
-    ('N693AM', '407'),
-    ('N697AM', '407'),
-    ('N702SA', 'AS350'),
-    ('N710SB', 'AW109'),
-    ('N741AM', '407'),
-    ('N743AM', '407'),
-    ('N7940K', 'EC130'),
-    ('N798AC', 'EC130'),
-    ('N805LF', 'AS350'),
-    ('N807LF', 'AS350'),
-    ('N808LF', 'AS350'),
-    ('N808SA', 'AS350'),
-    ('N810LF', 'AS350'),
-    ('N811ME', 'EC135'),
-    ('N831ME', 'EC135'),
-    ('N845ME', 'EC135'),
-    ('N855CH', 'EC130'),
-    ('N855ME', 'EC135'),
-    ('N87ME', 'BK117'),
-    ('N884ME', 'EC135'),
-    ('N8CP', 'AW139'),
-    ('N901LF', 'AW109'),
-    ('N901NM', '407'),
-    ('N901WM', 'AW109'),
-    ('N901XM', 'AW109'),
-    ('N913SM', 'AS350'),
-    ('N914SM', 'AS350'),
-    ('N915ME', 'EC135'),
-    ('N925MD', '407'),
-    ('N927AM', '407'),
-    ('N930U', 'EC130'),
-    ('N932ME', 'EC135'),
-    ('N941AM', '407'),
-    ('N944ME', 'EC135'),
-    ('N947MD', '407'),
-    ('N956AM', '407'),
-    ('N963SA', 'AS350'),
-    ('N972AC', 'BK117'),
-    ('N975SC', '407'),
-    ('N9CP', 'AW139');
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT 'N574AM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N586TS' AS tail, 'R44' AS airframe
+  UNION ALL
+    SELECT 'N624EC' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N625PA' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N639ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N693AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N697AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N702SA' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N710SB' AS tail, 'AW109' AS airframe
+  UNION ALL
+    SELECT 'N741AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N743AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N7940K' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N798AC' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N805LF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N807LF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N808LF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N808SA' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N810LF' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N811ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N831ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N845ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N855CH' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N855ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N87ME' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N884ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N8CP' AS tail, 'AW139' AS airframe
+  UNION ALL
+    SELECT 'N901LF' AS tail, 'AW109' AS airframe
+  UNION ALL
+    SELECT 'N901NM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N901WM' AS tail, 'AW109' AS airframe
+  UNION ALL
+    SELECT 'N901XM' AS tail, 'AW109' AS airframe
+  UNION ALL
+    SELECT 'N913SM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N914SM' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N915ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N925MD' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N927AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N930U' AS tail, 'EC130' AS airframe
+  UNION ALL
+    SELECT 'N932ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N941AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N944ME' AS tail, 'EC135' AS airframe
+  UNION ALL
+    SELECT 'N947MD' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N956AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N963SA' AS tail, 'AS350' AS airframe
+  UNION ALL
+    SELECT 'N972AC' AS tail, 'BK117' AS airframe
+  UNION ALL
+    SELECT 'N975SC' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N9CP' AS tail, 'AW139' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe;
 
---changeset roman:tail-airframe-registry-n272mj labels:flights,airframes,rotorcraft
-INSERT INTO tail_airframe_registry (tail, airframe)
-VALUES ('N272MJ', '407')
-ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+--changeset ngafid:tail-airframe-registry-n272mj labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT 'N272MJ', a.id FROM airframes a WHERE a.airframe = '407'
+ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-n158-n159-am labels:flights,airframes,rotorcraft
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('N158AM', '407'),
-    ('N159AM', '407')
-ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+--changeset ngafid:tail-airframe-registry-n158-n159-am labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT 'N158AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N159AM' AS tail, '407' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe
+ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-air-methods-cf labels:flights,airframes,rotorcraft
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('N902CF', '407'),
-    ('N903CF', '407')
-ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+--changeset ngafid:tail-airframe-registry-air-methods-cf labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT 'N902CF' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N903CF' AS tail, '407' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe
+ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-air-methods-batch labels:flights,airframes,rotorcraft
+--changeset ngafid:tail-airframe-registry-air-methods-batch labels:flights,airframes,rotorcraft
 -- Idempotent batch for Air Methods uploads (Garmin 407 + Appareo CF tails)
-INSERT INTO tail_airframe_registry (tail, airframe) VALUES
-    ('N272MJ', '407'),
-    ('N158AM', '407'),
-    ('N159AM', '407'),
-    ('N404AM', '407'),
-    ('N450AM', '407'),
-    ('N902CF', '407'),
-    ('N903CF', '407')
-ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT v.tail, a.id
+FROM (
+    SELECT 'N272MJ' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N158AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N159AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N404AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N450AM' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N902CF' AS tail, '407' AS airframe
+  UNION ALL
+    SELECT 'N903CF' AS tail, '407' AS airframe
+) AS v
+INNER JOIN airframes a ON a.airframe = v.airframe
+ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
---changeset roman:tail-airframe-registry-lifelink-n365ll labels:flights,airframes,rotorcraft
-INSERT INTO tail_airframe_registry (tail, airframe)
-VALUES ('N365LL', 'AW119')
-ON DUPLICATE KEY UPDATE airframe = VALUES(airframe);
+--changeset ngafid:tail-airframe-registry-lifelink-n365ll labels:flights,airframes,rotorcraft
+INSERT INTO tail_airframe_registry (tail, airframe_id)
+SELECT 'N365LL', a.id FROM airframes a WHERE a.airframe = 'AW119'
+ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
+
+--changeset ngafid:tail-airframe-registry-airframe-id-migrate labels:flights,airframes,tail-airframe-registry
+--precondition-sql-check expectedResult:1 SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tail_airframe_registry' AND COLUMN_NAME = 'airframe'
+--precondition-on-fail:MARK_RAN
+--comment Migrate legacy varchar airframe FK to airframe_id (MySQL charset/FK compatibility)
+ALTER TABLE tail_airframe_registry ADD COLUMN airframe_id INT NULL;
+UPDATE tail_airframe_registry r
+    INNER JOIN airframes a ON a.airframe = r.airframe
+SET r.airframe_id = a.id;
+ALTER TABLE tail_airframe_registry DROP FOREIGN KEY tail_airframe_registry_ibfk_1;
+ALTER TABLE tail_airframe_registry DROP COLUMN airframe;
+ALTER TABLE tail_airframe_registry MODIFY airframe_id INT NOT NULL;
+ALTER TABLE tail_airframe_registry
+    ADD CONSTRAINT tail_airframe_registry_airframe_fk
+        FOREIGN KEY (airframe_id) REFERENCES airframes (id);
 

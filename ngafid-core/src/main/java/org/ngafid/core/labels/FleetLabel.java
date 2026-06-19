@@ -6,16 +6,33 @@ import java.util.List;
 
 /** Predefined label options per fleet for the labeling tool (stored in label_definitions). */
 public class FleetLabel {
-    public int id;
-    public int fleetId;
-    public String labelText;
-    public int displayOrder;
+    private int id;
+    private int fleetId;
+    private String labelText;
+    private int displayOrder;
 
     public FleetLabel() {
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public int getFleetId() {
+        return fleetId;
+    }
+
+    public String getLabelText() {
+        return labelText;
+    }
+
+    public int getDisplayOrder() {
+        return displayOrder;
+    }
+
     public static List<FleetLabel> getByFleet(Connection connection, int fleetId) throws SQLException {
-        String sql = "SELECT id, fleet_id, label_text, display_order FROM label_definitions WHERE fleet_id = ? ORDER BY display_order, label_text";
+        String sql = "SELECT id, fleet_id, label_text, display_order FROM label_definitions "
+                + "WHERE fleet_id = ? ORDER BY display_order, label_text";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, fleetId);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -33,7 +50,15 @@ public class FleetLabel {
         }
     }
 
-    /** Returns true if the given label text is allowed for this fleet (or blank). */
+    /**
+     * Returns true if the given label text is allowed for this fleet (or blank).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to check
+     * @param labelText the label text to validate
+     * @return true when the label is blank or already defined for the fleet
+     * @throws SQLException if the lookup fails
+     */
     public static boolean isAllowedForFleet(Connection connection, int fleetId, String labelText) throws SQLException {
         if (labelText == null || labelText.isBlank()) return true;
         String sql = "SELECT 1 FROM label_definitions WHERE fleet_id = ? AND label_text = ? LIMIT 1";
@@ -49,13 +74,16 @@ public class FleetLabel {
     public static FleetLabel insert(Connection connection, int fleetId, String labelText) throws SQLException {
         if (isAllowedForFleet(connection, fleetId, labelText)) return null; // already exists
         int nextOrder = 0;
-        try (PreparedStatement sel = connection.prepareStatement("SELECT COALESCE(MAX(display_order), -1) + 1 FROM label_definitions WHERE fleet_id = ?")) {
+        try (PreparedStatement sel = connection.prepareStatement(
+                "SELECT COALESCE(MAX(display_order), -1) + 1 FROM label_definitions WHERE fleet_id = ?")) {
             sel.setInt(1, fleetId);
             try (ResultSet rs = sel.executeQuery()) {
                 if (rs.next()) nextOrder = rs.getInt(1);
             }
         }
-        try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO label_definitions (fleet_id, label_text, display_order) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "INSERT INTO label_definitions (fleet_id, label_text, display_order) VALUES (?, ?, ?)",
+                Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, fleetId);
             stmt.setString(2, labelText.trim());
             stmt.setInt(3, nextOrder);
@@ -74,7 +102,13 @@ public class FleetLabel {
         return null;
     }
 
-    /** Remove a label definition. Caller must ensure the definition belongs to the user's fleet. */
+    /**
+     * Remove a label definition. Caller must ensure the definition belongs to the user's fleet.
+     *
+     * @param connection the database connection
+     * @param id the label definition ID to delete
+     * @throws SQLException if the delete fails
+     */
     public static void delete(Connection connection, int id) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM label_definitions WHERE id = ?")) {
             stmt.setInt(1, id);
@@ -82,9 +116,17 @@ public class FleetLabel {
         }
     }
 
-    /** Returns the fleet_id for a label definition, or null if not found. */
+    /**
+     * Returns the fleet_id for a label definition, or null if not found.
+     *
+     * @param connection the database connection
+     * @param id the label definition ID
+     * @return the owning fleet ID, or null when the definition does not exist
+     * @throws SQLException if the lookup fails
+     */
     public static Integer getFleetIdForDefinition(Connection connection, int id) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement("SELECT fleet_id FROM label_definitions WHERE id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT fleet_id FROM label_definitions WHERE id = ?")) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? rs.getInt("fleet_id") : null;

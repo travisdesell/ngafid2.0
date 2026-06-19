@@ -534,6 +534,7 @@ public class AnalysisJavalinRoutes {
      * Batch heatmap points endpoint. Accepts POST body JSON: { "event_ids": [1, 2, 3, ...] }.
      * Returns heatmap points for all event IDs in chunks (server-side chunking).
      * Response: { "results": [ { "event_id", "flight_id", "points", "flight_airframe" }, ... ] }
+     * @param ctx the request context
      */
     @SuppressWarnings("unchecked")
     public static void postHeatmapPointsBatch(Context ctx) {

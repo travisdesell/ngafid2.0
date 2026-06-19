@@ -141,7 +141,9 @@ public class Filter {
      */
     public static String getOffsetDateTime(String datetime, String longOffset) {
         String offset = longOffset.substring(4, 10);
-        OffsetDateTime odt = LocalDateTime.parse(normalizeDateTimeInput(datetime), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        OffsetDateTime odt = LocalDateTime.parse(
+                normalizeDateTimeInput(datetime),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 .atOffset(ZoneOffset.of(offset));
         String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00"))
                 .format(DateTimeFormatter.ofPattern("yyyy" + "-MM-dd HH:mm:ss"));
@@ -162,11 +164,11 @@ public class Filter {
     /**
      * Helper function to build an Event Definition ID subquery
      * for an event (without a specified airframe).
-     * 
-     * @param fleetId
-     * @param parameters
-     * @param eventName
-     * @return
+     *
+     * @param fleetId the fleet ID used to scope fleet-specific event definitions
+     * @param parameters the query parameters to append to
+     * @param eventName the event name to match
+     * @return the event definition ID subquery
      */
     private String getEventDefinitionIdSubquery(int fleetId, ArrayList<Object> parameters, String eventName) {
         parameters.add(eventName);
@@ -179,14 +181,18 @@ public class Filter {
     /**
      * Helper function to build an Event Definition ID subquery
      * for an event with a specified airframe.
-     * 
-     * @param fleetId
-     * @param parameters
-     * @param eventName
-     * @param airframeName
-     * @return
+     *
+     * @param fleetId the fleet ID used to scope fleet-specific event definitions
+     * @param parameters the query parameters to append to
+     * @param eventName the event name to match
+     * @param airframeName the airframe name to match
+     * @return the event definition ID subquery
      */
-    private String getEventDefinitionIdSubquery(int fleetId, ArrayList<Object> parameters, String eventName, String airframeName) {
+    private String getEventDefinitionIdSubquery(
+            int fleetId,
+            ArrayList<Object> parameters,
+            String eventName,
+            String airframeName) {
         parameters.add(eventName);
         parameters.add(airframeName);
         parameters.add(fleetId);
@@ -504,9 +510,9 @@ public class Filter {
                     if (i > 0) string.append(" ");
                     string.append(inputs.get(i));
                 }
-                
+
                 return string.toString();
-                
+
             }
             case "GROUP" -> {
                 StringBuilder string = new StringBuilder();
@@ -514,9 +520,9 @@ public class Filter {
                     if (i > 0) string.append(" ").append(condition).append(" ");
                     string.append(filters.get(i).toHumanReadable());
                 }
-                
+
                 return "(" + string + ")";
-                
+
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
@@ -533,7 +539,7 @@ public class Filter {
      */
     @Override
     public String toString() {
-        
+
         switch (type) {
             case "RULE" -> {
                 String string = "";
@@ -541,9 +547,9 @@ public class Filter {
                     if (i > 0) string += " ";
                     string += "'" + inputs.get(i) + "'";
                 }
-                
+
                 return "(" + string + ")";
-                
+
             }
             case "GROUP" -> {
                 String string = "";
@@ -551,9 +557,9 @@ public class Filter {
                     if (i > 0) string += " " + condition + " ";
                     string += filters.get(i).toString();
                 }
-                
+
                 return "(" + string + ")";
-                
+
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
@@ -564,7 +570,10 @@ public class Filter {
     }
 
     /**
-     * Used for comparing two filters for equality
+     * Used for comparing two filters for equality.
+     *
+     * @param e the object to compare against
+     * @return true when the supplied object is an equal filter
      */
     @Override
     public boolean equals(Object e) {

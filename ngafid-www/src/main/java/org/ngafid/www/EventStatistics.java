@@ -201,7 +201,8 @@ public class EventStatistics {
                         + dateClause + " GROUP BY fleet_id, event_definition_id, airframe_id, year, month";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
-            Map<MonthlyCountKey, Integer> fleetMonthlyFlightCounts = getFleetMonthlyFlightCounts(connection, dateClause);
+            Map<MonthlyCountKey, Integer> fleetMonthlyFlightCounts =
+                    getFleetMonthlyFlightCounts(connection, dateClause);
             Map<MonthlyCountKey, Integer> aggregateMonthlyFlightCounts =
                     getAggregateMonthlyFlightCounts(connection, dateClause);
             Map<String, Map<String, MonthlyEventCountsBuilder>> eventCounts = new HashMap<>();
@@ -293,7 +294,8 @@ public class EventStatistics {
         return counts;
     }
 
-    private static Map<MonthlyCountKey, Integer> getAggregateMonthlyFlightCounts(Connection connection, String dateClause)
+    private static Map<MonthlyCountKey, Integer> getAggregateMonthlyFlightCounts(
+            Connection connection, String dateClause)
             throws SQLException {
         String query = """
             SELECT airframe_id, year, month, SUM(count) AS flight_count
@@ -474,7 +476,8 @@ public class EventStatistics {
      * @param startDate  is the earliest date to count flights from
      * @param endDate    is the latest date to count flights from
      * @return Flight counts
-     **/
+     * @throws SQLException if the query fails
+     */
     public static FlightCounts getFlightCounts(Connection connection, LocalDate startDate, LocalDate endDate)
             throws SQLException {
         if (startDate == null) startDate = LocalDate.of(0, 1, 1);

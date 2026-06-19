@@ -69,6 +69,8 @@ public class Navbar {
         final boolean isAdmin = (user != null && user.isAdmin());
         final boolean hasAggregateView = (user != null && user.hasAggregateView());
         final boolean hasStatusView = true;
+        final boolean rotorcraftSpecsView = (user != null && user.hasRotorcraftSpecsView());
+        final boolean rotorcraftSpecsEdit = (user != null && user.hasRotorcraftSpecsEdit());
 
         return "var admin = " + isAdmin + ";"
                 + "var aggregateView = " + hasAggregateView + ";"
@@ -78,6 +80,8 @@ public class Navbar {
                 + "var modifyTailsAccess = " + modifyTailsAccess + ";"
                 + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
                 + "var airSyncEnabled = " + airSyncEnabled + ";"
-                + "var isUploader = " + hasUploadAccess + ";";
+                + "var isUploader = " + hasUploadAccess + ";"
+                + "var rotorcraftSpecsView = " + rotorcraftSpecsView + ";"
+                + "var rotorcraftSpecsEdit = " + rotorcraftSpecsEdit + ";";
     }
 }

@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset roman:heatmap-points labels:flights,proximity
+--changeset ngafid:heatmap-points labels:flights,proximity
 CREATE TABLE heatmap_points (
     id INT NOT NULL AUTO_INCREMENT,
     event_id INT NOT NULL,
