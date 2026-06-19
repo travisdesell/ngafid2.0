@@ -11,8 +11,7 @@ public class FleetLabel {
     private String labelText;
     private int displayOrder;
 
-    public FleetLabel() {
-    }
+    public FleetLabel() {}
 
     public int getId() {
         return id;

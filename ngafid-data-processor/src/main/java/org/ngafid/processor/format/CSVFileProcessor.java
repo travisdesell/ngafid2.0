@@ -3,11 +3,6 @@ package org.ngafid.processor.format;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.flights.Airframes.AliasKey;
-import org.ngafid.core.util.MD5;
-import org.ngafid.processor.Pipeline;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -18,6 +13,10 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.flights.Airframes.AliasKey;
+import org.ngafid.core.util.MD5;
+import org.ngafid.processor.Pipeline;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders
@@ -85,9 +84,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             if (metainfo.startsWith("DID_")) {
                 return true;
             } else {
-                throw new FatalFlightFileException(
-                        "First line of the flight file should begin with a '#' and contain "
-                                + "flight recorder information.");
+                throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain "
+                        + "flight recorder information.");
             }
         }
 
@@ -197,7 +195,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     FlightBuilder makeFlightBuilder(
-            FlightMeta metaParam, Map<String, DoubleTimeSeries> doubleSeries,
+            FlightMeta metaParam,
+            Map<String, DoubleTimeSeries> doubleSeries,
             Map<String, StringTimeSeries> stringSeries) {
         return new FlightBuilder(metaParam, doubleSeries, stringSeries);
     }
@@ -399,8 +398,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         if (!Airframes.FIXED_WING_AIRFRAMES.contains(airframeName)
                 && !airframeName.contains("Garmin")
                 && !Airframes.ROTORCRAFT.contains(airframeName)) {
-            airframeName =
-                    Airframes.resolveGarminRotorcraftAirframeCode(name).orElse(airframeName);
+            airframeName = Airframes.resolveGarminRotorcraftAirframeCode(name).orElse(airframeName);
         }
 
         String airframeType = null;

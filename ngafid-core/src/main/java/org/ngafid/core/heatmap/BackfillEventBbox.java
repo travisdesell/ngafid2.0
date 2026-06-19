@@ -18,10 +18,9 @@ import org.ngafid.core.flights.Parameters;
 public final class BackfillEventBbox {
     private static final Logger LOG = Logger.getLogger(BackfillEventBbox.class.getName());
 
-    private static final String SELECT_EVENTS_NEEDING_BBOX =
-            "SELECT id, flight_id, start_line, end_line FROM events "
-                    + "WHERE min_latitude IS NULL AND start_line IS NOT NULL AND end_line IS NOT NULL "
-                    + "ORDER BY id";
+    private static final String SELECT_EVENTS_NEEDING_BBOX = "SELECT id, flight_id, start_line, end_line FROM events "
+            + "WHERE min_latitude IS NULL AND start_line IS NOT NULL AND end_line IS NOT NULL "
+            + "ORDER BY id";
 
     private static final String UPDATE_EVENT_BBOX =
             "UPDATE events SET min_latitude = ?, max_latitude = ?, min_longitude = ?, max_longitude = ? WHERE id = ?";
@@ -99,10 +98,7 @@ public final class BackfillEventBbox {
             try (ResultSet rs = select.executeQuery()) {
                 while (rs.next()) {
                     rows.add(new EventRow(
-                            rs.getInt("id"),
-                            rs.getInt("flight_id"),
-                            rs.getInt("start_line"),
-                            rs.getInt("end_line")));
+                            rs.getInt("id"), rs.getInt("flight_id"), rs.getInt("start_line"), rs.getInt("end_line")));
                     if (limit != null && rows.size() >= limit) {
                         break;
                     }
@@ -172,7 +168,11 @@ public final class BackfillEventBbox {
         return result;
     }
 
-    enum SkipReason { NONE, NO_SERIES, NO_VALID_COORDS }
+    enum SkipReason {
+        NONE,
+        NO_SERIES,
+        NO_VALID_COORDS
+    }
 
     static final class BboxResult {
         final double[] bbox;
@@ -227,8 +227,10 @@ public final class BackfillEventBbox {
                 if (lon > maxLon) maxLon = lon;
             }
         }
-        if (minLat == Double.POSITIVE_INFINITY || maxLat == Double.NEGATIVE_INFINITY
-                || minLon == Double.POSITIVE_INFINITY || maxLon == Double.NEGATIVE_INFINITY) {
+        if (minLat == Double.POSITIVE_INFINITY
+                || maxLat == Double.NEGATIVE_INFINITY
+                || minLon == Double.POSITIVE_INFINITY
+                || maxLon == Double.NEGATIVE_INFINITY) {
             return new BboxResult(SkipReason.NO_VALID_COORDS);
         }
         return new BboxResult(new double[]{minLat, maxLat, minLon, maxLon});

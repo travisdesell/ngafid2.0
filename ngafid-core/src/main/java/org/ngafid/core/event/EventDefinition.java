@@ -105,16 +105,7 @@ public class EventDefinition {
             Filter filter,
             TreeSet<String> severityColumnNames,
             SeverityType severityType) {
-        this(
-                fleetId,
-                name,
-                startBuffer,
-                stopBuffer,
-                airframeNameId,
-                null,
-                filter,
-                severityColumnNames,
-                severityType);
+        this(fleetId, name, startBuffer, stopBuffer, airframeNameId, null, filter, severityColumnNames, severityType);
     }
 
     public EventDefinition(
@@ -439,21 +430,16 @@ public class EventDefinition {
             String airframe,
             String filterJson,
             String severityColumnNamesJson,
-            String severityType
-    ) throws SQLException {
+            String severityType)
+            throws SQLException {
         insert(
                 connection, fleetId, name, startBuffer, stopBuffer, airframe, null,
                 filterJson, severityColumnNamesJson, severityType);
     }
 
     public static void insert(
-            Connection connection,
-            int id,
-            String name,
-            int startBuffer,
-            int stopBuffer,
-            int airframeId
-    ) throws SQLException {
+            Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId)
+            throws SQLException {
         insert(connection, id, name, startBuffer, stopBuffer, airframeId, null);
     }
 

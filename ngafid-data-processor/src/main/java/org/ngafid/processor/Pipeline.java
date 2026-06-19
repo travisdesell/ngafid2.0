@@ -1,17 +1,5 @@
 package org.ngafid.processor;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.ngafid.core.Config;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.core.uploads.UploadException;
-import org.ngafid.processor.format.*;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +17,17 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Config;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.core.uploads.UploadException;
+import org.ngafid.processor.format.*;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
@@ -355,7 +354,8 @@ public class Pipeline implements AutoCloseable {
             return flightBuilder.build(dbConnection);
         } catch (FlightProcessingException | SQLException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
-            fail(flightBuilder.meta.getFilename(),
+            fail(
+                    flightBuilder.meta.getFilename(),
                     new UploadException(e.getMessage(), e, flightBuilder.meta.getFilename()));
             return null;
         }
@@ -369,7 +369,8 @@ public class Pipeline implements AutoCloseable {
      * @return a list of `Flight` objects, having filtered out any `null` values.
      */
     public List<FlightBuilder> build(Connection dbConnection, Stream<FlightBuilder> flightBuilders) {
-        return flightBuilders.map(flightBuilder -> this.build(dbConnection, flightBuilder))
+        return flightBuilders
+                .map(flightBuilder -> this.build(dbConnection, flightBuilder))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }

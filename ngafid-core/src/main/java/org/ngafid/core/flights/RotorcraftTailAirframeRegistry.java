@@ -36,8 +36,8 @@ public final class RotorcraftTailAirframeRegistry {
             query.setString(1, tail);
             try (ResultSet rs = query.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(new Entry(
-                            rs.getString("tail"), rs.getString("airframe"), rs.getString("airframe_type")));
+                    return Optional.of(
+                            new Entry(rs.getString("tail"), rs.getString("airframe"), rs.getString("airframe_type")));
                 }
             }
         }

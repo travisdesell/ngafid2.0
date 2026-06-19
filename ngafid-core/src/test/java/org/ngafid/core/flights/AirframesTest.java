@@ -471,8 +471,7 @@ public class AirframesTest extends TestWithConnection {
     @Test
     @DisplayName("Should handle Type with very long name")
     public void testTypeWithLongName() {
-        String longName =
-                "Very Long Type Name That Exceeds Normal Length And "
+        String longName = "Very Long Type Name That Exceeds Normal Length And "
                 + "Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
         Airframes.Type type = new Airframes.Type(longName);
         assertNotNull(type);
@@ -646,8 +645,7 @@ public class AirframesTest extends TestWithConnection {
     @Test
     @DisplayName("Should handle getAirframeByName with very long name")
     public void testGetAirframeByNameWithLongName() throws SQLException {
-        String longName =
-                "Very Long Aircraft Name That Exceeds Normal Length And "
+        String longName = "Very Long Aircraft Name That Exceeds Normal Length And "
                 + "Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
 
         assertThrows(SQLException.class, () -> {

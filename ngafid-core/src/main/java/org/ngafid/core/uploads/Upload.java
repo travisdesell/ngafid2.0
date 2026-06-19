@@ -146,8 +146,7 @@ public final class Upload {
             // We don't want to add this upload to the kafka queue while it is still locked, because then processing
             // could fail if it is read from the queue too fast while we still have the lock.
             if (markedComplete) {
-                if (producer == null)
-                    producer = new KafkaProducer<>(Configuration.getUploadProperties());
+                if (producer == null) producer = new KafkaProducer<>(Configuration.getUploadProperties());
 
                 // Key upload id so the default partitioner spreads messages across topic partitions
                 // (null-key produces can skew onto one partition and under-use parallel consumers).
@@ -704,7 +703,6 @@ public final class Upload {
                     uploads.add(new Upload(resultSet));
                 }
             }
-
         }
 
         return uploads;
@@ -742,7 +740,6 @@ public final class Upload {
                     uploads.add(new Upload(resultSet));
                 }
             }
-
         }
 
         return uploads;

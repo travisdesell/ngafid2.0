@@ -52,14 +52,16 @@ public class Filter {
     public void getColumnNamesHelper(Filter filter, TreeSet<String> columnNames) {
         LOG.info(() -> "getting column filter for " + filter.type);
 
-        if (!filter.type.equals("RULE")) if (filter.type.equals("GROUP")) {
-            for (int i = 0; i < filter.filters.size(); i++) {
-                getColumnNamesHelper(filter.filters.get(i), columnNames);
+        if (!filter.type.equals("RULE"))
+            if (filter.type.equals("GROUP")) {
+                for (int i = 0; i < filter.filters.size(); i++) {
+                    getColumnNamesHelper(filter.filters.get(i), columnNames);
+                }
+            } else {
+                LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
+                System.exit(1);
             }
-        } else {
-            LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
-            System.exit(1);
-        } else {
+        else {
             LOG.info(filter.inputs.toString());
             columnNames.add(filter.inputs.get(0));
         }
@@ -155,8 +157,7 @@ public class Filter {
         String normalized = datetime.trim().replace('T', ' ');
 
         // Input is in the form "yyyy-MM-dd HH:mm", append ":00" to make it "yyyy-MM-dd HH:mm:ss"
-        if (normalized.length() == 16)
-            return normalized + ":00";
+        if (normalized.length() == 16) return normalized + ":00";
 
         return normalized;
     }
@@ -299,9 +300,7 @@ public class Filter {
 
             case "Start Time", "End Time" -> {
                 parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
-                String columnName = inputs.get(0).equals("Start Time")
-                    ? "flights.start_time"
-                    : "flights.end_time";
+                String columnName = inputs.get(0).equals("Start Time") ? "flights.start_time" : "flights.end_time";
                 return "TIME(" + columnName + ") " + checkOperator(inputs.get(1)) + " ?";
             }
 
@@ -357,9 +356,9 @@ public class Filter {
 
                     return " (SELECT COUNT(*) FROM events e "
                             + " WHERE e.flight_id = flights.id "
-                        + " AND e.event_definition_id IN ( "
-                        + eventDefinitionIdSubquery
-                        + " )) " + cond + " ? ";
+                            + " AND e.event_definition_id IN ( "
+                            + eventDefinitionIdSubquery
+                            + " )) " + cond + " ? ";
                 }
 
                 // Otherwise, use specified airframe
@@ -368,13 +367,13 @@ public class Filter {
                 eventName = eventName.substring(0, separatorIndex);
 
                 String eventDefinitionIdSubquery =
-                    getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
+                        getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
                 parameters.add(countTarget);
 
                 return " (SELECT COUNT(*) FROM events e "
                         + " WHERE e.flight_id = flights.id "
-                    + " AND e.event_definition_id IN ( "
-                    + eventDefinitionIdSubquery
+                        + " AND e.event_definition_id IN ( "
+                        + eventDefinitionIdSubquery
                         + " )) " + cond + " ? ";
             }
 
@@ -388,18 +387,18 @@ public class Filter {
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND events.severity "
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND events.severity "
                             + cond + " ?)";
                 } else {
                     String airframeName = eventName.substring(separatorIndex + 3);
                     eventName = eventName.substring(0, separatorIndex);
 
                     String eventDefinitionIdSubquery =
-                        getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
+                            getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
                             + " events.severity "
                             + cond + " ?)";
                 }
@@ -415,8 +414,8 @@ public class Filter {
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ")"
-                        + " AND ((events.end_line - events.start_line) + 1)"
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ")"
+                            + " AND ((events.end_line - events.start_line) + 1)"
                             + " "
                             + cond + " ?)";
                 } else {
@@ -424,11 +423,11 @@ public class Filter {
                     eventName = eventName.substring(0, separatorIndex);
 
                     String eventDefinitionIdSubquery =
-                        getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
+                            getEventDefinitionIdSubquery(fleetId, parameters, eventName, airframeName);
                     parameters.add(inputs.get(3));
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events"
-                        + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
+                            + ".event_definition_id IN (" + eventDefinitionIdSubquery + ") AND"
                             + " ((events.end_line - events.start_line) + 1) "
                             + cond + " ?)";
                 }

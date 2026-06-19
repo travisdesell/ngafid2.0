@@ -27,8 +27,7 @@ import org.ngafid.www.uploads.UploadStatistics;
 public class StatisticsJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
-    private StatisticsJavalinRoutes() {
-    }
+    private StatisticsJavalinRoutes() {}
 
     public static class StatFetcher {
         private final Connection connection;

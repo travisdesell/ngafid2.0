@@ -84,8 +84,7 @@ public class DoubleSeriesJavalinRoutes {
         private final List<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
-            try (PreparedStatement query = connection.prepareStatement(
-                    "SELECT dsn.name FROM double_series AS ds "
+            try (PreparedStatement query = connection.prepareStatement("SELECT dsn.name FROM double_series AS ds "
                     + "INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id "
                     + "WHERE ds.flight_id = ? ORDER BY dsn.name")) {
                 query.setInt(1, flightId);

@@ -294,10 +294,8 @@ public class AnalysisJavalinRoutes {
         // Chart tile service base URL (aviation charts).
         try {
             String chartBase = Config.getProperty("ngafid.chart.tile.base.url");
-            if (chartBase != null && !chartBase.trim().isEmpty())
-                chartBase = chartBase.replaceAll("/+$", "");
-            else
-                chartBase = "http://localhost:8187";
+            if (chartBase != null && !chartBase.trim().isEmpty()) chartBase = chartBase.replaceAll("/+$", "");
+            else chartBase = "http://localhost:8187";
             scopes.put("chart_tile_base_url", "var chartTileBaseUrl = '" + chartBase + "';\n");
         } catch (RuntimeException e) {
             scopes.put("chart_tile_base_url", "var chartTileBaseUrl = 'http://localhost:8187';\n");

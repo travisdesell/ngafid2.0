@@ -1,11 +1,7 @@
 package org.ngafid.core.flights;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.event.Event;
-import org.ngafid.core.event.EventDefinition;
-import org.ngafid.core.util.FlightTag;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.core.util.filters.Filter;
+import static org.ngafid.core.flights.Parameters.COMP_CONV;
+import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,9 +9,12 @@ import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
-
-import static org.ngafid.core.flights.Parameters.COMP_CONV;
-import static org.ngafid.core.flights.Parameters.PROSPIN_LIM;
+import org.ngafid.core.Database;
+import org.ngafid.core.event.Event;
+import org.ngafid.core.event.EventDefinition;
+import org.ngafid.core.util.FlightTag;
+import org.ngafid.core.util.TimeUtils;
+import org.ngafid.core.util.filters.Filter;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods

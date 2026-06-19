@@ -220,8 +220,7 @@ public class FleetTest {
     @Test
     @DisplayName("Should handle fleet with very long name in equality")
     public void testFleetEqualsWithLongName() {
-        String longName =
-                "Very Long Fleet Name That Exceeds Normal Length And "
+        String longName = "Very Long Fleet Name That Exceeds Normal Length And "
                 + "Contains Special Characters @#$%^&*()_+-=[]{}|;':\",./<>?";
         Fleet fleet1 = new Fleet(1, longName);
         Fleet fleet2 = new Fleet(1, longName);

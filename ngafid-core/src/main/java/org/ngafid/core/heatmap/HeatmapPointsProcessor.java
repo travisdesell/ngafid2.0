@@ -357,14 +357,13 @@ public class HeatmapPointsProcessor {
         Map<String, Object> eventMap = new HashMap<>();
         List<Map<String, Object>> points = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
-            String query =
-                    "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, "
-                            + "pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe "
-                            + "FROM heatmap_points pp "
-                            + "JOIN flights f ON pp.flight_id = f.id "
-                            + "JOIN airframes a ON f.airframe_id = a.id "
-                            + "WHERE pp.event_id = ? AND pp.flight_id = ? "
-                            + "ORDER BY pp.timestamp";
+            String query = "SELECT pp.event_id, pp.latitude, pp.longitude, pp.timestamp, "
+                    + "pp.flight_id, pp.altitude_agl, a.airframe as flight_airframe "
+                    + "FROM heatmap_points pp "
+                    + "JOIN flights f ON pp.flight_id = f.id "
+                    + "JOIN airframes a ON f.airframe_id = a.id "
+                    + "WHERE pp.event_id = ? AND pp.flight_id = ? "
+                    + "ORDER BY pp.timestamp";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, eventId);
                 stmt.setInt(2, flightId);
@@ -734,20 +733,19 @@ public class HeatmapPointsProcessor {
             throws SQLException {
         List<Map<String, Object>> events = new ArrayList<>();
         try (Connection connection = Database.getConnection()) {
-            StringBuilder sql = new StringBuilder(
-                    "SELECT e.id, e.fleet_id, e.flight_id, e.event_definition_id, "
-                            + "e.other_flight_id, e.start_line, e.end_line, "
-                            + "e.start_time, e.end_time, e.severity, "
-                            + "e.min_latitude, e.max_latitude, e.min_longitude, e.max_longitude, "
-                            + "a.airframe as airframe_name, oa.airframe as other_airframe_name "
-                            + "FROM events e "
-                            + "JOIN flights f ON e.flight_id = f.id "
-                            + "JOIN airframes a ON f.airframe_id = a.id "
-                            + "LEFT JOIN flights ofl ON e.other_flight_id = ofl.id "
-                            + "LEFT JOIN airframes oa ON ofl.airframe_id = oa.id "
-                            + "WHERE DATE(e.start_time) BETWEEN ? AND ? "
-                            + "AND e.min_latitude <= ? AND e.max_latitude >= ? "
-                            + "AND e.min_longitude <= ? AND e.max_longitude >= ?");
+            StringBuilder sql = new StringBuilder("SELECT e.id, e.fleet_id, e.flight_id, e.event_definition_id, "
+                    + "e.other_flight_id, e.start_line, e.end_line, "
+                    + "e.start_time, e.end_time, e.severity, "
+                    + "e.min_latitude, e.max_latitude, e.min_longitude, e.max_longitude, "
+                    + "a.airframe as airframe_name, oa.airframe as other_airframe_name "
+                    + "FROM events e "
+                    + "JOIN flights f ON e.flight_id = f.id "
+                    + "JOIN airframes a ON f.airframe_id = a.id "
+                    + "LEFT JOIN flights ofl ON e.other_flight_id = ofl.id "
+                    + "LEFT JOIN airframes oa ON ofl.airframe_id = oa.id "
+                    + "WHERE DATE(e.start_time) BETWEEN ? AND ? "
+                    + "AND e.min_latitude <= ? AND e.max_latitude >= ? "
+                    + "AND e.min_longitude <= ? AND e.max_longitude >= ?");
             if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
                 sql.append(" AND a.airframe = ?");
             }

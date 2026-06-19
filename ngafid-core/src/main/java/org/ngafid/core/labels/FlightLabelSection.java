@@ -30,8 +30,7 @@ public class FlightLabelSection {
     private String startTimeStr;
     private String endTimeStr;
 
-    public FlightLabelSection() {
-    }
+    public FlightLabelSection() {}
 
     public int getId() {
         return id;
@@ -328,8 +327,8 @@ public class FlightLabelSection {
     }
 
     public static void updateLabelText(Connection connection, int id, String labelText) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "UPDATE flight_label_section SET label_text = ? WHERE id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("UPDATE flight_label_section SET label_text = ? WHERE id = ?")) {
             stmt.setString(1, labelText);
             stmt.setInt(2, id);
             stmt.executeUpdate();
@@ -337,16 +336,15 @@ public class FlightLabelSection {
     }
 
     public static void delete(Connection connection, int id) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM flight_label_section WHERE id = ?")) {
+        try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM flight_label_section WHERE id = ?")) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         }
     }
 
     public static void deleteByFlight(Connection connection, int flightId) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "DELETE FROM flight_label_section WHERE flight_id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("DELETE FROM flight_label_section WHERE flight_id = ?")) {
             stmt.setInt(1, flightId);
             stmt.executeUpdate();
         }

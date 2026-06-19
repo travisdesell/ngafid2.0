@@ -17,9 +17,7 @@ import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.sql.rowset.serial.SerialBlob;
-
 import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.Runway;
@@ -28,7 +26,7 @@ import org.ngafid.core.util.TimeUtils;
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
-    public static final long serialVersionUID = 0x46AF1D77F0002L;   // <-- Bumped 2/6/26
+    public static final long serialVersionUID = 0x46AF1D77F0002L; // <-- Bumped 2/6/26
 
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
@@ -286,6 +284,7 @@ public class TurnToFinal implements Serializable {
     }
 
     static final String DELETE_QUERY_STR = "DELETE FROM turn_to_final WHERE flight_id = ?";
+
     public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight)
             throws SQLException, IOException, ClassNotFoundException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?");
@@ -349,8 +348,8 @@ public class TurnToFinal implements Serializable {
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be resolved
      */
-    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalFromCacheBatch(Connection connection,
-            List<Integer> flightIds) throws SQLException, IOException, ClassNotFoundException {
+    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalFromCacheBatch(
+            Connection connection, List<Integer> flightIds) throws SQLException, IOException, ClassNotFoundException {
         Map<Integer, ArrayList<TurnToFinal>> result = new HashMap<>();
         if (flightIds == null || flightIds.isEmpty()) {
             return result;
@@ -402,8 +401,8 @@ public class TurnToFinal implements Serializable {
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be resolved
      */
-    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(Connection connection,
-            List<Integer> flightIds, String airportIataCode)
+    public static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(
+            Connection connection, List<Integer> flightIds, String airportIataCode)
             throws SQLException, IOException, ClassNotFoundException {
         return getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode, id -> {
             try {
@@ -414,8 +413,10 @@ public class TurnToFinal implements Serializable {
         });
     }
 
-    private static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(Connection connection,
-            List<Integer> flightIds, String airportIataCode,
+    private static Map<Integer, ArrayList<TurnToFinal>> getTurnToFinalBatchByFlightIds(
+            Connection connection,
+            List<Integer> flightIds,
+            String airportIataCode,
             java.util.function.Function<Integer, Flight> flightLoader)
             throws SQLException, IOException, ClassNotFoundException {
         Map<Integer, ArrayList<TurnToFinal>> result = new HashMap<>();
@@ -433,7 +434,8 @@ public class TurnToFinal implements Serializable {
             }
             if (ttfs != null && !ttfs.isEmpty()) {
                 ArrayList<TurnToFinal> filtered = ttfs.stream()
-                        .filter(ttf -> airportIataCode == null || ttf.getAirportIataCode().equals(airportIataCode))
+                        .filter(ttf -> airportIataCode == null
+                                || ttf.getAirportIataCode().equals(airportIataCode))
                         .collect(Collectors.toCollection(ArrayList::new));
                 if (!filtered.isEmpty()) {
                     result.put(flightId, filtered);
@@ -473,8 +475,7 @@ public class TurnToFinal implements Serializable {
 
         for (Itinerary it : itineraries) {
             int to = it.getMinAltitudeIndex();
-            if (!it.wasApproach())
-                continue;
+            if (!it.wasApproach()) continue;
 
             int from = to;
 
@@ -482,20 +483,20 @@ public class TurnToFinal implements Serializable {
             Runway runway = airport.getRunway(it.getRunway());
             double runwayAltitude = altitude[to];
 
-            for (;;) {
+            for (; ; ) {
                 if (to < 0) {
                     to = 0;
                     break;
                 }
 
                 if (altitude[to] > 15) // - runwayAltitude > 30)
-                    break;
+                break;
 
                 to -= 1;
             }
 
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
-            for (;;) {
+            for (; ; ) {
                 if (from < 0) {
                     // We never found a point in time where there is a turn to final
                     // We assume all aircraft that perform a turn to final will reach 400 feet above the runway
@@ -504,13 +505,12 @@ public class TurnToFinal implements Serializable {
                 }
 
                 if (altitude[from] > 300) // - runwayAltitude > 400)
-                    break;
+                break;
 
                 from -= 1;
             }
 
-            if (to == from)
-                continue;
+            if (to == from) continue;
 
             double min = Double.POSITIVE_INFINITY;
             double max = Double.NEGATIVE_INFINITY;
@@ -519,10 +519,8 @@ public class TurnToFinal implements Serializable {
                 max = Math.max(max, altitude[i]);
             }
 
-            if (max - min < 60 || Double.isNaN(max - min))
-                continue;
-            if (min > 100 || Double.isNaN(min))
-                continue;
+            if (max - min < 60 || Double.isNaN(max - min)) continue;
+            if (min > 100 || Double.isNaN(min)) continue;
 
             double[] stallProbabilityArray = null;
             double[] locProbabilityArray = null;
@@ -566,12 +564,10 @@ public class TurnToFinal implements Serializable {
         ArrayList<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
 
         // No cached TTFs found, compute and cache them
-        if (turnToFinals == null)
-            turnToFinals = computeAndCacheTurnToFinals(connection, flight);
+        if (turnToFinals == null) turnToFinals = computeAndCacheTurnToFinals(connection, flight);
 
         // Still no TTFs found -> Empty list
-        if (turnToFinals == null)
-            return new ArrayList<>();
+        if (turnToFinals == null) return new ArrayList<>();
 
         return turnToFinals.stream()
                 .filter(ttf ->
@@ -613,24 +609,19 @@ public class TurnToFinal implements Serializable {
             Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
             for (String param : required) {
                 DoubleTimeSeries series = flight.getDoubleTimeSeries(connection, param);
-                if (series != null)
-                    doubleTimeSeries.put(param, series);
+                if (series != null) doubleTimeSeries.put(param, series);
             }
 
             DoubleTimeSeries stallProb = flight.getDoubleTimeSeries(connection, Parameters.STALL_PROBABILITY);
-            if (stallProb != null)
-                doubleTimeSeries.put(Parameters.STALL_PROBABILITY, stallProb);
+            if (stallProb != null) doubleTimeSeries.put(Parameters.STALL_PROBABILITY, stallProb);
 
             DoubleTimeSeries locProb = flight.getDoubleTimeSeries(connection, Parameters.LOSS_OF_CONTROL_PROBABILITY);
-            if (locProb != null)
-                doubleTimeSeries.put(Parameters.LOSS_OF_CONTROL_PROBABILITY, locProb);
+            if (locProb != null) doubleTimeSeries.put(Parameters.LOSS_OF_CONTROL_PROBABILITY, locProb);
 
             List<Itinerary> itinerary = Itinerary.getItinerary(connection, flight.getId());
             OffsetDateTime startTime = TimeUtils.sqlToOffsetDateTime(flight.getStartDateTime());
 
-            ttfs = calculateFlightTurnToFinals(
-                doubleTimeSeries, itinerary, flight.getAirframe(), startTime
-            );
+            ttfs = calculateFlightTurnToFinals(doubleTimeSeries, itinerary, flight.getAirframe(), startTime);
 
             LOG.info("Recomputed TTFs for flight " + flight.getId() + ": " + ttfs.size());
 
@@ -642,11 +633,9 @@ public class TurnToFinal implements Serializable {
         } catch (IOException | SQLException e) {
             LOG.info(() -> "Failed to recompute TTF data for flight " + flight.getId() + ": " + e.getMessage());
             // On duplicate key (concurrent cache write), return computed data - cache already has it
-            if (ttfs != null && !ttfs.isEmpty())
-                return ttfs;
+            if (ttfs != null && !ttfs.isEmpty()) return ttfs;
             return new ArrayList<>();
         }
-
     }
 
     public record TurnToFinalJSON(
@@ -669,9 +658,7 @@ public class TurnToFinal implements Serializable {
 
     public TurnToFinalJSON jsonify() {
 
-        String startDate = (flightStartDate == null)
-            ? null
-            : flightStartDate.format(TimeUtils.getIso8601Format());
+        String startDate = (flightStartDate == null) ? null : flightStartDate.format(TimeUtils.getIso8601Format());
 
         return new TurnToFinalJSON(
                 locExceedences,

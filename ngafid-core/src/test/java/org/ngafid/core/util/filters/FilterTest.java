@@ -1,12 +1,12 @@
 package org.ngafid.core.util.filters;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class FilterTest {
@@ -202,8 +202,8 @@ class FilterTest {
         assertParameters(parameters, "GFK");
 
         parameters.clear();
-        String airportNotVisitedQuery = filterOf("Airport", "GFK - Grand Forks", "not visited")
-                .getRuleQuery(1, parameters);
+        String airportNotVisitedQuery =
+                filterOf("Airport", "GFK - Grand Forks", "not visited").getRuleQuery(1, parameters);
 
         assertContainsAll(airportNotVisitedQuery, "NOT EXISTS", "itinerary.airport = ?");
         assertParameters(parameters, "GFK");
@@ -238,7 +238,8 @@ class FilterTest {
         assertParameters(parameters, "Example Event", 7, 1);
 
         parameters.clear();
-        String airframeQuery = filterOf("Event Count", "Example Event - C172S", "<=", "2").getRuleQuery(7, parameters);
+        String airframeQuery =
+                filterOf("Event Count", "Example Event - C172S", "<=", "2").getRuleQuery(7, parameters);
 
         assertContainsAll(
                 airframeQuery,
@@ -264,8 +265,8 @@ class FilterTest {
         assertParameters(parameters, "Example Event", 11, "2.5");
 
         parameters.clear();
-        String airframeQuery = filterOf("Event Severity", "Example Event - C172S", ">=", "2.5")
-                .getRuleQuery(11, parameters);
+        String airframeQuery =
+                filterOf("Event Severity", "Example Event - C172S", ">=", "2.5").getRuleQuery(11, parameters);
 
         assertContainsAll(
                 airframeQuery,
@@ -289,8 +290,8 @@ class FilterTest {
         assertParameters(parameters, "Example Event", 4, "10");
 
         parameters.clear();
-        String airframeQuery = filterOf("Event Duration", "Example Event - C172S", "<", "10")
-                .getRuleQuery(4, parameters);
+        String airframeQuery =
+                filterOf("Event Duration", "Example Event - C172S", "<", "10").getRuleQuery(4, parameters);
 
         assertContainsAll(
                 airframeQuery,
@@ -309,7 +310,8 @@ class FilterTest {
         assertParameters(parameters, 3, "Checkride");
 
         parameters.clear();
-        String notAssociatedQuery = filterOf("Tag", "Checkride", "Is Not Associated").getRuleQuery(3, parameters);
+        String notAssociatedQuery =
+                filterOf("Tag", "Checkride", "Is Not Associated").getRuleQuery(3, parameters);
 
         assertContainsAll(notAssociatedQuery, "NOT EXISTS", "flight_tags WHERE fleet_id = ? AND name = ?");
         assertParameters(parameters, 3, "Checkride");

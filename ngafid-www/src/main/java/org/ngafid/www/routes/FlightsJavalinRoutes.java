@@ -29,10 +29,8 @@ public class FlightsJavalinRoutes {
     private static String getChartTileBaseUrlScript() {
         try {
             String chartBase = Config.getProperty("ngafid.chart.tile.base.url");
-            if (chartBase != null && !chartBase.trim().isEmpty())
-                chartBase = chartBase.replaceAll("/+$", "");
-            else
-                chartBase = "http://localhost:8187";
+            if (chartBase != null && !chartBase.trim().isEmpty()) chartBase = chartBase.replaceAll("/+$", "");
+            else chartBase = "http://localhost:8187";
             return "var chartTileBaseUrl = '" + chartBase + "';\n";
         } catch (RuntimeException e) {
             return "var chartTileBaseUrl = 'http://localhost:8187';\n";

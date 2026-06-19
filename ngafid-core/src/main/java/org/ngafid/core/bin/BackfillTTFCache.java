@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.TurnToFinal;
@@ -82,8 +81,8 @@ public final class BackfillTTFCache {
     private static int updateVersionOnly(Connection connection) throws SQLException {
         long currentVersion = TurnToFinal.serialVersionUID;
         System.out.println("Updating version to " + currentVersion + " for all rows...");
-        try (PreparedStatement ps = connection.prepareStatement(
-                "UPDATE turn_to_final SET version = ? WHERE version != ?")) {
+        try (PreparedStatement ps =
+                connection.prepareStatement("UPDATE turn_to_final SET version = ? WHERE version != ?")) {
             ps.setLong(1, currentVersion);
             ps.setLong(2, currentVersion);
             int updated = ps.executeUpdate();

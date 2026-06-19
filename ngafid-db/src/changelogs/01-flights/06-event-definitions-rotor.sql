@@ -127,13 +127,13 @@ SET name = 'Medium Roll Above 300ft',
   AND name IN ('ROLL_ABOVE_300FT::MEDIUM', 'Medium Roll Above 300ft');
 
 UPDATE event_definitions
-SET name = 'High Roll Above 300ft'
+SET name = 'High Roll Above 300ft',
     condition_json = '{"type":"GROUP","condition":"AND","filters":[{"type":"RULE","inputs":["AltAGL",">=","300"]},{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">=","55"]},{"type":"RULE","inputs":["Roll","<=","-55"]}]}]}'
 WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
   AND name IN ('ROLL_ABOVE_300FT::HIGH', 'High Roll Above 300ft');
 
 UPDATE event_definitions
-SET name = 'High Roll Excessive'
+SET name = 'High Roll Excessive',
     condition_json = '{"type":"GROUP","condition":"OR","filters":[{"type":"RULE","inputs":["Roll",">","60"]},{"type":"RULE","inputs":["Roll","<","-60"]}]}'
 WHERE airframe_type_id IN (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')
   AND name IN ('ROLL_EXCESSIVE::HIGH', 'High Roll Excessive');

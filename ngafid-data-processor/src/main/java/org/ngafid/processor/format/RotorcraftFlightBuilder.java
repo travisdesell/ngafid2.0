@@ -160,9 +160,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "GPS.PP_Longitude",
                             "GeneralPurpose-PP_LNG",
                             "GeneralPurpose-NAV_LNG")),
-            Map.entry(
-                    Parameters.OAT,
-                    Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
+            Map.entry(Parameters.OAT, Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
             Map.entry(
                     Parameters.LAT_AC,
                     Set.of(
@@ -255,10 +253,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             for (int i = 0; i < latSource.size(); i++) {
                 double lat = latSource.get(i);
                 double lon = lonSource.get(i);
-                if (!Double.isNaN(lat)
-                        && !Double.isNaN(lon)
-                        && lat != 0.0
-                        && lon != 0.0) {
+                if (!Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0) {
                     validPoints++;
                 }
             }
