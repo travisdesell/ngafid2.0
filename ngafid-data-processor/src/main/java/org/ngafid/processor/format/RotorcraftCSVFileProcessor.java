@@ -1034,6 +1034,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
         StringTimeSeries utcCanonical =
                 new StringTimeSeries(Parameters.UTC_DATE_TIME, Parameters.Unit.UTC_DATE_TIME.toString());
 
+        LocalDate currentDate = flightDate.get();
+        LocalTime previousTime = null;
+
         for (int i = 0; i < analogTime.size(); i++) {
             String sample = analogTime.get(i);
             if (sample == null || sample.isBlank()) {
@@ -1044,7 +1047,11 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
             try {
                 LocalTime time = LocalTime.parse(sample.trim(), METRO_ANALOG_TIME);
-                LocalDateTime local = LocalDateTime.of(flightDate.get(), time);
+                if (previousTime != null && time.isBefore(previousTime)) {
+                    currentDate = currentDate.plusDays(1);
+                }
+                LocalDateTime local = LocalDateTime.of(currentDate, time);
+                previousTime = time;
                 OffsetDateTime utc = OffsetDateTime.of(local, ZoneOffset.UTC);
                 unixCanonical.add(utc.toEpochSecond());
                 utcCanonical.add(utc.format(TimeUtils.ISO_8601_FORMAT));
