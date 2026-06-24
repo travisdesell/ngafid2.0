@@ -3,21 +3,25 @@ For the purpose of this class, since Lat./Lon. plus altitude if available is all
 This will just have Lat and Lon, and it will have a similar calculation to that of the Airports.java
 */
 
+package org.ngafid.core.obstacles;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.mutable.MutableDouble;
 import org.ngafid.core.Config;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.GeoHash;
 
 public final class Obstacles {
+    private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
     private static final double FT_PER_KM = 3280.84;
     private static final Logger LOG = Logger.getLogger(Obstacle.class.getName());
     private static final HashMap<String, ArrayList<Obstacle>> GEO_HASH_TO_OBSTACLES;
-    private static final HashMap<Int, Obstacle> OBJECTID_TO_OBSTACLES;
+    private static final HashMap<Integer, Obstacle> OBJECTID_TO_OBSTACLES;
     
     private static final boolean TEST_MODE =
         Boolean.getBoolean("testMode") || "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
@@ -31,45 +35,47 @@ public final class Obstacles {
         OBJECTID_TO_OBSTACLES = new HashMap<>();
 
         if (TEST_MODE) {
-            LOG.info("TEST MODE: skipping reading airports and runways files");
-            return;
-        }
+            LOG.info("TEST MODE: skipping reading obstacles files");
+        } else {
+            LOG.info("Obstacle Class was ran");
 
-        LOG.info("Obstacle Class was ran");
+            int maxHashSize = 0;
+            int numberUniqueObstacles = 0;
 
-        int maxHashSize = 0;
-        int numberUniqueObstacles = 0;
+            // Here is the code for the parsing of the Obstacles
 
-        // Here is the code for the parsing of the Obstacles
+            try (BufferedReader obstaclesReader = new BufferedReader(new FileReader(Config.OBSTACLES_FILE));) {
+                String line;
 
-        try (BufferedReader obstaclesReader = new BufferedReader(new FileReader(Config.OBSTACLES_FILE));) {
-            String line;
+                while ((line = obstaclesReader.readLine()) != null) {
+                    String[] values = line.split(",");
+                    int id = Integer.parseInt(values[2]);
+                    Double lat = Double.parseDouble(values[10]);
+                    Double lon = Double.parseDouble(values[11]);
+                    int agl = Integer.parseInt(values[14]);
+                    int amsl = Integer.parseInt(values[15]);
+                    String type = values[12];
+                    int quantity = Integer.parseInt(values[13]);
 
-            while ((line = obstaclesReader.readLine()) != null) {
-                String[] values = line.split(",");
-                int id = Integer.parseInt(values[2]);
-                Double lat = Double.parseDouble(values[10]);
-                Double lon = Double.parseDouble(values[11]);
-                int agl = Integer.parseInt(values[14]);
-                int amsl = Integer.parseInt(values[15]);
-                String type = values[12];
-                int quantity = Integer.parseInt(values[13]);
+                    Obstacle obstacle = new Obstacle(id, lat, lon, type, agl, amsl, quantity);
 
-                Obstacle obstacle = new Obstacle(id, lat, lon, type, agl, amsl, quantity);
+                    ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
+                    hashedObstacles.add(obstacle);
+                    OBJECTID_TO_OBSTACLES.put(obstacle.getID(), obstacle);
 
-                ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
-                hashedObstacles.add(obstacle);
-                OBJECTID_TO_OBSTACLES.put(obstacle.getID(), obstacle);
+                    if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
+                    numberUniqueObstacles++;
 
-                if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
-                numberUniqueObstacles++;
-
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
             }
-        }
 
-        LOG.info("Read "+ numberUniqueObstacles + " obstacles.");
-        LOG.info("obstacles HashMap size: " + GEO_HASH_TO_OBSTACLES.size());
-        LOG.info("max obstacle ArrayList: " + maxHashSize);
+            LOG.info("Read "+ numberUniqueObstacles + " obstacles.");
+            LOG.info("obstacles HashMap size: " + GEO_HASH_TO_OBSTACLES.size());
+            LOG.info("max obstacle ArrayList: " + maxHashSize);
+        }
     }
 
     public static Obstacle getNearestObstacleWithin(
@@ -82,7 +88,7 @@ public final class Obstacles {
         for (String geoHash : geoHashes) {
             ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.get(geoHash);
 
-            if (hashedAirports != null) {
+            if (hashedObstacles != null) {
 
                 for (Obstacle obstacle : hashedObstacles) {
                     double distanceFt = calculateDistanceInFeet(latitude, longitude, obstacle.getLatitude(), obstacle.getLongitude());

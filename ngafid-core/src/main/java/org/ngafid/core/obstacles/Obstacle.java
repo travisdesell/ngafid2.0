@@ -1,3 +1,7 @@
+package org.ngafid.core.obstacles;
+
+import org.ngafid.core.airports.GeoHash;
+
 enum ObstacleRisk {
     HIGH,
     MEDIUM,
@@ -31,14 +35,14 @@ public class Obstacle {
     public int getID() {return this.id;}
     public double getLatitude() {return this.latitude;}
     public double getLongitude() {return this.longitude;}
-    public double getType() {return this.type;}
+    public String getType() {return this.type;}
     public int getAGL() {return this.agl;}
     public int getAMSL() {return this.amsl;}
     public int getQuantity() {return this.quantity;}
     public String getGeoHash() {return this.geoHash;}
 
     public ObstacleRisk calculateRiskFromPoint(double latitude, double longitude, int agl) {
-        double horizontalDistance = Airports.calculateDistanceInFeet(this.latitude, this.longitude, latitude, longitude);
+        double horizontalDistance = Obstacles.calculateDistanceInFeet(this.latitude, this.longitude, latitude, longitude);
         double verticalDistance = Math.abs(agl - this.agl);
 
         if ((horizontalDistance <= 500) || (verticalDistance <= 75)) {return ObstacleRisk.HIGH;}
@@ -52,6 +56,5 @@ public class Obstacle {
     public String toString() {
         return "[Obstacle " + id + ", " + type + ", " + latitude + ", " + longitude + ", " + agl + ", " + geoHash + "]";
     }
-
     
 }

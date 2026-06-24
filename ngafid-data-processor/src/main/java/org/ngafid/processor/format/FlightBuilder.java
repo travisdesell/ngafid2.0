@@ -15,8 +15,6 @@ import org.ngafid.core.flights.*;
 import org.ngafid.processor.DependencyGraph;
 import org.ngafid.processor.steps.*;
 
-import main.java.org.ngafid.processor.steps.ComputeObstacleProximity;
-
 /**
  * Intermediate flight representation, before it has been placed into the database. The `meta` field contains basic
  * meta information like the type of aircraft, the start and end time of the flight, etc. The actual flight data is
@@ -108,6 +106,8 @@ public class FlightBuilder {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
+        System.out.println("DEBUG PRINTING: Gathering Steps has been called");
+        LOG.info("DEBUG LOGGING: Gathering Steps has been called");
         Set<String> existingDoubleColumns = getDoubleTimeSeriesKeySet();
         Set<String> existingStringColumns = getStringTimeSeriesKeySet();
 
@@ -142,6 +142,10 @@ public class FlightBuilder {
      * @throws FlightProcessingException if an irrecoverable processing issue is encountered
      */
     public FlightBuilder build(Connection connection) throws FlightProcessingException {
+
+        System.out.println("DEBUG PRINTING: Build has been called");
+        LOG.info("DEBUG LOGGING: Build has been called");
+
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
 
         // We can process individual steps in parallel as well, but it might not be worth the overhead.
