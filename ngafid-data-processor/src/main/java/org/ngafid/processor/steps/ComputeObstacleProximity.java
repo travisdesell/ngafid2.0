@@ -47,8 +47,7 @@ public class ComputeObstacleProximity extends ComputeStep {
 
     @Override
     public Set<String> getOutputColumns() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getOutputColumns'");
+        return OUTPUT_COLUMNS;
     }
 
     @Override
