@@ -24,6 +24,7 @@ x-ngafid-service-common: &ngafid-service-common
     - /mnt/ngafid/terrain:/mnt/ngafid/terrain
     - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
     - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
+    - ./data-local/obstacles:/mnt/ngafid/obstacles:ro
 
     - ./ngafid-static:/mnt/static
 
@@ -83,6 +84,7 @@ services:
       - /mnt/ngafid/terrain:/mnt/ngafid/terrain
       - /mnt/ngafid/airports:/mnt/ngafid/airports:ro
       - /mnt/ngafid/runways:/mnt/ngafid/runways:ro
+      - ./data-local/obstacles:/mnt/ngafid/obstacles:ro
     <<: *ngafid-service-common-base
 
   # Reads emails from email kafka topic and sends them using the supplied credentials
