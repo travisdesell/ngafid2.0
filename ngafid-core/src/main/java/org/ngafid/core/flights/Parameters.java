@@ -79,6 +79,11 @@ public interface Parameters {
     String LOCI = "LOC-I Index";
     String PRO_SPIN_FORCE = "Coordination Index";
     String YAW_RATE = "Yaw Rate";
+    String LTE = "LTE";
+    String LTE_PEDAL_MARGIN = "LTE Pedal Margin";
+    String LTE_MRCT_SIGMA = "LTE MRCT/Sigma";
+    String LTE_MU = "LTE Mu";
+    String LTE_RELATIVE_WIND = "LTE Relative Wind";
     String VSPD_CALCULATED = "VSpd Calculated";
     String CAS = "CAS";
     String GND_SPD = "GndSpd";
