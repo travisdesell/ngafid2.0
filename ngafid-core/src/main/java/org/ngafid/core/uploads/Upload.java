@@ -22,6 +22,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.ngafid.core.Config;
 import org.ngafid.core.kafka.Configuration;
 import org.ngafid.core.kafka.Topic;
+import org.ngafid.core.statistics.FleetStatisticsCacheRefresh;
 import org.ngafid.core.util.MD5;
 
 /**
@@ -265,6 +266,7 @@ public final class Upload {
         public void remove() throws SQLException {
             // We can skip this thanks to ON DELETE CASCADE -- clearing is only if we want to keep the `upload` entry.
             // clearUpload();
+            int fleetIdToRefresh = fleetId;
 
             if (kind == Kind.AIRSYNC) {
                 try (PreparedStatement preparedStatement =
@@ -282,6 +284,8 @@ public final class Upload {
 
             File archiveFile = new File(getArchivePath().toUri());
             archiveFile.delete();
+
+            FleetStatisticsCacheRefresh.refreshForFleetQuietly(connection, fleetIdToRefresh);
         }
     }
 

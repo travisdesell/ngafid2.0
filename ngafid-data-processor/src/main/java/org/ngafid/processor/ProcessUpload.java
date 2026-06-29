@@ -26,6 +26,7 @@ import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.FlightError;
 import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.core.statistics.FleetStatisticsCacheRefresh;
 import org.ngafid.core.uploads.*;
 import org.ngafid.core.util.MD5;
 import org.ngafid.core.util.SendEmail;
@@ -174,6 +175,8 @@ public final class ProcessUpload {
                 lockedUpload.updateStatus(Upload.Status.FAILED_UNKNOWN);
                 e.printStackTrace();
                 return false;
+            } finally {
+                FleetStatisticsCacheRefresh.refreshForFleetQuietly(connection, upload.getFleetId());
             }
         }
     }
