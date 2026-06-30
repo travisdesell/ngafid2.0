@@ -60,8 +60,9 @@ public class ComputeObstacleProximity extends ComputeStep {
 
         DoubleTimeSeries nearestObstacleTS = new DoubleTimeSeries(NEAREST_OBSTACLE, Unit.OBSTACLE_ID, sizeHint);
         DoubleTimeSeries obstacleDistanceTS = new DoubleTimeSeries(OBSTACLE_DISTANCE, Unit.FT, sizeHint);
+        StringTimeSeries obstacleRiskTS = new StringTimeSeries(OBSTACLE_RISK, Unit.OBSTACLE_RISK_LEVEL, sizeHint);
 
-        LOG.info("Obstacle Compute Proximity Class was ran");
+        // LOG.info("Obstacle Compute Proximity Class was ran");
 
         for (int i = 0; i < latitudeTS.size(); i++) {
             double latitude = latitudeTS.get(i);
@@ -74,14 +75,17 @@ public class ComputeObstacleProximity extends ComputeStep {
             if (obstacle == null) {
                 nearestObstacleTS.add(Double.NaN);
                 obstacleDistanceTS.add(Double.NaN);
+                obstacleRiskTS.add("");
             } else {
                 nearestObstacleTS.add(Double.valueOf(obstacle.getID()));
                 obstacleDistanceTS.add(obstacleDistance.getValue());
+                obstacleRiskTS.add(obstacle.calculateRiskFromPoint(latitude, longitude, altitudeAGL).toString());
             }
         }
 
         builder.addTimeSeries(NEAREST_OBSTACLE, nearestObstacleTS);
         builder.addTimeSeries(OBSTACLE_DISTANCE, obstacleDistanceTS);
+        builder.addTimeSeries(OBSTACLE_RISK, obstacleRiskTS);
     }
 
 }

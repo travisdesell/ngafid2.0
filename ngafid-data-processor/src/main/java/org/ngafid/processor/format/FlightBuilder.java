@@ -143,9 +143,6 @@ public class FlightBuilder {
      */
     public FlightBuilder build(Connection connection) throws FlightProcessingException {
 
-        System.out.println("DEBUG PRINTING: Build has been called");
-        LOG.info("DEBUG LOGGING: Build has been called");
-
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
 
         // We can process individual steps in parallel as well, but it might not be worth the overhead.

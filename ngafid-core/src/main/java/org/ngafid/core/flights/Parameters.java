@@ -130,6 +130,7 @@ public interface Parameters {
 
     String NEAREST_OBSTACLE = "NearestObstacle";
     String OBSTACLE_DISTANCE = "ObstacleDistance";
+    String OBSTACLE_RISK = "ObstacleRisk";
 
     /**
      * Units
@@ -148,7 +149,8 @@ public interface Parameters {
         RATIO("ratio"),
         SECONDS("seconds"),
         UTC_DATE_TIME("ISO 8601 Extended Offset Date Time"),
-        OBSTACLE_ID("Obstacle ID");
+        OBSTACLE_ID("Obstacle ID"),
+        OBSTACLE_RISK_LEVEL("Obstacle Risk Level");
 
         private final String value;
 

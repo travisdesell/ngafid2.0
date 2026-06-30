@@ -58,7 +58,7 @@ public class ComputeTurnToFinal extends ComputeStep {
 
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        LOG.info("Compuiting turn to final.");
+        LOG.info("Computing turn to final.");
         var x = TurnToFinal.calculateFlightTurnToFinals(
                 builder.getDoubleTimeSeriesMap(),
                 builder.getItinerary(),

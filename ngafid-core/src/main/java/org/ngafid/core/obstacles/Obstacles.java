@@ -48,6 +48,7 @@ public final class Obstacles {
                 String line;
 
                 while ((line = obstaclesReader.readLine()) != null) {
+
                     String[] values = line.split(",");
                     int id = Integer.parseInt(values[2]);
                     Double lat = Double.parseDouble(values[10]);
