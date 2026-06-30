@@ -8,21 +8,20 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 
 /**
- * Flight builder for rotorcraft CSV uploads. Maps recorder-specific column names (e.g. Appareo) to
- * {@link Parameters} names expected by compute steps.
+ * Rotorcraft flight builder: maps recorder columns to {@link Parameters}.
  */
 public final class RotorcraftFlightBuilder extends FlightBuilder {
 
-    /** First pair with enough valid samples wins ({@link #promoteForPersistence}). */
+    /** Present-position lat/lon pairs in priority order; GPS-NAV excluded. */
     private static final String[][] POSITION_SOURCE_PAIRS = {
-        {"GPS-NAV_LAT", "GPS-NAV_LNG"},
-        {"GPS.NAV_Latitude", "GPS.NAV_Longitude"},
+        {"GPS-PP_LAT", "GPS-PP_LNG"},
         {"GPS.PP_Latitude", "GPS.PP_Longitude"},
         {"GeneralPurpose-PP_LAT", "GeneralPurpose-PP_LNG"},
+        {"Latitude", "Longitude"},
         {"Latitude (1)", "Longitude (1)"},
-        {"GeneralPurpose-NAV_LAT", "GeneralPurpose-NAV_LNG"},
     };
 
+    /** Recorder column aliases by canonical {@link Parameters} name. */
     private static final Map<String, Set<String>> ALIASES = Map.ofEntries(
             Map.entry(Parameters.UNIX_TIME_SECONDS, Set.of("UNIX Time")),
             Map.entry(
@@ -145,21 +144,17 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                     Set.of(
                             "Latitude",
                             "Latitude (1)",
-                            "GPS-NAV_LAT",
-                            "GPS.NAV_Latitude",
+                            "GPS-PP_LAT",
                             "GPS.PP_Latitude",
-                            "GeneralPurpose-PP_LAT",
-                            "GeneralPurpose-NAV_LAT")),
+                            "GeneralPurpose-PP_LAT")),
             Map.entry(
                     Parameters.LONGITUDE,
                     Set.of(
                             "Longitude",
                             "Longitude (1)",
-                            "GPS-NAV_LNG",
-                            "GPS.NAV_Longitude",
+                            "GPS-PP_LNG",
                             "GPS.PP_Longitude",
-                            "GeneralPurpose-PP_LNG",
-                            "GeneralPurpose-NAV_LNG")),
+                            "GeneralPurpose-PP_LNG")),
             Map.entry(Parameters.OAT, Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
             Map.entry(
                     Parameters.LAT_AC,
@@ -180,11 +175,9 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "GeneralPurpose-LNG_ACC")));
 
     /**
-     * Creates a rotorcraft flight builder that aliases recorder columns to canonical parameter keys.
-     *
-     * @param meta             the flight metadata
-     * @param doubleTimeSeries numeric time series keyed by recorder column name
-     * @param stringTimeSeries string time series keyed by recorder column name
+     * @param meta             flight metadata
+     * @param doubleTimeSeries numeric series keyed by recorder column name
+     * @param stringTimeSeries string series keyed by recorder column name
      */
     public RotorcraftFlightBuilder(
             FlightMeta meta,
@@ -194,19 +187,19 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * Promotes recorder columns into canonical {@link Parameters} keys for storage/map APIs (numeric series only).
+     * Promotes recorder columns to canonical {@link Parameters} keys.
      *
-     * @param doubleTimeSeries numeric time series to promote in-place
+     * @param doubleTimeSeries numeric series to update in place
      */
     static void promoteForPersistence(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         promoteForPersistence(doubleTimeSeries, null);
     }
 
     /**
-     * Promotes recorder columns into canonical {@link Parameters} keys (numeric series only, plus optional USCG DMS).
+     * Promotes recorder columns to canonical {@link Parameters} keys.
      *
-     * @param doubleTimeSeries numeric time series to promote in-place
-     * @param stringTimeSeries string time series used for USCG DMS position conversion, may be null
+     * @param doubleTimeSeries numeric series to update in place
+     * @param stringTimeSeries string series for USCG DMS, or null
      */
     static void promoteForPersistence(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
@@ -234,10 +227,10 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * If canonical {@link Parameters#LATITUDE} is missing, builds it from the first lat/lon recorder pair
-     * with at least one non-zero, non-NaN sample.
+     * Sets {@link Parameters#LATITUDE} and {@link Parameters#LONGITUDE} from the first
+     * {@link #POSITION_SOURCE_PAIRS} entry with a valid sample.
      *
-     * @param doubleTimeSeries numeric time series to search and update in-place
+     * @param doubleTimeSeries numeric series to update in place
      */
     private static void promotePositionPair(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.LATITUDE)) {
@@ -267,11 +260,9 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * Deep-copies a {@link DoubleTimeSeries} into a new series name (canonical parameter key).
-     *
-     * @param canonicalName the canonical parameter name for the new series
-     * @param source        the source series to copy values from
-     * @return a new {@link DoubleTimeSeries} with the same values as {@code source}
+     * @param canonicalName canonical parameter name
+     * @param source        series to copy
+     * @return copy of {@code source} under {@code canonicalName}
      */
     private static DoubleTimeSeries copySeries(String canonicalName, DoubleTimeSeries source) {
         DoubleTimeSeries canonical = new DoubleTimeSeries(canonicalName, source.getDataType(), source.size());
@@ -281,7 +272,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         return canonical;
     }
 
-    /** Alias set consumed by the base {@link FlightBuilder} when computing derived parameters. */
+    /** Recorder column aliases for {@link FlightBuilder}. */
     @Override
     protected Map<String, Set<String>> getAliases() {
         return ALIASES;
