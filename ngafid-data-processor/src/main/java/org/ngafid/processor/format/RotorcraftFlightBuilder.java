@@ -249,25 +249,21 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             if (latSource == null || lonSource == null || latSource.size() != lonSource.size()) {
                 continue;
             }
-            if (countValidPositions(latSource, lonSource) < 1) {
+            int validPoints = 0;
+            for (int i = 0; i < latSource.size(); i++) {
+                double lat = latSource.get(i);
+                double lon = lonSource.get(i);
+                if (!Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0) {
+                    validPoints++;
+                }
+            }
+            if (validPoints < 1) {
                 continue;
             }
             doubleTimeSeries.put(Parameters.LATITUDE, copySeries(Parameters.LATITUDE, latSource));
             doubleTimeSeries.put(Parameters.LONGITUDE, copySeries(Parameters.LONGITUDE, lonSource));
             return;
         }
-    }
-
-    private static int countValidPositions(DoubleTimeSeries latSource, DoubleTimeSeries lonSource) {
-        int validPoints = 0;
-        for (int i = 0; i < latSource.size(); i++) {
-            double lat = latSource.get(i);
-            double lon = lonSource.get(i);
-            if (!Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0) {
-                validPoints++;
-            }
-        }
-        return validPoints;
     }
 
     /**
