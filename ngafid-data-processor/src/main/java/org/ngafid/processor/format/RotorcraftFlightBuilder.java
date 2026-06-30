@@ -13,14 +13,18 @@ import org.ngafid.core.flights.StringTimeSeries;
  */
 public final class RotorcraftFlightBuilder extends FlightBuilder {
 
-    /** First pair with enough valid samples wins ({@link #promoteForPersistence}). */
+    /**
+     * Lat/lon column pairs in priority order. Navigation-solution (NAV) columns are intentionally omitted —
+     * they are unsuitable for map tracks on Appareo-style exports. The first pair with at least one valid
+     * sample wins ({@link #promotePositionPair}). Metro OTL/HAA uses {@code Latitude}/{@code Longitude} via
+     * {@link RotorcraftCSVFileProcessor}.
+     */
     private static final String[][] POSITION_SOURCE_PAIRS = {
-        {"GPS-NAV_LAT", "GPS-NAV_LNG"},
-        {"GPS.NAV_Latitude", "GPS.NAV_Longitude"},
+        {"GPS-PP_LAT", "GPS-PP_LNG"},
         {"GPS.PP_Latitude", "GPS.PP_Longitude"},
         {"GeneralPurpose-PP_LAT", "GeneralPurpose-PP_LNG"},
+        {"Latitude", "Longitude"},
         {"Latitude (1)", "Longitude (1)"},
-        {"GeneralPurpose-NAV_LAT", "GeneralPurpose-NAV_LNG"},
     };
 
     private static final Map<String, Set<String>> ALIASES = Map.ofEntries(
@@ -145,21 +149,17 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                     Set.of(
                             "Latitude",
                             "Latitude (1)",
-                            "GPS-NAV_LAT",
-                            "GPS.NAV_Latitude",
+                            "GPS-PP_LAT",
                             "GPS.PP_Latitude",
-                            "GeneralPurpose-PP_LAT",
-                            "GeneralPurpose-NAV_LAT")),
+                            "GeneralPurpose-PP_LAT")),
             Map.entry(
                     Parameters.LONGITUDE,
                     Set.of(
                             "Longitude",
                             "Longitude (1)",
-                            "GPS-NAV_LNG",
-                            "GPS.NAV_Longitude",
+                            "GPS-PP_LNG",
                             "GPS.PP_Longitude",
-                            "GeneralPurpose-PP_LNG",
-                            "GeneralPurpose-NAV_LNG")),
+                            "GeneralPurpose-PP_LNG")),
             Map.entry(Parameters.OAT, Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
             Map.entry(
                     Parameters.LAT_AC,
@@ -234,8 +234,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * If canonical {@link Parameters#LATITUDE} is missing, builds it from the first lat/lon recorder pair
-     * with at least one non-zero, non-NaN sample.
+     * If canonical {@link Parameters#LATITUDE} is missing, copies the first lat/lon pair from
+     * {@link #POSITION_SOURCE_PAIRS} with at least one non-zero, non-NaN sample.
      *
      * @param doubleTimeSeries numeric time series to search and update in-place
      */
@@ -249,21 +249,25 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             if (latSource == null || lonSource == null || latSource.size() != lonSource.size()) {
                 continue;
             }
-            int validPoints = 0;
-            for (int i = 0; i < latSource.size(); i++) {
-                double lat = latSource.get(i);
-                double lon = lonSource.get(i);
-                if (!Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0) {
-                    validPoints++;
-                }
-            }
-            if (validPoints < 1) {
+            if (countValidPositions(latSource, lonSource) < 1) {
                 continue;
             }
             doubleTimeSeries.put(Parameters.LATITUDE, copySeries(Parameters.LATITUDE, latSource));
             doubleTimeSeries.put(Parameters.LONGITUDE, copySeries(Parameters.LONGITUDE, lonSource));
             return;
         }
+    }
+
+    private static int countValidPositions(DoubleTimeSeries latSource, DoubleTimeSeries lonSource) {
+        int validPoints = 0;
+        for (int i = 0; i < latSource.size(); i++) {
+            double lat = latSource.get(i);
+            double lon = lonSource.get(i);
+            if (!Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0) {
+                validPoints++;
+            }
+        }
+        return validPoints;
     }
 
     /**
