@@ -8,17 +8,11 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 
 /**
- * Flight builder for rotorcraft CSV uploads. Maps recorder-specific column names (e.g. Appareo) to
- * {@link Parameters} names expected by compute steps.
+ * Rotorcraft flight builder: maps recorder columns to {@link Parameters}.
  */
 public final class RotorcraftFlightBuilder extends FlightBuilder {
 
-    /**
-     * Lat/lon column pairs in priority order. Navigation-solution (NAV) columns are intentionally omitted —
-     * they are unsuitable for map tracks on Appareo-style exports. The first pair with at least one valid
-     * sample wins ({@link #promotePositionPair}). Metro OTL/HAA uses {@code Latitude}/{@code Longitude} via
-     * {@link RotorcraftCSVFileProcessor}.
-     */
+    /** Present-position lat/lon pairs in priority order; GPS-NAV excluded. */
     private static final String[][] POSITION_SOURCE_PAIRS = {
         {"GPS-PP_LAT", "GPS-PP_LNG"},
         {"GPS.PP_Latitude", "GPS.PP_Longitude"},
@@ -27,6 +21,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         {"Latitude (1)", "Longitude (1)"},
     };
 
+    /** Recorder column aliases by canonical {@link Parameters} name. */
     private static final Map<String, Set<String>> ALIASES = Map.ofEntries(
             Map.entry(Parameters.UNIX_TIME_SECONDS, Set.of("UNIX Time")),
             Map.entry(
@@ -180,11 +175,9 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "GeneralPurpose-LNG_ACC")));
 
     /**
-     * Creates a rotorcraft flight builder that aliases recorder columns to canonical parameter keys.
-     *
-     * @param meta             the flight metadata
-     * @param doubleTimeSeries numeric time series keyed by recorder column name
-     * @param stringTimeSeries string time series keyed by recorder column name
+     * @param meta             flight metadata
+     * @param doubleTimeSeries numeric series keyed by recorder column name
+     * @param stringTimeSeries string series keyed by recorder column name
      */
     public RotorcraftFlightBuilder(
             FlightMeta meta,
@@ -194,19 +187,19 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * Promotes recorder columns into canonical {@link Parameters} keys for storage/map APIs (numeric series only).
+     * Promotes recorder columns to canonical {@link Parameters} keys.
      *
-     * @param doubleTimeSeries numeric time series to promote in-place
+     * @param doubleTimeSeries numeric series to update in place
      */
     static void promoteForPersistence(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         promoteForPersistence(doubleTimeSeries, null);
     }
 
     /**
-     * Promotes recorder columns into canonical {@link Parameters} keys (numeric series only, plus optional USCG DMS).
+     * Promotes recorder columns to canonical {@link Parameters} keys.
      *
-     * @param doubleTimeSeries numeric time series to promote in-place
-     * @param stringTimeSeries string time series used for USCG DMS position conversion, may be null
+     * @param doubleTimeSeries numeric series to update in place
+     * @param stringTimeSeries string series for USCG DMS, or null
      */
     static void promoteForPersistence(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
@@ -234,10 +227,10 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * If canonical {@link Parameters#LATITUDE} is missing, copies the first lat/lon pair from
-     * {@link #POSITION_SOURCE_PAIRS} with at least one non-zero, non-NaN sample.
+     * Sets {@link Parameters#LATITUDE} and {@link Parameters#LONGITUDE} from the first
+     * {@link #POSITION_SOURCE_PAIRS} entry with a valid sample.
      *
-     * @param doubleTimeSeries numeric time series to search and update in-place
+     * @param doubleTimeSeries numeric series to update in place
      */
     private static void promotePositionPair(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.LATITUDE)) {
@@ -267,11 +260,9 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * Deep-copies a {@link DoubleTimeSeries} into a new series name (canonical parameter key).
-     *
-     * @param canonicalName the canonical parameter name for the new series
-     * @param source        the source series to copy values from
-     * @return a new {@link DoubleTimeSeries} with the same values as {@code source}
+     * @param canonicalName canonical parameter name
+     * @param source        series to copy
+     * @return copy of {@code source} under {@code canonicalName}
      */
     private static DoubleTimeSeries copySeries(String canonicalName, DoubleTimeSeries source) {
         DoubleTimeSeries canonical = new DoubleTimeSeries(canonicalName, source.getDataType(), source.size());
@@ -281,7 +272,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         return canonical;
     }
 
-    /** Alias set consumed by the base {@link FlightBuilder} when computing derived parameters. */
+    /** Recorder column aliases for {@link FlightBuilder}. */
     @Override
     protected Map<String, Set<String>> getAliases() {
         return ALIASES;
