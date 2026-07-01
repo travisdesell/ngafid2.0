@@ -3,7 +3,7 @@ import {
     Cartesian3,
     Entity,
     VelocityOrientationProperty,
-    Ion, Math, IonResource,
+    Ion, Math as CesiumMath, IonResource,
     JulianDate,
     TimeIntervalCollection,
     TimeInterval,
@@ -22,7 +22,7 @@ class CesiumPage extends React.Component {
 
         super(props);
         Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA";
-        Math.setRandomNumberSeed(9);
+        CesiumMath.setRandomNumberSeed(9);
         this.state = {
             modelURL: null,
             flightColors : {},
@@ -56,7 +56,13 @@ class CesiumPage extends React.Component {
                 minimumPixelSize: 64,
                 maximumScale: 20000,
                 scale: 0.5,
-            })
+            }),
+            "Helicopter": new ModelGraphics({
+                uri: "/models/helicopter.glb",
+                minimumPixelSize: 64,
+                maximumScale: 20000,
+                scale: 2.0,
+            }),
         };
 
         this.setState({ airFrameModels: newAirFrameModels });
@@ -70,10 +76,19 @@ class CesiumPage extends React.Component {
         console.log("infoagldemo");
         console.log(infoAglDemo);
         const infAglDemoTimes = flightData["flightAglTimes"];
-        const positions = Cartesian3.fromDegreesArrayHeights(infoAglDemo);
+        if (!infoAglDemo || !infAglDemoTimes || infoAglDemo.length < 3 || infAglDemoTimes.length === 0) {
+            return positionProperty;
+        }
 
-        for (let i = 0; i < positions.length; i++ ) {
-            positionProperty.addSample(JulianDate.fromIso8601(infAglDemoTimes[i]), positions[i]);
+        const positions = Cartesian3.fromDegreesArrayHeights(infoAglDemo);
+        const sampleCount = Math.min(positions.length, infAglDemoTimes.length);
+
+        for (let i = 0; i < sampleCount; i++ ) {
+            const sampleTime = infAglDemoTimes[i];
+            if (!sampleTime) {
+                continue;
+            }
+            positionProperty.addSample(JulianDate.fromIso8601(sampleTime), positions[i]);
         }
 
         return positionProperty;
@@ -434,8 +449,34 @@ class CesiumPage extends React.Component {
     addDefaultEntities(flightId, color) {
 
         const flightData = this.state.flightData[flightId];
-        const flightStartTime = JulianDate.fromIso8601(flightData.startTime);
-        const flightEndTime = JulianDate.fromIso8601(flightData.endTime);
+        if (!flightData
+            || !flightData.startTime
+            || !flightData.endTime
+            || !flightData.flightGeoInfoAgl
+            || flightData.flightGeoInfoAgl.length < 3
+            || !flightData.flightAglTimes
+            || flightData.flightAglTimes.length === 0) {
+            showErrorModal(
+                "Error Fetching Cesium Data (Likely missing coordinate data...)",
+                "Flight is missing valid Cesium timeline or position data."
+            );
+            return;
+        }
+
+        let flightStartTime;
+        let flightEndTime;
+        try {
+            flightStartTime = JulianDate.fromIso8601(flightData.startTime);
+            flightEndTime = JulianDate.fromIso8601(flightData.endTime);
+        } catch (error) {
+            console.error("Invalid Cesium flight timestamps:", flightData.startTime, flightData.endTime, error);
+            showErrorModal(
+                "Error Fetching Cesium Data (Likely missing coordinate data...)",
+                "Flight timestamps could not be parsed for Cesium playback."
+            );
+            return;
+        }
+
         console.log("Flight start time : ");
         console.log("Before entities");
         console.log(this.viewer.entities);
@@ -464,6 +505,9 @@ class CesiumPage extends React.Component {
         }
         else if (flightData["airframeType"] == "UAS Rotorcraft") {
             model = this.state.airFrameModels["Drone"];
+        }
+        else if (flightData["airframeType"] == "Rotorcraft") {
+            model = this.state.airFrameModels["Helicopter"];
         }
 
         const replayEntity = new Entity({
