@@ -1049,8 +1049,8 @@ SELECT 'N365LL', a.id FROM airframes a WHERE a.airframe = 'AW119'
 ON DUPLICATE KEY UPDATE airframe_id = VALUES(airframe_id);
 
 --changeset ngafid:tail-airframe-registry-airframe-id-migrate labels:flights,airframes,tail-airframe-registry
+--preconditions onFail:MARK_RAN onError:MARK_RAN
 --precondition-sql-check expectedResult:1 SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tail_airframe_registry' AND COLUMN_NAME = 'airframe'
---precondition-on-fail:MARK_RAN
 --comment Migrate legacy varchar airframe FK to airframe_id (MySQL charset/FK compatibility)
 ALTER TABLE tail_airframe_registry ADD COLUMN airframe_id INT NULL;
 UPDATE tail_airframe_registry r
@@ -1062,4 +1062,3 @@ ALTER TABLE tail_airframe_registry MODIFY airframe_id INT NOT NULL;
 ALTER TABLE tail_airframe_registry
     ADD CONSTRAINT tail_airframe_registry_airframe_fk
         FOREIGN KEY (airframe_id) REFERENCES airframes (id);
-
