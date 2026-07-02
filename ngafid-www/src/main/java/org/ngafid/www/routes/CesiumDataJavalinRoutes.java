@@ -36,6 +36,11 @@ public class CesiumDataJavalinRoutes {
     private static final DateTimeFormatter CESIUM_ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter CESIUM_ISO_TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    /** Minimum horizontal movement before another Cesium path vertex is emitted (reduces GPS dither). */
+    private static final double MIN_CESIUM_PATH_SEGMENT_METERS = 5.0;
+
+    private static final double EARTH_RADIUS_METERS = 6_371_000.0;
+
     private CesiumDataJavalinRoutes() {
         throw new UnsupportedOperationException("Utility class");
     }
@@ -229,21 +234,8 @@ public class CesiumDataJavalinRoutes {
                     }
                 }
 
-                // Calculate the full phase
-                // I am avoiding NaN here as well!
-                for (int i = 0; i < altAgl.size(); i++) {
-                    String cesiumTimestamp = formatCesiumIsoTimestamp(
-                            i < dateSize ? date.get(i) : null, i < dateSize ? time.get(i) : null);
-                    if (cesiumTimestamp != null
-                            && !Double.isNaN(longitude.get(i))
-                            && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i))) {
-                        flightGeoInfoAgl.add(longitude.get(i));
-                        flightGeoInfoAgl.add(latitude.get(i));
-                        flightGeoInfoAgl.add(altAgl.get(i));
-                        flightAglTimes.add(cesiumTimestamp);
-                    }
-                }
+                populateFilteredFullFlightPath(
+                        latitude, longitude, altAgl, date, time, flightGeoInfoAgl, flightAglTimes);
 
                 if (incomingFlight.getFleetId() != fleetId) {
                     LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
@@ -432,21 +424,8 @@ public class CesiumDataJavalinRoutes {
                 }
             }
 
-            // Calculate the full phase
-            // I am avoiding NaN here as well!
-            for (int i = 0; i < altAgl.size(); i++) {
-                String cesiumTimestamp = formatCesiumIsoTimestamp(
-                        i < dateSize ? date.get(i) : null, i < dateSize ? time.get(i) : null);
-                if (cesiumTimestamp != null
-                        && !Double.isNaN(longitude.get(i))
-                        && !Double.isNaN(latitude.get(i))
-                        && !Double.isNaN(altAgl.get(i))) {
-                    flightGeoInfoAgl.add(longitude.get(i));
-                    flightGeoInfoAgl.add(latitude.get(i));
-                    flightGeoInfoAgl.add(altAgl.get(i));
-                    flightAglTimes.add(cesiumTimestamp);
-                }
-            }
+            populateFilteredFullFlightPath(
+                    latitude, longitude, altAgl, date, time, flightGeoInfoAgl, flightAglTimes);
 
             CesiumResponse cr = new CesiumResponse(
                     flightGeoAglTaxiing,
@@ -466,6 +445,114 @@ public class CesiumDataJavalinRoutes {
         } catch (Exception e) {
             LOG.severe("Database error: " + e.getMessage());
             ctx.status(500).json(new ErrorResponse(e));
+        }
+    }
+
+    private static void populateFilteredFullFlightPath(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            ArrayList<Double> flightGeoInfoAgl,
+            ArrayList<String> flightAglTimes) {
+        int dateSize = date.size();
+        int lastValidIndex = findLastValidCesiumIndex(latitude, longitude, altAgl, date, time, dateSize);
+        CesiumPathFilter pathFilter = new CesiumPathFilter();
+
+        for (int i = 0; i < altAgl.size(); i++) {
+            String cesiumTimestamp = formatCesiumIsoTimestamp(
+                    i < dateSize ? date.get(i) : null, i < dateSize ? time.get(i) : null);
+            if (cesiumTimestamp == null || !hasValidCesiumCoordinates(longitude, latitude, altAgl, i)) {
+                continue;
+            }
+
+            double lat = latitude.get(i);
+            double lon = longitude.get(i);
+            appendFilteredCesiumSample(
+                    pathFilter,
+                    flightGeoInfoAgl,
+                    flightAglTimes,
+                    lon,
+                    lat,
+                    altAgl.get(i),
+                    cesiumTimestamp,
+                    i == lastValidIndex);
+        }
+    }
+
+    private static int findLastValidCesiumIndex(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            int dateSize) {
+        for (int i = altAgl.size() - 1; i >= 0; i--) {
+            String cesiumTimestamp = formatCesiumIsoTimestamp(
+                    i < dateSize ? date.get(i) : null, i < dateSize ? time.get(i) : null);
+            if (cesiumTimestamp != null && hasValidCesiumCoordinates(longitude, latitude, altAgl, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean hasValidCesiumCoordinates(
+            DoubleTimeSeries longitude, DoubleTimeSeries latitude, DoubleTimeSeries altAgl, int index) {
+        return !Double.isNaN(longitude.get(index))
+                && !Double.isNaN(latitude.get(index))
+                && !Double.isNaN(altAgl.get(index));
+    }
+
+    private static boolean appendFilteredCesiumSample(
+            CesiumPathFilter pathFilter,
+            ArrayList<Double> coordinates,
+            ArrayList<String> timestamps,
+            double longitude,
+            double latitude,
+            double altAgl,
+            String timestamp,
+            boolean forceInclude) {
+        if (!pathFilter.shouldInclude(latitude, longitude, forceInclude)) {
+            return false;
+        }
+
+        coordinates.add(longitude);
+        coordinates.add(latitude);
+        coordinates.add(altAgl);
+        timestamps.add(timestamp);
+        pathFilter.record(latitude, longitude);
+        return true;
+    }
+
+    private static double horizontalDistanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        double lat1Rad = Math.toRadians(lat1);
+        double lat2Rad = Math.toRadians(lat2);
+        double deltaLat = Math.toRadians(lat2 - lat1);
+        double deltaLon = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2)
+                + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return EARTH_RADIUS_METERS * c;
+    }
+
+    private static final class CesiumPathFilter {
+        private Double lastLatitude;
+        private Double lastLongitude;
+
+        boolean shouldInclude(double latitude, double longitude, boolean forceInclude) {
+            if (forceInclude || lastLatitude == null) {
+                return true;
+            }
+            return horizontalDistanceMeters(lastLatitude, lastLongitude, latitude, longitude)
+                    >= MIN_CESIUM_PATH_SEGMENT_METERS;
+        }
+
+        void record(double latitude, double longitude) {
+            lastLatitude = latitude;
+            lastLongitude = longitude;
         }
     }
 
