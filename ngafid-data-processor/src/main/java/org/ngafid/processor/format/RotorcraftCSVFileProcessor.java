@@ -98,6 +98,11 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
     private static final DateTimeFormatter METRO_ANALOG_TIME = DateTimeFormatter.ofPattern("H:mm:ss");
 
+    /** ISO-friendly local date/time for Cesium ({@code JulianDate.fromIso8601}). */
+    private static final DateTimeFormatter LCL_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static final DateTimeFormatter LCL_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
+
     private static final String USCG_IGS_FIRST_LINE_PREFIX = "IGS v,";
     private static final String USCG_AIRCRAFT_SERIAL_KEY = "Aircraft Serial Number";
     private static final String USCG_DDF_PATH_KEY = "DDF Path";
@@ -1141,6 +1146,60 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
 
         doubleTimeSeries.put(Parameters.UNIX_TIME_SECONDS, unixCanonical);
         stringTimeSeries.put(Parameters.UTC_DATE_TIME, utcCanonical);
+    }
+
+    /**
+     * Fills {@link Parameters#LCL_DATE}, {@link Parameters#LCL_TIME}, and {@link Parameters#UTC_OFFSET} from
+     * {@link Parameters#UTC_DATE_TIME} when Garmin local columns are absent (e.g. Appareo, Metro, USCG).
+     *
+     * @param stringTimeSeries string series keyed by column name
+     */
+    static void addCanonicalLocalDateTimeFromUtc(Map<String, StringTimeSeries> stringTimeSeries) {
+        if (stringTimeSeries.containsKey(Parameters.LCL_DATE)) {
+            return;
+        }
+
+        StringTimeSeries utc = stringTimeSeries.get(Parameters.UTC_DATE_TIME);
+        if (utc == null) {
+            return;
+        }
+
+        StringTimeSeries lclDate = new StringTimeSeries(Parameters.LCL_DATE, "");
+        StringTimeSeries lclTime = new StringTimeSeries(Parameters.LCL_TIME, "");
+        StringTimeSeries utcOffset = new StringTimeSeries(Parameters.UTC_OFFSET, "");
+
+        for (int i = 0; i < utc.size(); i++) {
+            String sample = utc.get(i);
+            if (sample == null || sample.isBlank()) {
+                lclDate.add("");
+                lclTime.add("");
+                utcOffset.add("");
+                continue;
+            }
+
+            try {
+                OffsetDateTime odt = TimeUtils.parseUTC(sample.trim());
+                LocalDateTime local = odt.toLocalDateTime();
+                lclDate.add(local.format(LCL_DATE_FORMAT));
+                lclTime.add(local.format(LCL_TIME_FORMAT));
+                utcOffset.add(formatUtcOffsetForGarmin(odt));
+            } catch (DateTimeParseException e) {
+                lclDate.add("");
+                lclTime.add("");
+                utcOffset.add("");
+            }
+        }
+
+        stringTimeSeries.put(Parameters.LCL_DATE, lclDate);
+        stringTimeSeries.put(Parameters.LCL_TIME, lclTime);
+        stringTimeSeries.put(Parameters.UTC_OFFSET, utcOffset);
+    }
+
+    private static String formatUtcOffsetForGarmin(OffsetDateTime odt) {
+        if (odt.getOffset().equals(ZoneOffset.UTC)) {
+            return "+00:00";
+        }
+        return odt.getOffset().getId();
     }
 
     /**

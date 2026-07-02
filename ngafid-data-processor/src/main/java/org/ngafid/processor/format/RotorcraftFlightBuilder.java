@@ -204,6 +204,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     static void promoteForPersistence(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (stringTimeSeries != null) {
+            RotorcraftCSVFileProcessor.addCanonicalLocalDateTimeFromUtc(stringTimeSeries);
             RotorcraftCSVFileProcessor.addCanonicalPositionFromPnavDms(doubleTimeSeries, stringTimeSeries);
         }
         promotePositionPair(doubleTimeSeries);
