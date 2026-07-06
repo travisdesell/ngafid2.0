@@ -82,20 +82,12 @@ export function SeveritiesPage() {
   const [endYear, setEndYear] = useState(date.getFullYear());
   const [endMonth, setEndMonth] = useState(date.getMonth() + 1);
   const [datesChanged, setDatesChanged] = useState(false);
-  const [eventMetaData, setEventMetaData] = useState<
-    Record<number, EventMetaDataItem[]>
-  >({});
-  const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(
-    initialEventFlags.checked
-  );
-  const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(
-    initialEventFlags.empty
-  );
+  const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
+  const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(initialEventFlags.checked);
+  const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(initialEventFlags.empty);
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
-  const [eventSeveritiesState, setEventSeveritiesState] =
-    useState<EventSeverities>({});
-  const [datesOrAirframeChanged, setDatesOrAirframeChanged] =
-    useState<boolean>(false);
+  const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
+  const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
 
   //Effect to update datesOrAirframeChanged when dependencies change
   useEffect(() => {
@@ -104,7 +96,6 @@ export function SeveritiesPage() {
 
   useEffect(() => {
     displayPlot(airframe.name);
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [airframe.name, eventChecked, eventMetaData, eventSeveritiesState]);
 
@@ -143,15 +134,12 @@ export function SeveritiesPage() {
           const eventMetaDataText: (string | number)[] = [];
           if (metaData != null) {
             metaData.map((item: EventMetaDataItem) => {
-              //...
               if (!uniqueMetaDataNames.includes(item.name))
                 uniqueMetaDataNames.push(item.name);
 
               eventMetaDataText.push(
                 typeof item.value === "number"
-                  ? `${item.name}: ${(
-                      Math.round(item.value * 100) / 100
-                    ).toFixed(2)}`
+                  ? `${item.name}: ${(Math.round(item.value * 100) / 100).toFixed(2)}`
                   : `${item.name}: ${item.value}`
               );
             });
@@ -159,7 +147,6 @@ export function SeveritiesPage() {
           const count = counts[i];
           line = `${eventName},${airframeName},${count.flightId},${count.startTime},${count.endTime},${count.startLine},${count.endLine},${count.severity}`;
 
-          //...
           if (eventMetaDataText.length !== 0)
             line += `,${eventMetaDataText.join(",")}`;
 
@@ -177,9 +164,7 @@ export function SeveritiesPage() {
     const element = document.createElement("a");
     element.setAttribute(
       "href",
-      `data:text/plain;charset=utf-8,${encodeURIComponent(
-        fileContent.join("\n")
-      )}`
+      `data:text/plain;charset=utf-8,${encodeURIComponent(fileContent.join("\n"))}`
     );
     element.setAttribute("download", filename);
 
@@ -242,9 +227,7 @@ export function SeveritiesPage() {
         "octagon",
       ];
 
-      for (const [eventName, countsMap] of Object.entries(
-        eventSeveritiesState
-      )) {
+      for (const [eventName, countsMap] of Object.entries(eventSeveritiesState)) {
         //Event is unchecked, skip
         if (!eventChecked[eventName]) continue;
 
@@ -264,27 +247,24 @@ export function SeveritiesPage() {
             airframeNames[airframeName] = Object.keys(airframeNames).length;
 
           const markerSymbol =
-            markerSymbolList[
-              airframeNames[airframeName] % markerSymbolList.length
-            ];
+            markerSymbolList[airframeNames[airframeName] % markerSymbolList.length];
           const markerSymbolAny = `${markerSymbol}-open-dot`;
 
           const x: number[] = [];
           const y: number[] = [];
           const z: (string | number)[] = [];
-          const customdata: Array<
-            [
-              string, //0. flightId
-              string | null, //1. otherFlightId
-              string, //2. systemId
-              string, //3. tail
-              number, //4. eventDefinitionId
-              string, //5. tagName
-              number, //6. severity
-              string | number, //7. startTime (raw)
-              string | number //8. endTime (raw)
-            ]
-          > = [];
+          const customdata: Array<[
+            string,          //0. flightId
+            string | null,   //1. otherFlightId (kept for click handler)
+            string,          //2. systemId
+            string,          //3. tail
+            number,          //4. eventDefinitionId
+            string,          //5. tagName
+            number,          //6. severity
+            string | number, //7. startTime (raw)
+            string | number, //8. endTime (raw)
+            string           //9. otherText (formatted, or "")
+          ]> = [];
 
           for (const c of counts) {
             const ms = toEpochMs(c.startTime);
@@ -293,8 +273,12 @@ export function SeveritiesPage() {
             z.push(c.endTime);
 
             const primary = String(c.flightId);
-            const other =
-              c.eventDefinitionId === -1 ? String(c.otherFlightId ?? "") : null;
+            const isProximity = c.eventDefinitionId === -1;
+            const otherText =
+              isProximity && c.otherFlightId != null
+                ? ` (Other #: ${c.otherFlightId})`
+                : "";
+            const other = isProximity ? String(c.otherFlightId ?? "") : null;
 
             customdata.push([
               primary,
@@ -306,6 +290,7 @@ export function SeveritiesPage() {
               Number(c.severity),
               c.startTime,
               c.endTime,
+              otherText,
             ]);
           }
 
@@ -334,7 +319,7 @@ export function SeveritiesPage() {
                   },
 
             hovertemplate:
-              "Flight #: %{customdata[0]} (Other #: %{customdata[1]})<br>" +
+              "Flight #: %{customdata[0]}%{customdata[9]}<br>" +
               "System ID: %{customdata[2]}<br>" +
               "Tail: %{customdata[3]}<br>" +
               "Severity: %{customdata[6]:.2f}<br>" +
@@ -398,7 +383,8 @@ export function SeveritiesPage() {
                 string,
                 number,
                 string | number,
-                string | number
+                string | number,
+                string
               ];
 
           if (!customData) continue;
@@ -473,13 +459,10 @@ export function SeveritiesPage() {
         //Build "ANY Event"
         const anyEvent: EventSeverityByAirframe = {};
         for (const countsByAirframe of Object.values(next)) {
-          for (const [airframeName, eventCountArray] of Object.entries(
-            countsByAirframe
-          )) {
+          for (const [airframeName, eventCountArray] of Object.entries(countsByAirframe)) {
             if (!anyEvent[airframeName]) anyEvent[airframeName] = [];
 
-            anyEvent[airframeName] =
-              anyEvent[airframeName].concat(eventCountArray);
+            anyEvent[airframeName] = anyEvent[airframeName].concat(eventCountArray);
           }
         }
 
