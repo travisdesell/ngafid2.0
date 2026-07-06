@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run the Cesium upload auditor inside the upload-consumer container (production / Docker stack).
+# Usage is the same as ./run/cesium_upload_auditor, e.g.:
+#   ./run/cesium_upload_auditor_docker -q "fleet_id = 233 AND status IN ('PROCESSED_OK', 'PROCESSED_WARNING')"
+
+COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.local-template.yml)
+
+if [[ -f docker-compose.local-template.yml ]]; then
+  COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.local-template.yml)
+else
+  COMPOSE=(docker compose)
+fi
+
+"${COMPOSE[@]}" exec ngafid-upload-consumer \
+  java -cp "/opt/ngafid-core/ngafid-core.jar:/app" \
+  org.ngafid.core.bin.CesiumUploadAuditor \
+  "$@"

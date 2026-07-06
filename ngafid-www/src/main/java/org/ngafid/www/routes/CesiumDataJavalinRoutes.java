@@ -11,32 +11,25 @@ import io.javalin.http.Context;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.CesiumFlightReadiness;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
-import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.ErrorResponse;
 
 public class CesiumDataJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(CesiumDataJavalinRoutes.class.getName());
     private static final String CESIUM_DATA = "cesium_data";
-
-    private static final DateTimeFormatter CESIUM_ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final DateTimeFormatter CESIUM_ISO_TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     /** Minimum horizontal movement before another Cesium path vertex is emitted (reduces GPS dither). */
     private static final double MIN_CESIUM_PATH_SEGMENT_METERS = 5.0;
@@ -50,10 +43,8 @@ public class CesiumDataJavalinRoutes {
             StringTimeSeries date,
             StringTimeSeries time,
             StringTimeSeries utcDateTime) {
-        if (latitude == null || longitude == null || altAgl == null) {
-            return false;
-        }
-        return (date != null && time != null) || utcDateTime != null;
+        return CesiumFlightReadiness.hasRequiredCesiumSeries(
+                latitude, longitude, altAgl, date, time, utcDateTime);
     }
 
     private static CesiumResponse emptyCesiumResponse(String airframeType, String errorMessage) {
@@ -84,33 +75,8 @@ public class CesiumDataJavalinRoutes {
             StringTimeSeries date,
             StringTimeSeries time,
             StringTimeSeries utcDateTime) {
-        List<String> missing = new ArrayList<>();
-        if (latitude == null) {
-            missing.add("Latitude");
-        }
-        if (longitude == null) {
-            missing.add("Longitude");
-        }
-        if (altAgl == null) {
-            missing.add("AltAGL");
-        }
-        boolean hasLocalTime = date != null && time != null;
-        boolean hasUtcTime = utcDateTime != null;
-        if (!hasLocalTime && !hasUtcTime) {
-            if (date == null) {
-                missing.add("Lcl Date");
-            }
-            if (time == null) {
-                missing.add("Lcl Time");
-            }
-            if (utcDateTime == null) {
-                missing.add(Parameters.UTC_DATE_TIME);
-            }
-        }
-        if (missing.isEmpty()) {
-            return null;
-        }
-        return "Missing required flight data for Cesium: " + String.join(", ", missing) + ".";
+        return CesiumFlightReadiness.describeMissingCesiumSeries(
+                latitude, longitude, altAgl, date, time, utcDateTime);
     }
 
     /**
@@ -129,39 +95,8 @@ public class CesiumDataJavalinRoutes {
         if (!response.getFlightGeoInfoAgl().isEmpty()) {
             return null;
         }
-
-        int sampleCount = cesiumSampleCount(latitude, altAgl);
-        int dateSize = date != null ? date.size() : 0;
-        int validPosition = 0;
-        int validAlt = 0;
-        int validTime = 0;
-
-        for (int i = 0; i < sampleCount; i++) {
-            if (hasValidCesiumPosition(latitude, longitude, i)) {
-                validPosition++;
-            }
-            if (i < altAgl.size() && !Double.isNaN(altAgl.get(i))) {
-                validAlt++;
-            }
-            if (formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize) != null) {
-                validTime++;
-            }
-        }
-
-        List<String> issues = new ArrayList<>();
-        if (validPosition == 0) {
-            issues.add("no valid Latitude/Longitude samples (non-zero, non-NaN)");
-        }
-        if (validAlt == 0) {
-            issues.add("no valid AltAGL samples");
-        }
-        if (validTime == 0) {
-            issues.add("no parseable timestamps (Lcl Date/Lcl Time or " + Parameters.UTC_DATE_TIME + ")");
-        }
-        if (issues.isEmpty()) {
-            return "Required fields are present but the flight path could not be built for Cesium.";
-        }
-        return "Cannot build Cesium flight path: " + String.join("; ", issues) + ".";
+        return CesiumFlightReadiness.describeNoPlayableSamples(
+                latitude, longitude, altAgl, date, time, utcDateTime);
     }
 
     private static CesiumResponse finalizeCesiumResponse(
@@ -232,17 +167,12 @@ public class CesiumDataJavalinRoutes {
     }
 
     private static int cesiumSampleCount(DoubleTimeSeries latitude, DoubleTimeSeries altAgl) {
-        return Math.min(latitude.size(), altAgl.size());
+        return CesiumFlightReadiness.cesiumSampleCount(latitude, altAgl);
     }
 
     private static boolean hasValidCesiumPosition(
             DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
-        if (index >= latitude.size() || index >= longitude.size()) {
-            return false;
-        }
-        double lat = latitude.get(index);
-        double lon = longitude.get(index);
-        return !Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0;
+        return CesiumFlightReadiness.hasValidCesiumPosition(latitude, longitude, index);
     }
 
     /** Valid 3D sample: position plus a defined AGL (0 ft on the ground is allowed). */
@@ -251,10 +181,7 @@ public class CesiumDataJavalinRoutes {
             DoubleTimeSeries longitude,
             DoubleTimeSeries altAgl,
             int index) {
-        if (!hasValidCesiumPosition(latitude, longitude, index) || index >= altAgl.size()) {
-            return false;
-        }
-        return !Double.isNaN(altAgl.get(index));
+        return CesiumFlightReadiness.hasValidCesiumSample(latitude, longitude, altAgl, index);
     }
 
     private static String formatCesiumRowTimestamp(
@@ -263,26 +190,7 @@ public class CesiumDataJavalinRoutes {
             StringTimeSeries time,
             StringTimeSeries utcDateTime,
             int dateSize) {
-        String fromLocal = formatCesiumIsoTimestamp(
-                date != null && index < dateSize ? date.get(index) : null,
-                time != null && index < dateSize ? time.get(index) : null);
-        if (fromLocal != null) {
-            return fromLocal;
-        }
-        if (utcDateTime == null || index >= utcDateTime.size()) {
-            return null;
-        }
-        String utcSample = utcDateTime.get(index);
-        if (utcSample == null || utcSample.isBlank()) {
-            return null;
-        }
-        try {
-            LocalDateTime local = TimeUtils.parseUTC(utcSample.trim()).toLocalDateTime();
-            return CESIUM_ISO_DATE.format(local) + "T" + CESIUM_ISO_TIME.format(local) + "Z";
-        } catch (DateTimeParseException e) {
-            LOG.fine("Skipping row with unparseable UTC Cesium timestamp: " + utcSample);
-            return null;
-        }
+        return CesiumFlightReadiness.formatCesiumRowTimestamp(index, date, time, utcDateTime, dateSize);
     }
 
     private CesiumDataJavalinRoutes() {
@@ -799,29 +707,6 @@ public class CesiumDataJavalinRoutes {
         void record(double latitude, double longitude) {
             lastLatitude = latitude;
             lastLongitude = longitude;
-        }
-    }
-
-    /**
-     * Builds an ISO-8601 timestamp string for Cesium ({@code JulianDate.fromIso8601}), normalizing Garmin
-     * {@code yyyy-M-d} / {@code H:m:s} local columns.
-     */
-    private static String formatCesiumIsoTimestamp(String date, String time) {
-        if (date == null || time == null) {
-            return null;
-        }
-        String trimmedDate = date.trim();
-        String trimmedTime = TimeUtils.normalizeLocalTimeForParsing(time);
-        if (trimmedDate.isEmpty() || trimmedTime.isEmpty()) {
-            return null;
-        }
-        try {
-            DateTimeFormatter formatter = TimeUtils.findCorrectFormatter(trimmedDate, trimmedTime);
-            LocalDateTime local = LocalDateTime.parse(trimmedDate + " " + trimmedTime, formatter);
-            return CESIUM_ISO_DATE.format(local) + "T" + CESIUM_ISO_TIME.format(local) + "Z";
-        } catch (TimeUtils.UnrecognizedDateTimeFormatException | DateTimeParseException e) {
-            LOG.fine("Skipping row with unparseable Cesium timestamp: " + trimmedDate + " " + trimmedTime);
-            return null;
         }
     }
 
