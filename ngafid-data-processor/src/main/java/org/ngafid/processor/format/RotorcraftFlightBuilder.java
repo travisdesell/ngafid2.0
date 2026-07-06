@@ -17,6 +17,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         {"GPS-PP_LAT", "GPS-PP_LNG"},
         {"GPS.PP_Latitude", "GPS.PP_Longitude"},
         {"GeneralPurpose-PP_LAT", "GeneralPurpose-PP_LNG"},
+        {"FDR-PP_LAT", "FDR-PP_LNG"},
         {"Latitude", "Longitude"},
         {"Latitude (1)", "Longitude (1)"},
     };
@@ -146,7 +147,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Latitude (1)",
                             "GPS-PP_LAT",
                             "GPS.PP_Latitude",
-                            "GeneralPurpose-PP_LAT")),
+                            "GeneralPurpose-PP_LAT",
+                            "FDR-PP_LAT")),
             Map.entry(
                     Parameters.LONGITUDE,
                     Set.of(
@@ -154,7 +156,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Longitude (1)",
                             "GPS-PP_LNG",
                             "GPS.PP_Longitude",
-                            "GeneralPurpose-PP_LNG")),
+                            "GeneralPurpose-PP_LNG",
+                            "FDR-PP_LNG")),
             Map.entry(Parameters.OAT, Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
             Map.entry(
                     Parameters.LAT_AC,
