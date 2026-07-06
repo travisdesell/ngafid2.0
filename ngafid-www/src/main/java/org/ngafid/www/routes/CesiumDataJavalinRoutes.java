@@ -546,8 +546,8 @@ public class CesiumDataJavalinRoutes {
             ArrayList<String> flightAglTimes) {
         int dateSize = date != null ? date.size() : 0;
         int sampleCount = cesiumSampleCount(latitude, altAgl);
-        int lastValidIndex =
-                findLastValidCesiumIndex(latitude, longitude, date, time, utcDateTime, dateSize, sampleCount);
+        int lastValidIndex = findLastValidCesiumIndex(
+                latitude, longitude, altAgl, date, time, utcDateTime, dateSize, sampleCount);
         CesiumPathFilter pathFilter = new CesiumPathFilter();
 
         for (int i = 0; i < sampleCount; i++) {
@@ -573,6 +573,7 @@ public class CesiumDataJavalinRoutes {
     private static int findLastValidCesiumIndex(
             DoubleTimeSeries latitude,
             DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
             StringTimeSeries date,
             StringTimeSeries time,
             StringTimeSeries utcDateTime,
