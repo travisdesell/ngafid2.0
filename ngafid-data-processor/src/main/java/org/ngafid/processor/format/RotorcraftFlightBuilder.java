@@ -123,7 +123,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Altitude Radio (B)",
                             "GeneralPurpose-RA",
                             "RadAlt_Inht",
-                            "FDR-RA")),
+                            "FDR-RA",
+                            "GP.RA")),
             Map.entry(
                     Parameters.ALT_MSL,
                     Set.of(

@@ -14,6 +14,7 @@ import {
 } from "cesium";
 import {Viewer, Scene, Globe, Clock, SkyAtmosphere} from "resium";
 import { showErrorModal } from "./error_modal";
+import extractAjaxErrorMessage from "./extract_ajax_error_message";
 
 
 class CesiumPage extends React.Component {
@@ -116,7 +117,12 @@ class CesiumPage extends React.Component {
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.error("Error Fetching Cesium Data:", errorThrown);
-                showErrorModal("Error Fetching Cesium Data (Likely missing coordinate data...)", errorThrown);
+                const message = extractAjaxErrorMessage(
+                    jqXHR,
+                    errorThrown,
+                    "The server could not load Cesium data for this flight."
+                );
+                showErrorModal("Cesium Data Unavailable", message);
             },
         });
 
@@ -449,6 +455,10 @@ class CesiumPage extends React.Component {
     addDefaultEntities(flightId, color) {
 
         const flightData = this.state.flightData[flightId];
+        if (flightData?.errorMessage) {
+            showErrorModal("Cesium Data Unavailable", flightData.errorMessage);
+            return;
+        }
         if (!flightData
             || !flightData.startTime
             || !flightData.endTime
@@ -457,7 +467,7 @@ class CesiumPage extends React.Component {
             || !flightData.flightAglTimes
             || flightData.flightAglTimes.length === 0) {
             showErrorModal(
-                "Error Fetching Cesium Data (Likely missing coordinate data...)",
+                "Cesium Data Unavailable",
                 "Flight is missing valid Cesium timeline or position data."
             );
             return;
@@ -471,7 +481,7 @@ class CesiumPage extends React.Component {
         } catch (error) {
             console.error("Invalid Cesium flight timestamps:", flightData.startTime, flightData.endTime, error);
             showErrorModal(
-                "Error Fetching Cesium Data (Likely missing coordinate data...)",
+                "Cesium Data Unavailable",
                 "Flight timestamps could not be parsed for Cesium playback."
             );
             return;
@@ -570,7 +580,10 @@ class CesiumPage extends React.Component {
             const cesiumData = cesiumDataContainer[flightId];
             console.log("addFlightEntity -- Cesium Data:", cesiumData);
 
-
+            if (cesiumData?.errorMessage) {
+                showErrorModal("Cesium Data Unavailable", cesiumData.errorMessage);
+                return;
+            }
 
             this.setState(prevState => ({
                 flightData: {
