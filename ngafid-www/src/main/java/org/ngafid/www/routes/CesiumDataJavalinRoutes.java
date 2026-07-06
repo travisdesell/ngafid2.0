@@ -41,6 +41,46 @@ public class CesiumDataJavalinRoutes {
 
     private static final double EARTH_RADIUS_METERS = 6_371_000.0;
 
+    private static boolean hasRequiredCesiumSeries(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time) {
+        return latitude != null && longitude != null && altAgl != null && date != null && time != null;
+    }
+
+    private static CesiumResponse emptyCesiumResponse(String airframeType) {
+        return new CesiumResponse(
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                airframeType);
+    }
+
+    private static boolean isTakeoffRangeGroundSpeed(DoubleTimeSeries groundSpeed, int index) {
+        if (groundSpeed == null) {
+            return false;
+        }
+        double speed = groundSpeed.get(index);
+        return speed > 14.5 && speed < 80;
+    }
+
+    private static boolean isClimbRangeGroundSpeed(DoubleTimeSeries groundSpeed, int index) {
+        if (groundSpeed == null) {
+            return false;
+        }
+        double speed = groundSpeed.get(index);
+        return speed > 14.5 && speed <= 80;
+    }
+
     private CesiumDataJavalinRoutes() {
         throw new UnsupportedOperationException("Utility class");
     }
@@ -114,6 +154,12 @@ public class CesiumDataJavalinRoutes {
                 StringTimeSeries time =
                         StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
 
+                if (!hasRequiredCesiumSeries(latitude, longitude, altAgl, date, time)) {
+                    LOG.warning("Flight " + flightIdNew + " is missing required Cesium coordinate or time series");
+                    flights.put(flightIdNew, emptyCesiumResponse(airframeType));
+                    continue;
+                }
+
                 ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
                 ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
                 ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
@@ -147,9 +193,7 @@ public class CesiumDataJavalinRoutes {
                         flightGeoAglTaxiing.add(altAgl.get(i));
                         flightTaxiingTimes.add(cesiumTimestamp);
 
-                        if ((rpm != null && rpm.get(i) >= 2100)
-                                && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) < 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
                             break;
                         }
                     }
@@ -163,9 +207,7 @@ public class CesiumDataJavalinRoutes {
                             && !Double.isNaN(longitude.get(i))
                             && !Double.isNaN(latitude.get(i))
                             && !Double.isNaN(altAgl.get(i))) {
-                        if ((rpm != null && rpm.get(i) >= 2100)
-                                && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) < 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
 
                             if (takeoffCounter <= 15) {
                                 flightGeoAglTakeOff.add(longitude.get(i));
@@ -192,9 +234,7 @@ public class CesiumDataJavalinRoutes {
                             && !Double.isNaN(longitude.get(i))
                             && !Double.isNaN(latitude.get(i))
                             && !Double.isNaN(altAgl.get(i))) {
-                        if ((rpm != null && rpm.get(i) >= 2100)
-                                && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) <= 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && isClimbRangeGroundSpeed(groundSpeed, i)) {
 
                             if (countPostTakeoff >= 15) {
                                 flightGeoAglClimb.add(longitude.get(i));
@@ -310,6 +350,13 @@ public class CesiumDataJavalinRoutes {
             StringTimeSeries date = flight.getStringTimeSeries(connection, "Lcl Date");
             StringTimeSeries time = flight.getStringTimeSeries(connection, "Lcl Time");
 
+            if (!hasRequiredCesiumSeries(latitude, longitude, altAgl, date, time)) {
+                LOG.warning("Flight " + flightId + " is missing required Cesium coordinate or time series");
+                flights.put(flightId, emptyCesiumResponse(airframeType));
+                ctx.json(flights);
+                return;
+            }
+
             ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
             ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
             ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
@@ -343,7 +390,7 @@ public class CesiumDataJavalinRoutes {
                     flightGeoAglTaxiing.add(altAgl.get(i));
                     flightTaxiingTimes.add(cesiumTimestamp);
 
-                    if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                    if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
                         break;
                     }
                 }
@@ -357,7 +404,7 @@ public class CesiumDataJavalinRoutes {
                         && !Double.isNaN(longitude.get(i))
                         && !Double.isNaN(latitude.get(i))
                         && !Double.isNaN(altAgl.get(i))) {
-                    if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                    if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
 
                         if (takeoffCounter <= 15) {
                             flightGeoAglTakeOff.add(longitude.get(i));
@@ -384,7 +431,7 @@ public class CesiumDataJavalinRoutes {
                         && !Double.isNaN(longitude.get(i))
                         && !Double.isNaN(latitude.get(i))
                         && !Double.isNaN(altAgl.get(i))) {
-                    if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
+                    if ((rpm != null && rpm.get(i) >= 2100) && isClimbRangeGroundSpeed(groundSpeed, i)) {
 
                         if (countPostTakeoff >= 15) {
                             flightGeoAglClimb.add(longitude.get(i));

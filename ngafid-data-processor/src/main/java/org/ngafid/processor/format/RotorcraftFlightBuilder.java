@@ -40,7 +40,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "PNAV GndSpd",
                             "PNAV_Tru_A/S",
                             "PNAV Tru A/S",
-                            "GPS.Ground_Speed")),
+                            "GPS.Ground_Speed",
+                            "FDR-GS")),
             Map.entry(
                     Parameters.VSPD,
                     Set.of(
@@ -102,7 +103,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Eng (1) Torque",
                             "Eng 1 Torque",
                             "1_Torque",
-                            "Torque 1(%)")),
+                            "Torque 1(%)",
+                            "FDR-TRQ_1")),
             Map.entry(
                     Parameters.ENGINE_2_TORQUE,
                     Set.of(
@@ -120,7 +122,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Altitude Radio (A)",
                             "Altitude Radio (B)",
                             "GeneralPurpose-RA",
-                            "RadAlt_Inht")),
+                            "RadAlt_Inht",
+                            "FDR-RA")),
             Map.entry(
                     Parameters.ALT_MSL,
                     Set.of(
@@ -139,7 +142,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                     Set.of("Pressure Altitude", "Press_Alt1", "Press Alt1", "Press_Alt2", "Press Alt2")),
             Map.entry(Parameters.FUEL_QTY_LEFT, Set.of("Fuel_Qty_1")),
             Map.entry(Parameters.FUEL_QTY_RIGHT, Set.of("Fuel_Qty_2")),
-            Map.entry(Parameters.E1_RPM, Set.of("Eng1_N1", "Eng1_N2", "Nr1")),
+            Map.entry(Parameters.E1_RPM, Set.of("Eng1_N1", "Eng1_N2", "Nr1", "Engine-NR")),
             Map.entry(
                     Parameters.LATITUDE,
                     Set.of(
