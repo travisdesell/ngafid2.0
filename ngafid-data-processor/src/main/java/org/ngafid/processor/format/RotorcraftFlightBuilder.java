@@ -28,7 +28,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             Map.entry(
                     Parameters.IAS,
                     Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS",
-                            "IAS1", "IAS2", "GP.CAS", "AP.IAS")),
+                            "IAS1", "IAS2", "GP.CAS", "AP.IAS", "FDR-CAS")),
             Map.entry(
                     Parameters.GND_SPD,
                     Set.of(
