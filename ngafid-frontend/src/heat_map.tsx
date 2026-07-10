@@ -213,7 +213,7 @@ function hasOtherFlightId(otherFlightId: string | number | null | undefined): bo
     return otherFlightId != null && otherFlightId !== 0 && otherFlightId !== '0';
 }
 
-function buildFlightsPageFilter(flightId: string | number) {
+function buildFlightIdFilter(flightId: string | number) {
     return {
         type: "GROUP",
         condition: "AND",
@@ -233,13 +233,14 @@ function buildFlightsPageFilter(flightId: string | number) {
     };
 }
 
+const prefetchFlightCacheKey = (flightId: string | number) => `ngafid-prefetch-flight-${flightId}`;
+
 function buildFlightsPageUrl(flightId: string | number): string {
-    const filter = buildFlightsPageFilter(flightId);
-    return `/protected/flights?filter=${encodeURIComponent(JSON.stringify(filter))}`;
+    return `/protected/flights?openFlightId=${encodeURIComponent(String(flightId))}`;
 }
 
 async function openFlightPage(flightId: string | number) {
-    const filter = buildFlightsPageFilter(flightId);
+    const filter = buildFlightIdFilter(flightId);
     const params = new URLSearchParams({
         filterQuery: JSON.stringify(filter),
         currentPage: "0",
@@ -265,6 +266,15 @@ async function openFlightPage(flightId: string | number) {
             showErrorModal("Error Loading Flight", `Could not load flight ID ${flightId}.`);
             return;
         }
+
+        const data = await response.json();
+        sessionStorage.setItem(
+            prefetchFlightCacheKey(flightId),
+            JSON.stringify({
+                flights: data.flights,
+                numberPages: data.numberPages,
+            })
+        );
 
         window.open(buildFlightsPageUrl(flightId), "_blank", "noopener");
     } catch (error) {

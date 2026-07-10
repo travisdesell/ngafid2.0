@@ -405,7 +405,7 @@ public class HeatmapPointsProcessor {
      * @param eventIds list of event IDs (up to 100k supported; will be chunked)
      * @return list of maps, each with event_id, flight_id, points, flight_airframe (same structure as getCoordinates)
      */
-    public static List<Map<String, Object>> getCoordinatesForEventIds(List<Integer> eventIds) {
+    public static List<Map<String, Object>> getCoordinatesForEventIds(List<Integer> eventIds, int fleetId) {
         List<Map<String, Object>> allResults = new ArrayList<>();
         if (eventIds == null || eventIds.isEmpty()) {
             return allResults;
@@ -414,7 +414,8 @@ public class HeatmapPointsProcessor {
             for (int i = 0; i < eventIds.size(); i += HEATMAP_POINTS_CHUNK_SIZE) {
                 int end = Math.min(i + HEATMAP_POINTS_CHUNK_SIZE, eventIds.size());
                 List<Integer> chunk = eventIds.subList(i, end);
-                List<Map<String, Object>> chunkResults = getCoordinatesForEventIdsChunk(connection, chunk);
+                List<Map<String, Object>> chunkResults =
+                        getCoordinatesForEventIdsChunk(connection, chunk, fleetId);
                 allResults.addAll(chunkResults);
             }
         } catch (SQLException e) {
@@ -433,7 +434,7 @@ public class HeatmapPointsProcessor {
      * @throws SQLException if a database error occurs
      */
     private static List<Map<String, Object>> getCoordinatesForEventIdsChunk(
-            Connection connection, List<Integer> eventIds) throws SQLException {
+            Connection connection, List<Integer> eventIds, int fleetId) throws SQLException {
         List<Map<String, Object>> results = new ArrayList<>();
         if (eventIds.isEmpty()) return results;
 
@@ -445,17 +446,20 @@ public class HeatmapPointsProcessor {
         String query = "SELECT pp.event_id, pp.flight_id, pp.latitude, pp.longitude, pp.timestamp, "
                 + "pp.altitude_agl, a.airframe as flight_airframe "
                 + "FROM heatmap_points pp "
+                + "JOIN events e ON pp.event_id = e.id "
                 + "JOIN flights f ON pp.flight_id = f.id "
                 + "JOIN airframes a ON f.airframe_id = a.id "
-                + "WHERE pp.event_id IN (" + placeholders + ") "
+                + "WHERE e.fleet_id = ? AND pp.event_id IN (" + placeholders + ") "
                 + "ORDER BY pp.event_id, pp.flight_id, pp.timestamp";
 
         // Use a structure that holds points list and airframe (from first row)
         Map<String, List<Map<String, Object>>> pointsByKey = new LinkedHashMap<>();
         Map<String, String> airframeByKey = new HashMap<>();
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            for (int k = 0; k < eventIds.size(); k++) {
-                stmt.setInt(k + 1, eventIds.get(k));
+            int paramIndex = 1;
+            stmt.setInt(paramIndex++, fleetId);
+            for (Integer eventId : eventIds) {
+                stmt.setInt(paramIndex++, eventId);
             }
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -720,6 +724,7 @@ public class HeatmapPointsProcessor {
     }
 
     public static List<Map<String, Object>> getEvents(
+            int fleetId,
             String airframe,
             List<Integer> eventDefinitionIds,
             java.sql.Date startDate,
@@ -743,7 +748,8 @@ public class HeatmapPointsProcessor {
                     + "JOIN airframes a ON f.airframe_id = a.id "
                     + "LEFT JOIN flights ofl ON e.other_flight_id = ofl.id "
                     + "LEFT JOIN airframes oa ON ofl.airframe_id = oa.id "
-                    + "WHERE DATE(e.start_time) BETWEEN ? AND ? "
+                    + "WHERE e.fleet_id = ? "
+                    + "AND DATE(e.start_time) BETWEEN ? AND ? "
                     + "AND e.min_latitude <= ? AND e.max_latitude >= ? "
                     + "AND e.min_longitude <= ? AND e.max_longitude >= ?");
             if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
@@ -767,6 +773,7 @@ public class HeatmapPointsProcessor {
 
             try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
                 int idx = 1;
+                stmt.setInt(idx++, fleetId);
                 stmt.setDate(idx++, startDate);
                 stmt.setDate(idx++, endDate);
                 stmt.setDouble(idx++, areaMaxLat);

@@ -562,7 +562,12 @@ public class AnalysisJavalinRoutes {
                 ctx.json(Map.of("results", List.of()));
                 return;
             }
-            List<Map<String, Object>> results = HeatmapPointsProcessor.getCoordinatesForEventIds(eventIds);
+            final int fleetId = user.getFleetId();
+            if (!user.hasViewAccess(fleetId)) {
+                ctx.status(401).result("User did not have access to view events for this fleet.");
+                return;
+            }
+            List<Map<String, Object>> results = HeatmapPointsProcessor.getCoordinatesForEventIds(eventIds, fleetId);
             ctx.json(Map.of("results", results));
         } catch (Exception e) {
             LOG.severe("Error in postHeatmapPointsBatch: " + e.getMessage());
@@ -596,6 +601,11 @@ public class AnalysisJavalinRoutes {
             ctx.status(401).result("User not logged in");
             return;
         }
+        final int fleetId = user.getFleetId();
+        if (!user.hasViewAccess(fleetId)) {
+            ctx.status(401).result("User did not have access to view events for this fleet.");
+            return;
+        }
         String airframe = ctx.queryParam("airframe");
         String eventDefinitionIdsParam = ctx.queryParam("event_definition_ids");
         String startDate = ctx.queryParam("start_date");
@@ -625,6 +635,7 @@ public class AnalysisJavalinRoutes {
 
         try {
             List<java.util.Map<String, Object>> events = org.ngafid.core.heatmap.HeatmapPointsProcessor.getEvents(
+                    fleetId,
                     airframe,
                     eventDefinitionIds,
                     java.sql.Date.valueOf(startDate),

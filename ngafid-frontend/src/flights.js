@@ -405,6 +405,28 @@ const CESIUM_RESOLUTION_PASSTHROUGH = "Default";
 const CESIUM_RESOLUTION_SCALE_DEFAULT = 1.00;
 const CESIUM_FLIGHT_TRACKED_NONE = undefined;
 
+const PREFETCH_FLIGHT_CACHE_PREFIX = "ngafid-prefetch-flight-";
+
+function buildFlightIdFilter(flightId) {
+    return {
+        type: "GROUP",
+        condition: "AND",
+        filters: [
+            {
+                type: "GROUP",
+                condition: "OR",
+                isFlightIdGroup: true,
+                filters: [
+                    {
+                        type: "RULE",
+                        inputs: ["Flight ID", "=", String(flightId)],
+                    },
+                ],
+            },
+        ],
+    };
+}
+
 const PAGE_ORIENTATION = Object.freeze({
     COLUMN: Symbol("column"),
     ROW: Symbol("row"),
@@ -482,6 +504,37 @@ class FlightsPage extends React.Component {
 
         //Check for filter in URL and load if present
         const urlParams = new URLSearchParams(window.location.search);
+        const openFlightId = urlParams.get("openFlightId");
+
+        if (openFlightId) {
+            const cacheKey = `${PREFETCH_FLIGHT_CACHE_PREFIX}${openFlightId}`;
+            const cached = sessionStorage.getItem(cacheKey);
+
+            if (cached) {
+                try {
+                    const { flights, numberPages } = JSON.parse(cached);
+                    sessionStorage.removeItem(cacheKey);
+                    this.setState({
+                        flights,
+                        numberPages: numberPages ?? 1,
+                        currentPage: 0,
+                        filters: buildFlightIdFilter(openFlightId),
+                    });
+                    return;
+                } catch (error) {
+                    console.error("Failed to load prefetched flight:", error);
+                }
+            }
+
+            const flightIdFilter = buildFlightIdFilter(openFlightId);
+            if (isValidFilter(flightIdFilter, rules)) {
+                this.setState({ filters: flightIdFilter }, () => {
+                    this.submitFilter(true);
+                });
+            }
+            return;
+        }
+
         const filterParam = urlParams.get('filter');
 
         //Found a filter in the URL, try to load it
