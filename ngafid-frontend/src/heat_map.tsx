@@ -208,6 +208,40 @@ const eventNameToDefinitionIds: { [eventName: string]: number[] } = {
 const allDefinitionIds = Array.from(new Set(Object.values(eventNameToDefinitionIds).flat().filter(id => id !== undefined)));
 eventNameToDefinitionIds["ANY Event"] = allDefinitionIds;
 
+function hasOtherFlightId(otherFlightId: string | number | null | undefined): boolean {
+    return otherFlightId != null && otherFlightId !== 0 && otherFlightId !== '0';
+}
+
+function buildFlightPageUrl(flightId: string | number, otherFlightId?: string | number | null): string {
+    const primary = String(flightId);
+    if (hasOtherFlightId(otherFlightId))
+        return `/protected/flight?flight_id=${encodeURIComponent(String(otherFlightId))}&flight_id=${encodeURIComponent(primary)}`;
+    return `/protected/flight?flight_id=${encodeURIComponent(primary)}`;
+}
+
+function FlightIdLink({
+    flightId,
+    otherFlightId,
+}: {
+    flightId: string | number | null | undefined;
+    otherFlightId?: string | number | null;
+}) {
+    if (flightId == null || flightId === '...')
+        return <>...</>;
+
+    return (
+        <a
+            href={buildFlightPageUrl(flightId, otherFlightId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary"
+            onClick={(e) => e.stopPropagation()}
+        >
+            {flightId}
+        </a>
+    );
+}
+
 // Map styling constants
 const ICON_IMAGE_RED = new Icon({
     src: '/images/red-point.png',
@@ -2809,12 +2843,12 @@ const HeatMapPage: React.FC = () => {
                                                                     <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}°</div>
                                                                     <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
                                                                     <hr />
-                                                                    <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
+                                                                    <div><strong>Flight ID: </strong><FlightIdLink flightId={popup.data.flightId} otherFlightId={popup.data.otherFlightId} /></div>
                                                                     <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
-                                                                    {popup.data.otherFlightId && popup.data.otherFlightId !== null && popup.data.otherFlightId !== 0 && popup.data.otherFlightId !== '0' && (
+                                                                    {hasOtherFlightId(popup.data.otherFlightId) && (
                                                                         <>
                                                                             <hr />
-                                                                            <div><strong>Other Flight ID: </strong>{popup.data.otherFlightId ?? '...'}</div>
+                                                                            <div><strong>Other Flight ID: </strong><FlightIdLink flightId={popup.data.otherFlightId} otherFlightId={popup.data.flightId} /></div>
                                                                             <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
                                                                         </>
                                                                     )}
