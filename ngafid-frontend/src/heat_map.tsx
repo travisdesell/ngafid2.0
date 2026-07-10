@@ -2072,6 +2072,34 @@ const HeatMapPage: React.FC = () => {
         return event.event_definition_id === -1 || event.event_definition_id === -2 || event.event_definition_id === -3;
     };
 
+    const fallbackPointsFromEvent = (event: any) => {
+        const minLat = event.min_latitude;
+        const maxLat = event.max_latitude;
+        const minLon = event.min_longitude;
+        const maxLon = event.max_longitude;
+        if (minLat == null || maxLat == null || minLon == null || maxLon == null)
+            return [];
+
+        return [{
+            latitude: (Number(minLat) + Number(maxLat)) / 2,
+            longitude: (Number(minLon) + Number(maxLon)) / 2,
+            timestamp: event.start_time,
+            altitude_agl: 0,
+        }];
+    };
+
+    const pointsForEventFlight = (
+        pointsByEventAndFlight: Record<number, Record<number, any[]>>,
+        event: any,
+        flightId: number | null | undefined
+    ) => {
+        if (flightId == null || flightId === 0)
+            return [];
+
+        const points = pointsByEventAndFlight[event.id]?.[flightId] || [];
+        return points.length > 0 ? points : fallbackPointsFromEvent(event);
+    };
+
     const BATCH_SIZE = 1000;
 
     // Main orchestration: fetch events, then fetch points via batch endpoint (1000 events per batch)
@@ -2121,6 +2149,7 @@ const HeatMapPage: React.FC = () => {
                 const results = resp?.results || [];
                 allResults.push(...results);
             }
+            console.log(`[DEBUG] Heatmap points batch results: count=${allResults.length}`);
 
             // Build map: eventId -> flightId -> points
             const pointsByEventAndFlight: Record<number, Record<number, any[]>> = {};
@@ -2143,8 +2172,8 @@ const HeatMapPage: React.FC = () => {
                     if (processedPairs.has(pairKey)) continue;
                     processedPairs.add(pairKey);
 
-                    const mainFlightPoints = pointsByEventAndFlight[eventId]?.[mainFlightId] || [];
-                    const otherFlightPoints = pointsByEventAndFlight[eventId]?.[otherFlightId] || [];
+                    const mainFlightPoints = pointsForEventFlight(pointsByEventAndFlight, event, mainFlightId);
+                    const otherFlightPoints = pointsForEventFlight(pointsByEventAndFlight, event, otherFlightId);
                     allProximityEventPoints.push({
                         eventId,
                         eventDefinitionId: event.event_definition_id,
@@ -2157,7 +2186,7 @@ const HeatMapPage: React.FC = () => {
                         otherAirframe: event.otherAirframe
                     });
                 } else {
-                    const mainFlightPoints = pointsByEventAndFlight[eventId]?.[mainFlightId] || [];
+                    const mainFlightPoints = pointsForEventFlight(pointsByEventAndFlight, event, mainFlightId);
                     allSingleEventPoints.push({
                         eventId,
                         eventDefinitionId: event.event_definition_id,

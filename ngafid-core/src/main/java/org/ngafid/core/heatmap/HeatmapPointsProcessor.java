@@ -446,10 +446,9 @@ public class HeatmapPointsProcessor {
         String query = "SELECT pp.event_id, pp.flight_id, pp.latitude, pp.longitude, pp.timestamp, "
                 + "pp.altitude_agl, a.airframe as flight_airframe "
                 + "FROM heatmap_points pp "
-                + "JOIN events e ON pp.event_id = e.id "
                 + "JOIN flights f ON pp.flight_id = f.id "
                 + "JOIN airframes a ON f.airframe_id = a.id "
-                + "WHERE e.fleet_id = ? AND pp.event_id IN (" + placeholders + ") "
+                + "WHERE pp.event_id IN (" + placeholders + ") "
                 + "ORDER BY pp.event_id, pp.flight_id, pp.timestamp";
 
         // Use a structure that holds points list and airframe (from first row)
@@ -457,7 +456,6 @@ public class HeatmapPointsProcessor {
         Map<String, String> airframeByKey = new HashMap<>();
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             int paramIndex = 1;
-            stmt.setInt(paramIndex++, fleetId);
             for (Integer eventId : eventIds) {
                 stmt.setInt(paramIndex++, eventId);
             }
