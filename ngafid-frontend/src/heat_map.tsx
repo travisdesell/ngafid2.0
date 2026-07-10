@@ -16,6 +16,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import SignedInNavbar from "./signed_in_navbar";
 import { TimeHeader } from "./time_header.js";
+import { showErrorModal } from "./error_modal.js";
 
 // OpenLayers imports
 import Map from 'ol/Map';
@@ -212,30 +213,87 @@ function hasOtherFlightId(otherFlightId: string | number | null | undefined): bo
     return otherFlightId != null && otherFlightId !== 0 && otherFlightId !== '0';
 }
 
-function buildFlightPageUrl(flightId: string | number, otherFlightId?: string | number | null): string {
-    const primary = String(flightId);
-    if (hasOtherFlightId(otherFlightId))
-        return `/protected/flight?flight_id=${encodeURIComponent(String(otherFlightId))}&flight_id=${encodeURIComponent(primary)}`;
-    return `/protected/flight?flight_id=${encodeURIComponent(primary)}`;
+function buildFlightsPageFilter(flightId: string | number) {
+    return {
+        type: "GROUP",
+        condition: "AND",
+        filters: [
+            {
+                type: "GROUP",
+                condition: "OR",
+                isFlightIdGroup: true,
+                filters: [
+                    {
+                        type: "RULE",
+                        inputs: ["Flight ID", "=", String(flightId)],
+                    },
+                ],
+            },
+        ],
+    };
+}
+
+function buildFlightsPageUrl(flightId: string | number): string {
+    const filter = buildFlightsPageFilter(flightId);
+    return `/protected/flights?filter=${encodeURIComponent(JSON.stringify(filter))}`;
+}
+
+async function openFlightPage(flightId: string | number) {
+    const filter = buildFlightsPageFilter(flightId);
+    const params = new URLSearchParams({
+        filterQuery: JSON.stringify(filter),
+        currentPage: "0",
+        pageSize: "10",
+        sortingColumn: "start_time",
+        sortingOrder: "Descending",
+    });
+
+    try {
+        const response = await fetch(`/api/flight?${params.toString()}`, {
+            credentials: "include",
+        });
+
+        if (response.status === 204) {
+            showErrorModal(
+                "No flights found with the given parameters!",
+                `Flight ID ${flightId} was not found in your fleet.`
+            );
+            return;
+        }
+
+        if (!response.ok) {
+            showErrorModal("Error Loading Flight", `Could not load flight ID ${flightId}.`);
+            return;
+        }
+
+        window.open(buildFlightsPageUrl(flightId), "_blank", "noopener");
+    } catch (error) {
+        showErrorModal(
+            "Error Loading Flight",
+            error instanceof Error ? error.message : String(error)
+        );
+    }
 }
 
 function FlightIdLink({
     flightId,
-    otherFlightId,
 }: {
     flightId: string | number | null | undefined;
-    otherFlightId?: string | number | null;
 }) {
-    if (flightId == null || flightId === '...')
+    if (flightId == null || flightId === '...' || flightId === 0 || flightId === '0')
         return <>...</>;
 
     return (
         <a
-            href={buildFlightPageUrl(flightId, otherFlightId)}
+            href={buildFlightsPageUrl(flightId)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void openFlightPage(flightId);
+            }}
         >
             {flightId}
         </a>
@@ -2843,12 +2901,12 @@ const HeatMapPage: React.FC = () => {
                                                                     <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}°</div>
                                                                     <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
                                                                     <hr />
-                                                                    <div><strong>Flight ID: </strong><FlightIdLink flightId={popup.data.flightId} otherFlightId={popup.data.otherFlightId} /></div>
+                                                                    <div><strong>Flight ID: </strong><FlightIdLink flightId={popup.data.flightId} /></div>
                                                                     <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
                                                                     {hasOtherFlightId(popup.data.otherFlightId) && (
                                                                         <>
                                                                             <hr />
-                                                                            <div><strong>Other Flight ID: </strong><FlightIdLink flightId={popup.data.otherFlightId} otherFlightId={popup.data.flightId} /></div>
+                                                                            <div><strong>Other Flight ID: </strong><FlightIdLink flightId={popup.data.otherFlightId} /></div>
                                                                             <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
                                                                         </>
                                                                     )}
