@@ -452,12 +452,17 @@ class CesiumPage extends React.Component {
         }
     }
 
-    addDefaultEntities(flightId, color) {
+    addDefaultEntities(flightId, color, flightDataOverride) {
 
-        const flightData = this.state.flightData[flightId];
+        if (!this.viewer) {
+            console.warn("Cesium viewer is not ready yet");
+            return false;
+        }
+
+        const flightData = flightDataOverride ?? this.state.flightData[flightId];
         if (flightData?.errorMessage) {
             showErrorModal("Cesium Data Unavailable", flightData.errorMessage);
-            return;
+            return false;
         }
         if (!flightData
             || !flightData.startTime
@@ -470,7 +475,7 @@ class CesiumPage extends React.Component {
                 "Cesium Data Unavailable",
                 "Flight is missing valid Cesium timeline or position data."
             );
-            return;
+            return false;
         }
 
         let flightStartTime;
@@ -484,7 +489,7 @@ class CesiumPage extends React.Component {
                 "Cesium Data Unavailable",
                 "Flight timestamps could not be parsed for Cesium playback."
             );
-            return;
+            return false;
         }
 
         console.log("Flight start time : ");
@@ -535,7 +540,7 @@ class CesiumPage extends React.Component {
                 })
             }), 
         });
-        const infoAglDemo = this.state.flightData[flightId]["flightGeoInfoAgl"];
+        const infoAglDemo = flightData["flightGeoInfoAgl"];
         this.setState(prevState => ({
             flightColors: {
                 ...prevState.flightColors,
@@ -556,46 +561,47 @@ class CesiumPage extends React.Component {
             currentZoomedEntity: geoFlightGroundEntity
         });
 
+        return true;
     }
 
     addFlightEntity(flightId, color) {
-        
+
         console.log("Cesium flight color: ", color);
+
         if (flightId in this.state.activePhaseEntities) {
-
-            console.log("Removing flight from cesium");
-            this.removeFlightEntities(flightId);
-
-        } else {
-
-            console.log("Adding flight to cesium");
-            const cesiumDataContainer = this.getCesiumData(flightId);
-
-            //Failed to load Cesium data, exit
-            if (!cesiumDataContainer) {
-                console.warn(`Failed to load Cesium data for Flight ID: ${flightId}, not adding flight entity`);
-                return;
-            }
-
-            const cesiumData = cesiumDataContainer[flightId];
-            console.log("addFlightEntity -- Cesium Data:", cesiumData);
-
-            if (cesiumData?.errorMessage) {
-                showErrorModal("Cesium Data Unavailable", cesiumData.errorMessage);
-                return;
-            }
-
-            this.setState(prevState => ({
-                flightData: {
-                    ...prevState.flightData,
-                    [flightId]: cesiumData
-                }
-            }), () => {
-                this.addDefaultEntities(flightId, color);
-            });
-            
+            console.log("Flight already loaded in Cesium:", flightId);
+            return true;
         }
-               
+
+        if (!this.viewer) {
+            console.warn(`Cesium viewer is not ready for flight ${flightId}`);
+            return false;
+        }
+
+        console.log("Adding flight to cesium");
+        const cesiumDataContainer = this.getCesiumData(flightId);
+
+        if (!cesiumDataContainer) {
+            console.warn(`Failed to load Cesium data for Flight ID: ${flightId}, not adding flight entity`);
+            return false;
+        }
+
+        const cesiumData = cesiumDataContainer[flightId];
+        console.log("addFlightEntity -- Cesium Data:", cesiumData);
+
+        if (cesiumData?.errorMessage) {
+            showErrorModal("Cesium Data Unavailable", cesiumData.errorMessage);
+            return false;
+        }
+
+        this.setState(prevState => ({
+            flightData: {
+                ...prevState.flightData,
+                [flightId]: cesiumData
+            }
+        }));
+
+        return this.addDefaultEntities(flightId, color, cesiumData);
     }
 
     componentDidUpdate(prevProps) {

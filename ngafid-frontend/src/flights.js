@@ -696,9 +696,14 @@ class FlightsPage extends React.Component {
 
         console.log(`Adding Cesium Flight with ID: ${  flightId}`);
 
-        this.cesiumRef.current.addFlightEntity(flightId, color);
         this.showCesiumMap();
 
+        if (!this.cesiumRef.current) {
+            console.warn("Cesium page is not mounted yet");
+            return false;
+        }
+
+        return this.cesiumRef.current.addFlightEntity(flightId, color);
     }
 
     toggleCesium() {

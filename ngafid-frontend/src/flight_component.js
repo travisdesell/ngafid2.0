@@ -23,7 +23,6 @@ import { Tags } from './tags_component.js';
 import { TraceButtons } from './trace_buttons_component.js';
 
 import Plotly from 'plotly.js';
-import { cesiumFlightsSelected } from "./cesium_buttons";
 
 import { plotlyLayoutGlobal } from './flights.js';
 
@@ -75,8 +74,8 @@ class Flight extends React.Component {
             itineraryLayer: null,
             eventOutlines: [],
             eventOutlineLayer: null,
-            replayToggled: cesiumFlightsSelected.includes(this.props.flightInfo.id),
             cesiumFlightEnabled: false,
+            cesiumToggleInProgress: false,
 
             mapButtonDisabled: false,
 
@@ -587,7 +586,6 @@ class Flight extends React.Component {
 
         this.setState(prevState => ({
             cesiumFlightEnabled: !prevState.cesiumFlightEnabled,
-            replayToggled: !prevState.replayToggled
         }), () => {
             this.props.showCesiumPage(flightId, this.state.color);
         });
@@ -596,34 +594,60 @@ class Flight extends React.Component {
 
     addCesiumFlight() {
 
+        if (this.state.cesiumToggleInProgress)
+            return;
+
         console.log("Adding flight to cesium");
+        this.setState({ cesiumToggleInProgress: true });
 
-        this.setState({ cesiumFlightEnabled: true }, () => {
-            this.props.showCesiumPage(this.props.flightInfo.id, this.state.color);
-        });
+        const flightId = this.props.flightInfo.id;
+        const color = this.state.color;
+        const tryAdd = () => this.props.showCesiumPage(flightId, color);
 
+        let succeeded = tryAdd();
+        if (succeeded) {
+            this.setState({
+                cesiumFlightEnabled: true,
+                cesiumToggleInProgress: false,
+            });
+            return;
+        }
+
+        // Cesium viewer may still be initializing after the panel is shown.
+        window.setTimeout(() => {
+            succeeded = tryAdd();
+            this.setState({
+                cesiumFlightEnabled: succeeded,
+                cesiumToggleInProgress: false,
+            });
+        }, 250);
     }
 
     removeCesiumFlight() {
 
+        if (this.state.cesiumToggleInProgress)
+            return;
+
         console.log("Removing Cesium flights");
-        this.setState({ cesiumFlightEnabled: false }, () => {
+        this.setState({ cesiumToggleInProgress: true }, () => {
             this.props.removeCesiumFlight(this.props.flightInfo.id);
+            this.setState({
+                cesiumFlightEnabled: false,
+                cesiumToggleInProgress: false,
+            });
         });
 
     }
 
     toggleCesiumFlight() {
 
-        //Cesium map is not visible, add the flight
+        if (this.state.cesiumToggleInProgress)
+            return;
+
         if (!this.state.cesiumFlightEnabled)
             this.addCesiumFlight();
-
-        //Cesium map is visible, remove the flight
         else
             this.removeCesiumFlight();
-
-        console.log(cesiumFlightsSelected);
     }
 
     replayClicked() {
@@ -2825,11 +2849,12 @@ class Flight extends React.Component {
 
                                             {/* Cesium Toggle */}
                                             <button
-                                                className={buttonClasses}
+                                                className={`${buttonClasses} ${this.state.cesiumFlightEnabled ? 'active' : ''}`}
                                                 style={styleButton}
                                                 id={`cesiumToggle-${this.props.flightInfo.id}`}
-                                                data-bs-toggle="button"
-                                                aria-pressed={this.state.replayToggled}
+                                                type="button"
+                                                aria-pressed={this.state.cesiumFlightEnabled}
+                                                disabled={this.state.cesiumToggleInProgress}
                                                 onClick={() => this.toggleCesiumFlight()}
                                             >
                                                 <i className="fa fa-globe p-1" />
