@@ -1,6 +1,6 @@
 import 'bootstrap';
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import {showErrorModal} from "./error_modal.js";
@@ -102,6 +102,60 @@ export function SeveritiesPage() {
     const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
     const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
     const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasQueried, setHasQueried] = useState(false);
+    const loadingCountRef = useRef(0);
+
+    const setLoading = useCallback((loading: boolean) => {
+        if (loading) {
+            loadingCountRef.current += 1;
+            setIsLoading(true);
+            $('#loading').show();
+        } else {
+            loadingCountRef.current = Math.max(0, loadingCountRef.current - 1);
+            if (loadingCountRef.current === 0) {
+                setIsLoading(false);
+                $('#loading').hide();
+            }
+        }
+    }, []);
+
+    const hasAnyEventChecked = useMemo(
+        () => Object.values(eventChecked).some(Boolean),
+        [eventChecked]
+    );
+
+    const allEventsEmpty = useMemo(
+        () => eventNames
+            .filter((name) => name !== "ANY Event")
+            .every((name) => eventsEmpty[name]),
+        [eventsEmpty]
+    );
+
+    const hasVisiblePlotData = useMemo(() => {
+        const selectedAirframe = airframe.name;
+        for (const [eventName, countsMap] of Object.entries(eventSeveritiesState)) {
+            if (!eventChecked[eventName])
+                continue;
+
+            for (const [airframeName, counts] of Object.entries(countsMap)) {
+                if (airframeName === "Garmin Flight Display")
+                    continue;
+
+                if (selectedAirframe !== airframeName && selectedAirframe !== "All Airframes")
+                    continue;
+
+                if (Array.isArray(counts) && counts.length > 0)
+                    return true;
+            }
+        }
+        return false;
+    }, [eventSeveritiesState, eventChecked, airframe.name]);
+
+    const showNoEventsMessage = hasQueried
+        && !isLoading
+        && !hasVisiblePlotData
+        && (allEventsEmpty || hasAnyEventChecked);
 
 
     //Effect to update datesOrAirframeChanged when dependencies change
@@ -420,7 +474,7 @@ export function SeveritiesPage() {
 
     const fetchAllEventSeverities = useCallback(() => {
 
-        $('#loading').show();
+        setLoading(true);
         console.log("Showing loading spinner!");
 
 
@@ -439,7 +493,7 @@ export function SeveritiesPage() {
             url: '/api/event/severities',
             data: submissionData,
             success: (response: EventSeverities) => {
-                $('#loading').hide();
+                setLoading(false);
                 if (response.err_msg) {
                     showErrorModal(response.err_title, response.err_msg);
                     return;
@@ -473,19 +527,21 @@ export function SeveritiesPage() {
 
                 setEventsEmpty(newEventsEmpty);
                 setEventSeveritiesState(next);
+                setHasQueried(true);
 
             },
             error: (jqXHR, textStatus, errorThrown) => {
+                setLoading(false);
                 showErrorModal("Error Loading Uploads", errorThrown);
             }
 
         });
 
-    }, [startMonth, startYear, endMonth, endYear, tagName]);
+    }, [startMonth, startYear, endMonth, endYear, tagName, setLoading]);
 
     const fetchEventSeverities = (eventName:string) => {
 
-        $('#loading').show();
+        setLoading(true);
         console.log("Showing loading spinner!");
 
         const startDate = buildStartDate(startYear, startMonth);
@@ -505,7 +561,7 @@ export function SeveritiesPage() {
                 data: submissionData,
                 async: true,
                 success: (response: EventSeverityByAirframe) => {
-                    $('#loading').hide();
+                    setLoading(false);
 
                     if ((response).err_msg) {
                         showErrorModal(response.err_title, response.err_msg);
@@ -523,8 +579,10 @@ export function SeveritiesPage() {
                         ...prev,
                         [eventName]: hasAnyData ? response : {}
                     }));
+                    setHasQueried(true);
                 },
                 error: (jqXHR, textStatus, errorThrown) => {
+                    setLoading(false);
                     showErrorModal("Error Loading Uploads", errorThrown);
                 },
             });
@@ -592,7 +650,7 @@ export function SeveritiesPage() {
         setDatesChanged(false);
 
         // Check event availability with COUNT queries instead of fetching all events
-        $('#loading').show();
+        setLoading(true);
         
         const startDate = buildStartDate(startYear, startMonth);
         const endDate = buildEndDate(endYear, endMonth);
@@ -609,7 +667,7 @@ export function SeveritiesPage() {
             url: '/api/event/severities/available',
             data: submissionData,
             success: (response: Record<string, number>) => {
-                $('#loading').hide();
+                setLoading(false);
                 
                 // Update eventsEmpty based on counts
                 const newEventsEmpty: Record<string, boolean> = {};
@@ -621,15 +679,16 @@ export function SeveritiesPage() {
                 
                 // Clear any previously loaded event data
                 setEventSeveritiesState({});
+                setHasQueried(true);
                 displayPlot(airframe.name);
             },
             error: (jqXHR, textStatus, errorThrown) => {
-                $('#loading').hide();
+                setLoading(false);
                 showErrorModal("Error Checking Event Availability", errorThrown);
             }
         });
 
-    }, [airframe.name, displayPlot, startYear, startMonth, endYear, endMonth, tagName]);
+    }, [airframe.name, displayPlot, startYear, startMonth, endYear, endMonth, tagName, setLoading]);
 
 
     const airframeChangeFromName = (airframeName: string) => {
@@ -697,6 +756,12 @@ export function SeveritiesPage() {
                                     datesOrAirframeChanged={datesOrAirframeChanged}
                                     requireManualInitialUpdate
                                 />
+
+                                {showNoEventsMessage && (
+                                    <div className="alert alert-info p-2 mx-3 mb-0 mt-2 text-center" role="status">
+                                        No events found for the given parameters. Please update your selection and try again.
+                                    </div>
+                                )}
 
                                 <div className="card-body" style={{padding: "0"}}>
                                     <div className="row" style={{margin: "0"}}>
