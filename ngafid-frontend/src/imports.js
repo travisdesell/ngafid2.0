@@ -424,6 +424,13 @@ class Import extends React.Component {
             statusClasses = statusStateUnknownDefaults.statusClasses;
         }
 
+        const errorFlightCount = Number(importInfo.errorFlights ?? 0);
+        if (status === "PROCESSED_WARNING" && errorFlightCount > 0) {
+            statusText = `Processed With ${errorFlightCount} Error${errorFlightCount === 1 ? "" : "s"}`;
+            colorClasses = "bg-danger";
+            statusClasses = "p-1 pl-2 pr-2 ml-1 card border-danger text-danger";
+        }
+
 
         const textClasses = "p-1 mr-1 card";
         const cardClasses = (textClasses + colorClasses);

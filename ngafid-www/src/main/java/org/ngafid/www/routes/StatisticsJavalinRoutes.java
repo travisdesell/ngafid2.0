@@ -214,7 +214,7 @@ public class StatisticsJavalinRoutes {
         }
 
         public Integer uploadsWithError() throws SQLException {
-            return getUploadCounts().errorUploadCount();
+            return getUploadIssueCounts().errorUploadCount();
         }
 
         public Integer uploadsWithWarning() throws SQLException {
@@ -222,11 +222,21 @@ public class StatisticsJavalinRoutes {
         }
 
         public Integer flightsWithWarning() throws SQLException {
-            return getUploadCounts().warningUploadCount();
+            return getUploadIssueCounts().warningFlightCount();
         }
 
         public Integer flightsWithError() throws SQLException {
-            return getUploadCounts().errorUploadCount();
+            return getUploadIssueCounts().errorFlightCount();
+        }
+
+        private UploadStatistics.UploadIssueCounts getUploadIssueCounts() throws SQLException {
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
+            return UploadStatistics.getUploadIssueCountsDated(connection, fleetId, startDate, endDate);
         }
     }
 
