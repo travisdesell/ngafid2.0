@@ -436,9 +436,11 @@ class Import extends React.Component {
         const cardClasses = (textClasses + colorClasses);
 
         console.log("Import Info: ", importInfo);
-        const totalFlights = (importInfo.validFlights + importInfo.errorFlights);
+        const warningFlights = Number(importInfo.warningFlights ?? 0);
+        const successfulFlights = Number(importInfo.validFlights ?? 0) + warningFlights;
+        const totalFlights = successfulFlights + Number(importInfo.errorFlights ?? 0);
 
-        const hasWarnings = (importInfo.warningFlights > 0);
+        const hasWarnings = (warningFlights > 0);
 
         return (
             <div className="m-2">
@@ -483,7 +485,7 @@ class Import extends React.Component {
                                          title="No Flights in this upload have Warnings."/>
                             }
                             <div>&nbsp;Valid:</div>
-                            <div style={{textAlign: "end", width: "100%"}}>{importInfo.validFlights}&nbsp;</div>
+                            <div style={{textAlign: "end", width: "100%"}}>{successfulFlights}&nbsp;</div>
                         </div>
 
                         {/* Flights Uploaded With Warnings */}
