@@ -6,12 +6,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 import org.ngafid.core.flights.LossOfTailRotorEffectiveness.HelicopterSpec;
-
+import org.ngafid.core.flights.VortexRingState;
 /**
- * Loads LTE helicopter specifications from the rotorcraft_airframe_specs database table.
- *
- * <p>The LTE model only needs the main-rotor and weight fields selected here; the rest of the table is retained for
- * auditability and future rotorcraft analyses.
+ * Loads rotorcraft/helicopter specifications from the rotorcraft_airframe_specs database table.
+ * LTE and VRS need different main-rotor fields, so this repository exposes model-specific projections while the
+ * table retains the complete rotorcraft specification for auditability and future analyses.
  */
 final class RotorcraftAirframeSpecRepository {
     private RotorcraftAirframeSpecRepository() {}
@@ -41,6 +40,42 @@ final class RotorcraftAirframeSpecRepository {
                     return Optional.empty();
                 }
                 return Optional.of(toHelicopterSpec(resultSet));
+            }
+        }
+    }
+
+    /** Loads the latest rotorcraft fields required by the VRS hover induced velocity calculation. */
+    static Optional<VortexRingState.HelicopterSpec> findVrsByAirframeId(Connection connection, int airframeId)
+            throws SQLException {
+        String sql = """
+                SELECT
+                    model,
+                    series,
+                    max_gross_weight_lbs,
+                    min_flying_weight_lbs,
+                    empty_weight_lbs,
+                    mr_diameter_in
+                FROM rotorcraft_airframe_specs
+                WHERE airframe_id = ?
+                ORDER BY year DESC, id DESC
+                LIMIT 1
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, airframeId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return Optional.empty();
+                }
+                String model = resultSet.getString("model");
+                String series = resultSet.getString("series");
+                String airframe = series == null || series.isBlank() ? model : model + " " + series;
+                return Optional.of(new VortexRingState.HelicopterSpec(
+                        airframe,
+                        nullableDouble(resultSet, "max_gross_weight_lbs"),
+                        nullableDouble(resultSet, "min_flying_weight_lbs"),
+                        nullableDouble(resultSet, "empty_weight_lbs"),
+                        nullableDouble(resultSet, "mr_diameter_in")));
             }
         }
     }

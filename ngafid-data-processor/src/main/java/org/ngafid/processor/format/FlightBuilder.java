@@ -39,6 +39,7 @@ public class FlightBuilder {
             ComputeLOCI::new,
             ComputeItinerary::new,
             ComputeAltAGL::new,
+            ComputeVortexRingState::new,
             ComputeLossOfTailRotorEffectiveness::new,
             ComputeTurnToFinal::new);
 

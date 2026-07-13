@@ -96,6 +96,15 @@ public interface Parameters {
     String ENGINE_1_TORQUE = "Engine 1 Torque";
     String ENGINE_2_TORQUE = "Engine 2 Torque";
 
+    // VRS calculation parameters. TAS is diffferent from TAS_FTMIN
+    // TAS_KT = rotorcraft VRS input, knots
+    //TAS_FTMIN = existing derived stall/LOCI-style series, feet per minute
+    String TAS = "TAS";
+    String VRS = "VRS";
+    String VRS_VH = "VRS Vh";
+    String VRS_VX = "VRS Vx/Vh";
+    String VRS_VZ = "VRS Vz/Vh";
+
     /**
      * Column name used for our derived UTC timestamp which uses the ISO 8601 format.
      * This column contains a time coordinate -- a date, time, and utc timezone offset.
@@ -147,6 +156,7 @@ public interface Parameters {
         IATA_CODE("IATA Code"),
         KNOTS("knots"),
         FT_PER_MINUTE("ft/min"),
+        METERS_PER_SECOND("m/s"),
         DEGREES("degrees"),
         INDEX("index"),
         RATIO("ratio"),
