@@ -45,6 +45,7 @@ const targetValues = {
     uploadsOK: "/api/upload/count/success",
     uploadsNotImported: "/api/upload/count/pending",
     uploadsWithError: "/api/upload/count/error",
+    importedFlights: "/api/flight/count/imported",
     flightsWithWarning: "/api/flight/count/with-warning",
     flightsWithError: "/api/flight/count/with-error",
 };
@@ -370,6 +371,7 @@ type SummaryPageState = {
         uploadsOK: number;
         uploadsNotImported: number;
         uploadsWithError: number;
+        importedFlights: number;
         flightsWithWarning: number;
         flightsWithError: number;
     };
@@ -407,6 +409,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 uploadsOK: number;
                 uploadsNotImported: number;
                 uploadsWithError: number;
+                importedFlights: number;
                 flightsWithWarning: number;
                 flightsWithError: number;
             }),
@@ -734,17 +737,17 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
         for await (const [stat, route] of Object.entries(targetValues)) {
 
-            const successResponseHandler = (response: { err_msg: string; err_title: string; }) => {
+            const successResponseHandler = (response: { err_msg?: string; err_title?: string; } | number | string) => {
 
                 console.log("Got response for statistic: ", stat, response);
 
-                if (response.err_msg) {
-                    showErrorModal(response.err_title, response.err_msg);
+                if (typeof response === "object" && response.err_msg) {
+                    showErrorModal(response.err_title ?? "Error Loading Statistic", response.err_msg);
                     return;
                 }
 
-                const result: { [key: string]: string } = {};
-                result[stat] = (typeof response === "string" ? response : JSON.stringify(response));
+                const result: { [key: string]: number } = {};
+                result[stat] = Number(response);
                 this.setState(prev => ({
                     statistics: {...prev.statistics, ...result}
                 }));
@@ -997,7 +1000,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
     UploadsSummary() {
 
-        const totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithError);
+        const totalFlights = Number(this.state.statistics.importedFlights)
+            + Number(this.state.statistics.flightsWithError);
         const hasWarnings = (this.state.statistics.flightsWithWarning > 0);
 
         //Modifes a string to be plural if the supplied is not 1
@@ -1080,10 +1084,10 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                                                         style={{alignContent: "center", color: "white"}}
                                                         title="No Flights in this Fleet have Warnings."/>
                                             }
-                                            &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
+                                            &nbsp;{formatNumberAsync(this.state.statistics.importedFlights, integerOptions)}
                                         </span>
                                 </td>
-                                <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.numberFlights, "Flight")}
+                                <td style={{paddingBottom: "6"}}>&nbsp;{pluralize(this.state.statistics.importedFlights, "Flight")}
                                     &nbsp;Valid
                                 </td>
                             </tr>

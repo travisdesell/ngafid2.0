@@ -39,6 +39,7 @@ object FlightRoutes : RouteProvider() {
 
                 RouteUtility.getStat("count/past-month") { ctx, stats -> ctx.json(stats.monthNumberFlights()) }
                 RouteUtility.getStat("count/past-year") { ctx, stats -> ctx.json(stats.yearNumberFlights()) }
+                RouteUtility.getStat("count/imported") { ctx, stats -> ctx.json(stats.flightsImported()) }
                 RouteUtility.getStat("count/with-warning") { ctx, stats -> ctx.json(stats.flightsWithWarning()) }
                 RouteUtility.getStat("count/with-error") { ctx, stats -> ctx.json(stats.flightsWithError()) }
                 RouteUtility.getStat("count") { ctx, stats -> ctx.json(stats.numberFlights()) }

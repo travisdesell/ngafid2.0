@@ -225,6 +225,10 @@ public class StatisticsJavalinRoutes {
             return getUploadIssueCounts().warningFlightCount();
         }
 
+        public Integer flightsImported() throws SQLException {
+            return getUploadIssueCounts().successfulFlightCount();
+        }
+
         public Integer flightsWithError() throws SQLException {
             return getUploadIssueCounts().errorFlightCount();
         }

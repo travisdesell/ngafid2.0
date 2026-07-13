@@ -438,11 +438,11 @@ function resolveUploadDisplayStatus(uploadInfo) {
         return status;
     }
 
-    const errorFlights = uploadInfo.errorFlights ?? 0;
-    const warningFlights = uploadInfo.warningFlights ?? 0;
-    const validFlights = uploadInfo.validFlights ?? 0;
+    const errorFlights = Number(uploadInfo.errorFlights ?? 0);
+    const warningFlights = Number(uploadInfo.warningFlights ?? 0);
+    const validFlights = Number(uploadInfo.validFlights ?? 0);
 
-    if (errorFlights > 0 && validFlights === 0) {
+    if (errorFlights > 0 && validFlights + warningFlights === 0) {
         return "FAILED_UNKNOWN";
     }
     if (errorFlights > 0 || warningFlights > 0) {
