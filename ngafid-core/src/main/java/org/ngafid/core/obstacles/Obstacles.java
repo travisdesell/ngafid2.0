@@ -1,7 +1,4 @@
-/* 
-For the purpose of this class, since Lat./Lon. plus altitude if available is all that we used for obstacles.
-This will just have Lat and Lon, and it will have a similar calculation to that of the Airports.java
-*/
+
 
 package org.ngafid.core.obstacles;
 
@@ -22,6 +19,7 @@ public final class Obstacles {
     private static final Logger LOG = Logger.getLogger(Obstacle.class.getName());
     private static final HashMap<String, ArrayList<Obstacle>> GEO_HASH_TO_OBSTACLES;
     private static final HashMap<Integer, Obstacle> OBJECTID_TO_OBSTACLES;
+    private static final HashMap<Integer, MarkedObstacle> OBJECTID_TO_OBSTACLEDISTANCETUPLE;
     
     private static final boolean TEST_MODE =
         Boolean.getBoolean("testMode") || "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
@@ -33,6 +31,7 @@ public final class Obstacles {
     static {
         GEO_HASH_TO_OBSTACLES = new HashMap<>();
         OBJECTID_TO_OBSTACLES = new HashMap<>();
+        OBJECTID_TO_OBSTACLEDISTANCETUPLE = new HashMap<>();
 
         if (TEST_MODE) {
             LOG.info("TEST MODE: skipping reading obstacles files");
@@ -79,12 +78,10 @@ public final class Obstacles {
         }
     }
 
-    public static Obstacle getNearestObstacleWithin(
-            double latitude, double longitude, double maxDistanceFt, MutableDouble obstacleDistance) {
+    public static ArrayList<MarkedObstacle> getNearbyObstaclesWithin(double latitude, double longitude, double altitude, double maxDistanceFt) {
         String[] geoHashes = GeoHash.getNearbyGeoHashes(latitude, longitude);
 
-        double minDistance = maxDistanceFt;
-        Obstacle nearestObstacle = null;
+        ArrayList<MarkedObstacle> nearbyObstacles = new ArrayList<>();
         
         for (String geoHash : geoHashes) {
             ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.get(geoHash);
@@ -92,18 +89,20 @@ public final class Obstacles {
             if (hashedObstacles != null) {
 
                 for (Obstacle obstacle : hashedObstacles) {
-                    double distanceFt = calculateDistanceInFeet(latitude, longitude, obstacle.getLatitude(), obstacle.getLongitude());
 
-                    if (distanceFt < minDistance) {
-                        nearestObstacle = obstacle;
-                        minDistance = distanceFt;
-                        obstacleDistance.setValue(minDistance);
+                    double horizontalDistanceFt = calculateDistanceInFeet(latitude, longitude, obstacle.getLatitude(), obstacle.getLongitude());
+                    double verticalDistance = Math.abs(obstacle.getAGL() - altitude);
+
+                    double distance = Math.sqrt(Math.pow(horizontalDistanceFt, 2) + Math.pow(verticalDistance, 2));
+                    
+                    if (distance <= maxDistanceFt) {
+                        nearbyObstacles.add(new MarkedObstacle(obstacle, distance, horizontalDistanceFt, verticalDistance));
                     }
                 }
             }
         }
 
-        return nearestObstacle;
+        return nearbyObstacles;
     }
     
     /**
@@ -173,10 +172,5 @@ public final class Obstacles {
 
     public static double calculateDistanceInFeet(double lat1, double lon1, double lat2, double lon2) {
         return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * Obstacles.FT_PER_KM;
-    }
-
-    public static boolean IsDoubleInRangeInclusive(double num, double bot, double top) {
-        if ((num >= bot) && (num <= top)) {return true;}
-        return false;
     }
 }

@@ -32,7 +32,6 @@ public class FlightBuilder {
     private static final List<ComputeStep.Factory> PROCESS_STEPS = List.of(
             required(ComputeStartEndTime::new),
             ComputeAirportProximity::new,
-            ComputeObstacleProximity::new,
             ComputeLaggedAltMSL::new,
             ComputeStallIndex::new,
             ComputeTotalFuel::new,
