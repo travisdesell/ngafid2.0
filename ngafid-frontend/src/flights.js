@@ -1790,7 +1790,7 @@ class FlightsPage extends React.Component {
                     clearTags={(flightId) => this.clearTags(flightId)}
                     editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
                     showCesium={(flightId, color) => {
-                        this.addCesiumFlight(flightId, color);
+                        return this.addCesiumFlight(flightId, color);
                     }}
                     addCesiumFlightPhase={(phase, flightId) => {
                         this.addCesiumFlightPhase(phase, flightId);
