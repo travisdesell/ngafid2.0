@@ -360,8 +360,12 @@ public class AirSyncFleet extends Fleet {
      * @return an unexpired {@link AirSyncAuth} instance
      */
     public AirSyncAuth getAuth() {
-        if (this.authCreds.isOutdated()) {
+        // Always use the shared singleton so a refresh on one fleet is visible to all fleets.
+        AirSyncAuth instance = AirSyncAuth.Companion.getInstance();
+        if (instance.isOutdated()) {
             refreshAuth();
+        } else {
+            this.authCreds = instance;
         }
 
         return this.authCreds;
@@ -384,7 +388,7 @@ public class AirSyncFleet extends Fleet {
 
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.authCreds.getBearerString());
+            connection.setRequestProperty("Authorization", getAuth().getBearerString());
 
             for (Map.Entry<String, List<String>> e :
                     connection.getRequestProperties().entrySet()) {
