@@ -58,6 +58,7 @@ public class ComputeAltAGL extends ComputeStep {
         DoubleTimeSeries altitudeMSLTS = builder.getDoubleTimeSeries(ALT_MSL);
         DoubleTimeSeries latitudeTS = builder.getDoubleTimeSeries(LATITUDE);
         DoubleTimeSeries longitudeTS = builder.getDoubleTimeSeries(LONGITUDE);
+        DoubleTimeSeries recorderAltAglTS = builder.getDoubleTimeSeries(ALT_AGL);
 
         DoubleTimeSeries altitudeAGLTS =
                 withConnection(connection -> new DoubleTimeSeries(connection, ALT_AGL, Unit.FT_AGL));
@@ -68,7 +69,7 @@ public class ComputeAltAGL extends ComputeStep {
             double longitude = longitudeTS.get(i);
 
             if (Double.isNaN(altitudeMSL) || Double.isNaN(latitude) || Double.isNaN(longitude)) {
-                altitudeAGLTS.add(Double.NaN);
+                altitudeAGLTS.add(recorderAltAglAt(recorderAltAglTS, i));
                 continue;
             }
 
@@ -76,10 +77,17 @@ public class ComputeAltAGL extends ComputeStep {
                 int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
                 altitudeAGLTS.add(altitudeAGL);
             } catch (TerrainUnavailableException e) {
-                altitudeAGLTS.add(Double.NaN);
+                altitudeAGLTS.add(recorderAltAglAt(recorderAltAglTS, i));
             }
         }
 
         builder.addTimeSeries(altitudeAGLTS);
+    }
+
+    private static double recorderAltAglAt(DoubleTimeSeries recorderAltAgl, int index) {
+        if (recorderAltAgl == null || index >= recorderAltAgl.size()) {
+            return Double.NaN;
+        }
+        return recorderAltAgl.get(index);
     }
 }

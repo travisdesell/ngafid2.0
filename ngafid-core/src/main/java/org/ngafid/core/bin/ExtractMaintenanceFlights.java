@@ -1373,215 +1373,177 @@ public final class ExtractMaintenanceFlights {
     }
 
     // -------------------------------------------------------------------------
-    // Manifest: manifest.json with workorders and flight paths
+    // Manifest: one manifest_<clusterId>.json per cluster (e.g. manifest_c_44.json)
     // -------------------------------------------------------------------------
 
-    /** Write manifest.json for extracted outputs. */
+    /** Write one manifest file per cluster for extracted outputs. */
     private static void generateManifest(String outputDirectory) {
         try {
-
-            StringBuilder json = new StringBuilder();
-            json.append("{\n");
-            json.append("  \"generated_at\": \"").append(LocalDateTime.now().toString()).append("\",\n");
-
-            // Calculate statistics
-            int totalFlights = 0;
-            HashMap<String, Integer> clusterFlightCounts = new HashMap<>();
             HashMap<String, String> clusterNames = new HashMap<>();
-
-            // Build label name map from records (label_id -> label)
             for (MaintenanceRecord record : ALL_RECORDS) {
                 if (record.getLabelId() != null && record.getLabel() != null) {
                     clusterNames.put(record.getLabelId(), record.getLabel());
                 }
             }
 
-            json.append("  \"statistics\": {\n");
-            json.append("    \"total_workorders\": ").append(RECORDS_BY_WORKORDER.size()).append(",\n");
-
-            // Count flights per cluster by scanning directories
-            int totalBefore = 0;
-            int totalDuring = 0;
-            int totalDuringSameDay = 0;
-            int totalAfter = 0;
+            // Discover clusters that have extracted output on disk
+            LinkedHashSet<String> clusterIds = new LinkedHashSet<>();
             File baseDir = new File(outputDirectory);
             if (baseDir.exists() && baseDir.isDirectory()) {
-                for (File clusterDir : baseDir.listFiles()) {
-                    if (clusterDir.isDirectory() && clusterDir.getName().startsWith("c_")) {
-                        int clusterCount = 0;
-                        for (File workorderDir : clusterDir.listFiles()) {
-                            if (workorderDir.isDirectory()) {
-                                // Count CSV files in before/during/after subdirectories
-                                for (String phase : new String[] {"before", "during", "after"}) {
-                                    File phaseDir = new File(workorderDir, phase);
-                                    if (phaseDir.exists() && phaseDir.isDirectory()) {
-                                        File[] csvFiles = phaseDir.listFiles((dir, name) -> name.endsWith(".csv"));
-                                        if (csvFiles != null) {
-                                            clusterCount += csvFiles.length;
-                                            totalFlights += csvFiles.length;
-                                            if ("before".equals(phase)) {
-                                                totalBefore += csvFiles.length;
-                                            } else if ("during".equals(phase)) {
-                                                totalDuring += csvFiles.length;
-                                                // Count during flights for records where open_date == close_date
-                                                try {
-                                                    int woNum = Integer.parseInt(workorderDir.getName()
-                                                            .split("_")[0]);
-                                                    MaintenanceRecord rec = RECORDS_BY_WORKORDER.get(woNum);
-                                                    if (rec != null
-                                                            && rec.getOpenDate().equals(rec.getCloseDate())) {
-                                                        totalDuringSameDay += csvFiles.length;
-                                                    }
-                                                } catch (NumberFormatException ignored) {
-                                                    // workorder dir name not numeric; skip
-                                                }
-                                            } else if ("after".equals(phase)) {
-                                                totalAfter += csvFiles.length;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (clusterCount > 0) {
-                            clusterFlightCounts.put(clusterDir.getName(), clusterCount);
+                File[] dirs = baseDir.listFiles();
+                if (dirs != null) {
+                    Arrays.sort(dirs, Comparator.comparing(File::getName));
+                    for (File clusterDir : dirs) {
+                        if (clusterDir.isDirectory() && clusterDir.getName().startsWith("c_")) {
+                            clusterIds.add(clusterDir.getName());
                         }
                     }
                 }
             }
+            // Also include any cluster ids from records (stable even if dir empty)
+            clusterIds.addAll(clusterNames.keySet());
 
-            json.append("    \"total_flights\": ").append(totalFlights).append(",\n");
-            json.append("    \"total_before\": ").append(totalBefore).append(",\n");
-            json.append("    \"total_during\": { \"all\": ").append(totalDuring)
-                    .append(", \"same_day\": ").append(totalDuringSameDay).append(" },\n");
-            json.append("    \"total_after\": ").append(totalAfter).append(",\n");
-            json.append("    \"by_cluster\": {\n");
-
-            int clusterIndex = 0;
-            for (Map.Entry<String, Integer> entry : clusterFlightCounts.entrySet()) {
-                String clusterId = entry.getKey();
-                String clusterName = clusterNames.getOrDefault(clusterId, "Unknown");
-                json.append("      \"").append(clusterId).append("\": {\n");
-                json.append("        \"name\": \"")
-                        .append(escapeJson(clusterName))
-                        .append("\",\n");
-                json.append("        \"count\": ").append(entry.getValue()).append("\n");
-                json.append("      }");
-                if (clusterIndex < clusterFlightCounts.size() - 1) {
-                    json.append(",");
-                }
-                json.append("\n");
-                clusterIndex++;
-            }
-
-            json.append("    }\n");
-            json.append("  },\n");
-
-            // Single-day during paths: flights that occurred on same-day maintenance (open==close),
-            // grouped by label_id for manual review
-            Map<String, java.util.List<String>> singleDayDuringByLabel = new LinkedHashMap<>();
-            for (String cid : clusterNames.keySet()) {
-                singleDayDuringByLabel.put(cid, new java.util.ArrayList<>());
-            }
-            for (MaintenanceRecord record : ALL_RECORDS) {
-                if (!record.getOpenDate().equals(record.getCloseDate())) continue;
-                String labelId = record.getLabelId();
-                String workorderTail = record.getWorkorderNumber() + "_" + record.getTailNumber();
-                File workorderDir = new File(outputDirectory, labelId + "/" + workorderTail);
-                java.util.List<String> duringPaths = new java.util.ArrayList<>();
-                collectPhasePaths(labelId, workorderTail, workorderDir, "during", duringPaths);
-                singleDayDuringByLabel.get(labelId).addAll(duringPaths);
-            }
-            json.append("  \"single_day_during_paths\": {\n");
-            int labelIdx = 0;
-            for (Map.Entry<String, java.util.List<String>> e : singleDayDuringByLabel.entrySet()) {
-                String labelId = e.getKey();
-                String labelName = clusterNames.getOrDefault(labelId, "Unknown");
-                json.append("    \"").append(labelId).append("\": {\n");
-                json.append("      \"name\": \"").append(escapeJson(labelName)).append("\",\n");
-                json.append("      \"paths\": ")
-                        .append(pathListToJson(e.getValue()))
-                        .append("\n");
-                json.append("    }");
-                if (labelIdx < singleDayDuringByLabel.size() - 1) json.append(",");
-                json.append("\n");
-                labelIdx++;
-            }
-            json.append("  },\n");
-
-            // Generate workorders array (only workorders that have at least one extracted flight)
-            json.append("  \"workorders\": [\n");
-
-            boolean firstWorkorder = true;
-            for (MaintenanceRecord record : ALL_RECORDS) {
-                String labelId = record.getLabelId();
-                String workorderTail = record.getWorkorderNumber() + "_" + record.getTailNumber();
-                File workorderDir = new File(outputDirectory, labelId + "/" + workorderTail);
-
-                java.util.List<String> beforePaths = new java.util.ArrayList<>();
-                java.util.List<String> duringPaths = new java.util.ArrayList<>();
-                java.util.List<String> afterPaths = new java.util.ArrayList<>();
-                collectPhasePaths(labelId, workorderTail, workorderDir, "before", beforePaths);
-                collectPhasePaths(labelId, workorderTail, workorderDir, "during", duringPaths);
-                collectPhasePaths(labelId, workorderTail, workorderDir, "after", afterPaths);
-                int totalFlightsForWorkorder = beforePaths.size() + duringPaths.size() + afterPaths.size();
-
-                if (totalFlightsForWorkorder == 0) {
-                    continue; // Skip workorders with no extracted flights; no manifest entry, no record_json
-                }
-
-                if (!firstWorkorder) {
-                    json.append(",\n");
-                }
-                firstWorkorder = false;
-
-                json.append("    {\n");
-                json.append("      \"workorder\": ").append(record.getWorkorderNumber()).append(",\n");
-                json.append("      \"label_id\": \"").append(record.getLabelId()).append("\",\n");
-                json.append("      \"label\": \"").append(escapeJson(record.getLabel())).append("\",\n");
-                json.append("      \"tail_number\": \"").append(record.getTailNumber()).append("\",\n");
-                json.append("      \"airframe\": \"").append(record.getAirframe()).append("\",\n");
-                json.append("      \"open_date\": \"").append(record.getOpenDate().toString()).append("\",\n");
-                json.append("      \"close_date\": \"").append(record.getCloseDate().toString()).append("\",\n");
-                json.append("      \"open_date_time\": \"").append(record.getOpenDateTime().toString()).append("\",\n");
-                json.append("      \"close_date_time\": \"")
-                        .append(record.getCloseDateTime().toString()).append("\",\n");
-                json.append("      \"original_action\": \"")
-                        .append(escapeJson(record.getOriginalAction())).append("\",\n");
-                json.append("      \"flights\": {\n");
-                json.append("        \"before\": ")
-                        .append(pathListToJson(beforePaths))
-                        .append(",\n");
-                json.append("        \"during\": ")
-                        .append(pathListToJson(duringPaths))
-                        .append(",\n");
-                json.append("        \"after\": ")
-                        .append(pathListToJson(afterPaths))
-                        .append("\n");
-                json.append("      },\n");
-                String recordJsonPath = labelId + "/" + workorderTail + "/" + workorderTail + "_record.json";
-                json.append("      \"record_json\": \"").append(recordJsonPath).append("\"\n");
-                json.append("    }");
-            }
-
-            json.append("\n  ]\n");
-            json.append("}\n");
-
-            // Write manifest file to data/maintenance/manifest.json
             File manifestDir = new File(outputDirectory).getParentFile();
-            File manifestFile = new File(manifestDir, "manifest.json");
+            int manifestsWritten = 0;
 
-            try (FileWriter writer = new FileWriter(manifestFile)) {
-                writer.write(json.toString());
+            for (String clusterId : clusterIds) {
+                if (writeClusterManifest(outputDirectory, manifestDir, clusterId, clusterNames)) {
+                    manifestsWritten++;
+                }
             }
 
-            System.out.println("Manifest: " + manifestFile.getName() + " ("
-                    + RECORDS_BY_WORKORDER.size() + " workorders, " + totalFlights + " flights)");
+            System.out.println("Wrote " + manifestsWritten + " cluster manifest(s) to "
+                    + (manifestDir != null ? manifestDir.getAbsolutePath() : "."));
 
         } catch (IOException e) {
             System.err.println("Error generating manifest: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Writes manifest_<clusterId>.json for one cluster. Returns false if the cluster
+     * has no extracted flights (no file written).
+     */
+    private static boolean writeClusterManifest(
+            String outputDirectory, File manifestDir, String clusterId, HashMap<String, String> clusterNames)
+            throws IOException {
+        String clusterName = clusterNames.getOrDefault(clusterId, "Unknown");
+
+        int totalFlights = 0;
+        int totalBefore = 0;
+        int totalDuring = 0;
+        int totalDuringSameDay = 0;
+        int totalAfter = 0;
+        int workorderCount = 0;
+
+        java.util.List<String> singleDayDuringPaths = new java.util.ArrayList<>();
+        StringBuilder workordersJson = new StringBuilder();
+        boolean firstWorkorder = true;
+
+        for (MaintenanceRecord record : ALL_RECORDS) {
+            if (!clusterId.equals(record.getLabelId())) {
+                continue;
+            }
+
+            String labelId = record.getLabelId();
+            String workorderTail = record.getWorkorderNumber() + "_" + record.getTailNumber();
+            File workorderDir = new File(outputDirectory, labelId + "/" + workorderTail);
+
+            java.util.List<String> beforePaths = new java.util.ArrayList<>();
+            java.util.List<String> duringPaths = new java.util.ArrayList<>();
+            java.util.List<String> afterPaths = new java.util.ArrayList<>();
+            collectPhasePaths(labelId, workorderTail, workorderDir, "before", beforePaths);
+            collectPhasePaths(labelId, workorderTail, workorderDir, "during", duringPaths);
+            collectPhasePaths(labelId, workorderTail, workorderDir, "after", afterPaths);
+            int totalFlightsForWorkorder = beforePaths.size() + duringPaths.size() + afterPaths.size();
+
+            if (totalFlightsForWorkorder == 0) {
+                continue; // Skip workorders with no extracted flights
+            }
+
+            workorderCount++;
+            totalFlights += totalFlightsForWorkorder;
+            totalBefore += beforePaths.size();
+            totalDuring += duringPaths.size();
+            totalAfter += afterPaths.size();
+
+            if (record.getOpenDate().equals(record.getCloseDate())) {
+                totalDuringSameDay += duringPaths.size();
+                singleDayDuringPaths.addAll(duringPaths);
+            }
+
+            if (!firstWorkorder) {
+                workordersJson.append(",\n");
+            }
+            firstWorkorder = false;
+
+            workordersJson.append("    {\n");
+            workordersJson.append("      \"workorder\": ").append(record.getWorkorderNumber()).append(",\n");
+            workordersJson.append("      \"label_id\": \"").append(record.getLabelId()).append("\",\n");
+            workordersJson.append("      \"label\": \"").append(escapeJson(record.getLabel())).append("\",\n");
+            workordersJson.append("      \"tail_number\": \"").append(record.getTailNumber()).append("\",\n");
+            workordersJson.append("      \"airframe\": \"").append(record.getAirframe()).append("\",\n");
+            workordersJson.append("      \"open_date\": \"").append(record.getOpenDate().toString()).append("\",\n");
+            workordersJson.append("      \"close_date\": \"").append(record.getCloseDate().toString()).append("\",\n");
+            workordersJson
+                    .append("      \"open_date_time\": \"")
+                    .append(record.getOpenDateTime().toString())
+                    .append("\",\n");
+            workordersJson
+                    .append("      \"close_date_time\": \"")
+                    .append(record.getCloseDateTime().toString())
+                    .append("\",\n");
+            workordersJson
+                    .append("      \"original_action\": \"")
+                    .append(escapeJson(record.getOriginalAction()))
+                    .append("\",\n");
+            workordersJson.append("      \"flights\": {\n");
+            workordersJson.append("        \"before\": ").append(pathListToJson(beforePaths)).append(",\n");
+            workordersJson.append("        \"during\": ").append(pathListToJson(duringPaths)).append(",\n");
+            workordersJson.append("        \"after\": ").append(pathListToJson(afterPaths)).append("\n");
+            workordersJson.append("      },\n");
+            String recordJsonPath = labelId + "/" + workorderTail + "/" + workorderTail + "_record.json";
+            workordersJson.append("      \"record_json\": \"").append(recordJsonPath).append("\"\n");
+            workordersJson.append("    }");
+        }
+
+        if (workorderCount == 0) {
+            return false;
+        }
+
+        StringBuilder json = new StringBuilder();
+        json.append("{\n");
+        json.append("  \"generated_at\": \"").append(LocalDateTime.now().toString()).append("\",\n");
+        json.append("  \"cluster_id\": \"").append(clusterId).append("\",\n");
+        json.append("  \"cluster_name\": \"").append(escapeJson(clusterName)).append("\",\n");
+        json.append("  \"statistics\": {\n");
+        json.append("    \"total_workorders\": ").append(workorderCount).append(",\n");
+        json.append("    \"total_flights\": ").append(totalFlights).append(",\n");
+        json.append("    \"total_before\": ").append(totalBefore).append(",\n");
+        json.append("    \"total_during\": { \"all\": ")
+                .append(totalDuring)
+                .append(", \"same_day\": ")
+                .append(totalDuringSameDay)
+                .append(" },\n");
+        json.append("    \"total_after\": ").append(totalAfter).append("\n");
+        json.append("  },\n");
+        json.append("  \"single_day_during_paths\": ")
+                .append(pathListToJson(singleDayDuringPaths))
+                .append(",\n");
+        json.append("  \"workorders\": [\n");
+        json.append(workordersJson);
+        json.append("\n  ]\n");
+        json.append("}\n");
+
+        File manifestFile = new File(manifestDir, "manifest_" + clusterId + ".json");
+        try (FileWriter writer = new FileWriter(manifestFile)) {
+            writer.write(json.toString());
+        }
+
+        System.out.println("Manifest: " + manifestFile.getName() + " ("
+                + workorderCount + " workorders, " + totalFlights + " flights)");
+        return true;
     }
 
     /**
@@ -1822,7 +1784,7 @@ public final class ExtractMaintenanceFlights {
                 e.printStackTrace();
             }
 
-            // Generate manifest file after all clusters are processed
+            // Generate one manifest_<clusterId>.json per cluster after all workorders are processed
             try {
                 generateManifest(outputDirectory);
             } catch (Exception e) {

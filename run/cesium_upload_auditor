@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
+
+# Local mvn runs use non-docker Config keys; supply safe defaults when ngafid.properties
+# only defines ngafid.docker.email.* (see README "At minimum, local email settings").
+EMAIL_PROPS=(
+  -Dngafid.email.enabled=false
+  -Dngafid.email.info="${REPO_ROOT}/email_info.txt"
+  -Dngafid.admin.emails=admin@example.com
+)
+
+mvn exec:java -pl ngafid-core \
+  "${EMAIL_PROPS[@]}" \
+  -Dexec.mainClass="org.ngafid.core.bin.CesiumUploadAuditor" \
+  -Dexec.args="$*"

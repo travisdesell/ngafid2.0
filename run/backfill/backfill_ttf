@@ -5,6 +5,8 @@
 #
 # Run from repo root: ./run/backfill/backfill_ttf [--full] [--batch N] [--limit N] [--dry-run]
 # --full: pre-populate from itinerary (all flights with approach data), not just cached ones
+#
+# Do NOT redirect to the repo (e.g. > backfill.log). Log goes to /tmp with a 100MB cap.
 
 JAR_PATH="ngafid-core/target/ngafid-core-1.0-SNAPSHOT-jar-with-dependencies.jar"
 
@@ -14,4 +16,27 @@ if [ ! -f "$JAR_PATH" ]; then
     exit 1
 fi
 
-java -cp "$JAR_PATH" org.ngafid.core.bin.BackfillTTFCache "$@"
+LOG_DIR="${NGAFID_BACKFILL_LOG_DIR:-/tmp/ngafid-backfill-logs}"
+LOG_FILE="$LOG_DIR/backfill_ttf.log"
+MAX_BYTES="${NGAFID_BACKFILL_LOG_MAX_BYTES:-104857600}"
+mkdir -p "$LOG_DIR"
+: >"$LOG_FILE"
+echo "Backfill log: $LOG_FILE (cap ${MAX_BYTES} bytes/run)"
+
+written=0
+capped=0
+set -o pipefail
+java -cp "$JAR_PATH" org.ngafid.core.bin.BackfillTTFCache "$@" 2>&1 | while IFS= read -r line || [ -n "$line" ]; do
+    printf '%s\n' "$line"
+    if [ "$capped" -eq 0 ]; then
+        n=$((${#line} + 1))
+        if [ $((written + n)) -le "$MAX_BYTES" ]; then
+            printf '%s\n' "$line" >>"$LOG_FILE"
+            written=$((written + n))
+        else
+            echo "[log capped at ${MAX_BYTES} bytes; further output stdout only]" >>"$LOG_FILE"
+            capped=1
+        fi
+    fi
+done
+exit "${PIPESTATUS[0]}"

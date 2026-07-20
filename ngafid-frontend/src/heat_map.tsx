@@ -16,6 +16,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import SignedInNavbar from "./signed_in_navbar";
 import { TimeHeader } from "./time_header.js";
+import { showErrorModal } from "./error_modal.js";
 
 // OpenLayers imports
 import Map from 'ol/Map';
@@ -207,6 +208,107 @@ const eventNameToDefinitionIds: { [eventName: string]: number[] } = {
 // Fill ANY Event with all unique IDs
 const allDefinitionIds = Array.from(new Set(Object.values(eventNameToDefinitionIds).flat().filter(id => id !== undefined)));
 eventNameToDefinitionIds["ANY Event"] = allDefinitionIds;
+
+function hasOtherFlightId(otherFlightId: string | number | null | undefined): boolean {
+    return otherFlightId != null && otherFlightId !== 0 && otherFlightId !== '0';
+}
+
+function buildFlightIdFilter(flightId: string | number) {
+    return {
+        type: "GROUP",
+        condition: "AND",
+        filters: [
+            {
+                type: "GROUP",
+                condition: "OR",
+                isFlightIdGroup: true,
+                filters: [
+                    {
+                        type: "RULE",
+                        inputs: ["Flight ID", "=", String(flightId)],
+                    },
+                ],
+            },
+        ],
+    };
+}
+
+const prefetchFlightCacheKey = (flightId: string | number) => `ngafid-prefetch-flight-${flightId}`;
+
+function buildFlightsPageUrl(flightId: string | number): string {
+    return `/protected/flights?openFlightId=${encodeURIComponent(String(flightId))}`;
+}
+
+async function openFlightPage(flightId: string | number) {
+    const filter = buildFlightIdFilter(flightId);
+    const params = new URLSearchParams({
+        filterQuery: JSON.stringify(filter),
+        currentPage: "0",
+        pageSize: "10",
+        sortingColumn: "start_time",
+        sortingOrder: "Descending",
+    });
+
+    try {
+        const response = await fetch(`/api/flight?${params.toString()}`, {
+            credentials: "include",
+        });
+
+        if (response.status === 204) {
+            showErrorModal(
+                "No flights found with the given parameters!",
+                `Flight ID ${flightId} was not found in your fleet.`
+            );
+            return;
+        }
+
+        if (!response.ok) {
+            showErrorModal("Error Loading Flight", `Could not load flight ID ${flightId}.`);
+            return;
+        }
+
+        const data = await response.json();
+        sessionStorage.setItem(
+            prefetchFlightCacheKey(flightId),
+            JSON.stringify({
+                flights: data.flights,
+                numberPages: data.numberPages,
+            })
+        );
+
+        window.open(buildFlightsPageUrl(flightId), "_blank", "noopener");
+    } catch (error) {
+        showErrorModal(
+            "Error Loading Flight",
+            error instanceof Error ? error.message : String(error)
+        );
+    }
+}
+
+function FlightIdLink({
+    flightId,
+}: {
+    flightId: string | number | null | undefined;
+}) {
+    if (flightId == null || flightId === '...' || flightId === 0 || flightId === '0')
+        return <>...</>;
+
+    return (
+        <a
+            href={buildFlightsPageUrl(flightId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary"
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void openFlightPage(flightId);
+            }}
+        >
+            {flightId}
+        </a>
+    );
+}
 
 // Map styling constants
 const ICON_IMAGE_RED = new Icon({
@@ -1970,6 +2072,34 @@ const HeatMapPage: React.FC = () => {
         return event.event_definition_id === -1 || event.event_definition_id === -2 || event.event_definition_id === -3;
     };
 
+    const fallbackPointsFromEvent = (event: any) => {
+        const minLat = event.min_latitude;
+        const maxLat = event.max_latitude;
+        const minLon = event.min_longitude;
+        const maxLon = event.max_longitude;
+        if (minLat == null || maxLat == null || minLon == null || maxLon == null)
+            return [];
+
+        return [{
+            latitude: (Number(minLat) + Number(maxLat)) / 2,
+            longitude: (Number(minLon) + Number(maxLon)) / 2,
+            timestamp: event.start_time,
+            altitude_agl: 0,
+        }];
+    };
+
+    const pointsForEventFlight = (
+        pointsByEventAndFlight: Record<number, Record<number, any[]>>,
+        event: any,
+        flightId: number | null | undefined
+    ) => {
+        if (flightId == null || flightId === 0)
+            return [];
+
+        const points = pointsByEventAndFlight[event.id]?.[flightId] || [];
+        return points.length > 0 ? points : fallbackPointsFromEvent(event);
+    };
+
     const BATCH_SIZE = 1000;
 
     // Main orchestration: fetch events, then fetch points via batch endpoint (1000 events per batch)
@@ -2019,6 +2149,7 @@ const HeatMapPage: React.FC = () => {
                 const results = resp?.results || [];
                 allResults.push(...results);
             }
+            console.log(`[DEBUG] Heatmap points batch results: count=${allResults.length}`);
 
             // Build map: eventId -> flightId -> points
             const pointsByEventAndFlight: Record<number, Record<number, any[]>> = {};
@@ -2041,8 +2172,8 @@ const HeatMapPage: React.FC = () => {
                     if (processedPairs.has(pairKey)) continue;
                     processedPairs.add(pairKey);
 
-                    const mainFlightPoints = pointsByEventAndFlight[eventId]?.[mainFlightId] || [];
-                    const otherFlightPoints = pointsByEventAndFlight[eventId]?.[otherFlightId] || [];
+                    const mainFlightPoints = pointsForEventFlight(pointsByEventAndFlight, event, mainFlightId);
+                    const otherFlightPoints = pointsForEventFlight(pointsByEventAndFlight, event, otherFlightId);
                     allProximityEventPoints.push({
                         eventId,
                         eventDefinitionId: event.event_definition_id,
@@ -2055,7 +2186,7 @@ const HeatMapPage: React.FC = () => {
                         otherAirframe: event.otherAirframe
                     });
                 } else {
-                    const mainFlightPoints = pointsByEventAndFlight[eventId]?.[mainFlightId] || [];
+                    const mainFlightPoints = pointsForEventFlight(pointsByEventAndFlight, event, mainFlightId);
                     allSingleEventPoints.push({
                         eventId,
                         eventDefinitionId: event.event_definition_id,
@@ -2809,12 +2940,12 @@ const HeatMapPage: React.FC = () => {
                                                                     <div><strong>Longitude: </strong> {popup.data.longitude !== null && popup.data.longitude !== undefined ? Number(popup.data.longitude).toFixed(5) : '...'}°</div>
                                                                     <div><strong>Altitude (AGL): </strong> {popup.data.altitude !== null && popup.data.altitude !== undefined ? `${popup.data.altitude.toFixed(0)} ft` : '...'}</div>
                                                                     <hr />
-                                                                    <div><strong>Flight ID: </strong>{popup.data.flightId ?? '...'}</div>
+                                                                    <div><strong>Flight ID: </strong><FlightIdLink flightId={popup.data.flightId} /></div>
                                                                     <div><strong>Airframe: </strong>{popup.data.flightAirframe ?? '...'}</div>
-                                                                    {popup.data.otherFlightId && popup.data.otherFlightId !== null && popup.data.otherFlightId !== 0 && popup.data.otherFlightId !== '0' && (
+                                                                    {hasOtherFlightId(popup.data.otherFlightId) && (
                                                                         <>
                                                                             <hr />
-                                                                            <div><strong>Other Flight ID: </strong>{popup.data.otherFlightId ?? '...'}</div>
+                                                                            <div><strong>Other Flight ID: </strong><FlightIdLink flightId={popup.data.otherFlightId} /></div>
                                                                             <div><strong>Other Airframe: </strong>{popup.data.otherFlightAirframe ?? '...'}</div>
                                                                         </>
                                                                     )}

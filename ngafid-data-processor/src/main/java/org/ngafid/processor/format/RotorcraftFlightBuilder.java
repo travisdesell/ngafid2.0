@@ -17,6 +17,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         {"GPS-PP_LAT", "GPS-PP_LNG"},
         {"GPS.PP_Latitude", "GPS.PP_Longitude"},
         {"GeneralPurpose-PP_LAT", "GeneralPurpose-PP_LNG"},
+        {"FDR-PP_LAT", "FDR-PP_LNG"},
         {"Latitude", "Longitude"},
         {"Latitude (1)", "Longitude (1)"},
     };
@@ -27,7 +28,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             Map.entry(
                     Parameters.IAS,
                     Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS",
-                            "IAS1", "IAS2", "GP.CAS", "AP.IAS")),
+                            "IAS1", "IAS2", "GP.CAS", "AP.IAS", "FDR-CAS")),
             Map.entry(
                     Parameters.GND_SPD,
                     Set.of(
@@ -39,7 +40,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "PNAV GndSpd",
                             "PNAV_Tru_A/S",
                             "PNAV Tru A/S",
-                            "GPS.Ground_Speed")),
+                            "GPS.Ground_Speed",
+                            "FDR-GS")),
             Map.entry(
                     Parameters.VSPD,
                     Set.of(
@@ -101,7 +103,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Eng (1) Torque",
                             "Eng 1 Torque",
                             "1_Torque",
-                            "Torque 1(%)")),
+                            "Torque 1(%)",
+                            "FDR-TRQ_1")),
             Map.entry(
                     Parameters.ENGINE_2_TORQUE,
                     Set.of(
@@ -119,7 +122,9 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Altitude Radio (A)",
                             "Altitude Radio (B)",
                             "GeneralPurpose-RA",
-                            "RadAlt_Inht")),
+                            "RadAlt_Inht",
+                            "FDR-RA",
+                            "GP.RA")),
             Map.entry(
                     Parameters.ALT_MSL,
                     Set.of(
@@ -138,7 +143,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                     Set.of("Pressure Altitude", "Press_Alt1", "Press Alt1", "Press_Alt2", "Press Alt2")),
             Map.entry(Parameters.FUEL_QTY_LEFT, Set.of("Fuel_Qty_1")),
             Map.entry(Parameters.FUEL_QTY_RIGHT, Set.of("Fuel_Qty_2")),
-            Map.entry(Parameters.E1_RPM, Set.of("Eng1_N1", "Eng1_N2", "Nr1")),
+            Map.entry(Parameters.E1_RPM, Set.of("Eng1_N1", "Eng1_N2", "Nr1", "Engine-NR")),
             Map.entry(
                     Parameters.LATITUDE,
                     Set.of(
@@ -146,7 +151,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Latitude (1)",
                             "GPS-PP_LAT",
                             "GPS.PP_Latitude",
-                            "GeneralPurpose-PP_LAT")),
+                            "GeneralPurpose-PP_LAT",
+                            "FDR-PP_LAT")),
             Map.entry(
                     Parameters.LONGITUDE,
                     Set.of(
@@ -154,7 +160,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Longitude (1)",
                             "GPS-PP_LNG",
                             "GPS.PP_Longitude",
-                            "GeneralPurpose-PP_LNG")),
+                            "GeneralPurpose-PP_LNG",
+                            "FDR-PP_LNG")),
             Map.entry(Parameters.OAT, Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
             Map.entry(
                     Parameters.LAT_AC,
@@ -204,6 +211,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     static void promoteForPersistence(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (stringTimeSeries != null) {
+            RotorcraftCSVFileProcessor.addCanonicalLocalDateTimeFromUtc(stringTimeSeries);
             RotorcraftCSVFileProcessor.addCanonicalPositionFromPnavDms(doubleTimeSeries, stringTimeSeries);
         }
         promotePositionPair(doubleTimeSeries);

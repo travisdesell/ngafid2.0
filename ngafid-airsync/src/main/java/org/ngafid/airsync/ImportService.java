@@ -25,6 +25,11 @@ public final class ImportService {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
+    static boolean isUnauthorized(Exception e) {
+        String message = e.getMessage();
+        return message != null && message.contains("HTTP response code: 401");
+    }
+
     /**
      * Gracefully handles an exception from the AirSync API
      *
@@ -37,14 +42,36 @@ public final class ImportService {
 
         LOG.severe("Caught " + message + " when making AirSync request!");
 
-        if (message.contains("HTTP response code: 40")) {
+        if (isUnauthorized(e) || (message != null && message.contains("HTTP response code: 40"))) {
             LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, "
-                    + "or this daemon is running somewhere else!).");
-        } else if (message.contains("HTTP response code: 502")) {
+                    + "or this daemon is running somewhere else!). Refreshing bearer token.");
+            AirSyncAuth.Companion.refreshInstance();
+        } else if (message != null && message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);
         } else {
             crashGracefully(e);
+        }
+    }
+
+    /**
+     * Runs a fleet update, refreshing the bearer token and retrying once on HTTP 401.
+     */
+    static void updateFleetWithAuthRetry(AirSyncFleet fleet, Connection connection)
+            throws IOException, SQLException {
+        try {
+            String status = fleet.update(connection);
+            LOG.info("Update status: " + status);
+        } catch (IOException e) {
+            if (!isUnauthorized(e)) {
+                throw e;
+            }
+
+            LOG.severe("Fleet " + fleet.getName()
+                    + " got HTTP 401; refreshing bearer token and retrying once");
+            fleet.refreshAuth();
+            String status = fleet.update(connection);
+            LOG.info("Update status after auth refresh: " + status);
         }
     }
 
@@ -144,19 +171,34 @@ public final class ImportService {
                 }
 
                 for (AirSyncFleet fleet : airSyncFleets) {
-                    String logMessage = "Fleet " + fleet.getName() + ": %s";
-                    LOG.info("Override = " + fleet.getOverride(connection));
+                    try {
+                        boolean forceSync = fleet.getOverride(connection);
+                        LOG.info("Fleet " + fleet.getName() + ": override = " + forceSync);
 
-                    if (fleet.getOverride(connection) || fleet.isQueryOutdated(connection)) {
-                        LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
+                        if (!forceSync && !fleet.isQueryOutdated(connection)) {
+                            continue;
+                        }
+
+                        LOG.info("Fleet " + fleet.getName()
+                                + ": past timeout! Checking with the AirSync servers now.");
                         fleet.setOverride(connection, false);
 
-                        String status = fleet.update(connection);
-
-                        LOG.info("Update status: " + status);
+                        try {
+                            updateFleetWithAuthRetry(fleet, connection);
+                        } catch (IOException | SQLException e) {
+                            // Keep a forced sync request if this attempt failed.
+                            if (forceSync) {
+                                fleet.setOverride(connection, true);
+                            }
+                            throw e;
+                        }
+                    } catch (IOException | SQLException e) {
+                        LOG.severe("Fleet " + fleet.getName()
+                                + " update failed; continuing with remaining fleets: " + e.getMessage());
+                        e.printStackTrace();
                     }
                 }
-            } catch (SQLException | IOException e) {
+            } catch (SQLException e) {
                 LOG.severe("Encountered the following error: ");
                 e.printStackTrace();
             }

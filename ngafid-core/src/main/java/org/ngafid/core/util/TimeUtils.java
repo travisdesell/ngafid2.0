@@ -200,6 +200,7 @@ public final class TimeUtils {
 
     // Date formats WITHOUT TIMEZONE
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
             DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"),
             DateTimeFormatter.ofPattern("yyyy/M/d H:m:s"),
             DateTimeFormatter.ofPattern("M/d/yyyy H:m:s"),
