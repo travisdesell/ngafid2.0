@@ -221,6 +221,17 @@ public class StatisticsJavalinRoutes {
             return getUploadCounts().warningUploadCount();
         }
 
+        public UploadStatistics.UploadOutcomeCounts uploadOutcomes() throws SQLException {
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
+            return UploadStatistics.getUploadOutcomeCountsDated(
+                    connection, aggregate() ? null : fleetId, startDate, endDate);
+        }
+
         public Integer flightsWithWarning() throws SQLException {
             return getUploadIssueCounts().warningFlightCount();
         }

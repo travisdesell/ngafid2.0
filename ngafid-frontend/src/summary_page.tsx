@@ -41,13 +41,17 @@ const targetValues = {
     monthEvents: "/api/event/count/past-month",
     numberFleets: "/api/fleet/count",
     numberUsers: "/api/user/count",
-    uploads: "/api/upload/count",
-    uploadsOK: "/api/upload/count/success",
-    uploadsNotImported: "/api/upload/count/pending",
-    uploadsWithError: "/api/upload/count/error",
-    importedFlights: "/api/flight/count/imported",
-    flightsWithWarning: "/api/flight/count/with-warning",
-    flightsWithError: "/api/flight/count/with-error",
+};
+
+type UploadOutcomeCounts = {
+    uploadCount: number;
+    okUploadCount: number;
+    warningUploadCount: number;
+    failedUploadCount: number;
+    errorUploadCount: number;
+    successfulFlightCount: number;
+    warningFlightCount: number;
+    errorFlightCount: number;
 };
 
 const LOADING_STRING = "...";
@@ -392,7 +396,16 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         this.state = {
             airframe: airframes[0],
             datesOrAirframeChanged: false,
-            statistics: Object.keys(targetValues).reduce((o, key) => ({...o, [key]: ""}), {} as {
+            statistics: {
+                ...Object.keys(targetValues).reduce((o, key) => ({...o, [key]: ""}), {}),
+                uploads: "",
+                uploadsOK: "",
+                uploadsNotImported: "",
+                uploadsWithError: "",
+                importedFlights: "",
+                flightsWithWarning: "",
+                flightsWithError: ""
+            } as unknown as {
                 flightTime: number;
                 yearFlightTime: number;
                 monthFlightTime: number;
@@ -412,7 +425,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 importedFlights: number;
                 flightsWithWarning: number;
                 flightsWithError: number;
-            }),
+            },
             flightHoursByAirframe: [],
             aggregateFlightHoursByAirframe: [],
             eventCounts: {},
@@ -420,7 +433,6 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         };
 
         this.dateChange();
-        this.fetchStatistics();
 
     }
 
@@ -767,6 +779,37 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
             );
 
         }
+
+        fetchStatistic<UploadOutcomeCounts>(
+            "uploadOutcomes",
+            "/api/upload/outcomes",
+            this.props.aggregate,
+            this.state.airframe,
+            startYear,
+            startMonth,
+            endYear,
+            endMonth,
+            response => {
+                const uploadCount = Number(response.uploadCount);
+                const okUploadCount = Number(response.okUploadCount);
+                const warningUploadCount = Number(response.warningUploadCount);
+                const failedUploadCount = Number(response.failedUploadCount);
+
+                this.setState(prev => ({
+                    statistics: {
+                        ...prev.statistics,
+                        uploads: uploadCount,
+                        uploadsOK: okUploadCount,
+                        uploadsNotImported:
+                            uploadCount - okUploadCount - warningUploadCount - failedUploadCount,
+                        uploadsWithError: Number(response.errorUploadCount),
+                        importedFlights: Number(response.successfulFlightCount),
+                        flightsWithWarning: Number(response.warningFlightCount),
+                        flightsWithError: Number(response.errorFlightCount)
+                    }
+                }));
+            }
+        );
 
     }
 

@@ -183,6 +183,29 @@ class UploadErrors extends React.Component {
     }
 }
 
+/**
+ * Resolve statuses from persisted flight counters so imports created before the
+ * processor status fix do not continue to appear as successfully processed.
+ */
+function resolveImportDisplayStatus(importInfo) {
+    const status = importInfo.status;
+    if (status !== "PROCESSED_OK") {
+        return status;
+    }
+
+    const errorFlights = Number(importInfo.errorFlights ?? 0);
+    const warningFlights = Number(importInfo.warningFlights ?? 0);
+    const validFlights = Number(importInfo.validFlights ?? 0);
+
+    if (errorFlights > 0 && validFlights + warningFlights === 0) {
+        return "FAILED_UNKNOWN";
+    }
+    if (errorFlights > 0 || warningFlights > 0) {
+        return "PROCESSED_WARNING";
+    }
+    return status;
+}
+
 class Import extends React.Component {
     constructor(props) {
         super(props);
@@ -319,7 +342,7 @@ class Import extends React.Component {
             expandDivClasses = "m-0";
         }
 
-        const status = importInfo.status;
+        const status = resolveImportDisplayStatus(importInfo);
 
         /*
 
