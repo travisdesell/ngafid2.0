@@ -113,7 +113,6 @@ public final class ApiExternalUploadRoutes {
         }
 
         // Reject if the user lacks upload access on the resolved fleet.
-       
         try (Connection connection = Database.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
                         "SELECT type FROM fleet_access WHERE user_id = ? AND fleet_id = ?")) {
