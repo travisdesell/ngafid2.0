@@ -217,7 +217,7 @@ class EventConsumer protected constructor(
                 EventScanner(def)
             } else {
                 when (def.id) {
-                    -8 -> ObstacleEventScanner(def)
+                    -8 -> ObstacleEventScanner(flight, def)
                     -6, -5, -4 -> LowEndingFuelScanner(flight.airframe, def)
                     -3, -2 -> SpinEventScanner(def)
                     -1 -> ProximityEventScanner(flight, def)

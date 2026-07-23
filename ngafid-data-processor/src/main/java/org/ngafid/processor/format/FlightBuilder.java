@@ -105,8 +105,6 @@ public class FlightBuilder {
         // Add all of our processing steps here... The order doesn't matter; the DependencyGraph will resolve the order
         // in the event that there are dependencies. Note that steps that output any columns that are already in
         // doubleTimeSeries or stringTimeSeries are ignored.
-        System.out.println("DEBUG PRINTING: Gathering Steps has been called");
-        LOG.info("DEBUG LOGGING: Gathering Steps has been called");
         Set<String> existingDoubleColumns = getDoubleTimeSeriesKeySet();
         Set<String> existingStringColumns = getStringTimeSeriesKeySet();
 
