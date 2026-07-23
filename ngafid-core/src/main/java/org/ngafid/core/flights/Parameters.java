@@ -128,10 +128,6 @@ public interface Parameters {
     String NEAREST_AIRPORT = "NearestAirport";
     String AIRPORT_DISTANCE = "AirportDistance";
 
-    String NEAREST_OBSTACLE = "NearestObstacle";
-    String OBSTACLE_DISTANCE = "ObstacleDistance";
-    String OBSTACLE_RISK = "ObstacleRisk";
-
     /**
      * Units
      */
@@ -148,9 +144,7 @@ public interface Parameters {
         INDEX("index"),
         RATIO("ratio"),
         SECONDS("seconds"),
-        UTC_DATE_TIME("ISO 8601 Extended Offset Date Time"),
-        OBSTACLE_ID("Obstacle ID"),
-        OBSTACLE_RISK_LEVEL("Obstacle Risk Level");
+        UTC_DATE_TIME("ISO 8601 Extended Offset Date Time");
 
         private final String value;
 

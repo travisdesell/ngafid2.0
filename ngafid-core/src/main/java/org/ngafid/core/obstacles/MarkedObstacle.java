@@ -45,18 +45,24 @@ public class MarkedObstacle {
         }
     }
 
-    private static boolean IsDoubleInRangeInclusive(double num, double bot, double top) {
-        if ((num >= bot) && (num <= top)) {return true;}
-        return false;
-    }
-
     public static ObstacleRisk calculateRiskFromPoint(double horizontalDistance, double verticalDistance) {
-        if ((horizontalDistance <= 500) || (verticalDistance <= 75)) {return ObstacleRisk.HIGH;}
-        else if (((horizontalDistance <= 1000) && (IsDoubleInRangeInclusive(verticalDistance, 75, 200)))
-            || ((IsDoubleInRangeInclusive(horizontalDistance, 500, 1000)) && (verticalDistance <= 200))) {return ObstacleRisk.MEDIUM;}
-        else if (((horizontalDistance >= 500) && (horizontalDistance <= 1000))
-            && ((verticalDistance >= 75) && (verticalDistance <= 200))) {return ObstacleRisk.LOW;}
-        else {return ObstacleRisk.NONE;}
+        if ((horizontalDistance <= 500) || (verticalDistance <= 75)) {
+            return ObstacleRisk.HIGH;
+        }
+
+        else if (((500 <= horizontalDistance) && (horizontalDistance <= 1000))
+            && ((75 <= verticalDistance) && (verticalDistance <= 200))) {
+            return ObstacleRisk.LOW;
+        }
+
+        else if (((horizontalDistance <= 1000) && ((75 <= verticalDistance) && (verticalDistance <= 200)))
+            || ((500 <= horizontalDistance) && (horizontalDistance <= 1000)) && (verticalDistance <= 200)) {
+            return ObstacleRisk.MEDIUM;
+        }
+        
+        else {
+            return ObstacleRisk.NONE;
+        }
     }
 
 

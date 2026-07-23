@@ -22,6 +22,7 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.obstacles.MarkedObstacle;
 import org.ngafid.core.obstacles.Obstacles;
+import org.ngafid.core.obstacles.MarkedObstacle.ObstacleRisk;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.core.util.TimeUtils.UnrecognizedDateTimeFormatException;
 
@@ -31,6 +32,8 @@ public class ObstacleEventScanner extends AbstractEventScanner {
 
     private static Logger LOG = Logger.getLogger(ObstacleEventScanner.class.getName());
     private static final double MAX_DETECTION_DISTANCE = 1200;
+    private static final double FIXED_WING_DETECTION_DISTANCE = 500;
+    private static final double ROTOR_DETECTION_DISTANCE = 200;
     private static final double OBSTACLE_SCAN_BUFFER_SECONDS = 60 * 5; 
     private Flight flight;
 
@@ -62,16 +65,53 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         HashMap<Integer, String> tempObstacleLastUpdateMap = new HashMap<>(); 
         HashMap<Integer, MarkedObstacle> tempObstacleDistanceMap = new HashMap<>();
 
+        int obstacleCount = 0;
+
+        double detectionRange;
+        switch (flight.getAirframeType()) {
+            case "Fixed Wing":
+                detectionRange = FIXED_WING_DETECTION_DISTANCE;
+                LOG.info("Detecting Obstacles for Fixed Wing");
+                break;
+            case "Rotorcraft":
+                detectionRange = ROTOR_DETECTION_DISTANCE;
+                LOG.info("Detecting Obstacles for Rotorcraft");
+                break;
+            default:
+                detectionRange = MAX_DETECTION_DISTANCE;
+                LOG.info("Undefined type for obstacle detection range, using default range of 1200 ft");
+                break;
+        }
+
         // Loop through all of the flight's entries
         for (int i = 0; i < lat.size(); i++) {
-            ArrayList<MarkedObstacle> nearbyObstacles = Obstacles.getNearbyObstaclesWithin(lat.get(i), lon.get(i), altAGL.get(i), 500);
-            int count = 0;
+            ArrayList<MarkedObstacle> nearbyObstacles = Obstacles.getNearbyObstaclesWithinRange(lat.get(i), lon.get(i), altAGL.get(i), detectionRange);
 
             // For each entry, check for all of the nearby objects
             for (int n = 0; n < nearbyObstacles.size(); n++) {
 
                 MarkedObstacle marked = nearbyObstacles.get(n);
                 int obstacleId = marked.getObstacleID();
+
+                // Check for if it is the right obstacle risk
+                switch (definition.getId()) {
+                    // High risk
+                    case -10:
+                        if (marked.getObstacleRisk() != ObstacleRisk.HIGH) {continue;}
+                        break;
+                    // Low risk
+                    case -9:
+                        if (marked.getObstacleRisk() != ObstacleRisk.LOW) {continue;}
+                        break;
+                    // Medium risk
+                    case -8:
+                        if (marked.getObstacleRisk() != ObstacleRisk.MEDIUM) {continue;}
+                        break;
+                    
+                    default:
+                        break;
+                }
+                
 
                 // If they are not tracked, track them
                 if (!tempObstacleIDMap.containsKey(obstacleId)) {
@@ -86,7 +126,6 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                     event.updateEnd(utcSeries.get(i), i);
                     tempObstacleIDMap.put(obstacleId, event);
                     tempObstacleLastUpdateMap.put(obstacleId, utcSeries.get(i));
-                    count++;
 
                     // If their current position is smaller than the inital position, update it as well
                     if (marked.getTotalDistance() < event.getSeverity()) {
@@ -107,10 +146,9 @@ public class ObstacleEventScanner extends AbstractEventScanner {
 
             // Loop through all of the tracked obstacle events & check if any of them should be inserted
             for (int ObstacleID : ObstacleIDs) {
+                
                 // If their last updated time is greater than the obstacle scan buffer, the event is no longer tracked
                 double diff = Duration.between(Instant.parse(tempObstacleLastUpdateMap.get(ObstacleID)), Instant.parse(utcSeries.get(i))).toMillis() / 1000.0;
-
-
                 if (diff > OBSTACLE_SCAN_BUFFER_SECONDS) {
                     MarkedObstacle marked = tempObstacleDistanceMap.remove(ObstacleID);
                     tempObstacleLastUpdateMap.remove(ObstacleID);
@@ -118,10 +156,10 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                     event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, marked.getHorizontalDistance()));
                     event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
                     allEvents.add(event);
+                    obstacleCount++;
                 }
                 
             }
-            LOG.info(">>> " + i + " | Obstacle Found: " + nearbyObstacles.size() + " | Repeated Obstacles: " + count);
             
             // Insert all of the untracked obstacles into database
             try {
@@ -147,6 +185,8 @@ public class ObstacleEventScanner extends AbstractEventScanner {
             event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
             allEvents.add(event);
         }
+
+        LOG.info("Obstacle Events Inserted: " + (obstacleCount + allEvents.size()));
         return allEvents;
     }
 

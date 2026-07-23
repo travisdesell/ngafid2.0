@@ -78,7 +78,15 @@ public final class Obstacles {
         }
     }
 
-    public static ArrayList<MarkedObstacle> getNearbyObstaclesWithin(double latitude, double longitude, double altitude, double maxDistanceFt) {
+    /**
+     * Checks for nearby obstacle that is within a given distance
+     * @param latitude
+     * @param longitude
+     * @param altitude
+     * @param maxDistanceFt
+     * @return
+     */
+    public static ArrayList<MarkedObstacle> getNearbyObstaclesWithinRange(double latitude, double longitude, double altitude, double maxDistanceFt) {
         String[] geoHashes = GeoHash.getNearbyGeoHashes(latitude, longitude);
 
         ArrayList<MarkedObstacle> nearbyObstacles = new ArrayList<>();
@@ -101,7 +109,6 @@ public final class Obstacles {
                 }
             }
         }
-
         return nearbyObstacles;
     }
     
