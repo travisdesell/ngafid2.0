@@ -113,10 +113,24 @@ public final class ApiExternalUploadRoutes {
         }
 
         // Reject if the user lacks upload access on the resolved fleet.
-        if (!user.hasUploadAccess(fleetId)) {
-            ctx.status(403)
-                    .json(new ApiTokenAuth.ApiError(
-                            "No upload access to fleet '" + fleetNameParam + "'. " + "Need MANAGER or UPLOAD."));
+        try (Connection connection = Database.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT type FROM fleet_access WHERE user_id = ? AND fleet_id = ?")) {
+            ps.setInt(1, uploaderId);
+            ps.setInt(2, fleetId);
+            try (ResultSet rs = ps.executeQuery()) {
+                String accessType = rs.next() ? rs.getString("type") : null;
+                boolean canUpload = "MANAGER".equals(accessType) || "UPLOAD".equals(accessType);
+                if (!canUpload) {
+                    ctx.status(403)
+                            .json(new ApiTokenAuth.ApiError(
+                                    "No upload access to fleet '" + fleetNameParam + "'. Need MANAGER or UPLOAD."));
+                    return;
+                }
+            }
+        } catch (SQLException e) {
+            LOG.log(Level.SEVERE, "fleet_access lookup failed", e);
+            ctx.status(500).json(new ApiTokenAuth.ApiError("Internal error"));
             return;
         }
 
@@ -360,7 +374,6 @@ public final class ApiExternalUploadRoutes {
             return dflt;
         }
     }
-
 
     /** Response body for a successful upload (201 Created) or a retryable existing upload (200 OK). */
     public static final class UploadResponse {
