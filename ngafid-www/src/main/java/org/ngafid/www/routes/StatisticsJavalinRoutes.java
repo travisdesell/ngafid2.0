@@ -214,19 +214,44 @@ public class StatisticsJavalinRoutes {
         }
 
         public Integer uploadsWithError() throws SQLException {
-            return getUploadCounts().errorUploadCount();
+            return getUploadIssueCounts().errorUploadCount();
         }
 
         public Integer uploadsWithWarning() throws SQLException {
             return getUploadCounts().warningUploadCount();
         }
 
+        public UploadStatistics.UploadOutcomeCounts uploadOutcomes() throws SQLException {
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
+            return UploadStatistics.getUploadOutcomeCountsDated(
+                    connection, aggregate() ? null : fleetId, startDate, endDate);
+        }
+
         public Integer flightsWithWarning() throws SQLException {
-            return getUploadCounts().warningUploadCount();
+            return getUploadIssueCounts().warningFlightCount();
+        }
+
+        public Integer flightsImported() throws SQLException {
+            return getUploadIssueCounts().successfulFlightCount();
         }
 
         public Integer flightsWithError() throws SQLException {
-            return getUploadCounts().errorUploadCount();
+            return getUploadIssueCounts().errorFlightCount();
+        }
+
+        private UploadStatistics.UploadIssueCounts getUploadIssueCounts() throws SQLException {
+            final String startDateIn = context.queryParam("startDate");
+            final String endDateIn = context.queryParam("endDate");
+
+            final LocalDate startDate = startDateIn != null ? LocalDate.parse(startDateIn) : LocalDate.MIN;
+            final LocalDate endDate = endDateIn != null ? LocalDate.parse(endDateIn) : LocalDate.MAX;
+
+            return UploadStatistics.getUploadIssueCountsDated(connection, fleetId, startDate, endDate);
         }
     }
 

@@ -155,7 +155,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
      */
     public static boolean isRotorcraftUpload(Connection connection, String filename, BufferedReader reader)
             throws SQLException, IOException, FatalFlightFileException {
-        Optional<ParsedFilename> parsed = parseFilename(filename);
+        Optional<ParsedFilename> registeredIdentity = resolveRegisteredFilenameIdentity(connection, filename);
         if (reader != null) {
             reader.mark(512 * 1024);
             try {
@@ -167,25 +167,28 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 if (isUscgFormat(firstLine)) {
                     throw fatalUscgRegistryMiss(peekUscgAircraftSerialAfterReset(reader));
                 }
-                if (parsed.isPresent()) {
-                    String tail = parsed.get().tail();
-                    if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail)
-                            .isPresent()) {
-                        return true;
-                    }
+                if (registeredIdentity.isPresent()) {
+                    return true;
+                }
+
+                Optional<String> recorderAirframeName = peekGarminAirframeName(firstLine);
+                if (recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode).isPresent()) {
+                    throw fatalTailRegistryMiss(
+                            preferredFilenameTail(filename),
+                            filename,
+                            recorderAirframeName,
+                            describeRotorcraftCsvLayout(firstLine));
                 }
             } finally {
                 reader.reset();
             }
         }
-        if (parsed.isPresent()
-                && RotorcraftTailAirframeRegistry.findRotorcraft(
-                                connection, parsed.get().tail())
-                        .isPresent()) {
+        if (registeredIdentity.isPresent()) {
             return true;
         }
-        if (parsed.isPresent()) {
-            LOG.info(() -> "Filename tail prefix '" + parsed.get().tail() + "' from '" + filename
+        String filenameTail = preferredFilenameTail(filename);
+        if (!filenameTail.isEmpty()) {
+            LOG.info(() -> "Filename tail prefix '" + filenameTail + "' from '" + filename
                     + "' is not in tail_airframe_registry and the file start does not match a known rotorcraft CSV"
                     + " layout; standard CSV processing will be used.");
         }
@@ -547,13 +550,18 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             if (isUscgFormat(firstLine)) {
                 throw fatalUscgRegistryMiss(peekUscgAircraftSerialAfterReset(reader));
             }
-            Optional<ParsedFilename> fromFilename = parseFilename(filename);
+            Optional<ParsedFilename> fromFilename = resolveRegisteredFilenameIdentity(connection, filename);
             if (fromFilename.isPresent()) {
-                String tail = fromFilename.get().tail();
-                if (RotorcraftTailAirframeRegistry.findRotorcraft(connection, tail)
-                        .isPresent()) {
-                    return fromFilename.get();
-                }
+                return fromFilename.get();
+            }
+
+            Optional<String> recorderAirframeName = peekGarminAirframeName(firstLine);
+            if (recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode).isPresent()) {
+                throw fatalTailRegistryMiss(
+                        preferredFilenameTail(filename),
+                        filename,
+                        recorderAirframeName,
+                        describeRotorcraftCsvLayout(firstLine));
             }
         } finally {
             stream.reset();
@@ -725,6 +733,61 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                     : base.substring(firstUnderscore + 1, secondUnderscore);
         }
         return Optional.of(new ParsedFilename(tail, systemId));
+    }
+
+    /**
+     * Resolves a registry identity from either the file prefix or its immediate parent directory. Garmin exports
+     * commonly use generic {@code log_*} basenames inside a tail-number directory.
+     */
+    static Optional<ParsedFilename> resolveRegisteredFilenameIdentity(Connection connection, String path)
+            throws SQLException {
+        Optional<ParsedFilename> parsed = parseFilename(path);
+        String systemId = parsed.map(ParsedFilename::systemId).orElse("");
+
+        for (String candidate : filenameTailCandidates(path)) {
+            Optional<RotorcraftTailAirframeRegistry.Entry> entry =
+                    RotorcraftTailAirframeRegistry.findRotorcraft(connection, candidate);
+            if (entry.isPresent()) {
+                return Optional.of(new ParsedFilename(entry.get().tail(), systemId));
+            }
+        }
+        return Optional.empty();
+    }
+
+    static List<String> filenameTailCandidates(String path) {
+        List<String> candidates = new ArrayList<>();
+        parseFilename(path).map(ParsedFilename::tail).ifPresent(tail -> addTailCandidate(candidates, tail));
+
+        String parent = immediateParentDirectory(path);
+        addTailCandidate(candidates, parent);
+        if (parent.length() > 1 && (parent.charAt(0) == 'N' || parent.charAt(0) == 'n')) {
+            addTailCandidate(candidates, parent.substring(1));
+        }
+        return candidates;
+    }
+
+    private static void addTailCandidate(List<String> candidates, String tail) {
+        if (tail != null && !tail.isBlank() && !candidates.contains(tail)) {
+            candidates.add(tail);
+        }
+    }
+
+    private static String immediateParentDirectory(String path) {
+        String normalized = path == null ? "" : path.replace('\\', '/');
+        int lastSlash = normalized.lastIndexOf('/');
+        if (lastSlash <= 0) {
+            return "";
+        }
+        int previousSlash = normalized.lastIndexOf('/', lastSlash - 1);
+        return normalized.substring(previousSlash + 1, lastSlash);
+    }
+
+    private static String preferredFilenameTail(String path) {
+        String parent = immediateParentDirectory(path);
+        if (!parent.isEmpty()) {
+            return parent;
+        }
+        return parseFilename(path).map(ParsedFilename::tail).orElse("");
     }
 
     /**
