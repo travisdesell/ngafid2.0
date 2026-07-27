@@ -322,6 +322,18 @@ dcl up -d
 - `docker-compose.local-template.yml` maps local host paths from `data-local` instead of host `/mnt`.
 - Do not modify the `data` folder/symlink for local setup. On the VM, `data` is used as a symlink; local Docker uses `data-local` and does not require changes to `data`.
 
+## 8.2. Docker disk cleanup
+
+On the UND VM, Docker data lives under `/opt/docker-root` on the root filesystem (`/`). Unused build cache and dangling images can fill `/` and break uploads (errors may mention `/tmp` even when `/tmp` still has space).
+
+Run periodically (or after large rebuilds):
+
+```shell
+~/ngafid2.0 $ ./run/docker_prune
+```
+
+This clears Docker build cache and dangling images only (not in-use images or volumes). Output is appended to `~/docker-prune.log`. Check free space with `df -h /` and `docker system df`.
+
 ## 9. Workflow
 
 Note that these things should work regardless of whether you are launching services directly or with docker so long as your
