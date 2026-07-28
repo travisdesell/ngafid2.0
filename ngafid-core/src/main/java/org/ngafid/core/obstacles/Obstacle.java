@@ -53,6 +53,7 @@ public class Obstacle {
     public int getAMSL() {return this.amsl;}
     public int getQuantity() {return this.quantity;}
     public String getGeoHash() {return this.geoHash;}
+    public Lighting getLighting() {return this.lighting;}
 
 
     public String toString() {

@@ -4,16 +4,24 @@ package org.ngafid.core.obstacles;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.management.RuntimeErrorException;
+
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.ngafid.core.Config;
+import org.ngafid.core.Database;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.GeoHash;
+import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.obstacles.Obstacle.Lighting;
 
 public final class Obstacles {
@@ -22,7 +30,7 @@ public final class Obstacles {
     private static final Logger LOG = Logger.getLogger(Obstacle.class.getName());
     private static final HashMap<String, ArrayList<Obstacle>> GEO_HASH_TO_OBSTACLES;
     private static final HashMap<Integer, Obstacle> OBJECTID_TO_OBSTACLES;
-    private static final HashMap<Integer, MarkedObstacle> OBJECTID_TO_OBSTACLEDISTANCETUPLE;
+    private static HashMap<String, Integer> OBSTACLE_TYPE_MAP;
     
     private static final boolean TEST_MODE =
         Boolean.getBoolean("testMode") || "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
@@ -34,8 +42,9 @@ public final class Obstacles {
     static {
         GEO_HASH_TO_OBSTACLES = new HashMap<>();
         OBJECTID_TO_OBSTACLES = new HashMap<>();
-        OBJECTID_TO_OBSTACLEDISTANCETUPLE = new HashMap<>();
 
+        // Check if obstacles exist in the database. If not, begin parsing
+        
         if (TEST_MODE) {
             LOG.info("TEST MODE: skipping reading obstacles files");
         } else {
@@ -44,9 +53,6 @@ public final class Obstacles {
             int maxHashSize = 0;
             int numberUniqueObstacles = 0;
             HashSet<String> uniqueLightings = new HashSet<>();
-            
-            // Read through the obstacle types from the database and grab their id
-
 
             // Parse out the obstacles from the csv file in the Ostacles class
 
@@ -74,8 +80,6 @@ public final class Obstacles {
                     if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
                     numberUniqueObstacles++;
                     uniqueLightings.add(lighting.toString());
-                    
-                    // Connect each obstacle with their obstacle type id
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -88,6 +92,58 @@ public final class Obstacles {
             LOG.info("Obstacle Lightings: " + uniqueLightings.toString());
 
             // Insert the obstacles into the database
+
+            String sql = """
+                INSERT INTO obstacles (id, agl_height, msl_height, type_id, lighting_code)
+                    VALUES (?, ?, ?, ?, ?)
+            """;
+
+            try (Connection connection = Database.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+                OBSTACLE_TYPE_MAP = getObstacleTypes(connection);
+                for (Obstacle obstacle : OBJECTID_TO_OBSTACLES.values()) {
+
+                    if (!OBSTACLE_TYPE_MAP.containsKey(obstacle.getType())) {
+                        throw new RuntimeException("Unknown obstacle type of " + obstacle.getType() + ". Try adding it to the obstacle type table.");
+                    }
+
+                    preparedStatement.setInt(1, obstacle.getID());
+                    preparedStatement.setInt(2, obstacle.getAGL());
+                    preparedStatement.setInt(3, obstacle.getAMSL());
+                    preparedStatement.setInt(4, OBSTACLE_TYPE_MAP.get(obstacle.getType()));
+                    preparedStatement.setString(5, obstacle.getLighting().toString());
+                    preparedStatement.addBatch();
+                }
+
+                preparedStatement.executeBatch();
+                connection.commit();
+                preparedStatement.close();
+
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+
+            
+        }
+    }
+
+    public static HashMap<String, Integer> getObstacleTypes(Connection connection) throws SQLException {
+        String query = "SELECT id, name FROM obstacle_types;";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+            LOG.info(preparedStatement.toString());
+            
+            HashMap<String, Integer> obstacleTypeToID = new HashMap<>();
+
+            while (resultSet.next()) {
+                Integer id = resultSet.getInt(1);
+                String typeName = resultSet.getString(2);
+                obstacleTypeToID.put(typeName, id);
+            }
+
+            return obstacleTypeToID;
         }
     }
 
