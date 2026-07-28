@@ -6,12 +6,15 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.ngafid.core.Config;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.GeoHash;
+import org.ngafid.core.obstacles.Obstacle.Lighting;
 
 public final class Obstacles {
     private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
@@ -40,8 +43,12 @@ public final class Obstacles {
 
             int maxHashSize = 0;
             int numberUniqueObstacles = 0;
+            HashSet<String> uniqueLightings = new HashSet<>();
+            
+            // Read through the obstacle types from the database and grab their id
 
-            // Here is the code for the parsing of the Obstacles
+
+            // Parse out the obstacles from the csv file in the Ostacles class
 
             try (BufferedReader obstaclesReader = new BufferedReader(new FileReader(Config.OBSTACLES_FILE));) {
                 String line;
@@ -56,8 +63,9 @@ public final class Obstacles {
                     int amsl = Integer.parseInt(values[15]);
                     String type = values[12];
                     int quantity = Integer.parseInt(values[13]);
+                    Lighting lighting = Lighting.valueOf(values[16]);
 
-                    Obstacle obstacle = new Obstacle(id, lat, lon, type, agl, amsl, quantity);
+                    Obstacle obstacle = new Obstacle(id, lat, lon, type, agl, amsl, quantity, lighting);
 
                     ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
                     hashedObstacles.add(obstacle);
@@ -65,7 +73,9 @@ public final class Obstacles {
 
                     if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
                     numberUniqueObstacles++;
-
+                    uniqueLightings.add(lighting.toString());
+                    
+                    // Connect each obstacle with their obstacle type id
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -75,6 +85,9 @@ public final class Obstacles {
             LOG.info("Read "+ numberUniqueObstacles + " obstacles.");
             LOG.info("obstacles HashMap size: " + GEO_HASH_TO_OBSTACLES.size());
             LOG.info("max obstacle ArrayList: " + maxHashSize);
+            LOG.info("Obstacle Lightings: " + uniqueLightings.toString());
+
+            // Insert the obstacles into the database
         }
     }
 

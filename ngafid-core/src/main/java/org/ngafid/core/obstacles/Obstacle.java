@@ -3,6 +3,24 @@ package org.ngafid.core.obstacles;
 import org.ngafid.core.airports.GeoHash;
 
 public class Obstacle {
+
+    public enum Lighting {
+        R("R"), S("S"), 
+        C("C"), D("D"), 
+        U("U"), F("F"), 
+        W("W"), H("H"), 
+        L("L"), M("M"), 
+        N("N");
+
+        private String value;
+        Lighting(String value) {this.value = value;}
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
+
     private final int id;
     private final double latitude;
     private final double longitude;
@@ -10,10 +28,11 @@ public class Obstacle {
     private final int amsl;     //Above mean sea level
     private final String type;
     private final int quantity;
+    private final Lighting lighting;
 
     private final String geoHash;
 
-    public Obstacle(int id, double latitude, double longitude, String type, int agl, int amsl, int quantity) {
+    public Obstacle(int id, double latitude, double longitude, String type, int agl, int amsl, int quantity, Lighting lighting) {
         this.id = id;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -21,6 +40,7 @@ public class Obstacle {
         this.agl = agl;
         this.amsl = amsl;
         this.quantity = quantity;
+        this.lighting = lighting;
 
         this.geoHash = GeoHash.getGeoHash(latitude, longitude);
     }
