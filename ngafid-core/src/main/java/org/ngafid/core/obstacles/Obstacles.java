@@ -30,7 +30,7 @@ public final class Obstacles {
     private static final Logger LOG = Logger.getLogger(Obstacle.class.getName());
     private static final HashMap<String, ArrayList<Obstacle>> GEO_HASH_TO_OBSTACLES;
     private static final HashMap<Integer, Obstacle> OBJECTID_TO_OBSTACLES;
-    private static HashMap<String, Integer> OBSTACLE_TYPE_MAP;
+    private static final HashMap<String, Integer> OBSTACLE_TYPE_MAP;
     
     private static final boolean TEST_MODE =
         Boolean.getBoolean("testMode") || "true".equalsIgnoreCase(System.getenv("TEST_MODE"));
@@ -42,6 +42,7 @@ public final class Obstacles {
     static {
         GEO_HASH_TO_OBSTACLES = new HashMap<>();
         OBJECTID_TO_OBSTACLES = new HashMap<>();
+        OBSTACLE_TYPE_MAP = new HashMap<>();
         
         if (TEST_MODE) {
             LOG.info("TEST MODE: skipping reading obstacles files");
@@ -55,9 +56,11 @@ public final class Obstacles {
 
                     // Parse out the obstacles from the csv file in the Ostacles class
                     ParseObstacles(GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
+                    
+                    getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
 
                     // Insert the obstacles into the database
-                    ObstacleInsertion(connection, OBJECTID_TO_OBSTACLES);
+                    ObstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
                 }
                 else {LOG.info("Obstacles tables are filled. Parsing is skipped.");}
             } catch (Exception e) {
@@ -113,19 +116,61 @@ public final class Obstacles {
      * Helper function that inserts obstacles into the database
      * @param connection
      */
-    private static void ObstacleInsertion(Connection connection, HashMap<Integer, Obstacle> obstacleMap) {
+    private static void ObstacleInsertion(Connection connection, HashMap<Integer, Obstacle> obstacleMap, HashMap<String, Integer> obstacleTypeMap) {
 
+        ArrayList<Obstacle> obstacles = new ArrayList<>();
+        int count = 0;
+        
         String sql = """
             INSERT INTO obstacles (id, agl_height, msl_height, type_id, lighting_code)
                 VALUES (?, ?, ?, ?, ?)
         """;
 
+        
+        for (Obstacle obstacle : obstacleMap.values()) {
+
+            obstacles.add(obstacle);
+            count++;
+            
+            // Split obstacles into batches of 10
+            if (count >= 10) {
+                try {
+                    BatchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
+                    obstacles.clear();
+                    count = 0;
+                } catch (SQLException e) {
+                    LOG.warning("Unable to insert batch of obstacles");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        // Insert the rest of the obstacles
+        try {
+            BatchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
+            obstacles.clear();
+        } catch (SQLException e) {
+            LOG.warning("Unable to insert last batch of obstacles");
+            e.printStackTrace();
+        }
+
+        
+    }
+
+    /**
+     * Helper function to insert obstacles into database as batches
+     * @param connection
+     * @param sql
+     * @param obstacles
+     * @throws SQLException
+     */
+    private static void BatchDatabaseUpdate(Connection connection, String sql, ArrayList<Obstacle> obstacles, HashMap<String, Integer> obstacleTypeMap) throws SQLException {
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            OBSTACLE_TYPE_MAP = getObstacleTypes(connection);
-            for (Obstacle obstacle : obstacleMap.values()) {
+            for (Obstacle obstacle : obstacles) {
 
-                if (!OBSTACLE_TYPE_MAP.containsKey(obstacle.getType())) {
+                if (!obstacleTypeMap.containsKey(obstacle.getType())) {
                     throw new RuntimeException("Unknown obstacle type of " + obstacle.getType() + ". Try adding it to the obstacle type table.");
                 }
 
@@ -139,33 +184,28 @@ public final class Obstacles {
 
             preparedStatement.executeBatch();
 
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
+
     /**
-     * Helper function that fetches all of the obstacles types from the database
+     * Helper function that fetches all of the obstacles types from the database and stores it as a Hashmap of obstacle types and id as key-pair values 
      * @param connection
-     * @return A Hashmap of obstacle types and id as key-pair values 
+     * @return 
      * @throws SQLException
      */
-    private static HashMap<String, Integer> getObstacleTypes(Connection connection) throws SQLException {
+    private static void getObstacleTypes(Connection connection, HashMap<String, Integer> obstacleTypeMap) throws SQLException {
         String query = "SELECT id, name FROM obstacle_types;";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query);
                 ResultSet resultSet = preparedStatement.executeQuery()) {
             LOG.info(preparedStatement.toString());
-            
-            HashMap<String, Integer> obstacleTypeToID = new HashMap<>();
 
             while (resultSet.next()) {
                 Integer id = resultSet.getInt(1);
                 String typeName = resultSet.getString(2);
-                obstacleTypeToID.put(typeName, id);
+                obstacleTypeMap.put(typeName, id);
             }
-
-            return obstacleTypeToID;
         }
     }
 
@@ -186,7 +226,7 @@ public final class Obstacles {
                 if (resultSet.getInt(1) > 0) {return true;}
             }
 
-            return false;
+        return false;
     }
     
 
