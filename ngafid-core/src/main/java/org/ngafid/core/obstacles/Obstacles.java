@@ -42,93 +42,115 @@ public final class Obstacles {
     static {
         GEO_HASH_TO_OBSTACLES = new HashMap<>();
         OBJECTID_TO_OBSTACLES = new HashMap<>();
-
-        // Check if obstacles exist in the database. If not, begin parsing
         
         if (TEST_MODE) {
             LOG.info("TEST MODE: skipping reading obstacles files");
         } else {
             LOG.info("Obstacle Class was ran");
 
-            int maxHashSize = 0;
-            int numberUniqueObstacles = 0;
-            HashSet<String> uniqueLightings = new HashSet<>();
+            try (Connection connection = Database.getConnection();) {
+                
+                // Check if obstacles exist in the database. If not, begin parsing
+                if (VerifyObstaclesInDatabase(connection) == false) {
 
-            // Parse out the obstacles from the csv file in the Ostacles class
+                    // Parse out the obstacles from the csv file in the Ostacles class
+                    ParseObstacles(GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
 
-            try (BufferedReader obstaclesReader = new BufferedReader(new FileReader(Config.OBSTACLES_FILE));) {
-                String line;
-
-                while ((line = obstaclesReader.readLine()) != null) {
-
-                    String[] values = line.split(",");
-                    int id = Integer.parseInt(values[2]);
-                    Double lat = Double.parseDouble(values[10]);
-                    Double lon = Double.parseDouble(values[11]);
-                    int agl = Integer.parseInt(values[14]);
-                    int amsl = Integer.parseInt(values[15]);
-                    String type = values[12];
-                    int quantity = Integer.parseInt(values[13]);
-                    Lighting lighting = Lighting.valueOf(values[16]);
-
-                    Obstacle obstacle = new Obstacle(id, lat, lon, type, agl, amsl, quantity, lighting);
-
-                    ArrayList<Obstacle> hashedObstacles = GEO_HASH_TO_OBSTACLES.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
-                    hashedObstacles.add(obstacle);
-                    OBJECTID_TO_OBSTACLES.put(obstacle.getID(), obstacle);
-
-                    if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
-                    numberUniqueObstacles++;
-                    uniqueLightings.add(lighting.toString());
+                    // Insert the obstacles into the database
+                    ObstacleInsertion(connection, OBJECTID_TO_OBSTACLES);
                 }
+                else {LOG.info("Obstacles tables are filled. Parsing is skipped.");}
             } catch (Exception e) {
                 e.printStackTrace();
-                System.exit(1);
             }
 
-            LOG.info("Read "+ numberUniqueObstacles + " obstacles.");
-            LOG.info("obstacles HashMap size: " + GEO_HASH_TO_OBSTACLES.size());
-            LOG.info("max obstacle ArrayList: " + maxHashSize);
-            LOG.info("Obstacle Lightings: " + uniqueLightings.toString());
-
-            // Insert the obstacles into the database
-
-            String sql = """
-                INSERT INTO obstacles (id, agl_height, msl_height, type_id, lighting_code)
-                    VALUES (?, ?, ?, ?, ?)
-            """;
-
-            try (Connection connection = Database.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-                OBSTACLE_TYPE_MAP = getObstacleTypes(connection);
-                for (Obstacle obstacle : OBJECTID_TO_OBSTACLES.values()) {
-
-                    if (!OBSTACLE_TYPE_MAP.containsKey(obstacle.getType())) {
-                        throw new RuntimeException("Unknown obstacle type of " + obstacle.getType() + ". Try adding it to the obstacle type table.");
-                    }
-
-                    preparedStatement.setInt(1, obstacle.getID());
-                    preparedStatement.setInt(2, obstacle.getAGL());
-                    preparedStatement.setInt(3, obstacle.getAMSL());
-                    preparedStatement.setInt(4, OBSTACLE_TYPE_MAP.get(obstacle.getType()));
-                    preparedStatement.setString(5, obstacle.getLighting().toString());
-                    preparedStatement.addBatch();
-                }
-
-                preparedStatement.executeBatch();
-                connection.commit();
-                preparedStatement.close();
-
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-
-            
         }
     }
 
-    public static HashMap<String, Integer> getObstacleTypes(Connection connection) throws SQLException {
+    /**
+     * Helper function that parses the obstacles from the obstacle csv file
+     * @param geoHash
+     * @param obstacleIDMap
+     * @throws Exception
+     */
+    private static void ParseObstacles(HashMap<String, ArrayList<Obstacle>> geoHash, HashMap<Integer, Obstacle> obstacleIDMap) throws Exception  {
+
+        int maxHashSize = 0;
+        int numberUniqueObstacles = 0;
+
+        try (BufferedReader obstaclesReader = new BufferedReader(new FileReader(Config.OBSTACLES_FILE));) {
+            String line;
+
+            while ((line = obstaclesReader.readLine()) != null) {
+
+                String[] values = line.split(",");
+                int id = Integer.parseInt(values[2]);
+                Double lat = Double.parseDouble(values[10]);
+                Double lon = Double.parseDouble(values[11]);
+                int agl = Integer.parseInt(values[14]);
+                int amsl = Integer.parseInt(values[15]);
+                String type = values[12];
+                int quantity = Integer.parseInt(values[13]);
+                Lighting lighting = Lighting.valueOf(values[16]);
+
+                Obstacle obstacle = new Obstacle(id, lat, lon, type, agl, amsl, quantity, lighting);
+
+                ArrayList<Obstacle> hashedObstacles = geoHash.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
+                hashedObstacles.add(obstacle);
+                obstacleIDMap.put(obstacle.getID(), obstacle);
+
+                if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
+                numberUniqueObstacles++;
+            }
+        }
+
+        LOG.info("Read "+ numberUniqueObstacles + " obstacles.");
+        LOG.info("obstacles HashMap size: " + geoHash.size());
+        LOG.info("max obstacle ArrayList: " + maxHashSize);
+    }
+
+    /**
+     * Helper function that inserts obstacles into the database
+     * @param connection
+     */
+    private static void ObstacleInsertion(Connection connection, HashMap<Integer, Obstacle> obstacleMap) {
+
+        String sql = """
+            INSERT INTO obstacles (id, agl_height, msl_height, type_id, lighting_code)
+                VALUES (?, ?, ?, ?, ?)
+        """;
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            OBSTACLE_TYPE_MAP = getObstacleTypes(connection);
+            for (Obstacle obstacle : obstacleMap.values()) {
+
+                if (!OBSTACLE_TYPE_MAP.containsKey(obstacle.getType())) {
+                    throw new RuntimeException("Unknown obstacle type of " + obstacle.getType() + ". Try adding it to the obstacle type table.");
+                }
+
+                preparedStatement.setInt(1, obstacle.getID());
+                preparedStatement.setInt(2, obstacle.getAGL());
+                preparedStatement.setInt(3, obstacle.getAMSL());
+                preparedStatement.setInt(4, OBSTACLE_TYPE_MAP.get(obstacle.getType()));
+                preparedStatement.setString(5, obstacle.getLighting().toString());
+                preparedStatement.addBatch();
+            }
+
+            preparedStatement.executeBatch();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Helper function that fetches all of the obstacles types from the database
+     * @param connection
+     * @return A Hashmap of obstacle types and id as key-pair values 
+     * @throws SQLException
+     */
+    private static HashMap<String, Integer> getObstacleTypes(Connection connection) throws SQLException {
         String query = "SELECT id, name FROM obstacle_types;";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -146,6 +168,27 @@ public final class Obstacles {
             return obstacleTypeToID;
         }
     }
+
+    /**
+     * Helper function that checks if the obstacle table is empty in the database
+     * @param connection
+     * @return True if there are obstacles, False if it is empty
+     * @throws SQLException 
+     */
+    private static Boolean VerifyObstaclesInDatabase(Connection connection) throws SQLException {
+        String query = "SELECT COUNT(DISTINCT id) FROM obstacles";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+
+                LOG.info(preparedStatement.toString());
+                resultSet.next();
+                if (resultSet.getInt(1) > 0) {return true;}
+            }
+
+            return false;
+    }
+    
 
     /**
      * Checks for nearby obstacle that is within a given distance
