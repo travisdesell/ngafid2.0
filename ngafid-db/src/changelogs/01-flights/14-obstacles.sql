@@ -12,10 +12,13 @@ CREATE TABLE obstacle_types (
 
 CREATE TABLE obstacles (
     id INT NOT NULL AUTO_INCREMENT,
+    latitude DOUBLE NOT NULL,
+    longitude DOUBLE NOT NULL,
     agl_height INT NOT NULL,
     msl_height INT NOT NULL,
     type_id INT NOT NULL,
     lighting_code VARCHAR(1) NOT NULL,
+    quantity INT NOT NULL,
 
     PRIMARY KEY(id),
     FOREIGN KEY(type_id) REFERENCES obstacle_types(id)

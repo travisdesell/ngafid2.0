@@ -141,11 +141,11 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                 }
             }
 
-            ArrayList<Integer> ObstacleIDs = new ArrayList<>();
-            ObstacleIDs.addAll(tempObstacleIDMap.keySet());
+            ArrayList<Integer> obstacleIDs = new ArrayList<>();
+            obstacleIDs.addAll(tempObstacleIDMap.keySet());
 
             // Loop through all of the tracked obstacle events & check if any of them should be inserted
-            for (int ObstacleID : ObstacleIDs) {
+            for (int ObstacleID : obstacleIDs) {
                 
                 // If their last updated time is greater than the obstacle scan buffer, the event is no longer tracked
                 double diff = Duration.between(Instant.parse(tempObstacleLastUpdateMap.get(ObstacleID)), Instant.parse(utcSeries.get(i))).toMillis() / 1000.0;

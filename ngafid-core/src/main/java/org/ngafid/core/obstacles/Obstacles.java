@@ -47,22 +47,31 @@ public final class Obstacles {
         if (TEST_MODE) {
             LOG.info("TEST MODE: skipping reading obstacles files");
         } else {
-            LOG.info("Obstacle Class was ran");
 
             try (Connection connection = Database.getConnection();) {
                 
                 // Check if obstacles exist in the database. If not, begin parsing
-                if (VerifyObstaclesInDatabase(connection) == false) {
+                if (verifyObstaclesInDatabase(connection) == false) {
+
+                    LOG.info("No obstacles found in Database. Begin parsing.");
 
                     // Parse out the obstacles from the csv file in the Ostacles class
-                    ParseObstacles(GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
-                    
+                    parseObstaclesFromCSV(GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
+
                     getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
 
                     // Insert the obstacles into the database
-                    ObstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
+                    obstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
                 }
-                else {LOG.info("Obstacles tables are filled. Parsing is skipped.");}
+                else {
+                    LOG.info("Obstacles tables are filled. Reading from the database.");
+
+                    // Parse obstacles from Database
+                    parseObstaclesFromDatabase(connection, GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
+
+                    LOG.info("A total of " + OBJECTID_TO_OBSTACLES.size() + " obstacles have been read from the database");
+                    LOG.info("GeoHash Size: " + GEO_HASH_TO_OBSTACLES.size());
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -76,7 +85,7 @@ public final class Obstacles {
      * @param obstacleIDMap
      * @throws Exception
      */
-    private static void ParseObstacles(HashMap<String, ArrayList<Obstacle>> geoHash, HashMap<Integer, Obstacle> obstacleIDMap) throws Exception  {
+    private static void parseObstaclesFromCSV(HashMap<String, ArrayList<Obstacle>> geoHash, HashMap<Integer, Obstacle> obstacleIDMap) throws Exception  {
 
         int maxHashSize = 0;
         int numberUniqueObstacles = 0;
@@ -88,8 +97,8 @@ public final class Obstacles {
 
                 String[] values = line.split(",");
                 int id = Integer.parseInt(values[2]);
-                Double lat = Double.parseDouble(values[10]);
-                Double lon = Double.parseDouble(values[11]);
+                double lat = Double.parseDouble(values[10]);
+                double lon = Double.parseDouble(values[11]);
                 int agl = Integer.parseInt(values[14]);
                 int amsl = Integer.parseInt(values[15]);
                 String type = values[12];
@@ -112,18 +121,40 @@ public final class Obstacles {
         LOG.info("max obstacle ArrayList: " + maxHashSize);
     }
 
+    private static void parseObstaclesFromDatabase(Connection connection, HashMap<String, ArrayList<Obstacle>> geoHashMap, HashMap<Integer, Obstacle> obstacleMap) {
+        
+        String sql = """
+                SELECT obstacles.id, latitude, longitude, agl_height, msl_height, obstacle_types.name, lighting_code, quantity FROM obstacles
+                    INNER JOIN obstacle_types ON obstacles.type_id = obstacle_types.id;
+                """;
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+            LOG.info(preparedStatement.toString());
+
+            while (resultSet.next()) {
+                Obstacle obstacle = new Obstacle(resultSet);
+                obstacleMap.put(obstacle.getID(), obstacle);
+                geoHashMap.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
+            }
+        } catch (SQLException e) {
+            LOG.warning("Unable to parse obstacles from database.");
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Helper function that inserts obstacles into the database
      * @param connection
      */
-    private static void ObstacleInsertion(Connection connection, HashMap<Integer, Obstacle> obstacleMap, HashMap<String, Integer> obstacleTypeMap) {
+    private static void obstacleInsertion(Connection connection, HashMap<Integer, Obstacle> obstacleMap, HashMap<String, Integer> obstacleTypeMap) {
 
         ArrayList<Obstacle> obstacles = new ArrayList<>();
         int count = 0;
         
         String sql = """
-            INSERT INTO obstacles (id, agl_height, msl_height, type_id, lighting_code)
-                VALUES (?, ?, ?, ?, ?)
+            INSERT INTO obstacles (id, latitude, longitude, agl_height, msl_height, type_id, lighting_code, quantity)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         
@@ -135,7 +166,7 @@ public final class Obstacles {
             // Split obstacles into batches of 10
             if (count >= 10) {
                 try {
-                    BatchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
+                    batchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
                     obstacles.clear();
                     count = 0;
                 } catch (SQLException e) {
@@ -147,7 +178,7 @@ public final class Obstacles {
 
         // Insert the rest of the obstacles
         try {
-            BatchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
+            batchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
             obstacles.clear();
         } catch (SQLException e) {
             LOG.warning("Unable to insert last batch of obstacles");
@@ -164,9 +195,11 @@ public final class Obstacles {
      * @param obstacles
      * @throws SQLException
      */
-    private static void BatchDatabaseUpdate(Connection connection, String sql, ArrayList<Obstacle> obstacles, HashMap<String, Integer> obstacleTypeMap) throws SQLException {
+    private static void batchDatabaseUpdate(Connection connection, String sql, ArrayList<Obstacle> obstacles, HashMap<String, Integer> obstacleTypeMap) throws SQLException {
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            ArrayList<Integer> obstacleIDs = new ArrayList<>();
 
             for (Obstacle obstacle : obstacles) {
 
@@ -174,15 +207,21 @@ public final class Obstacles {
                     throw new RuntimeException("Unknown obstacle type of " + obstacle.getType() + ". Try adding it to the obstacle type table.");
                 }
 
+                obstacleIDs.add(obstacle.getID());
+                
                 preparedStatement.setInt(1, obstacle.getID());
-                preparedStatement.setInt(2, obstacle.getAGL());
-                preparedStatement.setInt(3, obstacle.getAMSL());
-                preparedStatement.setInt(4, OBSTACLE_TYPE_MAP.get(obstacle.getType()));
-                preparedStatement.setString(5, obstacle.getLighting().toString());
+                preparedStatement.setDouble(2, obstacle.getLatitude());
+                preparedStatement.setDouble(3, obstacle.getLongitude());
+                preparedStatement.setInt(4, obstacle.getAGL());
+                preparedStatement.setInt(5, obstacle.getAMSL());
+                preparedStatement.setInt(6, OBSTACLE_TYPE_MAP.get(obstacle.getType()));
+                preparedStatement.setString(7, obstacle.getLighting().toString());
+                preparedStatement.setInt(8, obstacle.getQuantity());
                 preparedStatement.addBatch();
             }
 
             preparedStatement.executeBatch();
+            LOG.info("Executed batch obstacles insertion for obstacles of :" + obstacleIDs.toArray());
 
         }
     }
@@ -215,7 +254,7 @@ public final class Obstacles {
      * @return True if there are obstacles, False if it is empty
      * @throws SQLException 
      */
-    private static Boolean VerifyObstaclesInDatabase(Connection connection) throws SQLException {
+    private static Boolean verifyObstaclesInDatabase(Connection connection) throws SQLException {
         String query = "SELECT COUNT(DISTINCT id) FROM obstacles";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query);

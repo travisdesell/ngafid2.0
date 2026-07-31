@@ -139,7 +139,6 @@ public class FlightBuilder {
      * @throws FlightProcessingException if an irrecoverable processing issue is encountered
      */
     public FlightBuilder build(Connection connection) throws FlightProcessingException {
-
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
 
         // We can process individual steps in parallel as well, but it might not be worth the overhead.

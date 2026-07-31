@@ -1,5 +1,8 @@
 package org.ngafid.core.obstacles;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.ngafid.core.airports.GeoHash;
 
 public class Obstacle {
@@ -41,6 +44,19 @@ public class Obstacle {
         this.amsl = amsl;
         this.quantity = quantity;
         this.lighting = lighting;
+
+        this.geoHash = GeoHash.getGeoHash(latitude, longitude);
+    }
+
+    public Obstacle(ResultSet result) throws SQLException {
+        this.id = result.getInt(1);
+        this.latitude = result.getDouble(2);
+        this.longitude = result.getDouble(3);
+        this.agl = result.getInt(4);
+        this.amsl = result.getInt(5);
+        this.type = result.getString(6);
+        this.lighting = Lighting.valueOf(result.getString(7));
+        this.quantity = result.getInt(8);
 
         this.geoHash = GeoHash.getGeoHash(latitude, longitude);
     }
