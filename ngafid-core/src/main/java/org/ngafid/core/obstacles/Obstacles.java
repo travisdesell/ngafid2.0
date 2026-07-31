@@ -10,18 +10,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.management.RuntimeErrorException;
-
-import org.apache.commons.lang3.mutable.MutableDouble;
 import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.GeoHash;
-import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.obstacles.Obstacle.Lighting;
 
 public final class Obstacles {
@@ -71,6 +65,8 @@ public final class Obstacles {
 
                     LOG.info("A total of " + OBJECTID_TO_OBSTACLES.size() + " obstacles have been read from the database");
                     LOG.info("GeoHash Size: " + GEO_HASH_TO_OBSTACLES.size());
+
+                    getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

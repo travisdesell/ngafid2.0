@@ -3,12 +3,10 @@ package org.ngafid.processor.events;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.io.IOException;
 import java.sql.Connection;
 
@@ -23,8 +21,6 @@ import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.obstacles.MarkedObstacle;
 import org.ngafid.core.obstacles.Obstacles;
 import org.ngafid.core.obstacles.MarkedObstacle.ObstacleRisk;
-import org.ngafid.core.util.TimeUtils;
-import org.ngafid.core.util.TimeUtils.UnrecognizedDateTimeFormatException;
 
 import java.util.logging.Logger;
 
