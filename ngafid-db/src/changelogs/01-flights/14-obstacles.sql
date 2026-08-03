@@ -81,3 +81,16 @@ INSERT INTO obstacle_types (name, description)
         ("WIND INDICATOR","Wind Indicator"),
         ("WINDMILL","Windmill (wind turbine)"),
         ("WINDSOCK","Windsock (flexible, mast-mounted cylinder showing wind direction and strength)");
+
+--changeset mingfeng:obstacle-event-id-table labels:flights,obstacles
+CREATE TABLE obstacle_event_keys (
+    id INT NOT NULL AUTO_INCREMENT,
+    event_id INT NOT NULL,
+    obstacle_id INT NOT NULL,
+
+    PRIMARY KEY(id),
+    FOREIGN KEY(event_id) REFERENCES events(id)
+        ON DELETE CASCADE,
+    FOREIGN KEY(obstacle_id) REFERENCES obstacles(id)
+        ON DELETE CASCADE
+);
