@@ -49,29 +49,29 @@ public final class Obstacles {
                 getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
 
                 // Check if obstacles exist in the database. If not, begin parsing
-                // if (verifyObstaclesInDatabase(connection) == false) {
+                if (verifyObstaclesInDatabase(connection) == false) {
 
-                //     LOG.info("No obstacles found in Database. Begin parsing.");
+                    LOG.info("No obstacles found in Database. Begin parsing.");
 
-                //     // Parse out the obstacles from the csv file in the Ostacles class
-                //     parseObstaclesFromCSV(GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
+                    // Parse out the obstacles from the csv file in the Ostacles class
+                    parseObstaclesFromCSV(GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
 
-                //     getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
+                    getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
 
-                //     // Insert the obstacles into the database
-                //     obstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
-                // }
-                // else {
-                //     LOG.info("Obstacles tables are filled. Reading from the database.");
+                    // Insert the obstacles into the database
+                    obstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
+                }
+                else {
+                    LOG.info("Obstacles tables are filled. Reading from the database.");
 
-                //     // Parse obstacles from Database
-                //     parseObstaclesFromDatabase(connection, GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
+                    // Parse obstacles from Database
+                    parseObstaclesFromDatabase(connection, GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
 
-                //     LOG.info("A total of " + OBJECTID_TO_OBSTACLES.size() + " obstacles have been read from the database");
-                //     LOG.info("GeoHash Size: " + GEO_HASH_TO_OBSTACLES.size());
+                    LOG.info("A total of " + OBJECTID_TO_OBSTACLES.size() + " obstacles have been read from the database");
+                    LOG.info("GeoHash Size: " + GEO_HASH_TO_OBSTACLES.size());
 
-                //     getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
-                // }
+                    getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
+                }
 
 
             } catch (Exception e) {
@@ -125,6 +125,8 @@ public final class Obstacles {
 
     private static void parseObstaclesFromDatabase(Connection connection, HashMap<String, ArrayList<Obstacle>> geoHashMap, HashMap<Integer, Obstacle> obstacleMap) {
         
+        int maxHashSize = 0;
+
         String sql = """
                 SELECT obstacles.id, latitude, longitude, agl_height, msl_height, obstacle_types.name, lighting_code, quantity FROM obstacles
                     INNER JOIN obstacle_types ON obstacles.type_id = obstacle_types.id;
@@ -136,8 +138,12 @@ public final class Obstacles {
 
             while (resultSet.next()) {
                 Obstacle obstacle = new Obstacle(resultSet);
+                
+                ArrayList<Obstacle> hashedObstacles = geoHashMap.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
+                hashedObstacles.add(obstacle);
                 obstacleMap.put(obstacle.getID(), obstacle);
-                geoHashMap.computeIfAbsent(obstacle.getGeoHash(), k -> new ArrayList<>());
+
+                if (hashedObstacles.size() > maxHashSize) {maxHashSize = hashedObstacles.size();}
             }
         } catch (SQLException e) {
             LOG.warning("Unable to parse obstacles from database.");
