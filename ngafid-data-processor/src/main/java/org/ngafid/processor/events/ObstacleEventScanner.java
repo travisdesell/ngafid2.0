@@ -190,6 +190,11 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         return new ArrayList<>();
     }
 
+    /**
+     * Helper function that inserts obstacle events into the database and also updates the obstacle_event_keys table
+     * @param connection
+     * @param untrackedObstacleEvents
+     */
     private void insertObstacleEvents(Connection connection, HashMap<Event, Integer> untrackedObstacleEvents){
         
         if (untrackedObstacleEvents.size() == 0) {return;}
