@@ -23,10 +23,8 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.obstacles.MarkedObstacle;
-import org.ngafid.core.obstacles.Obstacle;
 import org.ngafid.core.obstacles.Obstacles;
 import org.ngafid.core.obstacles.MarkedObstacle.ObstacleRisk;
-import org.ngafid.core.util.filters.Pair;
 
 import java.util.logging.Logger;
 
@@ -211,7 +209,7 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                 INSERT INTO obstacle_event_keys (event_id, obstacle_id)
                 VALUES (?, ?)
                 """;
-                
+
         // Insert the obstacle event keys into db
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
@@ -219,7 +217,6 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                 preparedStatement.setInt(1, event.getId());
                 preparedStatement.setDouble(2, untrackedObstacleEvents.get(event));
                 preparedStatement.addBatch();
-                // LOG.info("Inserting event " + event.getId() + " with Obstacle" + untrackedObstacleEvents.get(event));
             }
             preparedStatement.executeBatch();
         } catch (SQLException e) {

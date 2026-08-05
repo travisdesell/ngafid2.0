@@ -44,10 +44,6 @@ public final class Obstacles {
 
             try (Connection connection = Database.getConnection();) {
                 
-                parseObstaclesFromCSV(GEO_HASH_TO_OBSTACLES, OBJECTID_TO_OBSTACLES);
-
-                getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
-
                 // Check if obstacles exist in the database. If not, begin parsing
                 if (verifyObstaclesInDatabase(connection) == false) {
 
@@ -158,25 +154,28 @@ public final class Obstacles {
     private static void obstacleInsertion(Connection connection, HashMap<Integer, Obstacle> obstacleMap, HashMap<String, Integer> obstacleTypeMap) {
 
         ArrayList<Obstacle> obstacles = new ArrayList<>();
-        int count = 0;
+        int totalCount = 0;
+        int batchCount = 0;
         
         String sql = """
             INSERT INTO obstacles (id, latitude, longitude, agl_height, msl_height, type_id, lighting_code, quantity)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
-        
+        LOG.info("Inserting obstacles into database... This will take about 40 minutes.");
         for (Obstacle obstacle : obstacleMap.values()) {
 
             obstacles.add(obstacle);
-            count++;
+            totalCount++;
+            batchCount++;
             
-            // Split obstacles into batches of 10
-            if (count >= 20) {
+            // Split obstacles into batches of 20
+            if (batchCount >= 20) {
                 try {
                     batchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
                     obstacles.clear();
-                    count = 0;
+                    batchCount = 0;
+                    if (totalCount % 100000 == 0) {LOG.info(totalCount + " obstacles have been inserted");}
                 } catch (SQLException e) {
                     LOG.warning("Unable to insert batch of obstacles");
                     e.printStackTrace();
@@ -187,13 +186,12 @@ public final class Obstacles {
         // Insert the rest of the obstacles
         try {
             batchDatabaseUpdate(connection, sql, obstacles, obstacleTypeMap);
+            LOG.info((totalCount + obstacles.size()) + " total obstacles have been inserted into the database");
             obstacles.clear();
         } catch (SQLException e) {
             LOG.warning("Unable to insert last batch of obstacles");
             e.printStackTrace();
         }
-
-        
     }
 
     /**
@@ -228,14 +226,7 @@ public final class Obstacles {
                 preparedStatement.addBatch();
             }
 
-            String ids = "";
-            for (Integer id : obstacleIDs) {
-                ids = ids + ", " + id;
-            }
-
             preparedStatement.executeBatch();
-            LOG.info("Executed batch obstacles insertion for obstacles of :" + ids);
-
         }
     }
 
