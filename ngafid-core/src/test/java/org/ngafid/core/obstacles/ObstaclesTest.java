@@ -125,6 +125,10 @@ public class ObstaclesTest {
         Obstacles.InjectTestData(geoHasMap, obstacleMap);
     }
 
+    /**
+     * Helper function to generate the obstacle data from the given csv string
+     * @param csv
+     */
     private void generateData(String csv) {
         HashMap<String, ArrayList<Obstacle>> geoHasMap = new HashMap<>();
         HashMap<Integer, Obstacle> obstacleMap = new HashMap<>();
@@ -147,16 +151,6 @@ public class ObstaclesTest {
             obstacleMap.put(obstacle.getID(), obstacle);
         }
         Obstacles.InjectTestData(geoHasMap, obstacleMap);
-    }
-
-    private void printObstacle(MarkedObstacle marked) {
-        System.out.println(
-            "Obstacle " + marked.getObstacleID() +
-            " | hash=" + marked.getObstacle().getGeoHash() +
-            " | horizontal=" + marked.getHorizontalDistance() +
-            " | vertical=" + marked.getVerticalDistance() +
-            " | distance=" + marked.getTotalDistance()
-        );
     }
 
     @Test
@@ -400,7 +394,6 @@ public class ObstaclesTest {
 
     @Test
     public void testParseFairHope500() {
-
         generateData(FAIR_HOPE);
         ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, 500);
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
@@ -409,7 +402,6 @@ public class ObstaclesTest {
 
     @Test
     public void testParseFairHope1000() {
-
         generateData(FAIR_HOPE);
         ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, 1000);
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
@@ -418,7 +410,6 @@ public class ObstaclesTest {
 
     @Test
     public void testParseFairHope1500() {
-
         generateData(FAIR_HOPE);
         ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, 1500);
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();

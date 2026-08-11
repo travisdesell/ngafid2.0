@@ -19,6 +19,9 @@ import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.GeoHash;
 import org.ngafid.core.obstacles.Obstacle.Lighting;
 
+/**
+ * Loads and contains all of the obstacles.
+ */
 public final class Obstacles {
     private static final Logger LOG = Logger.getLogger(Obstacle.class.getName());
     private static final HashMap<String, ArrayList<Obstacle>> GEO_HASH_TO_OBSTACLES;
@@ -54,7 +57,7 @@ public final class Obstacles {
                     getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
 
                     // Insert the obstacles into the database
-                    // obstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
+                    obstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
                 }
                 else {
                     LOG.info("Obstacles tables are filled. Reading from the database.");
@@ -118,6 +121,12 @@ public final class Obstacles {
         LOG.info("max obstacle ArrayList: " + maxHashSize);
     }
 
+    /**
+     * Helper function that parse obstacles from the database
+     * @param connection
+     * @param geoHashMap
+     * @param obstacleMap
+     */
     private static void parseObstaclesFromDatabase(Connection connection, HashMap<String, ArrayList<Obstacle>> geoHashMap, HashMap<Integer, Obstacle> obstacleMap) {
         
         int maxHashSize = 0;

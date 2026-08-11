@@ -27,6 +27,10 @@ public class MarkedObstacle {
     public ObstacleRisk getObstacleRisk() {return this.obstacleRisk;}
     public int getObstacleID() {return this.obstacle.getID();}
 
+    /**
+     * Describes the level of obstacle proximity risk associated with the obstacle 
+     * ObstacleRisk
+     */
     public enum ObstacleRisk {
         HIGH("High"),
         MEDIUM("Medium"),
@@ -45,6 +49,12 @@ public class MarkedObstacle {
         }
     }
 
+    /**
+     * Determine the obstacle proximity risk of the obstacle from a given point
+     * @param horizontalDistance
+     * @param verticalDistance
+     * @return
+     */
     public static ObstacleRisk calculateRiskFromPoint(double horizontalDistance, double verticalDistance) {
         if ((horizontalDistance <= 500) && (verticalDistance <= 75)) {
             return ObstacleRisk.HIGH;
@@ -59,8 +69,6 @@ public class MarkedObstacle {
             || ((500 < horizontalDistance) && (horizontalDistance < 1000)) && (verticalDistance <= 75)) {
             return ObstacleRisk.MEDIUM;
         }
-
-        
         
         else {
             return ObstacleRisk.NONE;

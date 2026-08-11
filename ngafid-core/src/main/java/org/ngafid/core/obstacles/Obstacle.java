@@ -5,6 +5,10 @@ import java.sql.SQLException;
 
 import org.ngafid.core.airports.GeoHash;
 
+/**
+ * Basic representation of an obstacle.
+ * Obstacle
+ */
 public class Obstacle {
 
     public enum Lighting {
@@ -35,6 +39,17 @@ public class Obstacle {
 
     private final String geoHash;
 
+    /**
+     * Basic obstacle constructor
+     * @param id
+     * @param latitude
+     * @param longitude
+     * @param type
+     * @param agl
+     * @param amsl
+     * @param quantity
+     * @param lighting
+     */
     public Obstacle(int id, double latitude, double longitude, String type, int agl, int amsl, int quantity, Lighting lighting) {
         this.id = id;
         this.latitude = latitude;
@@ -48,6 +63,11 @@ public class Obstacle {
         this.geoHash = GeoHash.getGeoHash(latitude, longitude);
     }
 
+    /**
+     * Creates an obstacle from the database sql return result
+     * @param result
+     * @throws SQLException
+     */
     public Obstacle(ResultSet result) throws SQLException {
         this.id = result.getInt(1);
         this.latitude = result.getDouble(2);

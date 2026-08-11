@@ -1,19 +1,17 @@
 package org.ngafid.processor.events;
 
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.util.logging.Logger;
 
-import org.jline.utils.Log;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
@@ -23,11 +21,17 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.obstacles.MarkedObstacle;
-import org.ngafid.core.obstacles.Obstacles;
 import org.ngafid.core.obstacles.MarkedObstacle.ObstacleRisk;
+import org.ngafid.core.obstacles.Obstacles;
 
-import java.util.logging.Logger;
-
+/**
+ * Event Scanner for obstacles.
+ * This scanner scans all of the event definitions associates with obstacles and raises the appropriate
+ * events. Obstacle events are linked to the corresponding obstacles by obstacle event keys table.
+ * 
+ * @implNote Obstacle detection range changes depending on the specific aircraft
+ * ObstacleEventScanner
+ */
 public class ObstacleEventScanner extends AbstractEventScanner {
 
     private static Logger LOG = Logger.getLogger(ObstacleEventScanner.class.getName());
@@ -52,6 +56,21 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         return List.of(Parameters.UTC_DATE_TIME);
     }
 
+    /**
+     * For each flight entry, obstacle events are created and tracked.
+     * If the same tracked obstacle gets pulled up by any of the following flight entries, 
+     * the event will be updated with the new distance and time. 
+     * <br> <br>
+     * If the event has not been updated in a set period of time, ie., the same 
+     * obstacle has not been found within range in (hard-coded to be 5 minutes for now), 
+     * they are inserted into the database with severity as the distance between the obstacle & the aircraft, 
+     * and horizontal & vertical distance inserted as event metadata.
+     *
+     * @param connection
+     * @param doubleTimeSeries
+     * @param stringTimeSeries
+     * @return
+     */
     private List<Event> processObstacles(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
     
         double detectionRange;
