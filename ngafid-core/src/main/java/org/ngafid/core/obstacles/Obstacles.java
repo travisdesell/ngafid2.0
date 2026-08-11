@@ -54,7 +54,7 @@ public final class Obstacles {
                     getObstacleTypes(connection, OBSTACLE_TYPE_MAP);
 
                     // Insert the obstacles into the database
-                    obstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
+                    // obstacleInsertion(connection, OBJECTID_TO_OBSTACLES, OBSTACLE_TYPE_MAP);
                 }
                 else {
                     LOG.info("Obstacles tables are filled. Reading from the database.");
@@ -313,7 +313,7 @@ public final class Obstacles {
      * @param obstacles
      * @param obstacle_types
      */
-    public static void InjectTestData(Map<String, ArrayList<Obstacle>> geo, Map<Integer, Obstacle> obstacles, Map<String, Integer> obstacle_types) {
+    public static void InjectTestData(Map<String, ArrayList<Obstacle>> geo, Map<Integer, Obstacle> obstacles) {
          if (!TEST_MODE) {
             throw new IllegalStateException("Can only inject test data in test mode");
         }
@@ -322,7 +322,5 @@ public final class Obstacles {
         GEO_HASH_TO_OBSTACLES.putAll(geo);
         OBJECTID_TO_OBSTACLES.clear();
         OBJECTID_TO_OBSTACLES.putAll(obstacles);
-        OBSTACLE_TYPE_MAP.clear();
-        OBSTACLE_TYPE_MAP.putAll(obstacle_types);
     }
 }
