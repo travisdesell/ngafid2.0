@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 // import org.junit.Test;
 import org.junit.jupiter.api.Test;
+import org.ngafid.core.obstacles.MarkedObstacle.ObstacleRisk;
 import org.ngafid.core.obstacles.Obstacle.Lighting;
 
 public class ObstaclesTest {
@@ -451,4 +452,80 @@ public class ObstaclesTest {
             assertEquals(expected, result);
         }
     }
+
+    @Test
+    public void testHighRiskObstacle() {
+        String csv = "-87.681418,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 53.10W,30.290059,-87.681418,TOWER,1,110,130,N,4,D,N,2026ASO00001OE,A,2026223";
+        generateData(csv);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+
+        assertEquals(1, obstacles.size());
+        MarkedObstacle obstacle = obstacles.getFirst();
+
+        assertEquals(ObstacleRisk.HIGH, obstacle.getObstacleRisk());
+        assertEquals(true, (obstacle.getHorizontalDistance() <= 200));
+        assertEquals(true, (obstacle.getVerticalDistance() <= 75));
+    }
+
+    @Test 
+    public void testHighRiskObstacleLowHorizontalLowVertical() {
+        String csv = "-87.681418,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 53.10W,30.290059,-87.681418,TOWER,1,130,150,N,4,D,N,2026ASO00001OE,A,2026223";
+        generateData(csv);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+
+        assertEquals(1, obstacles.size());
+        MarkedObstacle obstacle = obstacles.getFirst();
+
+        assertEquals(ObstacleRisk.HIGH, obstacle.getObstacleRisk());
+        assertEquals(true, (obstacle.getHorizontalDistance() <= 200));
+        assertEquals(true, (obstacle.getVerticalDistance() <= 75));
+    }
+
+    @Test 
+    public void testMediumRiskObstacleCloseHorizontal() {
+        String csv = "-87.681418,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 53.10W,30.290059,-87.681418,TOWER,1,180,200,N,4,D,N,2026ASO00001OE,A,2026223";
+        generateData(csv);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+
+        assertEquals(1, obstacles.size());
+        MarkedObstacle obstacle = obstacles.getFirst();
+
+        assertEquals(ObstacleRisk.MEDIUM, obstacle.getObstacleRisk());
+        assertEquals(true, (obstacle.getHorizontalDistance() < 500));
+        assertEquals(true, (obstacle.getVerticalDistance() > 75));
+        assertEquals(true, (obstacle.getVerticalDistance() < 200));
+    }
+
+    @Test 
+    public void testMediumRiskObstacleCloseVertical() {
+        String csv = "-87.679833,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 47.40W,30.290059,-87.679833,TOWER,1,90,110,N,4,D,N,2026ASO00001OE,A,2026223";
+        generateData(csv);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+
+        assertEquals(1, obstacles.size());
+        MarkedObstacle obstacle = obstacles.getFirst();
+
+        assertEquals(ObstacleRisk.MEDIUM, obstacle.getObstacleRisk());
+        assertEquals(true, (obstacle.getHorizontalDistance() > 500));
+        assertEquals(true, (obstacle.getHorizontalDistance() < 1000));
+        assertEquals(true, (obstacle.getVerticalDistance() < 75));
+    }
+
+    @Test
+    public void testLowRiskObstacle() {
+        String csv = "-87.679833,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 47.40W,30.290059,-87.679833,TOWER,1,180,200,N,4,D,N,2026ASO00001OE,A,2026223";
+        generateData(csv);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+
+        assertEquals(1, obstacles.size());
+        MarkedObstacle obstacle = obstacles.getFirst();
+        
+        assertEquals(ObstacleRisk.LOW, obstacle.getObstacleRisk());
+        assertEquals(true, (obstacle.getHorizontalDistance() > 500));
+        assertEquals(true, (obstacle.getHorizontalDistance() < 1000));
+        assertEquals(true, (obstacle.getVerticalDistance() > 75));
+        assertEquals(true, (obstacle.getVerticalDistance() < 200));
+    }
+    
+
 }

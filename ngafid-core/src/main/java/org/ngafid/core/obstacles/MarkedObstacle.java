@@ -46,19 +46,21 @@ public class MarkedObstacle {
     }
 
     public static ObstacleRisk calculateRiskFromPoint(double horizontalDistance, double verticalDistance) {
-        if ((horizontalDistance <= 500) || (verticalDistance <= 75)) {
+        if ((horizontalDistance <= 500) && (verticalDistance <= 75)) {
             return ObstacleRisk.HIGH;
         }
 
-        else if (((500 <= horizontalDistance) && (horizontalDistance <= 1000))
+        else if (((500 < horizontalDistance) && (horizontalDistance < 1000))
             && ((75 <= verticalDistance) && (verticalDistance <= 200))) {
             return ObstacleRisk.LOW;
         }
 
-        else if (((horizontalDistance <= 1000) && ((75 <= verticalDistance) && (verticalDistance <= 200)))
-            || ((500 <= horizontalDistance) && (horizontalDistance <= 1000)) && (verticalDistance <= 200)) {
+        else if (((horizontalDistance <= 500) && ((75 < verticalDistance) && (verticalDistance < 200)))
+            || ((500 < horizontalDistance) && (horizontalDistance < 1000)) && (verticalDistance <= 75)) {
             return ObstacleRisk.MEDIUM;
         }
+
+        
         
         else {
             return ObstacleRisk.NONE;
