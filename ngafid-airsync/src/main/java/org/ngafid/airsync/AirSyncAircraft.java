@@ -136,6 +136,25 @@ public final class AirSyncAircraft {
      */
     private List<AirSyncImport> getImportsHTTPS(HttpsURLConnection netConnection, AirSyncAuth authentication)
             throws IOException {
+        try {
+            return readImportsPage(netConnection, authentication);
+        } catch (IOException e) {
+            if (!ImportService.isUnauthorized(e)) {
+                throw e;
+            }
+
+            LOG.info("AirSync log listing got HTTP 401; refreshing bearer token and retrying");
+            fleet.refreshAuth();
+
+            // Re-open the same URL with a fresh bearer token.
+            HttpsURLConnection retryConnection =
+                    (HttpsURLConnection) new URL(netConnection.getURL().toString()).openConnection();
+            return readImportsPage(retryConnection, fleet.getAuth());
+        }
+    }
+
+    private List<AirSyncImport> readImportsPage(HttpsURLConnection netConnection, AirSyncAuth authentication)
+            throws IOException {
         netConnection.setRequestMethod("GET");
         netConnection.setRequestProperty("Authorization", authentication.getBearerString());
 
@@ -167,7 +186,6 @@ public final class AirSyncAircraft {
      * @return a {@link List} of AirSyncImports
      */
     public List<AirSyncImport> getImports(Connection connection, AirSyncFleet airSyncFleet) throws IOException {
-        AirSyncAuth authentication = airSyncFleet.getAuth();
         List<AirSyncImport> imports = new LinkedList<>();
 
         boolean continueIteration = true;
@@ -195,7 +213,6 @@ public final class AirSyncAircraft {
      */
     public List<AirSyncImport> getImportsAfterDate(
             Connection connection, AirSyncFleet airSyncFleet, LocalDateTime lastImportTime) throws IOException {
-        AirSyncAuth authentication = airSyncFleet.getAuth();
         List<AirSyncImport> imports = new LinkedList<>();
 
         boolean continueIteration = true;
@@ -205,7 +222,7 @@ public final class AirSyncAircraft {
         while (continueIteration) {
             HttpsURLConnection netConnection = (HttpsURLConnection)
                     getAircraftLogURL(nPage++, lastImportTime).openConnection();
-            List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
+            List<AirSyncImport> page = getImportsHTTPS(netConnection, airSyncFleet.getAuth());
             continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
             imports.addAll(page);
         }

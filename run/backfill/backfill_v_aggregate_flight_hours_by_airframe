@@ -1,19 +1,45 @@
 #!/bin/bash
 
-# Path to liquibase.properties
-PROP_FILE="ngafid-db/src/liquibase.properties"
+# Do NOT redirect to the repo (e.g. > backfill.log). Log goes to /tmp with a 100MB cap.
 
-# Parse properties
+PROP_FILE="ngafid-db/src/liquibase.properties"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SQL_FILE="$SCRIPT_DIR/backfill_v_aggregate_flight_hours_by_airframe.sql"
+
 DB_USER=$(grep '^username=' "$PROP_FILE" | cut -d'=' -f2)
 DB_PASS=$(grep '^password=' "$PROP_FILE" | cut -d'=' -f2)
 DB_URL=$(grep '^url=' "$PROP_FILE" | cut -d'=' -f2)
-
-# Extract database name from JDBC URL (assumes format jdbc:mysql://host:port/dbname)
 DB_NAME=$(echo "$DB_URL" | sed -E 's/.*\///')
 
-# Allow override with CLI args
-if [ $# -gt 0 ]; then
-    mysql "$@" < "$(dirname "$0")/backfill_v_aggregate_flight_hours_by_airframe.sql"
-else
-    mysql -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$(dirname "$0")/backfill_v_aggregate_flight_hours_by_airframe.sql"
-fi 
+LOG_DIR="${NGAFID_BACKFILL_LOG_DIR:-/tmp/ngafid-backfill-logs}"
+LOG_FILE="$LOG_DIR/backfill_v_aggregate_flight_hours_by_airframe.log"
+MAX_BYTES="${NGAFID_BACKFILL_LOG_MAX_BYTES:-104857600}"
+mkdir -p "$LOG_DIR"
+: >"$LOG_FILE"
+echo "Backfill log: $LOG_FILE (cap ${MAX_BYTES} bytes/run)"
+
+run_mysql() {
+    if [ $# -gt 0 ]; then
+        mysql "$@" <"$SQL_FILE"
+    else
+        mysql -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" <"$SQL_FILE"
+    fi
+}
+
+written=0
+capped=0
+set -o pipefail
+run_mysql "$@" 2>&1 | while IFS= read -r line || [ -n "$line" ]; do
+    printf '%s\n' "$line"
+    if [ "$capped" -eq 0 ]; then
+        n=$((${#line} + 1))
+        if [ $((written + n)) -le "$MAX_BYTES" ]; then
+            printf '%s\n' "$line" >>"$LOG_FILE"
+            written=$((written + n))
+        else
+            echo "[log capped at ${MAX_BYTES} bytes; further output stdout only]" >>"$LOG_FILE"
+            capped=1
+        fi
+    fi
+done
+exit "${PIPESTATUS[0]}"

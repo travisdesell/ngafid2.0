@@ -4406,9 +4406,9 @@ public class FlightTest extends TestWithConnection {
         String uniqueTag2 = "TestTag2_" + System.currentTimeMillis();
         int tagId1;
         int tagId2;
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO flight_tags (fleet_id, name, description, color) "
-                + "VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = name")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO flight_tags (fleet_id, name, description, color) "
+                        + "VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = name")) {
             stmt.setInt(1, fleetId);
             stmt.setString(2, uniqueTag1);
             stmt.setString(3, "Test Description 1");
@@ -4446,9 +4446,9 @@ public class FlightTest extends TestWithConnection {
         }
 
         // Now insert the flight_tag_map entries with the correct tag IDs
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO flight_tag_map (flight_id, tag_id) VALUES (?, ?) "
-                + "ON DUPLICATE KEY UPDATE flight_id = flight_id")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO flight_tag_map (flight_id, tag_id) VALUES (?, ?) "
+                        + "ON DUPLICATE KEY UPDATE flight_id = flight_id")) {
             stmt.setInt(1, flightId1);
             stmt.setInt(2, tagId1);
             stmt.executeUpdate();

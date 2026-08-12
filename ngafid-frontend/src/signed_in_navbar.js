@@ -581,6 +581,8 @@ export default class SignedInNavbar extends React.Component {
                                               href="/protected/manage_fleet"/>
                                 <DropdownLink name={`Manage Tail Numbers${  unconfirmedTailsString}`} hidden={tailsHidden}
                                               href="/protected/system_ids"/>
+                                <DropdownLink name={"Manage Airframe Specs"} hidden={false}
+                                              href="/protected/airframe_specs"/>
                                 <div className="dropdown-divider" hidden={manageHidden}/>
                                 <DropdownLink name={"Update Password"} hidden={false}
                                               href="/protected/update_password"/>

@@ -1,5 +1,9 @@
 package org.ngafid.www.routes;
 
+import static org.ngafid.www.WebServer.GSON;
+
+import io.javalin.Javalin;
+import io.javalin.http.Context;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -7,16 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.uploads.Upload;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
-import static org.ngafid.www.WebServer.GSON;
-
-import io.javalin.Javalin;
-import io.javalin.http.Context;
 
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
@@ -49,11 +48,9 @@ public class ImportUploadJavalinRoutes {
         String pageParam = ctx.pathParam("page");
 
         // Page param is not a valid number, default to page 0 (first page)
-        if (!pageParam.matches("\\d+"))
-            return 0;
+        if (!pageParam.matches("\\d+")) return 0;
 
         return Integer.parseInt(pageParam);
-
     }
 
     private static boolean redirectIfClamped(Context ctx, String basePath, int requestedPage, int currentPage) {

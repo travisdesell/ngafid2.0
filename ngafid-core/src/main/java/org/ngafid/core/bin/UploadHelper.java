@@ -1,10 +1,6 @@
 package org.ngafid.core.bin;
 
-import org.apache.commons.cli.*;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.ngafid.core.Database;
-import org.ngafid.core.uploads.UploadDoesNotExistException;
+import static org.ngafid.core.kafka.Configuration.getUploadProperties;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,10 +13,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
+import org.apache.commons.cli.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.ngafid.core.Database;
 import org.ngafid.core.kafka.Topic;
-
-import static org.ngafid.core.kafka.Configuration.getUploadProperties;
+import org.ngafid.core.uploads.UploadDoesNotExistException;
 
 public class UploadHelper {
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
@@ -145,8 +143,8 @@ public class UploadHelper {
                             while (resultSet.next()) {
                                 int uploadId = resultSet.getInt(1);
                                 LOG.info("Added upload id = " + uploadId + " to `upload` topic.");
-                                producer.send(
-                                        new ProducerRecord<>(Topic.UPLOAD.toString(), String.valueOf(uploadId), uploadId));
+                                producer.send(new ProducerRecord<>(
+                                        Topic.UPLOAD.toString(), String.valueOf(uploadId), uploadId));
                                 idCursor = Math.max(uploadId, idCursor);
                                 nRows += 1;
                             }

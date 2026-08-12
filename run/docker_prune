@@ -1,0 +1,14 @@
+#!/bin/bash
+# Prune Docker build cache and dangling images (does not remove in-use images).
+# Safe for periodic/manual cleanup. Log: ~/docker-prune.log
+set -euo pipefail
+
+LOG="${HOME}/docker-prune.log"
+
+{
+  echo "===== $(date -Is) ====="
+  docker builder prune -af
+  docker image prune -f
+  docker system df
+  df -h /
+} | tee -a "$LOG"

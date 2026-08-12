@@ -1,5 +1,17 @@
 package org.ngafid.processor.events.proximity;
 
+import static org.ngafid.processor.events.proximity.CalculateProximity.*;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
@@ -12,19 +24,6 @@ import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.heatmap.ProximityPointData;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.processor.events.AbstractEventScanner;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-
-import static org.ngafid.processor.events.proximity.CalculateProximity.*;
 
 /**
  * Refactored proximity event scanner. Still could use an overhaul, this is directly derived from the original code.
@@ -74,8 +73,7 @@ public class ProximityEventScanner extends AbstractEventScanner {
         final int stopBuffer = 30;
         final double degreeBuffer = 0.003; // 1000 ft
 
-        if (!flightInfo.hasRegionOverlap(otherFlightInfo, degreeBuffer)
-                || !otherFlightInfo.getSeriesData(connection)) {
+        if (!flightInfo.hasRegionOverlap(otherFlightInfo, degreeBuffer) || !otherFlightInfo.getSeriesData(connection)) {
             return List.of();
         }
 
@@ -227,8 +225,8 @@ public class ProximityEventScanner extends AbstractEventScanner {
         }
 
         if (startTime != null) {
-            LOG.info("(B) Creating events for flights with IDs : " + flightParam.getId()
-                    + " and " + otherFlight.getId());
+            LOG.info("(B) Creating events for flights with IDs : " + flightParam.getId() + " and "
+                    + otherFlight.getId());
             emitProximityEventPair(
                     flightParam,
                     flightInfo,

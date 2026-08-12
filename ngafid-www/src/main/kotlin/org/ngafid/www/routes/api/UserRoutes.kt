@@ -130,7 +130,7 @@ object UserRoutes : RouteProvider() {
                 connection.autoCommit = previousAutoCommit
             }
         }
-        
+
     }
 
     fun putUserFleetSelected(ctx: Context) {

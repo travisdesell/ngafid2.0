@@ -27,6 +27,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private final String originalAction;
     /** Raw date strings from CSV (for debugging log). */
     private final String rawOpenDate;
+
     private final String rawCloseDate;
 
     public int getWorkorderNumber() {
@@ -61,12 +62,20 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         return closeDate;
     }
 
-    /** Open date-time (for before/during/after phase comparison). */
+    /**
+     * Open date-time (for before/during/after phase comparison).
+     *
+     * @return open date-time
+     */
     public LocalDateTime getOpenDateTime() {
         return openDateTime;
     }
 
-    /** Close date-time (for before/during/after phase comparison). */
+    /**
+     * Close date-time (for before/during/after phase comparison).
+     *
+     * @return close date-time
+     */
     public LocalDateTime getCloseDateTime() {
         return closeDateTime;
     }
@@ -75,18 +84,27 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         return actionDate;
     }
 
-    /** Raw open date string as read from CSV (for debugging). */
+    /**
+     * Raw open date string as read from CSV (for debugging).
+     *
+     * @return raw open date string
+     */
     public String getRawOpenDate() {
         return rawOpenDate;
     }
 
-    /** Raw close date string as read from CSV (for debugging). */
+    /**
+     * Raw close date string as read from CSV (for debugging).
+     *
+     * @return raw close date string
+     */
     public String getRawCloseDate() {
         return rawCloseDate;
     }
 
     /** yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss — used in new maintenance CSV format. */
     private static final DateTimeFormatter FORMAT_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
     private static final DateTimeFormatter FORMAT_DATETIME_SEC = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     /** yyyy-MM-dd — for problem_date. */
     private static final DateTimeFormatter FORMAT_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -99,6 +117,9 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     /**
      * Parses a datetime string: yyyy-MM-dd HH:mm, yyyy-MM-dd HH:mm:ss, or yyyy-MM-dd.
+     *
+     * @param raw the raw date-time string
+     * @return the parsed local date-time
      */
     private static LocalDateTime parseDateTime(String raw) {
         String s = raw == null ? "" : raw.trim();
@@ -114,7 +135,10 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 try {
                     return LocalDate.parse(s, FORMAT_DATE).atStartOfDay();
                 } catch (DateTimeParseException e3) {
-                    throw new IllegalArgumentException("Cannot parse datetime '" + s + "'; expected yyyy-MM-dd HH:mm or yyyy-MM-dd", e3);
+                    throw new IllegalArgumentException(
+                            "Cannot parse datetime '" + s
+                                    + "'; expected yyyy-MM-dd HH:mm or yyyy-MM-dd",
+                            e3);
                 }
             }
         }
@@ -122,6 +146,9 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     /**
      * Parses a date string: yyyy-MM-dd, MM-dd-yyyy, or M/d/yy.
+     *
+     * @param raw the raw date string
+     * @return the parsed local date
      */
     private static LocalDate parseDate(String raw) {
         String s = raw == null ? "" : raw.trim();
@@ -137,7 +164,10 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 try {
                     return LocalDate.parse(s, FORMAT_M_D_YY);
                 } catch (DateTimeParseException e3) {
-                    throw new IllegalArgumentException("Cannot parse date '" + s + "'; expected yyyy-MM-dd, MM-dd-yyyy or M/d/yy", e3);
+                    throw new IllegalArgumentException(
+                            "Cannot parse date '" + s
+                                    + "'; expected yyyy-MM-dd, MM-dd-yyyy or M/d/yy",
+                            e3);
                 }
             }
         }
@@ -145,14 +175,20 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     /**
      * Parses a line from the new maintenance CSV format (11 columns):
-     * workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,problem,problem_date,action,cluster_id,cluster_name
+     * workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,problem,
+     * problem_date,action,cluster_id,cluster_name
+     *
+     * @param line the CSV line to parse
      */
     public MaintenanceRecord(String line) {
         String[] parts = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
         if (parts.length != 11) {
-            throw new IllegalArgumentException("Maintenance CSV line must have exactly 11 columns "
-                    + "(workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,problem,problem_date,action,cluster_id,cluster_name); got "
-                    + parts.length + ". If a field contains commas, quote it (e.g. \"text, with comma\").");
+            throw new IllegalArgumentException(
+                    "Maintenance CSV line must have exactly 11 columns "
+                            + "(workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,"
+                            + "problem,problem_date,action,cluster_id,cluster_name); got "
+                            + parts.length
+                            + ". If a field contains commas, quote it (e.g. \"text, with comma\").");
         }
 
         workorderNumber = Integer.parseInt(parts[0].trim());
@@ -163,7 +199,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         openDate = openDateTime.toLocalDate();
         closeDate = closeDateTime.toLocalDate();
         tailNumber = parts[3].trim();
-        airframe = "";  // New format has no airframe column
+        airframe = ""; // New format has no airframe column
         problemATACode = parseIntOrZero(parts[5]);
         label = parts[10].trim();
         labelId = parts[9].trim();
@@ -209,8 +245,8 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         if (!labelId.equals(other.labelId)) mismatches.add("labelId");
 
         if (mismatches.contains("workorderNumber")) {
-            System.err.println("Cannot combine two records with different workorder numbers: "
-                    + workorderNumber + " vs " + other.workorderNumber);
+            System.err.println("Cannot combine two records with different workorder numbers: " + workorderNumber
+                    + " vs " + other.workorderNumber);
             System.exit(1);
         }
 
@@ -223,7 +259,11 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
 
     private static String escapeJson(String s) {
         if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 
     public String toJSON() {

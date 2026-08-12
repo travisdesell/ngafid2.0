@@ -1,18 +1,17 @@
 package org.ngafid.core.accounts;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.ngafid.core.TestWithConnection;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.ngafid.core.TestWithConnection;
 
 public class UserTest extends TestWithConnection {
 
@@ -138,8 +137,8 @@ public class UserTest extends TestWithConnection {
         }
 
         // Set up fleet_access records for main test users
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
                         + "(1, 1, 'VIEW'), (2, 1, 'MANAGER'), (1, 2, 'WAITING'), "
                         + "(2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED') "
                         + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
@@ -149,15 +148,15 @@ public class UserTest extends TestWithConnection {
         // Set up fleet_access records for test users (all with VIEW access to fleet 1)
         try (PreparedStatement stmt =
                 connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES "
-                        + "(1999, 1, 'VIEW'), (1998, 1, 'VIEW'), (1997, 1, 'VIEW'), (1996, 1, 'VIEW')," +
-                        " (1995, 1, 'VIEW'), "
-                        + "(1994, 1, 'VIEW'), (1993, 1, 'VIEW'), (1992, 1, 'VIEW'), (1991, 1, 'VIEW')," +
-                        " (1990, 1, 'VIEW'), "
+                        + "(1999, 1, 'VIEW'), (1998, 1, 'VIEW'), (1997, 1, 'VIEW'), (1996, 1, 'VIEW'),"
+                        + " (1995, 1, 'VIEW'), "
+                        + "(1994, 1, 'VIEW'), (1993, 1, 'VIEW'), (1992, 1, 'VIEW'), (1991, 1, 'VIEW'),"
+                        + " (1990, 1, 'VIEW'), "
                         + "(1989, 1, 'VIEW'), (1988, 1, 'VIEW'), (1987, 1, 'VIEW'), "
-                        + "(2999, 1, 'VIEW'), (2998, 1, 'VIEW'), (2997, 1, 'VIEW'), (2996, 1, 'VIEW')," +
-                        " (2995, 1, 'VIEW'), "
-                        + "(2994, 1, 'VIEW'), (2993, 1, 'VIEW'), (2992, 1, 'VIEW'), (2991, 1, 'VIEW')," +
-                        " (2990, 1, 'VIEW'), "
+                        + "(2999, 1, 'VIEW'), (2998, 1, 'VIEW'), (2997, 1, 'VIEW'), (2996, 1, 'VIEW'),"
+                        + " (2995, 1, 'VIEW'), "
+                        + "(2994, 1, 'VIEW'), (2993, 1, 'VIEW'), (2992, 1, 'VIEW'), (2991, 1, 'VIEW'),"
+                        + " (2990, 1, 'VIEW'), "
                         + "(2989, 1, 'VIEW'), (2988, 1, 'VIEW'), (2987, 1, 'VIEW') "
                         + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
             stmt.executeUpdate();
@@ -175,8 +174,8 @@ public class UserTest extends TestWithConnection {
 
         // Restore the original test data
         try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), " +
-                        "(1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED')")) {
+                "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (1, 1, 'VIEW'), (2, 1, 'MANAGER'), "
+                        + "(1, 2, 'WAITING'), (2, 2, 'WAITING'), (3, 1, 'DENIED'), (3, 2, 'DENIED')")) {
             stmt.executeUpdate();
         }
     }
@@ -1467,8 +1466,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentId() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 999); // Different ID
@@ -1502,8 +1501,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentEmail() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 998); // Different ID
@@ -1537,8 +1536,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentFirstName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 997); // Different ID
@@ -1572,8 +1571,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentLastName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 996); // Different ID
@@ -1607,8 +1606,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentCountry() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 995); // Different ID
@@ -1642,8 +1641,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentState() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 994); // Different ID
@@ -1677,8 +1676,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentCity() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 993); // Different ID
@@ -1712,8 +1711,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentAddress() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 992); // Different ID
@@ -1747,8 +1746,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentPhoneNumber() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 991); // Different ID
@@ -1782,8 +1781,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentZipCode() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 990); // Different ID
@@ -1817,8 +1816,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentAdminStatus() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 989); // Different ID
@@ -1852,8 +1851,8 @@ public class UserTest extends TestWithConnection {
     public void equalsWithDifferentAggregateView() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
+        try (PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO user (id, email, first_name, last_name, country, state, city, "
                         + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             stmt.setInt(1, 988); // Different ID
@@ -2486,8 +2485,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 999); // Different ID
                 stmt.setString(2, "test999@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2523,8 +2522,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 998); // Different ID
                 stmt.setString(2, "different@email.com"); // Different email
                 stmt.setString(3, "John");
@@ -2560,8 +2559,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 997); // Different ID
                 stmt.setString(2, "test997@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "Jane"); // Different first name
@@ -2597,8 +2596,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 996); // Different ID
                 stmt.setString(2, "test996@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2634,8 +2633,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 995); // Different ID
                 stmt.setString(2, "test995@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2672,8 +2671,8 @@ public class UserTest extends TestWithConnection {
             // Create a user with different state
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 994); // Different ID
                 stmt.setString(2, "test994@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2709,8 +2708,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 993); // Different ID
                 stmt.setString(2, "test993@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2746,8 +2745,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 992); // Different ID
                 stmt.setString(2, "test992@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2783,8 +2782,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 991); // Different ID
                 stmt.setString(2, "test991@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2820,8 +2819,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 990); // Different ID
                 stmt.setString(2, "test990@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2857,8 +2856,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 989); // Different ID
                 stmt.setString(2, "test989@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2894,8 +2893,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 988); // Different ID
                 stmt.setString(2, "test988@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2931,8 +2930,8 @@ public class UserTest extends TestWithConnection {
         try {
             try (PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO user (id, email, first_name, last_name, country, state, city, "
-                        + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            + "address, phone_number, zip_code, admin, aggregate_view, password_token) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, 987); // Different ID
                 stmt.setString(2, "test987@email.com"); // Different email to avoid unique constraint
                 stmt.setString(3, "John");
@@ -2988,8 +2987,7 @@ public class UserTest extends TestWithConnection {
             assertEquals(newFleetId, user.getFleetId());
 
             // Verify database was updated
-            try (PreparedStatement stmt =
-                         connection.prepareStatement("SELECT fleet_selected FROM user WHERE id = ?")) {
+            try (PreparedStatement stmt = connection.prepareStatement("SELECT fleet_selected FROM user WHERE id = ?")) {
                 stmt.setInt(1, user.getId());
                 try (ResultSet rs = stmt.executeQuery()) {
                     assertTrue(rs.next());
@@ -3027,9 +3025,9 @@ public class UserTest extends TestWithConnection {
             int originalFleetId = user.getFleetId();
 
             // Ensure user has access to fleet 2 as well
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
-                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) "
+                            + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "VIEW");
@@ -3127,9 +3125,9 @@ public class UserTest extends TestWithConnection {
             User user = user1Fleet1;
 
             // Add access to fleet 2 but with DENIED status
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
-                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) "
+                            + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "DENIED");
@@ -3154,9 +3152,9 @@ public class UserTest extends TestWithConnection {
             User user = user1Fleet1;
 
             // Set up user with access to fleet 2
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) " +
-                            "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
+            try (PreparedStatement stmt =
+                    connection.prepareStatement("INSERT INTO fleet_access (user_id, fleet_id, type) VALUES (?, ?, ?) "
+                            + "ON DUPLICATE KEY UPDATE type = VALUES(type)")) {
                 stmt.setInt(1, user.getId());
                 stmt.setInt(2, 2);
                 stmt.setString(3, "VIEW");

@@ -28,8 +28,7 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private static final DateTimeFormatter FORMAT_DT_SEC = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter FORMAT_DT_MIN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    //private ArrayList<AircraftTimeline> combinedRecords = new ArrayList<AircraftTimeline>();
-
+    // private ArrayList<AircraftTimeline> combinedRecords = new ArrayList<AircraftTimeline>();
 
     public int getFlightId() {
         return flightId;
@@ -43,22 +42,38 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
         return endTime;
     }
 
-    /** Full start datetime (GMT) for phase comparison with maintenance open/close. */
+    /**
+     * Full start datetime (GMT) for phase comparison with maintenance open/close.
+     *
+     * @return full start datetime (GMT)
+     */
     public LocalDateTime getStartDateTime() {
         return startDateTime;
     }
 
-    /** Full end datetime (GMT) for phase comparison. */
+    /**
+     * Full end datetime (GMT) for phase comparison.
+     *
+     * @return full end datetime (GMT)
+     */
     public LocalDateTime getEndDateTime() {
         return endDateTime;
     }
 
-    /** Full start datetime string from DB (GMT). */
+    /**
+     * Full start datetime string from DB (GMT).
+     *
+     * @return full start datetime string from DB (GMT)
+     */
     public String getStartDateTimeUtc() {
         return startDateTimeUtc;
     }
 
-    /** Full end datetime string from DB (GMT). */
+    /**
+     * Full end datetime string from DB (GMT).
+     *
+     * @return full end datetime string from DB (GMT)
+     */
     public String getEndDateTimeUtc() {
         return endDateTimeUtc;
     }
@@ -87,7 +102,6 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
         return previousEvent;
     }
 
-
     public void setPreviousEvent(MaintenanceRecord record, long newDaysSincePreviousValue) {
         previousEvent = record;
         this.daysSincePrevious = newDaysSincePreviousValue;
@@ -105,7 +119,6 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     public void setFlightsToNext(int flightsToNext) {
         this.flightsToNext = flightsToNext;
     }
-
 
     private static LocalDateTime parseDateTime(String s) {
         try {
@@ -140,4 +153,3 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
                 + "]";
     }
 }
-

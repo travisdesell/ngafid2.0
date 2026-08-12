@@ -32,8 +32,8 @@ public class EventObserver {
     private static boolean isRotorcraftType(Connection connection, Integer airframeTypeId) throws SQLException {
         if (airframeTypeId == null) return false;
 
-        try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT name = 'Rotorcraft' FROM airframe_types WHERE id = ?")) {
+        try (PreparedStatement statement =
+                connection.prepareStatement("SELECT name = 'Rotorcraft' FROM airframe_types WHERE id = ?")) {
             statement.setInt(1, airframeTypeId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next() && resultSet.getBoolean(1);
@@ -60,10 +60,10 @@ public class EventObserver {
         // All other definitions (legacy null type or non-rotor type) should run only on non-rotor flights.
         if (!condition.isEmpty()) condition.append("AND ");
         boolean isRotorcraftDefinition = isRotorcraftType(connection, event.getAirframeTypeId());
-        condition.append(
-                        " airframe_id IN (SELECT a.id FROM airframes a "
-                                + "LEFT JOIN airframe_types t ON t.id = a.type_id "
-                                + "WHERE ")
+        condition
+                .append(" airframe_id IN (SELECT a.id FROM airframes a "
+                        + "LEFT JOIN airframe_types t ON t.id = a.type_id "
+                        + "WHERE ")
                 .append(isRotorcraftDefinition ? "t.name = 'Rotorcraft'" : "(t.name <> 'Rotorcraft' OR t.name IS NULL)")
                 .append(") ");
 

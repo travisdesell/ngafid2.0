@@ -1,14 +1,12 @@
 package org.ngafid.www.routes;
 
 import io.javalin.http.Context;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.AccountException;
 import org.ngafid.core.accounts.ApiToken;
@@ -32,6 +30,23 @@ public final class ApiTokenAuth {
 
     private ApiTokenAuth() {}
 
+    /**
+     * Validates the {@code Authorization} header on the incoming request and, on success,
+     * attaches the resolved {@link User} and {@link ApiToken} as Javalin context
+     * attributes for downstream handlers to read.
+     *
+     * Authentication failures (missing header, malformed scheme, empty value, unknown or
+     * inactive token, no usable fleet) all respond 401 with a generic message — the
+     * specific cause is not exposed to the caller to avoid leaking which condition failed.
+     * Database errors during lookup respond 500. In either failure path the remaining
+     * handlers are skipped so the route body never runs.
+     *
+     * The token's {@code last_used_at} timestamp is updated as a side effect; failures
+     * here are swallowed so a transient write error does not block an otherwise valid
+     * request.
+     *
+     * @param ctx the Javalin request context
+     */
     public static void requireApiToken(Context ctx) {
         String header = ctx.header(AUTH_HEADER);
         if (header == null || !header.startsWith(BEARER_PREFIX)) {
@@ -60,8 +75,10 @@ public final class ApiTokenAuth {
                 return;
             }
 
-            try { token.touchLastUsed(connection); }
-            catch (SQLException ignored) {}
+            try {
+                token.touchLastUsed(connection);
+            } catch (SQLException ignored) {
+            }
 
             ctx.attribute("user", user);
             ctx.attribute("apiToken", token);
@@ -77,14 +94,24 @@ public final class ApiTokenAuth {
     }
 
     /**
-     * Loads the user with their currently-selected fleet, verifying the fleet
-     * exists and the user still has a fleet_access row for it.
+     * Loads the user with their currently-selected fleet, verifying the fleet exists and
+     * the user still has a {@code fleet_access} row for it.
+     *
+     * Returns {@code null} if the user no longer exists, has no selected fleet, or has
+     * had their fleet access revoked. This is treated as an authentication failure rather
+     * than a server error.
+     *
+     * @param connection an open database connection
+     * @param userId the id of the user to resolve
+     * @return the resolved {@link User} with their selected fleet, or {@code null} when
+     *         the user is missing, has no selected fleet, or has lost fleet access
+     * @throws SQLException if the database query fails
+     * @throws AccountException if user resolution fails for account-specific reasons
      */
     private static User resolveUserWithSelectedFleet(Connection connection, int userId)
             throws SQLException, AccountException {
         int selectedFleetId;
-        try (PreparedStatement q = connection.prepareStatement(
-                "SELECT fleet_selected FROM user WHERE id = ?")) {
+        try (PreparedStatement q = connection.prepareStatement("SELECT fleet_selected FROM user WHERE id = ?")) {
             q.setInt(1, userId);
             try (ResultSet rs = q.executeQuery()) {
                 if (!rs.next()) return null;
@@ -97,13 +124,29 @@ public final class ApiTokenAuth {
         return User.get(connection, userId, selectedFleetId);
     }
 
+    /**
+     * Writes a JSON error body with the given status and skips remaining handlers so the
+     * route body does not execute.
+     *
+     * @param ctx the Javalin request context
+     * @param status the HTTP status code to respond with
+     * @param message the client-facing error message to include in the JSON body
+     */
     private static void reject(Context ctx, int status, String message) {
         ctx.status(status).json(new ApiError(message));
         ctx.skipRemainingHandlers();
     }
 
+    /** Generic JSON error body used by every failure path in this package. */
     public static final class ApiError {
-        public final String error;
-        public ApiError(String error) { this.error = error; }
+        private final String error;
+
+        public ApiError(String error) {
+            this.error = error;
+        }
+
+        public String getError() {
+            return error;
+        }
     }
 }

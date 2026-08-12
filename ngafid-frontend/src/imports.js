@@ -183,6 +183,29 @@ class UploadErrors extends React.Component {
     }
 }
 
+/**
+ * Resolve statuses from persisted flight counters so imports created before the
+ * processor status fix do not continue to appear as successfully processed.
+ */
+function resolveImportDisplayStatus(importInfo) {
+    const status = importInfo.status;
+    if (status !== "PROCESSED_OK") {
+        return status;
+    }
+
+    const errorFlights = Number(importInfo.errorFlights ?? 0);
+    const warningFlights = Number(importInfo.warningFlights ?? 0);
+    const validFlights = Number(importInfo.validFlights ?? 0);
+
+    if (errorFlights > 0 && validFlights + warningFlights === 0) {
+        return "FAILED_UNKNOWN";
+    }
+    if (errorFlights > 0 || warningFlights > 0) {
+        return "PROCESSED_WARNING";
+    }
+    return status;
+}
+
 class Import extends React.Component {
     constructor(props) {
         super(props);
@@ -319,7 +342,7 @@ class Import extends React.Component {
             expandDivClasses = "m-0";
         }
 
-        const status = importInfo.status;
+        const status = resolveImportDisplayStatus(importInfo);
 
         /*
 
@@ -424,14 +447,23 @@ class Import extends React.Component {
             statusClasses = statusStateUnknownDefaults.statusClasses;
         }
 
+        const errorFlightCount = Number(importInfo.errorFlights ?? 0);
+        if (status === "PROCESSED_WARNING" && errorFlightCount > 0) {
+            statusText = `Processed With ${errorFlightCount} Error${errorFlightCount === 1 ? "" : "s"}`;
+            colorClasses = "bg-danger";
+            statusClasses = "p-1 pl-2 pr-2 ml-1 card border-danger text-danger";
+        }
+
 
         const textClasses = "p-1 mr-1 card";
         const cardClasses = (textClasses + colorClasses);
 
         console.log("Import Info: ", importInfo);
-        const totalFlights = (importInfo.validFlights + importInfo.errorFlights);
+        const warningFlights = Number(importInfo.warningFlights ?? 0);
+        const successfulFlights = Number(importInfo.validFlights ?? 0) + warningFlights;
+        const totalFlights = successfulFlights + Number(importInfo.errorFlights ?? 0);
 
-        const hasWarnings = (importInfo.warningFlights > 0);
+        const hasWarnings = (warningFlights > 0);
 
         return (
             <div className="m-2">
@@ -476,7 +508,7 @@ class Import extends React.Component {
                                          title="No Flights in this upload have Warnings."/>
                             }
                             <div>&nbsp;Valid:</div>
-                            <div style={{textAlign: "end", width: "100%"}}>{importInfo.validFlights}&nbsp;</div>
+                            <div style={{textAlign: "end", width: "100%"}}>{successfulFlights}&nbsp;</div>
                         </div>
 
                         {/* Flights Uploaded With Warnings */}

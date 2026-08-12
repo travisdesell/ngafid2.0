@@ -3,14 +3,13 @@ package org.ngafid.processor.terrain;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import org.jetbrains.annotations.NotNull;
-import org.ngafid.core.Config;
-
 import java.nio.file.NoSuchFileException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.ngafid.core.Config;
 
 public class TerrainCache {
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());

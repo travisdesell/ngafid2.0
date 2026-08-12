@@ -239,14 +239,6 @@ object AuthRoutes : RouteProvider() {
         val accountType = ctx.formParam("accountType")
 
         Database.getConnection().use { connection ->
-            if (accountType != null) {
-                ctx.json(
-                    ErrorResponse(
-                        "Invalid Account Type",
-                        "A request was made to create an account with an unknown account type '$accountType'."
-                    )
-                )
-            }
             if (accountType != null && accountType == "gaard") {
                 ctx.json(
                     ErrorResponse(

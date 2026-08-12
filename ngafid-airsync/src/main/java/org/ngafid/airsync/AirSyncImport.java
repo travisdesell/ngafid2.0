@@ -8,6 +8,8 @@ import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -333,6 +335,61 @@ public final class AirSyncImport {
                 return dataStream.readAllBytes();
             }
         }
+    }
+
+    /**
+     * Notifies AirSync that this log was received. Uses the NGAFID upload id as partner_key.
+     *
+     * @throws IOException if the confirm request fails
+     * @throws IllegalStateException if uploadId has not been set yet
+     */
+    public void confirmReceived() throws IOException {
+        if (uploadId <= 0) {
+            throw new IllegalStateException("Cannot confirm AirSync log " + id + " before upload id is assigned");
+        }
+
+        String partnerKey = Integer.toString(uploadId);
+        String confirmUrl = String.format(
+                AirSyncEndpoints.CONFIRM_LOG,
+                id,
+                URLEncoder.encode(partnerKey, StandardCharsets.UTF_8));
+
+        LOG.info(String.format(
+                "Sending AirSync log confirmation: airsync_log_id=%d, partner_key=%s (upload_id), tail=%s",
+                id,
+                partnerKey,
+                aircraft.getTailNumber()));
+
+        int responseCode = postConfirm(confirmUrl);
+
+        if (responseCode == 401) {
+            LOG.info("AirSync log confirmation got HTTP 401; refreshing bearer token and retrying");
+            fleet.refreshAuth();
+            responseCode = postConfirm(confirmUrl);
+        }
+
+        if (responseCode < 200 || responseCode >= 300) {
+            throw new IOException(String.format(
+                    "AirSync log confirmation failed: airsync_log_id=%d, partner_key=%s, HTTP %d",
+                    id,
+                    partnerKey,
+                    responseCode));
+        }
+
+        LOG.info(String.format(
+                "AirSync log confirmation sent successfully: airsync_log_id=%d, partner_key=%s, HTTP %d",
+                id,
+                partnerKey,
+                responseCode));
+    }
+
+    private int postConfirm(String confirmUrl) throws IOException {
+        HttpsURLConnection connection = (HttpsURLConnection) new URL(confirmUrl).openConnection();
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Authorization", fleet.getAuth().getBearerString());
+        connection.getOutputStream().close();
+        return connection.getResponseCode();
     }
 
     public boolean exists(Connection connection) throws SQLException {

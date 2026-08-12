@@ -92,6 +92,8 @@ export default defineConfig([
                 visitedAirports: 'readonly',
                 visitedRunways: 'readonly',
                 waitingUserCount: 'readonly',
+                rotorcraftSpecsView: 'readonly',
+                rotorcraftSpecsEdit: 'readonly',
             },
 
         },

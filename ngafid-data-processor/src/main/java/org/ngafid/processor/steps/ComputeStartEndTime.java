@@ -62,6 +62,10 @@ public class ComputeStartEndTime extends ComputeStep {
         var startODT = OffsetDateTime.parse(utc.get(start), TimeUtils.ISO_8601_FORMAT);
         var endODT = OffsetDateTime.parse(utc.get(end), TimeUtils.ISO_8601_FORMAT);
 
+        if (endODT.isBefore(startODT)) {
+            endODT = endODT.plusDays(1);
+        }
+
         builder.setStartDateTime(startODT).setEndDateTime(endODT);
     }
 }

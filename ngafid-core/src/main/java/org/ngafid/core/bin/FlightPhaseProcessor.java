@@ -1,29 +1,30 @@
 package org.ngafid.core.bin;
 
-import org.ngafid.core.flights.DoubleTimeSeries;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.Parameters;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.ngafid.core.flights.DoubleTimeSeries;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.Parameters;
 
 /**
  * Labels flight phases from altitude, ground speed, and RPM time series.
  * <p>
- * Pipeline: (1) Initial phases from RPM/speed/altitude — TAXI, TAKEOFF, CLIMB, CRUISE, DESCENT, LANDING, GROUND.
- * (2) Touch-and-go and go-around detection; (3) Post-process: smooth noise, reclassify UNKNOWNs, lock ground/sustained trend.
+ * Pipeline: (1) Initial phases from RPM/speed/altitude — TAXI, TAKEOFF, CLIMB,
+ * CRUISE, DESCENT, LANDING, GROUND.
+ * (2) Touch-and-go and go-around detection; (3) Post-process: smooth noise,
+ * reclassify UNKNOWNs, lock ground/sustained trend.
  */
 public final class FlightPhaseProcessor {
 
     // ----- Altitude (ft AGL) -----
     private static final double GROUND_ALT_FT = 5.0;
-    private static final double GROUND_CONTEXT_ALT_FT = 10.0;   // also "valid flight" min (max alt > this)
+    private static final double GROUND_CONTEXT_ALT_FT = 10.0; // also "valid flight" min (max alt > this)
     private static final double MAX_ALT_AGL_FOR_SHORT_RUN_RECLASSIFY_FT = 20.0;
     private static final double LANDING_ALT_FT = 100.0;
-    private static final double PATTERN_ALT_FT = 200.0;          // pattern / touch-and-go "climbed high"
+    private static final double PATTERN_ALT_FT = 200.0; // pattern / touch-and-go "climbed high"
     private static final double CRUISE_ALT_FT = 600.0;
     private static final double DESCENT_ALT_CHANGE_FT = 10.0;
     private static final double SUSTAINED_TREND_THRESHOLD_FT = 5.0;
@@ -32,14 +33,14 @@ public final class FlightPhaseProcessor {
     // ----- Speed (kts) -----
     private static final double GROUND_SPEED_STATIONARY_KTS = 5.0;
     private static final double TAXI_SPEED_MAX_KTS = 8.0;
-    private static final double MIN_TAKEOFF_ROLL_SPEED_KTS = 15.0;  // takeoff phase + touch-and-go rolling
+    private static final double MIN_TAKEOFF_ROLL_SPEED_KTS = 15.0; // takeoff phase + touch-and-go rolling
     private static final double TAKEOFF_SPEED_MAX_KTS = 80.0;
 
     // ----- RPM -----
     private static final double TAKEOFF_RPM = 2100.0;
 
     // ----- Row counts -----
-    private static final int NOISE_WINDOW_ROWS = 5;              // sustained trend + ground-context window
+    private static final int NOISE_WINDOW_ROWS = 5; // sustained trend + ground-context window
     private static final int TAKEOFF_DURATION_ROWS = 15;
     private static final int TOUCH_AND_GO_MIN_GROUND_ROWS = 10;
     private static final int GO_AROUND_WINDOW_ROWS = 10;
@@ -51,16 +52,16 @@ public final class FlightPhaseProcessor {
      * Flight phase enumeration representing different stages of flight
      */
     public enum FlightPhase {
-        GROUND,         // Aircraft on ground, not moving (altitude <= 5 ft, speed < 5 knots)
-        TAXI,           // Aircraft taxiing on ground
-        TAKEOFF,        // Aircraft taking off (first 15 rows meeting takeoff criteria)
-        CLIMB,          // Aircraft climbing (below 600 ft and climbing)
-        CRUISE,         // Aircraft in cruise phase (altitude >= 600 ft)
-        DESCENT,        // Aircraft descending (below 600 ft and descending)
-        LANDING,        // Aircraft landing (below 100 ft and descending)
-        TOUCH_AND_GO,   // Ground contact followed by immediate takeoff (altitude < 5 ft for 10+ rows)
-        GO_AROUND,      // Aborted landing - valley pattern (descent to <100 ft, then climb without landing)
-        UNKNOWN         // Phase cannot be determined (should be eliminated by post-processing)
+        GROUND, // Aircraft on ground, not moving (altitude <= 5 ft, speed < 5 knots)
+        TAXI, // Aircraft taxiing on ground
+        TAKEOFF, // Aircraft taking off (first 15 rows meeting takeoff criteria)
+        CLIMB, // Aircraft climbing (below 600 ft and climbing)
+        CRUISE, // Aircraft in cruise phase (altitude >= 600 ft)
+        DESCENT, // Aircraft descending (below 600 ft and descending)
+        LANDING, // Aircraft landing (below 100 ft and descending)
+        TOUCH_AND_GO, // Ground contact followed by immediate takeoff (altitude < 5 ft for 10+ rows)
+        GO_AROUND, // Aborted landing - valley pattern (descent to <100 ft, then climb without landing)
+        UNKNOWN // Phase cannot be determined (should be eliminated by post-processing)
     }
 
     /** Phase at each time index; used for CSV export and analysis. */
@@ -93,24 +94,31 @@ public final class FlightPhaseProcessor {
             return phases.get(index);
         }
 
-        /** Phase name for CSV export. */
+        /**
+         * Phase name for CSV export.
+         * @param index the row index
+         * @return the phase name at that index
+         */
         public String getPhaseStringAt(int index) {
             return getPhaseAt(index).name();
         }
     }
 
-    /** Validation result: isValid, touch-and-go split indices (for phase marking), maxAltAGL. File splitting uses {@link #detectProlongedTaxiSplits}. */
+    /**
+     * Validation result: isValid, touch-and-go split indices (for phase marking),
+     * and maxAltAGL. File splitting uses {@link #detectProlongedTaxiSplits}.
+     */
     public static class FlightValidationResult {
         public final boolean isValid;
         public final List<Integer> splitIndices;
         public final double maxAltAGL;
-        
+
         public FlightValidationResult(boolean isValid, List<Integer> splitIndices, double maxAltAGL) {
             this.isValid = isValid;
             this.splitIndices = splitIndices;
             this.maxAltAGL = maxAltAGL;
         }
-        
+
         public boolean hasTouchAndGo() {
             return !splitIndices.isEmpty();
         }
@@ -124,6 +132,8 @@ public final class FlightPhaseProcessor {
      * Validates flight (max AltAGL &gt; 10 ft) and detects touch-and-go indices for phase marking.
      * Touch-and-go: 10+ consecutive rows with AltAGL &lt; 5 ft after having climbed above 200 ft.
      * splitIndices are for TOUCH_AND_GO marking only; file splitting uses {@link #detectProlongedTaxiSplits}.
+     * @param altAGLValues the altitude AGL samples
+     * @return the validation result for the flight
      */
     public static FlightValidationResult validateAndDetectTouchAndGo(double[] altAGLValues) {
         if (altAGLValues == null || altAGLValues.length == 0) {
@@ -160,6 +170,10 @@ public final class FlightPhaseProcessor {
      * Detects prolonged taxi (30+ s) in the middle of a flight for splitting one CSV into multiple files.
      * Taxi = alt &lt; 5 ft, speed &lt; 8 kts, RPM &lt; 2100. Excludes initial and final taxi.
      * @return Split indices (midpoints of prolonged taxi windows), empty if none
+     * @param connection the database connection
+     * @param flightId the flight id
+     * @throws SQLException if a database error occurs
+     * @throws IOException if an I/O error occurs
      */
     public static List<Integer> detectProlongedTaxiSplits(Connection connection, int flightId)
             throws SQLException, IOException {
@@ -174,7 +188,13 @@ public final class FlightPhaseProcessor {
         return detectProlongedTaxiSplitsFromSeries(altAGL, groundSpeed, rpm);
     }
 
-    /** Taxi criteria: alt &lt; 5 ft, speed &lt; 8 kts, RPM &lt; 2100. Only after having climbed above 200 ft. */
+    /**
+     * Taxi criteria: alt &lt; 5 ft, speed &lt; 8 kts, RPM &lt; 2100. Only after having climbed above 200 ft.
+     * @param altAGLValues the altitude AGL samples
+     * @param groundSpeedValues the ground speed samples
+     * @param rpmValues the RPM samples
+     * @return the detected prolonged taxi split indices
+     */
     public static List<Integer> detectProlongedTaxiSplitsFromSeries(
             double[] altAGLValues, double[] groundSpeedValues, double[] rpmValues) {
         List<Integer> splits = new ArrayList<>();
@@ -193,11 +213,16 @@ public final class FlightPhaseProcessor {
             double gs = (i < groundSpeedValues.length) ? groundSpeedValues[i] : Double.NaN;
             double r = (rpmValues != null && i < rpmLen) ? rpmValues[i] : Double.NaN;
 
-            if (Double.isNaN(alt)) { consecCount = 0; startIdx = -1; continue; }
+            if (Double.isNaN(alt)) {
+                consecCount = 0;
+                startIdx = -1;
+                continue;
+            }
             if (alt > PATTERN_ALT_FT) hasClimbedHigh = true;
 
             boolean isTaxi = alt < GROUND_ALT_FT
-                    && !Double.isNaN(gs) && gs < TAXI_SPEED_MAX_KTS
+                    && !Double.isNaN(gs)
+                    && gs < TAXI_SPEED_MAX_KTS
                     && (Double.isNaN(r) || r < TAKEOFF_RPM);
 
             if (hasClimbedHigh && isTaxi) {
@@ -215,8 +240,7 @@ public final class FlightPhaseProcessor {
         return splits;
     }
 
-    private static double[] getDoubleSeriesValues(Connection connection, int flightId,
-                                                   String columnName, int maxRows)
+    private static double[] getDoubleSeriesValues(Connection connection, int flightId, String columnName, int maxRows)
             throws SQLException, IOException {
         DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, columnName);
         int len = Math.min(series.size(), maxRows);
@@ -228,6 +252,7 @@ public final class FlightPhaseProcessor {
     /**
      * Detects go-arounds: descent below 100 ft, valley &gt; 5 ft (no touchdown), then climb ≥50 ft.
      * @return Indices of valley bottoms (go-around points)
+     * @param altAglArray the altitude AGL samples
      */
     public static List<Integer> detectGoArounds(double[] altAglArray) {
         List<Integer> goAroundIndices = new ArrayList<>();
@@ -266,7 +291,15 @@ public final class FlightPhaseProcessor {
         return goAroundIndices;
     }
 
-    /** Computes phases from DB time series (no post-processing). Prefer {@link #computeCompleteFlightPhases} when validation is available. */
+    /**
+     * Computes phases from DB time series (no post-processing). Prefer
+     * {@link #computeCompleteFlightPhases} when validation is available.
+     * @param connection the database connection
+     * @param flight the flight to analyze
+     * @return the computed flight phase data
+     * @throws SQLException if a database error occurs
+     * @throws IOException if an I/O error occurs
+     */
     public static FlightPhaseData computeFlightPhases(Connection connection, Flight flight)
             throws SQLException, IOException {
         DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
@@ -275,7 +308,9 @@ public final class FlightPhaseProcessor {
         try {
             rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
         } catch (Exception ignored) {
-            System.err.println("Warning: RPM not available for flight " + flight.getId() + ", using alternative phase detection");
+            System.err.println(
+                    "Warning: RPM not available for flight " + flight.getId()
+                            + ", using alternative phase detection");
         }
         return computeFlightPhasesFromTimeSeries(altAgl, groundSpeed, rpm);
     }
@@ -284,11 +319,13 @@ public final class FlightPhaseProcessor {
      * Compute flight phases from already-loaded time series.
      * Order: TAXI → TAKEOFF (15 rows) → CLIMB until 600 ft → CRUISE (≥600 ft) → DESCENT / LANDING → GROUND.
      * TOUCH_AND_GO and GO_AROUND are applied later in post-processing.
+     * @param altAgl the altitude AGL series
+     * @param groundSpeed the ground speed series
+     * @param rpm the RPM series
+     * @return the computed flight phase data
      */
     public static FlightPhaseData computeFlightPhasesFromTimeSeries(
-            DoubleTimeSeries altAgl,
-            DoubleTimeSeries groundSpeed,
-            DoubleTimeSeries rpm) {
+            DoubleTimeSeries altAgl, DoubleTimeSeries groundSpeed, DoubleTimeSeries rpm) {
 
         int numRows = altAgl.size();
         List<FlightPhase> phases = new ArrayList<>(numRows);
@@ -305,13 +342,26 @@ public final class FlightPhaseProcessor {
         return new FlightPhaseData(phases, numRows);
     }
 
-    /** TAXI from start until takeoff criteria; TAKEOFF = next 15 rows with RPM ≥2100, 14.5 &lt; speed &lt; 80 kts. Returns index after TAKEOFF block. */
+    /**
+     * TAXI from start until takeoff criteria; TAKEOFF = next 15 rows with RPM
+     * ≥2100, 14.5 &lt; speed &lt; 80 kts. Returns index after TAKEOFF block.
+     * @param phases the phase list to update
+     * @param altAgl the altitude AGL series
+     * @param groundSpeed the ground speed series
+     * @param rpm the RPM series
+     * @param numRows the number of rows to process
+     * @return the index after the takeoff block
+     */
     private static int markTaxiAndTakeoff(List<FlightPhase> phases, DoubleTimeSeries altAgl,
                                            DoubleTimeSeries groundSpeed, DoubleTimeSeries rpm, int numRows) {
         int taxiEndIdx = -1;
         for (int i = 0; i < numRows; i++) {
-            if (rpm != null && !Double.isNaN(rpm.get(i)) && !Double.isNaN(groundSpeed.get(i))
-                    && rpm.get(i) >= TAKEOFF_RPM && groundSpeed.get(i) > MIN_TAKEOFF_ROLL_SPEED_KTS && groundSpeed.get(i) < TAKEOFF_SPEED_MAX_KTS) {
+            if (rpm != null
+                    && !Double.isNaN(rpm.get(i))
+                    && !Double.isNaN(groundSpeed.get(i))
+                    && rpm.get(i) >= TAKEOFF_RPM
+                    && groundSpeed.get(i) > MIN_TAKEOFF_ROLL_SPEED_KTS
+                    && groundSpeed.get(i) < TAKEOFF_SPEED_MAX_KTS) {
                 taxiEndIdx = i;
                 break;
             }
@@ -321,8 +371,12 @@ public final class FlightPhaseProcessor {
         }
         if (taxiEndIdx < 0) return 0;
         int takeoffEnd = Math.min(taxiEndIdx + TAKEOFF_DURATION_ROWS, numRows);
-        boolean meetsTakeoff = rpm != null && !Double.isNaN(rpm.get(taxiEndIdx)) && !Double.isNaN(groundSpeed.get(taxiEndIdx))
-                && rpm.get(taxiEndIdx) >= TAKEOFF_RPM && groundSpeed.get(taxiEndIdx) > MIN_TAKEOFF_ROLL_SPEED_KTS && groundSpeed.get(taxiEndIdx) < TAKEOFF_SPEED_MAX_KTS;
+        boolean meetsTakeoff = rpm != null
+                && !Double.isNaN(rpm.get(taxiEndIdx))
+                && !Double.isNaN(groundSpeed.get(taxiEndIdx))
+                && rpm.get(taxiEndIdx) >= TAKEOFF_RPM
+                && groundSpeed.get(taxiEndIdx) > MIN_TAKEOFF_ROLL_SPEED_KTS
+                && groundSpeed.get(taxiEndIdx) < TAKEOFF_SPEED_MAX_KTS;
         if (meetsTakeoff) {
             for (int i = taxiEndIdx; i < takeoffEnd; i++) {
                 phases.set(i, FlightPhase.TAKEOFF);
@@ -331,7 +385,16 @@ public final class FlightPhaseProcessor {
         return takeoffEnd;
     }
 
-    /** CLIMB from takeoffEnd until AGL ≥ 600 ft. Rows at or above 600 ft are set to CRUISE. Returns first index at or above cruise altitude. */
+    /**
+     * CLIMB from takeoffEnd until AGL ≥ 600 ft. Rows at or above 600 ft are set
+     * to CRUISE. Returns first index at or above cruise altitude.
+     * @param phases the phase list to update
+     * @param altAgl the altitude AGL series
+     * @param groundSpeed the ground speed series
+     * @param takeoffEnd the index after the takeoff block
+     * @param numRows the number of rows to process
+     * @return the first index at or above cruise altitude
+     */
     private static int markClimb(List<FlightPhase> phases, DoubleTimeSeries altAgl,
                                  DoubleTimeSeries groundSpeed, int takeoffEnd, int numRows) {
         int climbIdx = takeoffEnd;
@@ -353,16 +416,32 @@ public final class FlightPhaseProcessor {
         return climbIdx;
     }
 
-    /** CRUISE: all UNKNOWN rows with AGL ≥ 600 ft (e.g. after climb or later in flight). */
+    /**
+     * CRUISE: all UNKNOWN rows with AGL ≥ 600 ft (e.g. after climb or later in flight).
+     * @param phases the phase list to update
+     * @param altAgl the altitude AGL series
+     * @param fromIdx the index to start scanning from
+     * @param numRows the number of rows to process
+     */
     private static void markCruise(List<FlightPhase> phases, DoubleTimeSeries altAgl, int fromIdx, int numRows) {
         for (int j = fromIdx; j < numRows; j++) {
-            if (phases.get(j) == FlightPhase.UNKNOWN && !Double.isNaN(altAgl.get(j)) && altAgl.get(j) >= CRUISE_ALT_FT) {
+            if (phases.get(j) == FlightPhase.UNKNOWN
+                    && !Double.isNaN(altAgl.get(j))
+                    && altAgl.get(j) >= CRUISE_ALT_FT) {
                 phases.set(j, FlightPhase.CRUISE);
             }
         }
     }
 
-    /** DESCENT: 100–600 ft descending or &gt;200 ft with drop &gt;10 ft. LANDING: &lt;100 ft and descending, with speed &gt; taxi (excludes ground taxi with AGL noise). Single pass. */
+    /**
+     * DESCENT: 100–600 ft descending or &gt;200 ft with drop &gt;10 ft.
+     * LANDING: &lt;100 ft and descending, with speed &gt; taxi (excludes ground
+     * taxi with AGL noise). Single pass.
+     * @param phases the phase list to update
+     * @param altAgl the altitude AGL series
+     * @param groundSpeed the ground speed series
+     * @param numRows the number of rows to process
+     */
     private static void markDescentAndLanding(List<FlightPhase> phases, DoubleTimeSeries altAgl,
                                               DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 1; i < numRows; i++) {
@@ -379,7 +458,10 @@ public final class FlightPhaseProcessor {
             boolean hasLandingSpeed = Double.isNaN(gs) || gs >= TAXI_SPEED_MAX_KTS;
             if (alt < LANDING_ALT_FT && alt > GROUND_ALT_FT && alt < prevAlt && hasLandingSpeed) {
                 phases.set(i, FlightPhase.LANDING);
-            } else if (alt < CRUISE_ALT_FT && alt >= LANDING_ALT_FT && (altChange < -DESCENT_ALT_CHANGE_FT || phases.get(i - 1) == FlightPhase.DESCENT)) {
+            } else if (alt < CRUISE_ALT_FT
+                    && alt >= LANDING_ALT_FT
+                    && (altChange < -DESCENT_ALT_CHANGE_FT
+                            || phases.get(i - 1) == FlightPhase.DESCENT)) {
                 phases.set(i, FlightPhase.DESCENT);
             } else if (alt > PATTERN_ALT_FT && altChange < -DESCENT_ALT_CHANGE_FT) {
                 phases.set(i, FlightPhase.DESCENT);
@@ -387,25 +469,40 @@ public final class FlightPhaseProcessor {
         }
     }
 
-    /** GROUND: AGL ≤ 5 ft and speed ≤ 5 kts (stationary or very slow). */
+    /**
+     * GROUND: AGL ≤ 5 ft and speed ≤ 5 kts (stationary or very slow).
+     * @param phases the phase list to update
+     * @param altAgl the altitude AGL series
+     * @param groundSpeed the ground speed series
+     * @param numRows the number of rows to process
+     */
     private static void markGround(List<FlightPhase> phases, DoubleTimeSeries altAgl,
                                    DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 0; i < numRows; i++) {
             if (phases.get(i) == FlightPhase.TAKEOFF) continue;
             if (phases.get(i) != FlightPhase.UNKNOWN) continue;
             double gs = (groundSpeed != null && i < groundSpeed.size()) ? groundSpeed.get(i) : Double.NaN;
-            if (!Double.isNaN(altAgl.get(i)) && !Double.isNaN(gs)
-                    && altAgl.get(i) <= GROUND_ALT_FT && gs <= GROUND_SPEED_STATIONARY_KTS) {
+            if (!Double.isNaN(altAgl.get(i))
+                    && !Double.isNaN(gs)
+                    && altAgl.get(i) <= GROUND_ALT_FT
+                    && gs <= GROUND_SPEED_STATIONARY_KTS) {
                 phases.set(i, FlightPhase.GROUND);
             }
         }
     }
 
-    /** Full pipeline: initial phases + touch-and-go/go-around marking + reclassify UNKNOWNs + smooth short airborne runs. */
+    /**
+     * Full pipeline: initial phases + touch-and-go/go-around marking +
+     * reclassify UNKNOWNs + smooth short airborne runs.
+     * @param connection the database connection
+     * @param flight the flight to analyze
+     * @param validation the validation result to apply
+     * @return the fully processed flight phase data
+     * @throws SQLException if a database error occurs
+     * @throws IOException if an I/O error occurs
+     */
     public static FlightPhaseData computeCompleteFlightPhases(
-            Connection connection,
-            Flight flight,
-            FlightValidationResult validation) throws SQLException, IOException {
+            Connection connection, Flight flight, FlightValidationResult validation) throws SQLException, IOException {
         FlightPhaseData phaseData = computeFlightPhases(connection, flight);
         if (validation == null) return phaseData;
         double[] altAglArray = getAltAGLValues(connection, flight.getId(), Integer.MAX_VALUE);
@@ -417,17 +514,25 @@ public final class FlightPhaseProcessor {
     /**
      * Compute complete flight phases from a pre-computed AltAGL array (e.g. from terrain fallback).
      * Use when AltAGL is not in DB but was computed from AltMSL/AltB + terrain.
+     * @param connection the database connection
+     * @param flightId the flight id
+     * @param altAglArray the altitude AGL samples
+     * @param validation the validation result to apply
+     * @return the fully processed flight phase data
+     * @throws SQLException if a database error occurs
+     * @throws IOException if an I/O error occurs
      */
     public static FlightPhaseData computeCompleteFlightPhasesFromAltAGLArray(
-            Connection connection, int flightId, double[] altAglArray,
-            FlightValidationResult validation) throws SQLException, IOException {
+            Connection connection, int flightId, double[] altAglArray, FlightValidationResult validation)
+            throws SQLException, IOException {
         Flight flight = Flight.getFlight(connection, flightId);
         DoubleTimeSeries altAglTS = new DoubleTimeSeries(Parameters.ALT_AGL, Parameters.Unit.FT_AGL, altAglArray);
         DoubleTimeSeries groundSpeed = flight.getDoubleTimeSeries(connection, Parameters.GND_SPD);
         DoubleTimeSeries rpm = null;
         try {
             rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
         FlightPhaseData phaseData = computeFlightPhasesFromTimeSeries(altAglTS, groundSpeed, rpm);
         if (validation != null) {
             applyCompletePhaseProcessing(phaseData, altAglArray, groundSpeed, validation);
@@ -437,6 +542,9 @@ public final class FlightPhaseProcessor {
 
     /**
      * True if at least NOISE_WINDOW_ROWS of the last NOISE_WINDOW_ROWS rows have altitude <= GROUND_CONTEXT_ALT_FT.
+     * @param altAglArray the altitude AGL samples
+     * @param i the row index to evaluate
+     * @return true if the recent samples indicate a ground context
      */
     private static boolean isInGroundContext(double[] altAglArray, int i) {
         int start = Math.max(0, i - NOISE_WINDOW_ROWS + 1);
@@ -449,7 +557,12 @@ public final class FlightPhaseProcessor {
         return count >= NOISE_WINDOW_ROWS;
     }
 
-    /** Trend over last NOISE_WINDOW_ROWS rows: "climb", "descent", or "flat" from net altitude change. */
+    /**
+     * Trend over last NOISE_WINDOW_ROWS rows: "climb", "descent", or "flat" from net altitude change.
+     * @param altAglArray the altitude AGL samples
+     * @param i the row index to evaluate
+     * @return the sustained trend at that index
+     */
     private static String getSustainedTrend(double[] altAglArray, int i) {
         int start = Math.max(0, i - NOISE_WINDOW_ROWS + 1);
         if (start >= i || i >= altAglArray.length) return "flat";
@@ -471,6 +584,10 @@ public final class FlightPhaseProcessor {
      * surrounded by at least MIN_GROUND_SURROUND_FOR_SHORT_RUN TAXI/GROUND as TAXI (or GROUND if speed 0).
      * Only reclassifies when the run is at ground level (max Alt AGL in run <= MAX_ALT_AGL_FOR_SHORT_RUN_RECLASSIFY_FT)
      * so real low approaches are not converted to TAXI.
+     * @param phases the phase list to update
+     * @param altAglArray the altitude AGL samples
+     * @param groundSpeed the ground speed series
+     * @param n the number of rows to inspect
      */
     private static void smoothShortAirborneInGround(
             List<FlightPhase> phases, double[] altAglArray, DoubleTimeSeries groundSpeed, int n) {
@@ -524,13 +641,17 @@ public final class FlightPhaseProcessor {
     /**
      * Post-processing: touch-and-go and go-around marking, reclassify UNKNOWNs, smooth short airborne runs.
      * Modifies phaseData in place. Safe to call with validation null (only go-around and reclassify run).
+     * @param phaseData the phase data to update
+     * @param altAglArray the altitude AGL samples
+     * @param groundSpeed the ground speed series
+     * @param validation the validation result to apply
      */
     public static void applyCompletePhaseProcessing(
             FlightPhaseData phaseData,
             double[] altAglArray,
             DoubleTimeSeries groundSpeed,
             FlightValidationResult validation) {
-        
+
         // 1. Touch-and-go: ±10 rows around split points; TOUCH_AND_GO only if rolling speed ≥ 15 kts, else GROUND
         if (validation != null && validation.hasTouchAndGo()) {
             for (int splitIndex : validation.splitIndices) {
@@ -599,9 +720,11 @@ public final class FlightPhaseProcessor {
                 } else if (!Double.isNaN(alt) && alt >= CRUISE_ALT_FT) {
                     phases.set(i, FlightPhase.CRUISE);
                 } else {
-                    phases.set(i, (inGroundContext || (!Double.isNaN(alt) && alt < 50))
-                            ? ((!Double.isNaN(gndSpd) && gndSpd > 0.0) ? FlightPhase.TAXI : FlightPhase.GROUND)
-                            : FlightPhase.CLIMB);
+                    phases.set(
+                            i,
+                            (inGroundContext || (!Double.isNaN(alt) && alt < 50))
+                                    ? ((!Double.isNaN(gndSpd) && gndSpd > 0.0) ? FlightPhase.TAXI : FlightPhase.GROUND)
+                                    : FlightPhase.CLIMB);
                 }
             }
         }
@@ -610,8 +733,17 @@ public final class FlightPhaseProcessor {
         smoothShortAirborneInGround(phases, altAglArray, groundSpeed, n);
     }
 
-    /** AltAGL time series as double array. */
-    public static double[] getAltAGLValues(Connection connection, int flightId, int maxRows) throws SQLException, IOException {
+    /**
+     * AltAGL time series as double array.
+     * @param connection the database connection
+     * @param flightId the flight id
+     * @param maxRows the maximum number of rows to load
+     * @return the loaded altitude AGL values
+     * @throws SQLException if a database error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    public static double[] getAltAGLValues(Connection connection, int flightId, int maxRows)
+            throws SQLException, IOException {
         DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_AGL);
         int n = Math.min(altAgl.size(), maxRows);
         double[] values = new double[n];

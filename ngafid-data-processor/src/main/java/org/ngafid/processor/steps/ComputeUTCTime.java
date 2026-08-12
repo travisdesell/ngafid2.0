@@ -118,8 +118,8 @@ public class ComputeUTCTime extends ComputeStep {
                 timestampSeries.add(odt.format(ISO_8601_FORMAT));
                 unixtime.add(odt.toEpochSecond());
             } catch (DateTimeParseException e) {
-                LOG.fine("Skipping row with unparseable local date/time: "
-                        + dates.get(i) + " " + time + " (" + e.getMessage() + ")");
+                LOG.fine("Skipping row with unparseable local date/time: " + dates.get(i) + " " + time + " ("
+                        + e.getMessage() + ")");
                 timestampSeries.add("");
                 unixtime.add(Double.NaN);
             }

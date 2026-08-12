@@ -26,6 +26,7 @@ import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.FlightError;
 import org.ngafid.core.flights.MalformedFlightFileException;
+import org.ngafid.core.statistics.FleetStatisticsCacheRefresh;
 import org.ngafid.core.uploads.*;
 import org.ngafid.core.util.MD5;
 import org.ngafid.core.util.SendEmail;
@@ -174,6 +175,8 @@ public final class ProcessUpload {
                 lockedUpload.updateStatus(Upload.Status.FAILED_UNKNOWN);
                 e.printStackTrace();
                 return false;
+            } finally {
+                FleetStatisticsCacheRefresh.refreshForFleetQuietly(connection, upload.getFleetId());
             }
         }
     }
@@ -213,17 +216,6 @@ public final class ProcessUpload {
                 errorFlights = flightErrors.size();
                 warningFlights = pipeline.getWarningFlightsCount();
                 validFlights = pipeline.getValidFlightsCount();
-
-                if (status == Upload.Status.PROCESSED_OK
-                        && pipeline.getFilesQueued() > 0
-                        && validFlights == 0
-                        && errorFlights == 0) {
-                    status = Upload.Status.FAILED_UNKNOWN;
-                    UploadError.insertError(
-                            connection,
-                            uploadId,
-                            "No flights were imported from the archive. Check upload consumer logs for errors.");
-                }
 
             } catch (java.nio.file.NoSuchFileException e) {
                 LOG.log(Level.SEVERE, "NoSuchFileException: {0}", e.toString());
@@ -339,6 +331,12 @@ public final class ProcessUpload {
         }
 
         if (status == Upload.Status.PROCESSED_OK) {
+            if (validFlights == 0 && warningFlights == 0 && errorFlights == 0) {
+                UploadError.insertError(
+                        connection,
+                        uploadId,
+                        "No flights were imported from the archive. Check the archive contents and upload consumer logs.");
+            }
             status = resolveStatusFromFlightCounts(validFlights, warningFlights, errorFlights);
         }
 
@@ -348,9 +346,13 @@ public final class ProcessUpload {
     /**
      * Zip/parquet ingestion starts as {@link Upload.Status#PROCESSED_OK}; adjust when individual flights
      * failed or produced warnings.
+     * @param validFlights the number of valid flights
+     * @param warningFlights the number of warning flights
+     * @param errorFlights the number of failed flights
+     * @return the upload status derived from the flight counts
      */
     static Upload.Status resolveStatusFromFlightCounts(int validFlights, int warningFlights, int errorFlights) {
-        if (validFlights == 0 && errorFlights > 0) {
+        if (validFlights == 0 && warningFlights == 0) {
             return Upload.Status.FAILED_UNKNOWN;
         }
         if (warningFlights > 0 || errorFlights > 0) {

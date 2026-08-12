@@ -73,8 +73,6 @@ public final class Airframes {
 
     public static final String AIRFRAME_QUEST_KODIAK_100 = "Quest Kodiak 100";
 
-    public static final String AIRFRAME_AW119 = "AW-119";
-
     private static HashMap<String, Integer> nameIdMap = new HashMap<>();
     private static HashMap<Integer, String> airframeNameMap = new HashMap<>();
     private static HashMap<String, Integer> typeIdMap = new HashMap<>();
@@ -104,13 +102,13 @@ public final class Airframes {
             AIRFRAME_BEECHCRAFT_G58));
 
     // CHECKSTYLE:OFF
-    public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44",AIRFRAME_AW119);
+    public static final Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
 
     // CHECKSTYLE:ON
 
     /** Canonical rotorcraft codes in {@code tail_airframe_registry} / {@code airframes}. */
-    public static final Set<String> ROTORCRAFT_AIRFRAME_CODES = Set.of(
-            "407", "AS350", "AW109", "AW119", "AW139", "BK117", "EC130", "EC135", "MH60", "MH65", "R44");
+    public static final Set<String> ROTORCRAFT_AIRFRAME_CODES =
+            Set.of("407", "AS350", "AW109", "AW119", "AW139", "BK117", "EC130", "EC135", "MH60", "MH65", "R44");
 
     /**
      * Garmin {@code #airframe_info} {@code airframe_name} values mapped to {@link #ROTORCRAFT_AIRFRAME_CODES}.

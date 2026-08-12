@@ -96,7 +96,8 @@ public class StartPageJavalinRoutes {
                 "/access_denied",
                 ctx -> getHome(
                         ctx,
-                        new Message("danger",
+                        new Message(
+                                "danger",
                                 "You attempted to load a page you did not have access to or "
                                         + "attempted to access a page while not logged in.")));
         //        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not

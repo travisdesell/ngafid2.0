@@ -165,3 +165,11 @@ Currently, host/port for chart service are configured for "localhost: 8187 ".
 Host/port configuration can be changed in: chart_service_config.json You will also need to change host/port in src/main/javascript/map.js
 E.g:   http://localhost:8187/terminal-area/{z}/{x}/{-y}.png
 ****
+
+
+## Restarting chart service on UND virtual machine.
+If the system had been restarted, you may need to start the serever again.
+
+Please see the readme document on the VM with instructins on how to restart.
+
+/mnt/ngafiddb/aviation_charts/readme.txt

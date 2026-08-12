@@ -1,12 +1,5 @@
 package org.ngafid.processor.format;
 
-import org.ngafid.core.Database;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.flights.TurnToFinal;
-import org.ngafid.processor.Pipeline;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +11,12 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import org.ngafid.core.Database;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.flights.TurnToFinal;
+import org.ngafid.processor.Pipeline;
 
 /**
  * A flight file processor handles the initial parsing of data and metadata from a flight file.

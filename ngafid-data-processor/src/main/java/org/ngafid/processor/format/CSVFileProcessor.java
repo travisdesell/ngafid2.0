@@ -3,11 +3,6 @@ package org.ngafid.processor.format;
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import org.ngafid.core.flights.*;
-import org.ngafid.core.flights.Airframes.AliasKey;
-import org.ngafid.core.util.MD5;
-import org.ngafid.processor.Pipeline;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -18,7 +13,10 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.nio.file.Paths ;
+import org.ngafid.core.flights.*;
+import org.ngafid.core.flights.Airframes.AliasKey;
+import org.ngafid.core.util.MD5;
+import org.ngafid.processor.Pipeline;
 
 /**
  * Parses CSV files into Double and String time series, and returns a stream of flight builders
@@ -60,8 +58,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     private static final Pattern G3X_PART_NUMBER_REGEX = Pattern.compile("006-B1727-[A-Za-z\\d]{2}");
-    private static final Pattern TAILNUMBER_FILENAME_PATTERN =
-    Pattern.compile("^([A-Z0-9]+)_\\d{8}T\\d{6}_.*\\.csv$", Pattern.CASE_INSENSITIVE);
+
     /**
      * Scans first line of file for G3X part number.
      *
@@ -87,9 +84,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             if (metainfo.startsWith("DID_")) {
                 return true;
             } else {
-                throw new FatalFlightFileException(
-                        "First line of the flight file should begin with a '#' and contain "
-                                + "flight recorder information.");
+                throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain "
+                        + "flight recorder information.");
             }
         }
 
@@ -192,24 +188,15 @@ public class CSVFileProcessor extends FlightFileProcessor {
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
         List<String[]> rows = extractFlightData();
-        
-        if (meta.getAirframe() != null 
-            && Airframes.AIRFRAME_AW119.equals(meta.getAirframe().getName())) {
-            String basename = Paths.get(filename).getFileName().toString();
-            java.util.regex.Matcher m = TAILNUMBER_FILENAME_PATTERN.matcher(basename);
-            if (m.matches()) {
-                String tail = m.group(1);
-                LOG.info("AW-119 detected, extracting tail number from filename: " + tail);
-                meta.setSuggestedTailNumber(tail);
-    }
-}
+
         readTimeSeries(rows, doubleTimeSeries, stringTimeSeries);
 
         return Stream.of(makeFlightBuilder(meta, doubleTimeSeries, stringTimeSeries));
     }
 
     FlightBuilder makeFlightBuilder(
-            FlightMeta metaParam, Map<String, DoubleTimeSeries> doubleSeries,
+            FlightMeta metaParam,
+            Map<String, DoubleTimeSeries> doubleSeries,
             Map<String, StringTimeSeries> stringSeries) {
         return new FlightBuilder(metaParam, doubleSeries, stringSeries);
     }
@@ -374,6 +361,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * Some Garmin logs (especially GIFD) repeat the {@code Lcl Date,...} header row before numeric data. Ingesting
      * that row makes {@code ComputeUTCTime} try to parse the literal strings {@code Lcl Date} and {@code Lcl Time}.
      * When the next line still looks like a header, drop it; otherwise leave the stream unchanged for older logs.
+     * @param reader the reader to inspect
+     * @throws IOException if an I/O error occurs
+     * @throws FatalFlightFileException if the file format is invalid or the airframe cannot be resolved
      */
     protected static void skipGarminExtraHeaderRowIfPresent(BufferedReader reader)
             throws IOException, FatalFlightFileException {
@@ -408,8 +398,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         if (!Airframes.FIXED_WING_AIRFRAMES.contains(airframeName)
                 && !airframeName.contains("Garmin")
                 && !Airframes.ROTORCRAFT.contains(airframeName)) {
-            airframeName =
-                    Airframes.resolveGarminRotorcraftAirframeCode(name).orElse(airframeName);
+            airframeName = Airframes.resolveGarminRotorcraftAirframeCode(name).orElse(airframeName);
         }
 
         String airframeType = null;

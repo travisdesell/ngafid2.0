@@ -67,6 +67,9 @@ public final class TimeUtils {
     /**
      * Returns a {@link ZoneOffset} id (e.g. {@code -06:00}) after {@link #updateBadOffset(String)}, or null when the
      * value is empty or a Garmin placeholder ({@code -} / {@code +} with no offset).
+     *
+     * @param offset the raw UTC offset string to normalize
+     * @return the normalized UTC offset string, or null when the input cannot be parsed
      */
     public static String normalizeUtcOffsetForParsing(String offset) {
         if (offset == null) {
@@ -88,6 +91,9 @@ public final class TimeUtils {
     /**
      * Garmin and similar logs sometimes emit {@code HH:mm} without seconds (e.g. touch-down footer rows).
      * Appends {@code :00} when the time has hours and minutes only.
+     *
+     * @param time the raw local time string to normalize
+     * @return the normalized local time string
      */
     public static String normalizeLocalTimeForParsing(String time) {
         if (time == null) {
@@ -194,6 +200,7 @@ public final class TimeUtils {
 
     // Date formats WITHOUT TIMEZONE
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
             DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"),
             DateTimeFormatter.ofPattern("yyyy/M/d H:m:s"),
             DateTimeFormatter.ofPattern("M/d/yyyy H:m:s"),
@@ -281,6 +288,7 @@ public final class TimeUtils {
      *
      * @param dateTimeString input date/time string
      * @return specific DateTimeFormatter
+     * @throws UnrecognizedDateTimeFormatException if no configured formatter matches the input
      */
     public static DateTimeFormatter findCorrectFormatter(String dateTimeString)
             throws UnrecognizedDateTimeFormatException {

@@ -39,6 +39,7 @@ public class FlightBuilder {
             ComputeLOCI::new,
             ComputeItinerary::new,
             ComputeAltAGL::new,
+            ComputeLossOfTailRotorEffectiveness::new,
             ComputeTurnToFinal::new);
 
     // Flight metadata - see FlightMeta definition for details.

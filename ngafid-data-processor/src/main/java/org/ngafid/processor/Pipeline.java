@@ -1,17 +1,5 @@
 package org.ngafid.processor;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.ngafid.core.Config;
-import org.ngafid.core.flights.Airframes;
-import org.ngafid.core.flights.FatalFlightFileException;
-import org.ngafid.core.flights.Flight;
-import org.ngafid.core.flights.FlightProcessingException;
-import org.ngafid.core.uploads.Upload;
-import org.ngafid.core.uploads.UploadException;
-import org.ngafid.processor.format.*;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +17,17 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.ngafid.core.Config;
+import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.FatalFlightFileException;
+import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.FlightProcessingException;
+import org.ngafid.core.uploads.Upload;
+import org.ngafid.core.uploads.UploadException;
+import org.ngafid.processor.format.*;
 
 /**
  * Primary entry point for interacting with the org.ngafid.flights.process package.
@@ -90,6 +89,7 @@ public class Pipeline implements AutoCloseable {
     // additional delegation if a single file extension may actually map to multiple significantly different schemas.
     private static final Map<String, FlightFileProcessor.Factory> FACTORIES = Map.of(
             "csv", CSVFileProcessor::factory,
+            "tel", CSVFileProcessor::factory, // Scan Eagle telemetry (DID_* columns; same format as .tel.csv)
             "dat", DATFileProcessor::new,
             "json", JSONFileProcessor::new,
             "gpx", GPXFileProcessor::new);
@@ -117,6 +117,7 @@ public class Pipeline implements AutoCloseable {
 
     /**
      * Closes the derivedFileSystem if there is one.
+     * @throws IOException if an I/O error occurs
      */
     @Override
     public void close() throws IOException {
@@ -263,7 +264,21 @@ public class Pipeline implements AutoCloseable {
         return StreamSupport.stream(
                         Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED), false)
                 .filter(z -> !z.getName().contains("__MACOSX"))
-                .filter(z -> !z.isDirectory());
+                .filter(z -> !z.isDirectory())
+                .filter(z -> !isSkippedNonFlightFile(z.getName()));
+    }
+
+    /**
+     * Mission/software logs bundled in Scan Eagle zips are not flight recordings.
+     * @param filename the filename to inspect
+     * @return true if the filename should be skipped as a non-flight log
+     */
+    private static boolean isSkippedNonFlightFile(String filename) {
+        int index = filename.lastIndexOf('.');
+        if (index < 0) {
+            return false;
+        }
+        return "log".equals(filename.substring(index + 1).toLowerCase());
     }
 
     // private Stream<FlightFileProcessor> getFlightFileProcessorStream() {
@@ -276,7 +291,9 @@ public class Pipeline implements AutoCloseable {
      *
      * @param entry The zip entry to create a FlightFileProcessor for.
      * @return A FlightFileProcessor if the file extension is supported, otherwise `null`.
-     * @throws Exception TODO this should be a specific set of exceptions.
+     * @throws IOException if an I/O error occurs
+     * @throws SQLException if a database error occurs
+     * @throws FatalFlightFileException if the file format is invalid or the airframe cannot be resolved
      */
     private FlightFileProcessor create(ZipArchiveEntry entry)
             throws IOException, SQLException, FatalFlightFileException {
@@ -337,7 +354,8 @@ public class Pipeline implements AutoCloseable {
             return flightBuilder.build(dbConnection);
         } catch (FlightProcessingException | SQLException e) {
             LOG.info("Encountered an irrecoverable issue processing a flight");
-            fail(flightBuilder.meta.getFilename(),
+            fail(
+                    flightBuilder.meta.getFilename(),
                     new UploadException(e.getMessage(), e, flightBuilder.meta.getFilename()));
             return null;
         }
@@ -351,7 +369,8 @@ public class Pipeline implements AutoCloseable {
      * @return a list of `Flight` objects, having filtered out any `null` values.
      */
     public List<FlightBuilder> build(Connection dbConnection, Stream<FlightBuilder> flightBuilders) {
-        return flightBuilders.map(flightBuilder -> this.build(dbConnection, flightBuilder))
+        return flightBuilders
+                .map(flightBuilder -> this.build(dbConnection, flightBuilder))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }

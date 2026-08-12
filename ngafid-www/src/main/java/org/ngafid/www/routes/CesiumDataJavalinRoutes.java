@@ -19,8 +19,10 @@ import java.util.logging.Logger;
 import org.ngafid.core.Database;
 import org.ngafid.core.accounts.User;
 import org.ngafid.core.event.Event;
+import org.ngafid.core.flights.CesiumFlightReadiness;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
+import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.www.ErrorResponse;
 
@@ -28,6 +30,168 @@ public class CesiumDataJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(CesiumDataJavalinRoutes.class.getName());
     private static final String CESIUM_DATA = "cesium_data";
+
+    /** Minimum horizontal movement before another Cesium path vertex is emitted (reduces GPS dither). */
+    private static final double MIN_CESIUM_PATH_SEGMENT_METERS = 5.0;
+
+    private static final double EARTH_RADIUS_METERS = 6_371_000.0;
+
+    private static boolean hasRequiredCesiumSeries(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            StringTimeSeries utcDateTime) {
+        return CesiumFlightReadiness.hasRequiredCesiumSeries(
+                latitude, longitude, altAgl, date, time, utcDateTime);
+    }
+
+    private static CesiumResponse emptyCesiumResponse(String airframeType, String errorMessage) {
+        return new CesiumResponse(
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                airframeType,
+                errorMessage);
+    }
+
+    /**
+     * Lists stored series that Cesium requires but are absent for this flight.
+     *
+     * @return null if all required series are present
+     */
+    static String describeMissingCesiumSeries(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            StringTimeSeries utcDateTime) {
+        return CesiumFlightReadiness.describeMissingCesiumSeries(
+                latitude, longitude, altAgl, date, time, utcDateTime);
+    }
+
+    /**
+     * Explains why a flight with stored series still produced an empty Cesium path.
+     *
+     * @return null when {@code response} contains path data
+     */
+    static String describeEmptyCesiumPath(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            StringTimeSeries utcDateTime,
+            CesiumResponse response) {
+        if (!response.getFlightGeoInfoAgl().isEmpty()) {
+            return null;
+        }
+        return CesiumFlightReadiness.describeNoPlayableSamples(
+                latitude, longitude, altAgl, date, time, utcDateTime);
+    }
+
+    private static CesiumResponse finalizeCesiumResponse(
+            ArrayList<Double> flightGeoAglTaxiing,
+            ArrayList<Double> flightGeoAglTakeOff,
+            ArrayList<Double> flightGeoAglClimb,
+            ArrayList<Double> flightGeoAglCruise,
+            ArrayList<Double> flightGeoInfoAgl,
+            ArrayList<String> flightTaxiingTimes,
+            ArrayList<String> flightTakeOffTimes,
+            ArrayList<String> flightClimbTimes,
+            ArrayList<String> flightCruiseTimes,
+            ArrayList<String> flightAglTimes,
+            String airframeType,
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            StringTimeSeries utcDateTime) {
+        CesiumResponse response = new CesiumResponse(
+                flightGeoAglTaxiing,
+                flightGeoAglTakeOff,
+                flightGeoAglClimb,
+                flightGeoAglCruise,
+                flightGeoInfoAgl,
+                flightTaxiingTimes,
+                flightTakeOffTimes,
+                flightClimbTimes,
+                flightCruiseTimes,
+                flightAglTimes,
+                airframeType,
+                null);
+        String errorMessage =
+                describeEmptyCesiumPath(latitude, longitude, altAgl, date, time, utcDateTime, response);
+        if (errorMessage == null) {
+            return response;
+        }
+        return new CesiumResponse(
+                flightGeoAglTaxiing,
+                flightGeoAglTakeOff,
+                flightGeoAglClimb,
+                flightGeoAglCruise,
+                flightGeoInfoAgl,
+                flightTaxiingTimes,
+                flightTakeOffTimes,
+                flightClimbTimes,
+                flightCruiseTimes,
+                flightAglTimes,
+                airframeType,
+                errorMessage);
+    }
+
+    private static boolean isTakeoffRangeGroundSpeed(DoubleTimeSeries groundSpeed, int index) {
+        if (groundSpeed == null) {
+            return false;
+        }
+        double speed = groundSpeed.get(index);
+        return speed > 14.5 && speed < 80;
+    }
+
+    private static boolean isClimbRangeGroundSpeed(DoubleTimeSeries groundSpeed, int index) {
+        if (groundSpeed == null) {
+            return false;
+        }
+        double speed = groundSpeed.get(index);
+        return speed > 14.5 && speed <= 80;
+    }
+
+    private static int cesiumSampleCount(DoubleTimeSeries latitude, DoubleTimeSeries altAgl) {
+        return CesiumFlightReadiness.cesiumSampleCount(latitude, altAgl);
+    }
+
+    private static boolean hasValidCesiumPosition(
+            DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
+        return CesiumFlightReadiness.hasValidCesiumPosition(latitude, longitude, index);
+    }
+
+    /** Valid 3D sample: position plus a defined AGL (0 ft on the ground is allowed). */
+    private static boolean hasValidCesiumSample(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            int index) {
+        return CesiumFlightReadiness.hasValidCesiumSample(latitude, longitude, altAgl, index);
+    }
+
+    private static String formatCesiumRowTimestamp(
+            int index,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            StringTimeSeries utcDateTime,
+            int dateSize) {
+        return CesiumFlightReadiness.formatCesiumRowTimestamp(index, date, time, utcDateTime, dateSize);
+    }
 
     private CesiumDataJavalinRoutes() {
         throw new UnsupportedOperationException("Utility class");
@@ -101,6 +265,17 @@ public class CesiumDataJavalinRoutes {
                         StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
                 StringTimeSeries time =
                         StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
+                StringTimeSeries utcDateTime = StringTimeSeries.getStringTimeSeries(
+                        connection, flightIdNewInteger, Parameters.UTC_DATE_TIME);
+
+                if (!hasRequiredCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime)) {
+                    String errorMessage =
+                            describeMissingCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime);
+                    LOG.warning("Flight " + flightIdNew + " is missing required Cesium coordinate or time series: "
+                            + errorMessage);
+                    flights.put(flightIdNew, emptyCesiumResponse(airframeType, errorMessage));
+                    continue;
+                }
 
                 ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
                 ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
@@ -119,45 +294,38 @@ public class CesiumDataJavalinRoutes {
                 int countPostTakeoff = 0;
                 int sizePreClimb = 0;
                 int countPostCruise = 0;
-                int dateSize = date.size();
+                int dateSize = date != null ? date.size() : 0;
+                int sampleCount = cesiumSampleCount(latitude, altAgl);
 
                 // Calculate the taxiing phase
-                for (int i = 0; i < altAgl.size(); i++) {
-
-                    if (!Double.isNaN(longitude.get(i))
-                            && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i))
-                            && (i < dateSize)) {
+                for (int i = 0; i < sampleCount; i++) {
+                    String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                    if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                        double altFt = altAgl.get(i);
                         initCounter++;
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
-                        flightGeoAglTaxiing.add(altAgl.get(i));
-                        flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                        flightGeoAglTaxiing.add(altFt);
+                        flightTaxiingTimes.add(cesiumTimestamp);
 
-                        if ((rpm != null && rpm.get(i) >= 2100)
-                                && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) < 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
                             break;
                         }
                     }
                 }
 
                 // Calculate the takeoff-init phase
-                for (int i = 0; i < altAgl.size(); i++) {
-
-                    if (!Double.isNaN(longitude.get(i))
-                            && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i))
-                            && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100)
-                                && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) < 80) {
+                for (int i = 0; i < sampleCount; i++) {
+                    String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                    if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                        double altFt = altAgl.get(i);
+                        if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
 
                             if (takeoffCounter <= 15) {
                                 flightGeoAglTakeOff.add(longitude.get(i));
                                 flightGeoAglTakeOff.add(latitude.get(i));
-                                flightGeoAglTakeOff.add(altAgl.get(i));
-                                flightTakeOffTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                                flightGeoAglTakeOff.add(altFt);
+                                flightTakeOffTimes.add(cesiumTimestamp);
 
                                 initCounter++;
                             } else if (takeoffCounter > 15) {
@@ -171,25 +339,21 @@ public class CesiumDataJavalinRoutes {
                 }
 
                 // Calculate the climb phase
-                for (int i = 0; i < altAgl.size(); i++) {
-
-                    if (!Double.isNaN(longitude.get(i))
-                            && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i))
-                            && (i < dateSize)) {
-                        if ((rpm != null && rpm.get(i) >= 2100)
-                                && groundSpeed.get(i) > 14.5
-                                && groundSpeed.get(i) <= 80) {
+                for (int i = 0; i < sampleCount; i++) {
+                    String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                    if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                        double altFt = altAgl.get(i);
+                        if ((rpm != null && rpm.get(i) >= 2100) && isClimbRangeGroundSpeed(groundSpeed, i)) {
 
                             if (countPostTakeoff >= 15) {
                                 flightGeoAglClimb.add(longitude.get(i));
                                 flightGeoAglClimb.add(latitude.get(i));
-                                flightGeoAglClimb.add(altAgl.get(i));
-                                flightClimbTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                                flightGeoAglClimb.add(altFt);
+                                flightClimbTimes.add(cesiumTimestamp);
 
                                 initCounter++;
                             }
-                            if (altAgl.get(i) >= 500) {
+                            if (altFt >= 500) {
                                 break;
                             }
                             countPostTakeoff++;
@@ -201,35 +365,23 @@ public class CesiumDataJavalinRoutes {
                 int preClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) - 9;
                 sizePreClimb = preClimb / 3;
 
-                for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i))
-                            && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i))
-                            && (i < dateSize)) {
+                for (int i = 0; i < sampleCount; i++) {
+                    String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                    if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                        double altFt = altAgl.get(i);
 
                         if (countPostCruise >= sizePreClimb) {
                             flightGeoAglCruise.add(longitude.get(i));
                             flightGeoAglCruise.add(latitude.get(i));
-                            flightGeoAglCruise.add(altAgl.get(i));
-                            flightCruiseTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                            flightGeoAglCruise.add(altFt);
+                            flightCruiseTimes.add(cesiumTimestamp);
                         }
                         countPostCruise++;
                     }
                 }
 
-                // Calculate the full phase
-                // I am avoiding NaN here as well!
-                for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i))
-                            && !Double.isNaN(latitude.get(i))
-                            && !Double.isNaN(altAgl.get(i))
-                            && (i < dateSize)) {
-                        flightGeoInfoAgl.add(longitude.get(i));
-                        flightGeoInfoAgl.add(latitude.get(i));
-                        flightGeoInfoAgl.add(altAgl.get(i));
-                        flightAglTimes.add(date.get(i) + "T" + time.get(i) + "Z");
-                    }
-                }
+                populateFilteredFullFlightPath(
+                        latitude, longitude, altAgl, date, time, utcDateTime, flightGeoInfoAgl, flightAglTimes);
 
                 if (incomingFlight.getFleetId() != fleetId) {
                     LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
@@ -238,7 +390,7 @@ public class CesiumDataJavalinRoutes {
                     ctx.status(401).result("User did not have access to view this fleet.");
                 }
 
-                CesiumResponse cr = new CesiumResponse(
+                CesiumResponse cr = finalizeCesiumResponse(
                         flightGeoAglTaxiing,
                         flightGeoAglTakeOff,
                         flightGeoAglClimb,
@@ -249,7 +401,13 @@ public class CesiumDataJavalinRoutes {
                         flightClimbTimes,
                         flightCruiseTimes,
                         flightAglTimes,
-                        airframeType);
+                        airframeType,
+                        latitude,
+                        longitude,
+                        altAgl,
+                        date,
+                        time,
+                        utcDateTime);
                 cesiumData = "var cesium_data_new = " + ctx.json(cr) + ";\n";
                 flights.put(flightIdNew, cr);
             }
@@ -303,6 +461,17 @@ public class CesiumDataJavalinRoutes {
 
             StringTimeSeries date = flight.getStringTimeSeries(connection, "Lcl Date");
             StringTimeSeries time = flight.getStringTimeSeries(connection, "Lcl Time");
+            StringTimeSeries utcDateTime = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
+
+            if (!hasRequiredCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime)) {
+                String errorMessage =
+                        describeMissingCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime);
+                LOG.warning("Flight " + flightId + " is missing required Cesium coordinate or time series: "
+                        + errorMessage);
+                flights.put(flightId, emptyCesiumResponse(airframeType, errorMessage));
+                ctx.json(flights);
+                return;
+            }
 
             ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
             ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
@@ -321,42 +490,38 @@ public class CesiumDataJavalinRoutes {
             int countPostTakeoff = 0;
             int sizePreClimb = 0;
             int countPostCruise = 0;
-            int dateSize = date.size();
+            int dateSize = date != null ? date.size() : 0;
+            int sampleCount = cesiumSampleCount(latitude, altAgl);
 
             // Calculate the taxiing phase
-            for (int i = 0; i < altAgl.size(); i++) {
-
-                if (!Double.isNaN(longitude.get(i))
-                        && !Double.isNaN(latitude.get(i))
-                        && !Double.isNaN(altAgl.get(i))
-                        && (i < dateSize)) {
+            for (int i = 0; i < sampleCount; i++) {
+                String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                    double altFt = altAgl.get(i);
                     initCounter++;
                     flightGeoAglTaxiing.add(longitude.get(i));
                     flightGeoAglTaxiing.add(latitude.get(i));
-                    flightGeoAglTaxiing.add(altAgl.get(i));
-                    flightTaxiingTimes.add(date.get(i) + "T" + time.get(i).trim() + "Z");
+                    flightGeoAglTaxiing.add(altFt);
+                    flightTaxiingTimes.add(cesiumTimestamp);
 
-                    if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                    if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
                         break;
                     }
                 }
             }
 
             // Calculate the takeoff-init phase
-            for (int i = 0; i < altAgl.size(); i++) {
-
-                if (!Double.isNaN(longitude.get(i))
-                        && !Double.isNaN(latitude.get(i))
-                        && !Double.isNaN(altAgl.get(i))
-                        && (i < dateSize)) {
-                    if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+            for (int i = 0; i < sampleCount; i++) {
+                String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                    double altFt = altAgl.get(i);
+                    if ((rpm != null && rpm.get(i) >= 2100) && isTakeoffRangeGroundSpeed(groundSpeed, i)) {
 
                         if (takeoffCounter <= 15) {
                             flightGeoAglTakeOff.add(longitude.get(i));
                             flightGeoAglTakeOff.add(latitude.get(i));
-                            flightGeoAglTakeOff.add(altAgl.get(i));
-                            flightTakeOffTimes.add(
-                                    date.get(i) + "T" + time.get(i).trim() + "Z");
+                            flightGeoAglTakeOff.add(altFt);
+                            flightTakeOffTimes.add(cesiumTimestamp);
 
                             initCounter++;
                         } else if (takeoffCounter > 15) {
@@ -370,23 +535,21 @@ public class CesiumDataJavalinRoutes {
             }
 
             // Calculate the climb phase
-            for (int i = 0; i < altAgl.size(); i++) {
-
-                if (!Double.isNaN(longitude.get(i))
-                        && !Double.isNaN(latitude.get(i))
-                        && !Double.isNaN(altAgl.get(i))
-                        && (i < dateSize)) {
-                    if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
+            for (int i = 0; i < sampleCount; i++) {
+                String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                    double altFt = altAgl.get(i);
+                    if ((rpm != null && rpm.get(i) >= 2100) && isClimbRangeGroundSpeed(groundSpeed, i)) {
 
                         if (countPostTakeoff >= 15) {
                             flightGeoAglClimb.add(longitude.get(i));
                             flightGeoAglClimb.add(latitude.get(i));
-                            flightGeoAglClimb.add(altAgl.get(i));
-                            flightClimbTimes.add(date.get(i) + "T" + time.get(i).trim() + "Z");
+                            flightGeoAglClimb.add(altFt);
+                            flightClimbTimes.add(cesiumTimestamp);
 
                             initCounter++;
                         }
-                        if (altAgl.get(i) >= 500) {
+                        if (altFt >= 500) {
                             break;
                         }
                         countPostTakeoff++;
@@ -398,37 +561,25 @@ public class CesiumDataJavalinRoutes {
             int preClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) - 9;
             sizePreClimb = preClimb / 3;
 
-            for (int i = 0; i < altAgl.size(); i++) {
-                if (!Double.isNaN(longitude.get(i))
-                        && !Double.isNaN(latitude.get(i))
-                        && !Double.isNaN(altAgl.get(i))
-                        && (i < dateSize)) {
+            for (int i = 0; i < sampleCount; i++) {
+                String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+                if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                    double altFt = altAgl.get(i);
 
                     if (countPostCruise >= sizePreClimb) {
                         flightGeoAglCruise.add(longitude.get(i));
                         flightGeoAglCruise.add(latitude.get(i));
-                        flightGeoAglCruise.add(altAgl.get(i));
-                        flightCruiseTimes.add(date.get(i) + "T" + time.get(i).trim() + "Z");
+                        flightGeoAglCruise.add(altFt);
+                        flightCruiseTimes.add(cesiumTimestamp);
                     }
                     countPostCruise++;
                 }
             }
 
-            // Calculate the full phase
-            // I am avoiding NaN here as well!
-            for (int i = 0; i < altAgl.size(); i++) {
-                if (!Double.isNaN(longitude.get(i))
-                        && !Double.isNaN(latitude.get(i))
-                        && !Double.isNaN(altAgl.get(i))
-                        && (i < dateSize)) {
-                    flightGeoInfoAgl.add(longitude.get(i));
-                    flightGeoInfoAgl.add(latitude.get(i));
-                    flightGeoInfoAgl.add(altAgl.get(i));
-                    flightAglTimes.add(date.get(i) + "T" + time.get(i).trim() + "Z");
-                }
-            }
+            populateFilteredFullFlightPath(
+                    latitude, longitude, altAgl, date, time, utcDateTime, flightGeoInfoAgl, flightAglTimes);
 
-            CesiumResponse cr = new CesiumResponse(
+            CesiumResponse cr = finalizeCesiumResponse(
                     flightGeoAglTaxiing,
                     flightGeoAglTakeOff,
                     flightGeoAglClimb,
@@ -439,13 +590,123 @@ public class CesiumDataJavalinRoutes {
                     flightClimbTimes,
                     flightCruiseTimes,
                     flightAglTimes,
-                    airframeType);
+                    airframeType,
+                    latitude,
+                    longitude,
+                    altAgl,
+                    date,
+                    time,
+                    utcDateTime);
             flights.put(flightId, cr);
 
             ctx.json(flights);
         } catch (Exception e) {
             LOG.severe("Database error: " + e.getMessage());
             ctx.status(500).json(new ErrorResponse(e));
+        }
+    }
+
+    private static void populateFilteredFullFlightPath(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            StringTimeSeries utcDateTime,
+            ArrayList<Double> flightGeoInfoAgl,
+            ArrayList<String> flightAglTimes) {
+        int dateSize = date != null ? date.size() : 0;
+        int sampleCount = cesiumSampleCount(latitude, altAgl);
+        int lastValidIndex = findLastValidCesiumIndex(
+                latitude, longitude, altAgl, date, time, utcDateTime, dateSize, sampleCount);
+        CesiumPathFilter pathFilter = new CesiumPathFilter();
+
+        for (int i = 0; i < sampleCount; i++) {
+            String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+            if (cesiumTimestamp == null || !hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                continue;
+            }
+
+            double lat = latitude.get(i);
+            double lon = longitude.get(i);
+            appendFilteredCesiumSample(
+                    pathFilter,
+                    flightGeoInfoAgl,
+                    flightAglTimes,
+                    lon,
+                    lat,
+                    altAgl.get(i),
+                    cesiumTimestamp,
+                    i == lastValidIndex);
+        }
+    }
+
+    private static int findLastValidCesiumIndex(
+            DoubleTimeSeries latitude,
+            DoubleTimeSeries longitude,
+            DoubleTimeSeries altAgl,
+            StringTimeSeries date,
+            StringTimeSeries time,
+            StringTimeSeries utcDateTime,
+            int dateSize,
+            int sampleCount) {
+        for (int i = sampleCount - 1; i >= 0; i--) {
+            String cesiumTimestamp = formatCesiumRowTimestamp(i, date, time, utcDateTime, dateSize);
+            if (cesiumTimestamp != null && hasValidCesiumSample(latitude, longitude, altAgl, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean appendFilteredCesiumSample(
+            CesiumPathFilter pathFilter,
+            ArrayList<Double> coordinates,
+            ArrayList<String> timestamps,
+            double longitude,
+            double latitude,
+            double altAgl,
+            String timestamp,
+            boolean forceInclude) {
+        if (!pathFilter.shouldInclude(latitude, longitude, forceInclude)) {
+            return false;
+        }
+
+        coordinates.add(longitude);
+        coordinates.add(latitude);
+        coordinates.add(altAgl);
+        timestamps.add(timestamp);
+        pathFilter.record(latitude, longitude);
+        return true;
+    }
+
+    private static double horizontalDistanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        double lat1Rad = Math.toRadians(lat1);
+        double lat2Rad = Math.toRadians(lat2);
+        double deltaLat = Math.toRadians(lat2 - lat1);
+        double deltaLon = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2)
+                + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return EARTH_RADIUS_METERS * c;
+    }
+
+    private static final class CesiumPathFilter {
+        private Double lastLatitude;
+        private Double lastLongitude;
+
+        boolean shouldInclude(double latitude, double longitude, boolean forceInclude) {
+            if (forceInclude || lastLatitude == null) {
+                return true;
+            }
+            return horizontalDistanceMeters(lastLatitude, lastLongitude, latitude, longitude)
+                    >= MIN_CESIUM_PATH_SEGMENT_METERS;
+        }
+
+        void record(double latitude, double longitude) {
+            lastLatitude = latitude;
+            lastLongitude = longitude;
         }
     }
 
@@ -492,6 +753,9 @@ public class CesiumDataJavalinRoutes {
         @JsonProperty
         private final String airframeType;
 
+        @JsonProperty
+        private final String errorMessage;
+
         CesiumResponse(
                 ArrayList<Double> flightGeoAglTaxiing,
                 ArrayList<Double> flightGeoAglTakeOff,
@@ -503,7 +767,8 @@ public class CesiumDataJavalinRoutes {
                 ArrayList<String> flightClimbTimes,
                 ArrayList<String> flightCruiseTimes,
                 ArrayList<String> flightAglTimes,
-                String airframeType) {
+                String airframeType,
+                String errorMessage) {
 
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
@@ -517,10 +782,11 @@ public class CesiumDataJavalinRoutes {
             this.flightCruiseTimes = flightCruiseTimes;
             this.flightAglTimes = flightAglTimes;
 
-            this.startTime = flightAglTimes.get(0);
-            this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
+            this.startTime = flightAglTimes.isEmpty() ? null : flightAglTimes.get(0);
+            this.endTime = flightAglTimes.isEmpty() ? null : flightAglTimes.get(flightAglTimes.size() - 1);
             this.airframeType = airframeType;
             this.events = new ArrayList<>();
+            this.errorMessage = errorMessage;
         }
 
         public ArrayList<Double> getFlightGeoAglTaxiing() {
@@ -577,6 +843,10 @@ public class CesiumDataJavalinRoutes {
 
         public String getAirframeType() {
             return airframeType;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
         }
     }
 }

@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset roman:flight-label-sections-tail-airframe labels:flights,labels
+--changeset ngafid:flight-label-sections-tail-airframe labels:flights,labels
 ALTER TABLE flight_label_section
     ADD COLUMN tail_number VARCHAR(64) NULL AFTER flight_id,
     ADD COLUMN airframe VARCHAR(64) NULL AFTER tail_number;

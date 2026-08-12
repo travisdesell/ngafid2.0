@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset roman:label-definitions-table labels:accounts,labels
+--changeset ngafid:label-definitions-table labels:accounts,labels
 CREATE TABLE label_definitions (
     id INT NOT NULL AUTO_INCREMENT,
     fleet_id INT NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE label_definitions (
             ON DELETE CASCADE
 );
 
---changeset roman:label-definitions-seed labels:accounts,labels
+--changeset ngafid:label-definitions-seed labels:accounts,labels
 -- Seed 39 predefined cluster labels for every existing fleet (numbered for order and dropdown search).
 INSERT INTO label_definitions (fleet_id, label_text, display_order)
 SELECT f.id, t.label_text, t.display_order

@@ -293,6 +293,13 @@ class Upload extends React.Component {
             statusClasses = statusStateUnknownDefaults.statusClasses;
         }
 
+        const errorFlightCount = Number(uploadInfo.errorFlights ?? 0);
+        if (status === "PROCESSED_WARNING" && errorFlightCount > 0) {
+            statusText = `Processed With ${errorFlightCount} Error${errorFlightCount === 1 ? "" : "s"}`;
+            progressBarClasses = "progress-bar bg-danger";
+            statusClasses = "p-1 pl-2 pr-2 ml-1 card border-danger text-danger";
+        }
+
 
         const progressSizeStyle = {
             width: `${width  }%`,
@@ -431,11 +438,11 @@ function resolveUploadDisplayStatus(uploadInfo) {
         return status;
     }
 
-    const errorFlights = uploadInfo.errorFlights ?? 0;
-    const warningFlights = uploadInfo.warningFlights ?? 0;
-    const validFlights = uploadInfo.validFlights ?? 0;
+    const errorFlights = Number(uploadInfo.errorFlights ?? 0);
+    const warningFlights = Number(uploadInfo.warningFlights ?? 0);
+    const validFlights = Number(uploadInfo.validFlights ?? 0);
 
-    if (errorFlights > 0 && validFlights === 0) {
+    if (errorFlights > 0 && validFlights + warningFlights === 0) {
         return "FAILED_UNKNOWN";
     }
     if (errorFlights > 0 || warningFlights > 0) {

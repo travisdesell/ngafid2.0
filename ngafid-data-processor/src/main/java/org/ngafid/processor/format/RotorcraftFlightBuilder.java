@@ -8,26 +8,27 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 
 /**
- * Flight builder for rotorcraft CSV uploads. Maps recorder-specific column names (e.g. Appareo) to
- * {@link Parameters} names expected by compute steps.
+ * Rotorcraft flight builder: maps recorder columns to {@link Parameters}.
  */
 public final class RotorcraftFlightBuilder extends FlightBuilder {
 
-    /** First pair with enough valid samples wins ({@link #promoteForPersistence}). */
+    /** Present-position lat/lon pairs in priority order; GPS-NAV excluded. */
     private static final String[][] POSITION_SOURCE_PAIRS = {
-        {"GPS-NAV_LAT", "GPS-NAV_LNG"},
-        {"GPS.NAV_Latitude", "GPS.NAV_Longitude"},
+        {"GPS-PP_LAT", "GPS-PP_LNG"},
         {"GPS.PP_Latitude", "GPS.PP_Longitude"},
         {"GeneralPurpose-PP_LAT", "GeneralPurpose-PP_LNG"},
+        {"FDR-PP_LAT", "FDR-PP_LNG"},
+        {"Latitude", "Longitude"},
         {"Latitude (1)", "Longitude (1)"},
-        {"GeneralPurpose-NAV_LAT", "GeneralPurpose-NAV_LNG"},
     };
 
+    /** Recorder column aliases by canonical {@link Parameters} name. */
     private static final Map<String, Set<String>> ALIASES = Map.ofEntries(
             Map.entry(Parameters.UNIX_TIME_SECONDS, Set.of("UNIX Time")),
             Map.entry(
                     Parameters.IAS,
-                    Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS", "IAS1", "IAS2", "GP.CAS", "AP.IAS")),
+                    Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS",
+                            "IAS1", "IAS2", "GP.CAS", "AP.IAS", "FDR-CAS")),
             Map.entry(
                     Parameters.GND_SPD,
                     Set.of(
@@ -39,7 +40,8 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "PNAV GndSpd",
                             "PNAV_Tru_A/S",
                             "PNAV Tru A/S",
-                            "GPS.Ground_Speed")),
+                            "GPS.Ground_Speed",
+                            "FDR-GS")),
             Map.entry(
                     Parameters.VSPD,
                     Set.of(
@@ -94,6 +96,25 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "RollAn-In-1")),
             Map.entry(Parameters.YAW_RATE, Set.of("Yaw Rate", "Gyro-YAW_RATE")),
             Map.entry(
+                    Parameters.ENGINE_1_TORQUE,
+                    Set.of(
+                            "TRQ_1",
+                            "E1 Torq",
+                            "Eng (1) Torque",
+                            "Eng 1 Torque",
+                            "1_Torque",
+                            "Torque 1(%)",
+                            "FDR-TRQ_1")),
+            Map.entry(
+                    Parameters.ENGINE_2_TORQUE,
+                    Set.of(
+                            "TRQ_2",
+                            "E2 torque",
+                            "Eng (2) Torque",
+                            "Eng 2 Torque",
+                            "2_Torque",
+                            "Torque 2(%)")),
+            Map.entry(
                     Parameters.ALT_AGL,
                     Set.of(
                             "Height Above Airfield",
@@ -101,7 +122,9 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Altitude Radio (A)",
                             "Altitude Radio (B)",
                             "GeneralPurpose-RA",
-                            "RadAlt_Inht")),
+                            "RadAlt_Inht",
+                            "FDR-RA",
+                            "GP.RA")),
             Map.entry(
                     Parameters.ALT_MSL,
                     Set.of(
@@ -120,30 +143,26 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                     Set.of("Pressure Altitude", "Press_Alt1", "Press Alt1", "Press_Alt2", "Press Alt2")),
             Map.entry(Parameters.FUEL_QTY_LEFT, Set.of("Fuel_Qty_1")),
             Map.entry(Parameters.FUEL_QTY_RIGHT, Set.of("Fuel_Qty_2")),
-            Map.entry(Parameters.E1_RPM, Set.of("Eng1_N1", "Eng1_N2", "Nr1")),
+            Map.entry(Parameters.E1_RPM, Set.of("Eng1_N1", "Eng1_N2", "Nr1", "Engine-NR")),
             Map.entry(
                     Parameters.LATITUDE,
                     Set.of(
                             "Latitude",
                             "Latitude (1)",
-                            "GPS-NAV_LAT",
-                            "GPS.NAV_Latitude",
+                            "GPS-PP_LAT",
                             "GPS.PP_Latitude",
                             "GeneralPurpose-PP_LAT",
-                            "GeneralPurpose-NAV_LAT")),
+                            "FDR-PP_LAT")),
             Map.entry(
                     Parameters.LONGITUDE,
                     Set.of(
                             "Longitude",
                             "Longitude (1)",
-                            "GPS-NAV_LNG",
-                            "GPS.NAV_Longitude",
+                            "GPS-PP_LNG",
                             "GPS.PP_Longitude",
                             "GeneralPurpose-PP_LNG",
-                            "GeneralPurpose-NAV_LNG")),
-            Map.entry(
-                    Parameters.OAT,
-                    Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
+                            "FDR-PP_LNG")),
+            Map.entry(Parameters.OAT, Set.of("TAT", "AFCS1 OAT (233)", "AFCS2 OAT (233)", "DAU OAT (233)")),
             Map.entry(
                     Parameters.LAT_AC,
                     Set.of(
@@ -162,7 +181,11 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "Gyro-LNG_ACC",
                             "GeneralPurpose-LNG_ACC")));
 
-    /** Creates a rotorcraft flight builder that aliases recorder columns to canonical parameter keys. */
+    /**
+     * @param meta             flight metadata
+     * @param doubleTimeSeries numeric series keyed by recorder column name
+     * @param stringTimeSeries string series keyed by recorder column name
+     */
     public RotorcraftFlightBuilder(
             FlightMeta meta,
             Map<String, DoubleTimeSeries> doubleTimeSeries,
@@ -171,18 +194,24 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * Promotes recorder columns into canonical {@link Parameters} keys for storage/map APIs (numeric series only).
+     * Promotes recorder columns to canonical {@link Parameters} keys.
+     *
+     * @param doubleTimeSeries numeric series to update in place
      */
     static void promoteForPersistence(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         promoteForPersistence(doubleTimeSeries, null);
     }
 
     /**
-     * Promotes recorder columns into canonical {@link Parameters} keys (numeric series only, plus optional USCG DMS).
+     * Promotes recorder columns to canonical {@link Parameters} keys.
+     *
+     * @param doubleTimeSeries numeric series to update in place
+     * @param stringTimeSeries string series for USCG DMS, or null
      */
     static void promoteForPersistence(
             Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
         if (stringTimeSeries != null) {
+            RotorcraftCSVFileProcessor.addCanonicalLocalDateTimeFromUtc(stringTimeSeries);
             RotorcraftCSVFileProcessor.addCanonicalPositionFromPnavDms(doubleTimeSeries, stringTimeSeries);
         }
         promotePositionPair(doubleTimeSeries);
@@ -206,8 +235,10 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
     }
 
     /**
-     * If canonical {@link Parameters#LATITUDE} is missing, builds it from the first lat/lon recorder pair
-     * with at least one non-zero, non-NaN sample.
+     * Sets {@link Parameters#LATITUDE} and {@link Parameters#LONGITUDE} from the first
+     * {@link #POSITION_SOURCE_PAIRS} entry with a valid sample.
+     *
+     * @param doubleTimeSeries numeric series to update in place
      */
     private static void promotePositionPair(Map<String, DoubleTimeSeries> doubleTimeSeries) {
         if (doubleTimeSeries.containsKey(Parameters.LATITUDE)) {
@@ -223,10 +254,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             for (int i = 0; i < latSource.size(); i++) {
                 double lat = latSource.get(i);
                 double lon = lonSource.get(i);
-                if (!Double.isNaN(lat)
-                        && !Double.isNaN(lon)
-                        && lat != 0.0
-                        && lon != 0.0) {
+                if (!Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0) {
                     validPoints++;
                 }
             }
@@ -239,7 +267,11 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         }
     }
 
-    /** Deep-copies a {@link DoubleTimeSeries} into a new series name (canonical parameter key). */
+    /**
+     * @param canonicalName canonical parameter name
+     * @param source        series to copy
+     * @return copy of {@code source} under {@code canonicalName}
+     */
     private static DoubleTimeSeries copySeries(String canonicalName, DoubleTimeSeries source) {
         DoubleTimeSeries canonical = new DoubleTimeSeries(canonicalName, source.getDataType(), source.size());
         for (int i = 0; i < source.size(); i++) {
@@ -248,7 +280,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
         return canonical;
     }
 
-    /** Alias set consumed by the base {@link FlightBuilder} when computing derived parameters. */
+    /** Recorder column aliases for {@link FlightBuilder}. */
     @Override
     protected Map<String, Set<String>> getAliases() {
         return ALIASES;
