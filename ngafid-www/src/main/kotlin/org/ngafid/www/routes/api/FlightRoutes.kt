@@ -9,6 +9,7 @@ import org.ngafid.core.Database
 import org.ngafid.core.event.Event
 import org.ngafid.core.event.EventDefinition
 import org.ngafid.core.flights.Flight
+import org.ngafid.core.flights.Airframes
 import org.ngafid.core.labels.FlightLabelSection
 import org.ngafid.core.util.FlightTag
 import org.ngafid.www.ErrorResponse
@@ -529,6 +530,8 @@ object FlightRoutes : RouteProvider() {
             val results = mutableListOf<Map<String, Any>>()
 
             val dateClause = StatisticsJavalinRoutes.buildDateClause(startDate, endDate)
+            val aircraftCategory = Airframes.AircraftCategory.fromQueryValue(ctx.queryParam("aircraftType"))
+            val aircraftTypeClause = aircraftCategory.sqlCondition("v.airframe_id")
             val sql = """
                 SELECT
                     a.airframe,
@@ -543,6 +546,8 @@ object FlightRoutes : RouteProvider() {
                     ((? = -1 OR v.airframe_id = ?) AND v.fleet_id = ?)
                 AND
                     $dateClause
+                AND
+                    $aircraftTypeClause
                 GROUP
                     BY a.airframe, v.airframe_id
                 ORDER
@@ -594,6 +599,8 @@ object FlightRoutes : RouteProvider() {
             val results = mutableListOf<Map<String, Any>>()
 
             val dateClause = StatisticsJavalinRoutes.buildDateClause(startDate, endDate)
+            val aircraftCategory = Airframes.AircraftCategory.fromQueryValue(ctx.queryParam("aircraftType"))
+            val aircraftTypeClause = aircraftCategory.sqlCondition("v.airframe_id")
             val sql = """
                 SELECT
                     a.airframe,
@@ -608,6 +615,8 @@ object FlightRoutes : RouteProvider() {
                     (? = -1 OR v.airframe_id = ?)
                 AND
                     $dateClause
+                AND
+                    $aircraftTypeClause
                 GROUP
                     BY a.airframe, v.airframe_id
                 ORDER

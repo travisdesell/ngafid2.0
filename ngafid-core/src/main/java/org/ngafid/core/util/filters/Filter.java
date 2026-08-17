@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import org.ngafid.core.flights.Airframes;
 
 public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
@@ -244,6 +245,19 @@ public class Filter {
                 } else {
                     return "flights.airframe_id != (SELECT id FROM airframes WHERE fleet_id = ? AND airframe = ?)";
                 }
+            }
+
+            case "Aircraft Type" -> {
+                Airframes.AircraftCategory category = switch (inputs.get(2)) {
+                    case "Fixed Wing" -> Airframes.AircraftCategory.FIXED_WING;
+                    case "Rotorcraft" -> Airframes.AircraftCategory.ROTORCRAFT;
+                    case "UAS" -> Airframes.AircraftCategory.UAS;
+                    default -> throw new IllegalArgumentException("Unknown aircraft type: " + inputs.get(2));
+                };
+                String predicate = category.sqlCondition("flights.airframe_id");
+                if (inputs.get(1).equals("is")) return predicate;
+                if (inputs.get(1).equals("is not")) return "NOT (" + predicate + ")";
+                throw new IllegalArgumentException("Unknown aircraft type condition: " + inputs.get(1));
             }
 
             case "System ID" -> {

@@ -69,6 +69,27 @@ export default class TimeHeader extends React.Component {
                 </div>
             );
         }
+        let aircraftType = null;
+        if ('aircraftType' in this.props) {
+            aircraftType = (
+                <div className="flex flex-row items-center gap-2" role="group" aria-label="Aircraft type filter">
+                    <span className="whitespace-nowrap">Aircraft type</span>
+                    <div className="btn-group" role="group">
+                        {this.props.aircraftTypes.map(option => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                className={`btn ${this.props.aircraftType === option.value ? 'btn-primary' : 'btn-secondary-outline'}`}
+                                aria-pressed={this.props.aircraftType === option.value}
+                                onClick={() => this.props.aircraftTypeChange(option.value)}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
         let tags = null;
         if ('tagName' in this.props) {
             tags = (
@@ -111,13 +132,16 @@ export default class TimeHeader extends React.Component {
         })();
 
         return (
-            <div className="flex flex-row items-center justify-start gap-4" style={{ textAlign: 'center' }}>
+            <div className="flex flex-row flex-wrap items-center justify-start gap-4" style={{ textAlign: 'center' }}>
 
                 {/* Export Button */}
                 {exportButton}
 
                 {/* Tags */}
                 {tags}
+
+                {/* Aircraft type */}
+                {aircraftType}
 
                 {/* Airframe Drop-down */}
                 {airframe}

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.flights.Airframes;
+import org.ngafid.core.flights.Airframes.AircraftCategory;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.flights.FlightStatistics;
 
@@ -503,6 +504,18 @@ public class EventStatistics {
 
             throw new SQLException("Failed to read from table " + tableName + ":" + statement);
         }
+    }
+
+    public static int getEventCountByAircraftCategory(
+            Connection connection,
+            Integer fleetId,
+            LocalDate startDate,
+            LocalDate endDate,
+            AircraftCategory category)
+            throws SQLException {
+        String condition = buildDateClause(startDate, endDate) + " AND " + category.sqlCondition("airframe_id");
+        if (fleetId != null) condition = "fleet_id = " + fleetId + " AND " + condition;
+        return getEventCount(connection, "m_fleet_airframe_monthly_event_counts", condition);
     }
 
     /**

@@ -310,7 +310,7 @@ public class AnalysisJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
 
-            final Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
+            final Airframes.TypedAirframeNameID[] airframes = Airframes.getAllWithIdsAndTypes(connection, fleetId);
             final String fleetInfo = "var airframes = " + GSON.toJson(airframes) + ";\n" + "var eventNames = "
                     + GSON.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" + "var tagNames = "
                     + GSON.toJson(Flight.getAllFleetTagNames(connection, fleetId)) + ";\n";
@@ -351,9 +351,18 @@ public class AnalysisJavalinRoutes {
     }
 
     public static void postTurnToFinal(Context ctx) {
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = user.getFleetId();
+        if (!user.hasViewAccess(fleetId)) {
+            ctx.status(401).result("User did not have access to view flights for this fleet.");
+            return;
+        }
+
         String startDate = ctx.queryParam("startDate");
         String endDate = ctx.queryParam("endDate");
         String airportIataCode = ctx.queryParam("airport");
+        Airframes.AircraftCategory aircraftCategory =
+                Airframes.AircraftCategory.fromQueryValue(ctx.queryParam("aircraftType"));
         int limit = parseIntOrDefault(ctx.queryParam("limit"), 1000);
         int offset = parseIntOrDefault(ctx.queryParam("offset"), 0);
         boolean skipCount = "true".equalsIgnoreCase(ctx.queryParam("skipCount"));
@@ -365,13 +374,13 @@ public class AnalysisJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             if (offset == 0 && !skipCount) {
                 totalFlights = Flight.getFlightsCountWithinDateRangeFromAirport(
-                        connection, startDate, endDate, airportIataCode);
+                        connection, startDate, endDate, airportIataCode, fleetId, aircraftCategory);
             }
 
             List<Integer> flightIds = (offset == 0 && !skipCount && totalFlights == 0)
                     ? List.of()
                     : Flight.getFlightIdsWithinDateRangeFromAirport(
-                            connection, startDate, endDate, airportIataCode, limit, offset);
+                            connection, startDate, endDate, airportIataCode, limit, offset, fleetId, aircraftCategory);
 
             Map<Integer, ArrayList<TurnToFinal>> batchResult =
                     TurnToFinal.getTurnToFinalBatchByFlightIds(connection, flightIds, airportIataCode);
@@ -422,10 +431,15 @@ public class AnalysisJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
 
-            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
+            Airframes.TypedAirframeNameID[] airframes = Airframes.getAllWithIdsAndTypes(connection, fleetId);
+            Map<String, String> aircraftTypesByName = new HashMap<>();
+            for (Airframes.TypedAirframeNameID item : Airframes.getAllWithIdsAndTypes(connection)) {
+                aircraftTypesByName.put(item.name(), item.type());
+            }
             final String fleetInfo = "var airframes = " + GSON.toJson(airframes) + ";\n" + "var eventNames = "
                     + GSON.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" + "var tagNames = "
-                    + GSON.toJson(Flight.getAllTagNames(connection)) + ";\n";
+                    + GSON.toJson(Flight.getAllTagNames(connection)) + ";\n" + "var aircraftTypesByName = "
+                    + GSON.toJson(aircraftTypesByName) + ";\n";
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", fleetInfo);
@@ -446,7 +460,7 @@ public class AnalysisJavalinRoutes {
         // Inject airframes variable for frontend
         try (Connection connection = Database.getConnection()) {
             int fleetId = user.getFleetId();
-            java.util.List<String> airframes = Airframes.getAll(connection, fleetId);
+            Airframes.TypedAirframeNameID[] airframes = Airframes.getAllWithIdsAndTypes(connection, fleetId);
             com.google.gson.Gson gson = new com.google.gson.Gson();
             scopes.put("fleet_info_js", "var airframes = " + gson.toJson(airframes) + ";\n");
         } catch (Exception e) {
@@ -607,6 +621,8 @@ public class AnalysisJavalinRoutes {
             return;
         }
         String airframe = ctx.queryParam("airframe");
+        Airframes.AircraftCategory aircraftCategory =
+                Airframes.AircraftCategory.fromQueryValue(ctx.queryParam("aircraftType"));
         String eventDefinitionIdsParam = ctx.queryParam("event_definition_ids");
         String startDate = ctx.queryParam("start_date");
         String endDate = ctx.queryParam("end_date");
@@ -637,6 +653,7 @@ public class AnalysisJavalinRoutes {
             List<java.util.Map<String, Object>> events = org.ngafid.core.heatmap.HeatmapPointsProcessor.getEvents(
                     fleetId,
                     airframe,
+                    aircraftCategory,
                     eventDefinitionIds,
                     java.sql.Date.valueOf(startDate),
                     java.sql.Date.valueOf(endDate),
