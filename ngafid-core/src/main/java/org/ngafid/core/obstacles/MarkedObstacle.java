@@ -4,7 +4,7 @@ package org.ngafid.core.obstacles;
  * Representation of the instance of when a flight passes by an obstacle. This is a intermediate class for obstacles before they
  * are parsed into events.
  */
-public class MarkedObstacle {
+public abstract class MarkedObstacle {
     private Obstacle obstacle;
     private Double totalDistanceFt;
     private Double horizontalDistanceFt;
@@ -55,25 +55,7 @@ public class MarkedObstacle {
      * @param verticalDistance
      * @return
      */
-    public static ObstacleRisk calculateRiskFromPoint(double horizontalDistance, double verticalDistance) {
-        if ((horizontalDistance <= 500) && (verticalDistance <= 75)) {
-            return ObstacleRisk.HIGH;
-        }
-
-        else if (((500 < horizontalDistance) && (horizontalDistance < 1000))
-            && ((75 <= verticalDistance) && (verticalDistance <= 200))) {
-            return ObstacleRisk.LOW;
-        }
-
-        else if (((horizontalDistance <= 500) && ((75 < verticalDistance) && (verticalDistance < 200)))
-            || ((500 < horizontalDistance) && (horizontalDistance < 1000)) && (verticalDistance <= 75)) {
-            return ObstacleRisk.MEDIUM;
-        }
-        
-        else {
-            return ObstacleRisk.NONE;
-        }
-    }
+    abstract ObstacleRisk calculateRiskFromPoint(double horizontalDistance, double verticalDistance);
 
 
     @Override

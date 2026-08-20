@@ -72,21 +72,16 @@ public class ObstacleEventScanner extends AbstractEventScanner {
      * @return
      */
     private List<Event> processObstacles(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
-    
-        double detectionRange;
         
         switch (flight.getAirframeType()) {
             case "Fixed Wing":
-                detectionRange = FIXED_WING_DETECTION_DISTANCE;
                 LOG.info("Detecting Obstacles for Fixed Wing");
                 break;
-            case "Rotorcraft":
-                detectionRange = ROTOR_DETECTION_DISTANCE;
-                LOG.info("Detecting Obstacles for Rotorcraft");
+            case "Rotercraft":
+                LOG.info("Detecting Obstacles for Rotercraft");
                 break;
             default:
-                detectionRange = MAX_DETECTION_DISTANCE;
-                LOG.info("Undefined type for obstacle detection range, using default range of 1200 ft");
+                LOG.info("Detecting Obstacles for " + flight.getAirframeType() + " . Defaulting to Rotercraft detection");
                 break;
         }
 
@@ -104,7 +99,7 @@ public class ObstacleEventScanner extends AbstractEventScanner {
 
         // Loop through all of the flight's entries
         for (int i = 0; i < lat.size(); i++) {
-            ArrayList<MarkedObstacle> nearbyObstacles = Obstacles.getNearbyObstaclesWithinRange(lat.get(i), lon.get(i), altAGL.get(i), detectionRange);
+            ArrayList<MarkedObstacle> nearbyObstacles = Obstacles.getNearbyObstaclesWithinRange(lat.get(i), lon.get(i), altAGL.get(i), flight.getAirframeType());
 
             // For each entry, check for all of the nearby objects
             for (int n = 0; n < nearbyObstacles.size(); n++) {
@@ -205,7 +200,7 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         insertObstacleEvents(connection, untrackedObstacleEvents);
         insertedEvents += untrackedObstacleEvents.size();
 
-        LOG.info("Obstacle Events Inserted: " + (insertedEvents));
+        LOG.info("Obstacle Events Inserted for " + flight.getAirframeType() + ": " + (insertedEvents));
         return new ArrayList<>();
     }
 

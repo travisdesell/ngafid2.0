@@ -289,7 +289,8 @@ public final class Obstacles {
      * @param maxDistanceFt
      * @return
      */
-    public static ArrayList<MarkedObstacle> getNearbyObstaclesWithinRange(double latitude, double longitude, double altitude, double maxDistanceFt) {
+    public static ArrayList<MarkedObstacle> getNearbyObstaclesWithinRange(double latitude, double longitude, double altitude, String aircraftType) {
+        
         String[] geoHashes = GeoHash.getNearbyGeoHashes(latitude, longitude);
 
         ArrayList<MarkedObstacle> nearbyObstacles = new ArrayList<>();
@@ -307,8 +308,11 @@ public final class Obstacles {
                     double verticalDistance = Math.abs(obstacle.getAGL() - altitude);
                     double distance = Math.sqrt(Math.pow(horizontalDistanceFt, 2) + Math.pow(verticalDistance, 2));
                     
-                    if (distance <= maxDistanceFt) {
-                        nearbyObstacles.add(new MarkedObstacle(obstacle, distance, horizontalDistanceFt, verticalDistance));
+                    if (aircraftType == "Fixed Wing") {
+                        nearbyObstacles.add(new FixedWingMarkedObstacle(obstacle, distance, horizontalDistanceFt, verticalDistance));
+                    }
+                    else {
+                        nearbyObstacles.add(new RotercraftMarkedObstacle(obstacle, distance, horizontalDistanceFt, verticalDistance));
                     }
                 }
             }
