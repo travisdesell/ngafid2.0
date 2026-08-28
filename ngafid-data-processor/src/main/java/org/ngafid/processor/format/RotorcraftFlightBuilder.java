@@ -27,8 +27,11 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             Map.entry(Parameters.UNIX_TIME_SECONDS, Set.of("UNIX Time")),
             Map.entry(
                     Parameters.IAS,
-                    Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS",
-                            "IAS1", "IAS2", "GP.CAS", "AP.IAS", "FDR-CAS")),
+                    Set.of("Airspeed", "GeneralPurpose-IAS", "IAS1", "IAS2", "AP.IAS")),
+            Map.entry(Parameters.CAS, Set.of("GP.CAS", "FDR-CAS")),
+            Map.entry(
+                    Parameters.TAS,
+                    Set.of("GeneralPurpose-TRUE_AS", "PNAV_Tru_A/S", "PNAV Tru A/S", "True Airspeed")),
             Map.entry(
                     Parameters.GND_SPD,
                     Set.of(
@@ -38,8 +41,6 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "GPS-GS",
                             "PNAV_GndSpd",
                             "PNAV GndSpd",
-                            "PNAV_Tru_A/S",
-                            "PNAV Tru A/S",
                             "GPS.Ground_Speed",
                             "FDR-GS")),
             Map.entry(
@@ -60,7 +61,6 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                     Set.of(
                             "True Heading",
                             "Heading",
-                            "Track",
                             "GeneralPurpose-MAG_HDG",
                             "Gyro-MAG_HDG",
                             "PNAV_Tr_Hdg",
@@ -74,6 +74,13 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "ANALOG.Magnetic_Heading",
                             "AP.Magnetic_Heading",
                             "GYRO.Magnetic_Heading")),
+            Map.entry(Parameters.TRK, Set.of("Track")),
+            Map.entry(
+                    Parameters.WIND_SPEED,
+                    Set.of("WndSpd", "Wind Speed", "Wind_Speed", "WIND_SPD", "GeneralPurpose-WIND_SPEED")),
+            Map.entry(
+                    Parameters.WIND_DIRECTION,
+                    Set.of("WndDr", "Wind Direction", "Wind_Direction", "WIND_DIR", "GeneralPurpose-WIND_DIR")),
             Map.entry(
                     Parameters.PITCH,
                     Set.of(
