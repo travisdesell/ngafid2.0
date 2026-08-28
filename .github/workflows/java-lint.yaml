@@ -27,7 +27,7 @@ jobs:
         uses: github/super-linter@v6
 
         env:
-          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_ALL_CODEBASE: true
           VALIDATE_JAVA: true
           VALIDATE_JAVASCRIPT_ES: true
           VALIDATE_JSX: true

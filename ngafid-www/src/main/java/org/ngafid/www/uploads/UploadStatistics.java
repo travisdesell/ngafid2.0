@@ -7,8 +7,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 
-public enum UploadStatistics {
-    ;
+public enum UploadStatistics {;
 
     public record UploadCounts(int count, int okUploadCount, int warningUploadCount, int errorUploadCount) {}
 
@@ -76,6 +75,12 @@ public enum UploadStatistics {
     /**
      * Returns all upload and flight outcome totals in one query. Dashboard callers should use this method rather
      * than issuing a separate aggregate query for each displayed value.
+     *
+     * @param connection database connection
+     * @param fleetId fleet ID, or null for all fleets
+     * @param startDate inclusive date-range start
+     * @param endDate inclusive date-range end
+     * @return upload and flight outcome totals
      */
     public static UploadOutcomeCounts getUploadOutcomeCountsDated(
             Connection connection, Integer fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
@@ -127,6 +132,12 @@ public enum UploadStatistics {
      * Returns issue totals for non-derived uploads in the requested fleet and date range: uploads that failed or
      * contain rejected flights, flights with warnings, and rejected flights. The flight counters are used because
      * {@code PROCESSED_WARNING} represents both warning-only and partially successful uploads.
+     *
+     * @param connection database connection
+     * @param fleetId fleet ID
+     * @param startDate inclusive date-range start
+     * @param endDate inclusive date-range end
+     * @return upload issue totals
      */
     public static UploadIssueCounts getUploadIssueCountsDated(
             Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {

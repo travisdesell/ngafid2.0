@@ -66,6 +66,12 @@ public class CesiumDataJavalinRoutes {
     /**
      * Lists stored series that Cesium requires but are absent for this flight.
      *
+     * @param latitude latitude series
+     * @param longitude longitude series
+     * @param altAgl altitude-above-ground-level series
+     * @param date local date series
+     * @param time local time series
+     * @param utcDateTime UTC date-time series
      * @return null if all required series are present
      */
     static String describeMissingCesiumSeries(
@@ -82,6 +88,13 @@ public class CesiumDataJavalinRoutes {
     /**
      * Explains why a flight with stored series still produced an empty Cesium path.
      *
+     * @param latitude latitude series
+     * @param longitude longitude series
+     * @param altAgl altitude-above-ground-level series
+     * @param date local date series
+     * @param time local time series
+     * @param utcDateTime UTC date-time series
+     * @param response generated Cesium response
      * @return null when {@code response} contains path data
      */
     static String describeEmptyCesiumPath(
@@ -175,7 +188,15 @@ public class CesiumDataJavalinRoutes {
         return CesiumFlightReadiness.hasValidCesiumPosition(latitude, longitude, index);
     }
 
-    /** Valid 3D sample: position plus a defined AGL (0 ft on the ground is allowed). */
+    /**
+     * Valid 3D sample: position plus a defined AGL (0 ft on the ground is allowed).
+     *
+     * @param latitude latitude series
+     * @param longitude longitude series
+     * @param altAgl altitude-above-ground-level series
+     * @param index sample index
+     * @return whether the sample is valid for Cesium
+     */
     private static boolean hasValidCesiumSample(
             DoubleTimeSeries latitude,
             DoubleTimeSeries longitude,

@@ -49,7 +49,8 @@ public final class CesiumFlightReadiness {
         }
 
         if (!hasPlayableCesiumSample(latitude, longitude, altAgl, date, time, utcDateTime)) {
-            return new Result(flightId, false, describeNoPlayableSamples(latitude, longitude, altAgl, date, time, utcDateTime));
+            return new Result(
+                    flightId, false, describeNoPlayableSamples(latitude, longitude, altAgl, date, time, utcDateTime));
         }
 
         return new Result(flightId, true, null);
@@ -69,6 +70,14 @@ public final class CesiumFlightReadiness {
     }
 
     /**
+     * Checks that the series needed to render Cesium flight data are available.
+     *
+     * @param latitude latitude series
+     * @param longitude longitude series
+     * @param altAgl altitude-above-ground-level series
+     * @param date local date series
+     * @param time local time series
+     * @param utcDateTime UTC date-time series
      * @return null if all required series are present
      */
     public static String describeMissingCesiumSeries(
@@ -108,6 +117,14 @@ public final class CesiumFlightReadiness {
     }
 
     /**
+     * Identifies why no Cesium sample can be rendered.
+     *
+     * @param latitude latitude series
+     * @param longitude longitude series
+     * @param altAgl altitude-above-ground-level series
+     * @param date local date series
+     * @param time local time series
+     * @param utcDateTime UTC date-time series
      * @return null when at least one playable sample exists
      */
     public static String describeNoPlayableSamples(

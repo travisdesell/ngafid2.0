@@ -109,14 +109,26 @@ public final class FlightPhaseProcessor {
      * and maxAltAGL. File splitting uses {@link #detectProlongedTaxiSplits}.
      */
     public static class FlightValidationResult {
-        public final boolean isValid;
-        public final List<Integer> splitIndices;
-        public final double maxAltAGL;
+        private final boolean isValid;
+        private final List<Integer> splitIndices;
+        private final double maxAltAGL;
 
         public FlightValidationResult(boolean isValid, List<Integer> splitIndices, double maxAltAGL) {
             this.isValid = isValid;
             this.splitIndices = splitIndices;
             this.maxAltAGL = maxAltAGL;
+        }
+
+        public boolean isValid() {
+            return isValid;
+        }
+
+        public List<Integer> getSplitIndices() {
+            return splitIndices;
+        }
+
+        public double getMaxAltAGL() {
+            return maxAltAGL;
         }
 
         public boolean hasTouchAndGo() {
@@ -566,7 +578,8 @@ public final class FlightPhaseProcessor {
     private static String getSustainedTrend(double[] altAglArray, int i) {
         int start = Math.max(0, i - NOISE_WINDOW_ROWS + 1);
         if (start >= i || i >= altAglArray.length) return "flat";
-        double first = Double.NaN, last = Double.NaN;
+        double first = Double.NaN;
+        double last = Double.NaN;
         for (int k = start; k <= i && k < altAglArray.length; k++) {
             if (Double.isNaN(altAglArray[k])) continue;
             if (Double.isNaN(first)) first = altAglArray[k];
