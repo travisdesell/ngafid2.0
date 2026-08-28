@@ -176,7 +176,7 @@ public final class BackfillEventBbox {
 
     static final class BboxResult {
         final double[] bbox;
-        final SkipReason skipReason;
+        private final SkipReason skipReason;
 
         BboxResult(double[] bbox) {
             this.bbox = bbox;

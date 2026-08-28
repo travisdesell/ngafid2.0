@@ -58,7 +58,11 @@ public final class CesiumUploadAuditor {
         Option enqueue = new Option("e", "enqueue", false, "Re-enqueue uploads that fail the Cesium check");
         options.addOption(enqueue);
 
-        Option checkAll = new Option("a", "check-all-flights", false, "Check every flight in each upload (default: first flight only)");
+        Option checkAll = new Option(
+                "a",
+                "check-all-flights",
+                false,
+                "Check every flight in each upload (default: first flight only)");
         options.addOption(checkAll);
 
         Option output = new Option("o", "output", true, "Write failing upload IDs to this file (one per line)");
@@ -68,7 +72,8 @@ public final class CesiumUploadAuditor {
                 "r",
                 "report",
                 true,
-                "Write a full audit/reprocess report to this file (default: run/cesium_reprocess_<timestamp>.log when -e is used)");
+                "Write a full audit/reprocess report to this file "
+                        + "(default: run/cesium_reprocess_<timestamp>.log when -e is used)");
         options.addOption(report);
 
         Option limit = new Option("l", "limit", true, "Maximum number of uploads to scan");

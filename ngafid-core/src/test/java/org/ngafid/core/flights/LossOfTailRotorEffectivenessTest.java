@@ -11,6 +11,7 @@ class LossOfTailRotorEffectivenessTest {
         assertEquals(LossOfTailRotorEffectiveness.NO_RISK, LossOfTailRotorEffectiveness.classify(1.0, 0.0));
     }
 
+
     @Test
     void classifierReturnsRiskForNegativePedalMarginWithoutHighYaw() {
         assertEquals(LossOfTailRotorEffectiveness.RISK, LossOfTailRotorEffectiveness.classify(-0.1, 20.0));
