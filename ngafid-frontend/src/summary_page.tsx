@@ -502,7 +502,9 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
             if (airframes.some(airframe => airframe.name === value.airframeName))
                 countData.push(value);
 
-            value.x = value.aggregateTotalEventsCounts;
+            value.x = this.props.aggregate
+                ? value.aggregateTotalEventsCounts
+                : value.totalEventsCounts;
 
             //  let percents = (this.props.aggregate ? fleetPercents : ngafidPercents);
 
