@@ -62,6 +62,7 @@ export default defineConfig([
                 aggregateView: 'readonly',
                 airframeMap: 'readonly',
                 airframes: 'readonly',
+                aircraftTypesByName: 'readonly',
                 airports: 'readonly',
                 airSyncEnabled: 'readonly',
                 airsyncTimeout: 'readonly',

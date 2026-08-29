@@ -16,6 +16,11 @@ import Tooltip from "react-bootstrap/Tooltip";
 import "./index.css";
 import type { AirframeNameID } from "./types";
 import { buildEndDate, buildStartDate } from "./summary_page";
+import {
+  AIRCRAFT_CATEGORIES,
+  airframesForCategory,
+  type AircraftCategory,
+} from "./aircraft_type_filter";
 
 const allAirframes = { name: "All Airframes", id: -1 } as AirframeNameID;
 
@@ -49,8 +54,6 @@ type EventCount = {
 type EventSeverityByAirframe = Record<string, EventCount[]>;
 type EventSeverities = Record<string, EventSeverityByAirframe>;
 
-const eventSeverities: EventSeverities = {};
-
 export function SeveritiesPage() {
   const airframesForUI = useMemo(() => {
     //Remove GFD
@@ -76,6 +79,7 @@ export function SeveritiesPage() {
   const date = new Date();
 
     const [airframe, setAirframe] = useState<AirframeNameID>(allAirframes);
+    const [aircraftType, setAircraftType] = useState<AircraftCategory>("all");
     const [tagName, setTagName] = useState("All Tags");
     const [startYear, setStartYear] = useState(date.getFullYear());
     const [startMonth, setStartMonth] = useState(1);
@@ -91,6 +95,15 @@ export function SeveritiesPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [hasQueried, setHasQueried] = useState(false);
     const loadingCountRef = useRef(0);
+
+    const visibleAirframes = useMemo(
+        () => airframesForCategory(airframesForUI, aircraftType),
+        [aircraftType, airframesForUI]
+    );
+    const visibleAirframeNames = useMemo(
+        () => new Set(visibleAirframes.map(({ name }) => name)),
+        [visibleAirframes]
+    );
 
     const setLoading = useCallback((loading: boolean) => {
         if (loading) {
@@ -128,6 +141,9 @@ export function SeveritiesPage() {
                 if (airframeName === "Garmin Flight Display")
                     continue;
 
+                if (!visibleAirframeNames.has(airframeName))
+                    continue;
+
                 if (selectedAirframe !== airframeName && selectedAirframe !== "All Airframes")
                     continue;
 
@@ -136,7 +152,7 @@ export function SeveritiesPage() {
             }
         }
         return false;
-    }, [eventSeveritiesState, eventChecked, airframe.name]);
+    }, [eventSeveritiesState, eventChecked, airframe.name, visibleAirframeNames]);
 
     const showNoEventsMessage = hasQueried
         && !isLoading
@@ -147,31 +163,33 @@ export function SeveritiesPage() {
   //Effect to update datesOrAirframeChanged when dependencies change
   useEffect(() => {
     setDatesOrAirframeChanged(true);
-  }, [startYear, startMonth, endYear, endMonth, tagName]);
+  }, [startYear, startMonth, endYear, endMonth, tagName, aircraftType]);
 
   useEffect(() => {
     displayPlot(airframe.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [airframe.name, eventChecked, eventMetaData, eventSeveritiesState]);
+  }, [airframe.name, eventChecked, eventMetaData, eventSeveritiesState, aircraftType]);
 
   const exportCSV = () => {
     const selectedAirframe = airframe;
 
     console.log(`selected airframe: '${selectedAirframe}'`);
-    console.log(eventSeverities);
+    console.log(eventSeveritiesState);
     const fileHeaders =
       "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity";
 
     const fileContent = [fileHeaders];
     const uniqueMetaDataNames: string[] = [];
 
-    for (const [eventName, countsMap] of Object.entries(eventSeverities)) {
+    for (const [eventName, countsMap] of Object.entries(eventSeveritiesState)) {
       //Event is unchecked, skip
       if (!eventChecked[eventName]) continue;
 
       for (const [airframeName, counts] of Object.entries(countsMap)) {
         //Airframe is Garmin Flight Display, skip
         if (airframeName === "Garmin Flight Display") continue;
+
+        if (!visibleAirframeNames.has(airframeName)) continue;
 
         //Airframe is not selected, skip
         if (
@@ -289,6 +307,8 @@ export function SeveritiesPage() {
         for (const [airframeName, counts] of Object.entries(countsMap)) {
           //Got GFD, skip
           if (airframeName === "Garmin Flight Display") continue;
+
+          if (!visibleAirframeNames.has(airframeName)) continue;
 
           //Airframe is unselected, skip
           if (
@@ -472,7 +492,7 @@ export function SeveritiesPage() {
         }
       });
     },
-    [eventChecked, eventSeveritiesState]
+    [eventChecked, eventSeveritiesState, visibleAirframeNames]
   );
 
     const fetchAllEventSeverities = useCallback(() => {
@@ -489,6 +509,7 @@ export function SeveritiesPage() {
       endDate: endDate,
       eventNames: JSON.stringify(eventNames),
       tagName: tagName,
+      aircraftType: aircraftType,
     };
 
         $.ajax({
@@ -537,7 +558,7 @@ export function SeveritiesPage() {
 
         });
 
-    }, [startMonth, startYear, endMonth, endYear, tagName, setLoading]);
+    }, [startMonth, startYear, endMonth, endYear, tagName, aircraftType, setLoading]);
 
     const fetchEventSeverities = (eventName:string) => {
 
@@ -551,6 +572,7 @@ export function SeveritiesPage() {
       startDate: startDate,
       endDate: endDate,
       tagName: tagName,
+      aircraftType: aircraftType,
     };
 
         return new Promise(() => {
@@ -574,7 +596,6 @@ export function SeveritiesPage() {
 
                     setEventsEmpty((prev) => ({ ...prev, [eventName]: !hasAnyData }));
                     
-                    eventSeverities[eventName] = hasAnyData ? response : {};
                     setEventSeveritiesState((prev) => ({
                         ...prev,
                         [eventName]: hasAnyData ? response : {}
@@ -647,6 +668,7 @@ export function SeveritiesPage() {
       endDate: endDate,
       eventNames: JSON.stringify(eventNames),
       tagName: tagName,
+      aircraftType: aircraftType,
     };
 
         $.ajax({
@@ -675,12 +697,12 @@ export function SeveritiesPage() {
             }
         });
 
-    }, [airframe.name, displayPlot, startYear, startMonth, endYear, endMonth, tagName, setLoading]);
+    }, [airframe.name, aircraftType, displayPlot, startYear, startMonth, endYear, endMonth, tagName, setLoading]);
 
 
   const airframeChangeFromName = (airframeName: string) => {
     //Find airframe data in list corresponding to the name
-    const airframe = airframes.find((a) => a.name === airframeName);
+    const airframe = visibleAirframes.find((a) => a.name === airframeName);
 
     //Got an airframe from the name, change the state
     if (airframe) airframeChange(airframe);
@@ -692,6 +714,11 @@ export function SeveritiesPage() {
 
   const tagNameChange = (tagName: string) => {
     setTagName(tagName);
+  };
+
+  const aircraftTypeChange = (nextAircraftType: AircraftCategory) => {
+    setAircraftType(nextAircraftType);
+    setAirframe(allAirframes);
   };
 
   const render = () => {
@@ -727,8 +754,11 @@ export function SeveritiesPage() {
                             <div className="card mb-2 m-2">
                                 <TimeHeader
                                     name="Event Severities"
-                                    airframes={airframesForUI.map(a => a.name)}
+                                    airframes={visibleAirframes.map(a => a.name)}
                                     airframe={airframe.name}
+                                    aircraftTypes={AIRCRAFT_CATEGORIES}
+                                    aircraftType={aircraftType}
+                                    aircraftTypeChange={aircraftTypeChange}
                                     startYear={startYear}
                                     startMonth={startMonth}
                                     endYear={endYear}

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import org.ngafid.core.flights.Airframes.AircraftCategory;
 
 public enum UploadStatistics {;
 
@@ -124,6 +125,49 @@ public enum UploadStatistics {;
                         resultSet.getInt("successful_flight_count"),
                         resultSet.getInt("warning_flight_count"),
                         resultSet.getInt("error_flight_count"));
+            }
+        }
+    }
+
+    /**
+     * Counts successfully persisted flights by the date of their parent upload. This keeps filtered dashboard
+     * outcomes aligned with getUploadOutcomeCountsDated, while using flight rows for aircraft metadata.
+     */
+    public static int getSuccessfulFlightCountDated(
+            Connection connection,
+            Integer fleetId,
+            LocalDate startDate,
+            LocalDate endDate,
+            AircraftCategory category,
+            int airframeId)
+            throws SQLException {
+        StringBuilder query = new StringBuilder("""
+                SELECT COUNT(*) AS successful_flight_count
+                FROM flights f
+                INNER JOIN uploads u ON u.id = f.upload_id
+                WHERE u.status <> 'DERIVED'
+                    AND f.status IN ('SUCCESS', 'WARNING')
+                """);
+
+        boolean filterStart = !LocalDate.MIN.equals(startDate);
+        boolean filterEnd = !LocalDate.MAX.equals(endDate);
+        if (fleetId != null) query.append(" AND u.fleet_id = ?");
+        if (filterStart) query.append(" AND u.start_time >= ?");
+        if (filterEnd) query.append(" AND u.start_time < ?");
+        if (category != AircraftCategory.ALL) query.append(" AND ").append(category.sqlCondition("f.airframe_id"));
+        if (airframeId >= 0) query.append(" AND f.airframe_id = ?");
+
+        try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+            int parameter = 1;
+            if (fleetId != null) statement.setInt(parameter++, fleetId);
+            if (filterStart) statement.setTimestamp(parameter++, Timestamp.valueOf(startDate.atStartOfDay()));
+            if (filterEnd)
+                statement.setTimestamp(parameter++, Timestamp.valueOf(endDate.plusDays(1).atStartOfDay()));
+            if (airframeId >= 0) statement.setInt(parameter, airframeId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt("successful_flight_count");
             }
         }
     }

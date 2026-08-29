@@ -197,8 +197,25 @@ public class Flight {
     public static List<Integer> getFlightIdsWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode, int limit, int offset)
             throws SQLException {
+        return getFlightIdsWithinDateRangeFromAirport(
+                connection, startDate, endDate, airportIataCode, limit, offset, null, Airframes.AircraftCategory.ALL);
+    }
+
+    public static List<Integer> getFlightIdsWithinDateRangeFromAirport(
+            Connection connection,
+            String startDate,
+            String endDate,
+            String airportIataCode,
+            int limit,
+            int offset,
+            Integer fleetId,
+            Airframes.AircraftCategory aircraftCategory)
+            throws SQLException {
         String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
-        String queryString = "SELECT id FROM flights WHERE (" + extraCondition + ") ORDER BY id DESC LIMIT " + limit;
+        String queryString = "SELECT id FROM flights WHERE (" + extraCondition + ") AND "
+                + aircraftCategory.sqlCondition("flights.airframe_id");
+        if (fleetId != null) queryString += " AND flights.fleet_id = " + fleetId;
+        queryString += " ORDER BY id DESC LIMIT " + limit;
         if (offset > 0) {
             queryString += " OFFSET " + offset;
         }
@@ -223,8 +240,22 @@ public class Flight {
      */
     public static int getFlightsCountWithinDateRangeFromAirport(
             Connection connection, String startDate, String endDate, String airportIataCode) throws SQLException {
+        return getFlightsCountWithinDateRangeFromAirport(
+                connection, startDate, endDate, airportIataCode, null, Airframes.AircraftCategory.ALL);
+    }
+
+    public static int getFlightsCountWithinDateRangeFromAirport(
+            Connection connection,
+            String startDate,
+            String endDate,
+            String airportIataCode,
+            Integer fleetId,
+            Airframes.AircraftCategory aircraftCategory)
+            throws SQLException {
         String extraCondition = buildDateRangeAirportCondition(startDate, endDate, airportIataCode);
-        String queryString = "SELECT COUNT(*) FROM flights WHERE (" + extraCondition + ")";
+        String queryString = "SELECT COUNT(*) FROM flights WHERE (" + extraCondition + ") AND "
+                + aircraftCategory.sqlCondition("flights.airframe_id");
+        if (fleetId != null) queryString += " AND flights.fleet_id = " + fleetId;
         try (PreparedStatement query = connection.prepareStatement(queryString);
                 ResultSet rs = query.executeQuery()) {
             rs.next();

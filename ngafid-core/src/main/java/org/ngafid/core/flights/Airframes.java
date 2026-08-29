@@ -365,6 +365,67 @@ public final class Airframes {
         /*...*/
     }
 
+    /** An airframe name/id pair with its persisted aircraft type. */
+    public record TypedAirframeNameID(String name, int id, String type) {}
+
+    /**
+     * Dashboard-level aircraft categories. UAS intentionally groups both persisted UAS subtypes.
+     */
+    public enum AircraftCategory {
+        ALL("all"),
+        FIXED_WING("fixed-wing"),
+        ROTORCRAFT("rotorcraft"),
+        UAS("uas");
+
+        private final String queryValue;
+
+        AircraftCategory(String queryValue) {
+            this.queryValue = queryValue;
+        }
+
+        public String queryValue() {
+            return queryValue;
+        }
+
+        public static AircraftCategory fromQueryValue(String value) {
+            if (value == null || value.isBlank()) return ALL;
+            for (AircraftCategory category : values()) {
+                if (category.queryValue.equalsIgnoreCase(value)) return category;
+            }
+            return ALL;
+        }
+
+        public boolean matches(String typeName) {
+            if (this == ALL) return true;
+            if (typeName == null) return false;
+            return switch (this) {
+                case FIXED_WING -> typeName.equals("Fixed Wing");
+                case ROTORCRAFT -> typeName.equals("Rotorcraft");
+                case UAS -> typeName.startsWith("UAS ");
+                case ALL -> true;
+            };
+        }
+
+        /**
+         * Returns a safe SQL predicate for an airframe-id column. The column expression is supplied only by
+         * server code; no request value is interpolated into SQL.
+         */
+        public String sqlCondition(String airframeIdColumn) {
+            return switch (this) {
+                case ALL -> "1 = 1";
+                case FIXED_WING -> airframeIdColumn
+                        + " IN (SELECT a.id FROM airframes a INNER JOIN airframe_types t ON t.id = a.type_id"
+                        + " WHERE t.name = 'Fixed Wing')";
+                case ROTORCRAFT -> airframeIdColumn
+                        + " IN (SELECT a.id FROM airframes a INNER JOIN airframe_types t ON t.id = a.type_id"
+                        + " WHERE t.name = 'Rotorcraft')";
+                case UAS -> airframeIdColumn
+                        + " IN (SELECT a.id FROM airframes a INNER JOIN airframe_types t ON t.id = a.type_id"
+                        + " WHERE t.name IN ('UAS Fixed Wing', 'UAS Rotorcraft'))";
+            };
+        }
+    }
+
     public static final int FLEET_ID_ALL = -1;
 
     public static AirframeNameID[] getAllWithIds(Connection connection) throws SQLException {
@@ -438,6 +499,33 @@ public final class Airframes {
         }
 
         return airframes.toArray(AirframeNameID[]::new);
+    }
+
+    public static TypedAirframeNameID[] getAllWithIdsAndTypes(Connection connection) throws SQLException {
+        return getAllWithIdsAndTypes(connection, FLEET_ID_ALL);
+    }
+
+    public static TypedAirframeNameID[] getAllWithIdsAndTypes(Connection connection, int fleetId)
+            throws SQLException {
+        ArrayList<TypedAirframeNameID> airframes = new ArrayList<>();
+        String fleetJoin = fleetId == FLEET_ID_ALL
+                ? ""
+                : " INNER JOIN fleet_airframes fa ON fa.airframe_id = a.id ";
+        String fleetWhere = fleetId == FLEET_ID_ALL ? "" : " WHERE fa.fleet_id = ? ";
+        String queryString = "SELECT a.airframe, a.id, t.name AS type FROM airframes a "
+                + "INNER JOIN airframe_types t ON t.id = a.type_id "
+                + fleetJoin + fleetWhere + " ORDER BY a.airframe";
+
+        try (PreparedStatement query = connection.prepareStatement(queryString)) {
+            if (fleetId != FLEET_ID_ALL) query.setInt(1, fleetId);
+            try (ResultSet resultSet = query.executeQuery()) {
+                while (resultSet.next()) {
+                    airframes.add(new TypedAirframeNameID(
+                            resultSet.getString("airframe"), resultSet.getInt("id"), resultSet.getString("type")));
+                }
+            }
+        }
+        return airframes.toArray(TypedAirframeNameID[]::new);
     }
 
     public static ArrayList<String> getAll(Connection connection) throws SQLException {

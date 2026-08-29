@@ -12,11 +12,17 @@
 // =======================
 // SECTION: Imports
 // =======================
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import SignedInNavbar from "./signed_in_navbar";
 import { TimeHeader } from "./time_header.js";
 import { showErrorModal } from "./error_modal.js";
+import type { AirframeNameID } from "./types";
+import {
+    AIRCRAFT_CATEGORIES,
+    airframesForCategory,
+    type AircraftCategory,
+} from "./aircraft_type_filter";
 
 // OpenLayers imports
 import Map from 'ol/Map';
@@ -330,14 +336,12 @@ const MARKER_VISIBILITY_ZOOM_THRESHOLD = 15;
 
 declare const azureMapsKey: string | undefined;
 
-// Airframes configuration - define airframes if not already defined
-declare const airframes: string[] | undefined;
-const airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes)) ? [...airframes] : [];
-if (!airframesList.includes('All Airframes')) {
-    airframesList.unshift('All Airframes');
-}
-const gfdIndex = airframesList.indexOf('Garmin Flight Display');
-if (gfdIndex !== -1) airframesList.splice(gfdIndex, 1);
+const allAirframes: AirframeNameID = { name: "All Airframes", id: -1 };
+const airframesList = (typeof airframes !== 'undefined' && Array.isArray(airframes))
+    ? airframes.filter(({ name }) => name !== "Garmin Flight Display")
+    : [];
+if (!airframesList.some(({ id, name }) => id === -1 || name === "All Airframes"))
+    airframesList.unshift(allAirframes);
 
 // =======================
 // SECTION: Utility Functions
@@ -472,7 +476,6 @@ const HeatMapPage: React.FC = () => {
     // =======================
 
     // UI State
-    const [airframes, setAirframes] = useState<string[]>(airframesList);
     const [eventChecked, setEventChecked] = useState<EventChecked>(() => {
         const checked: EventChecked = {};
         for (const name of allEventNames) checked[name] = false;
@@ -482,6 +485,11 @@ const HeatMapPage: React.FC = () => {
     const date = new Date();
 
     const [airframe, setAirframe] = useState<string>("All Airframes");
+    const [aircraftType, setAircraftType] = useState<AircraftCategory>("all");
+    const visibleAirframes = useMemo(
+        () => airframesForCategory(airframesList, aircraftType),
+        [aircraftType]
+    );
     const [startYear, setStartYear] = useState<number>(date.getFullYear());
     const [startMonth, setStartMonth] = useState<number>(1);
     const [endYear, setEndYear] = useState<number>(date.getFullYear());
@@ -523,7 +531,7 @@ const HeatMapPage: React.FC = () => {
         //Allow Time Header update after any of the dependencies change
         setDatesOrAirframeChanged(true);
         
-    }, [eventChecked, startYear, startMonth, endYear, endMonth, airframe, boxCoords.minLat, boxCoords.maxLat, boxCoords.minLon, boxCoords.maxLon, minSeverity, maxSeverity]);
+    }, [eventChecked, startYear, startMonth, endYear, endMonth, airframe, aircraftType, boxCoords.minLat, boxCoords.maxLat, boxCoords.minLon, boxCoords.maxLon, minSeverity, maxSeverity]);
 
     // Event Statistics State
     const [eventStatistics, setEventStatistics] = useState<EventStatistics>({
@@ -747,7 +755,7 @@ const HeatMapPage: React.FC = () => {
                 </div>
             </div>
         </div>
-    )
+    );
 
     // =======================
     // SECTION: Grid/Heatmap Toggle Management
@@ -2006,6 +2014,13 @@ const HeatMapPage: React.FC = () => {
         console.log('Airframe changing from', airframe, 'to', af);
         setAirframe(af);
     };
+    const handleAircraftTypeChange = (nextAircraftType: AircraftCategory) => {
+        setAircraftType(nextAircraftType);
+        setAirframe("All Airframes");
+        setProximityEventPoints([]);
+        setError(null);
+        clearMapLayers();
+    };
     const handleStartYear = (y: number) => {
         setStartYear(Number(y));
         setDatesChanged(true);
@@ -2031,6 +2046,7 @@ const HeatMapPage: React.FC = () => {
     // 1. Fetch events matching filters (all types)
     const fetchEvents = async (filters: {
         airframe: string;
+        aircraftType: AircraftCategory;
         eventDefinitionIds: number[];
         startDate: string;
         endDate: string;
@@ -2043,6 +2059,7 @@ const HeatMapPage: React.FC = () => {
     }) => {
         let url = `/protected/proximity_events_in_box?`;
         if (filters.airframe) url += `airframe=${encodeURIComponent(filters.airframe)}&`;
+        url += `aircraftType=${encodeURIComponent(filters.aircraftType)}&`;
         url += `event_definition_ids=${filters.eventDefinitionIds.join(",")}&` +
             `start_date=${filters.startDate}&end_date=${filters.endDate}&` +
             `area_min_lat=${filters.minLat}&area_max_lat=${filters.maxLat}&` +
@@ -2105,6 +2122,7 @@ const HeatMapPage: React.FC = () => {
     // Main orchestration: fetch events, then fetch points via batch endpoint (1000 events per batch)
     const processEventsAndPoints = async (filters: {
         airframe: string;
+        aircraftType: AircraftCategory;
         eventDefinitionIds: number[];
         startDate: string;
         endDate: string;
@@ -2267,6 +2285,7 @@ const HeatMapPage: React.FC = () => {
         if (selectedDefinitionIds.length > 0) {
             await processEventsAndPoints({
                 airframe,
+                aircraftType,
                 eventDefinitionIds: selectedDefinitionIds,
                 startDate: `${startYear}-${startMonth.toString().padStart(2, '0')}-01`,
                 endDate: `${endYear}-${endMonth.toString().padStart(2, '0')}-${new Date(endYear, endMonth, 0).getDate()}`,
@@ -2694,8 +2713,11 @@ const HeatMapPage: React.FC = () => {
     const timeHeader = (
         <TimeHeader
             name="Event Heat Map"
-            airframes={airframes}
+            airframes={visibleAirframes.map(({ name }) => name)}
             airframe={airframe}
+            aircraftTypes={AIRCRAFT_CATEGORIES}
+            aircraftType={aircraftType}
+            aircraftTypeChange={handleAircraftTypeChange}
             startYear={startYear}
             startMonth={startMonth}
             endYear={endYear}
@@ -3001,4 +3023,4 @@ const container = document.querySelector("#heat-map-page");
 if (container) {
     const root = createRoot(container);
     root.render(<HeatMapPage />);
-} 
+}

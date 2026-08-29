@@ -15,6 +15,11 @@ import "./index.css";
 import * as $ from "jquery";
 import type JQuery from "jquery";
 import type { AirframeNameID } from "./types";
+import {
+    AIRCRAFT_CATEGORIES,
+    airframesForCategory,
+    type AircraftCategory,
+} from "./aircraft_type_filter";
 
 
 const ALL_AIRFRAMES_PAIR = {
@@ -162,7 +167,8 @@ async function fetchStatistic<ResponseType>(
     stat: string,
     route: string,
     aggregate: boolean,
-    airframe: AirframeNameID = ALL_AIRFRAMES_PAIR,
+    airframe: AirframeNameID,
+    aircraftType: AircraftCategory,
     startYear: number,
     startMonth: number,
     endYear: number,
@@ -188,7 +194,8 @@ async function fetchStatistic<ResponseType>(
     const submissionData = {
         startDate: startDate,
         endDate: endDate,
-        airframeID: airframe.id
+        airframeID: airframe.id,
+        aircraftType,
     };
 
 
@@ -361,6 +368,7 @@ type FlightHoursByAirframe = {
 
 type SummaryPageState = {
     airframe: AirframeNameID;
+    aircraftType: AircraftCategory;
     datesOrAirframeChanged: boolean;
     statistics: {
         flightTime: number;
@@ -394,11 +402,14 @@ export type SummaryPageProps = {
 };
 
 export default class SummaryPage extends React.Component<SummaryPageProps, SummaryPageState> {
+    private statisticsRequestId = 0;
+
     constructor(props: SummaryPageProps) {
         super(props);
 
         this.state = {
             airframe: airframes[0],
+            aircraftType: "all",
             datesOrAirframeChanged: false,
             statistics: {
                 ...Object.keys(targetValues).reduce((o, key) => ({...o, [key]: ""}), {}),
@@ -703,6 +714,14 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         this.setState({airframe, datesOrAirframeChanged: true});
     }
 
+    aircraftTypeChange(aircraftType: AircraftCategory) {
+        this.setState({
+            aircraftType,
+            airframe: ALL_AIRFRAMES_PAIR,
+            datesOrAirframeChanged: false,
+        }, () => this.dateChange());
+    }
+
     dateChange() {
 
         $("#loading").show();
@@ -735,7 +754,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
         const submissionData = {
             startDate: startDate,
-            endDate: endDate
+            endDate: endDate,
+            aircraftType: this.state.aircraftType,
         };
 
         const route = `/api/event/count/by-airframe${this.props.aggregate ? "/aggregate" : ""}`;
@@ -772,10 +792,14 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
     async fetchStatistics() {
 
         console.log("SummaryPage -- Fetching Statistics...");
+        const requestId = ++this.statisticsRequestId;
 
         for await (const [stat, route] of Object.entries(targetValues)) {
 
             const successResponseHandler = (response: { err_msg?: string; err_title?: string; } | number | string) => {
+
+                if (requestId !== this.statisticsRequestId)
+                    return;
 
                 console.log("Got response for statistic: ", stat, response);
 
@@ -797,6 +821,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 route,
                 this.props.aggregate,
                 this.state.airframe,
+                this.state.aircraftType,
                 startYear,
                 startMonth,
                 endYear,
@@ -811,11 +836,15 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
             "/api/upload/outcomes",
             this.props.aggregate,
             this.state.airframe,
+            this.state.aircraftType,
             startYear,
             startMonth,
             endYear,
             endMonth,
             response => {
+                if (requestId !== this.statisticsRequestId)
+                    return;
+
                 const uploadCount = Number(response.uploadCount);
                 const okUploadCount = Number(response.okUploadCount);
                 const warningUploadCount = Number(response.warningUploadCount);
@@ -851,7 +880,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         const submissionData = {
             startDate: startDate,
             endDate: endDate,
-            airframeID: this.state.airframe.id
+            airframeID: this.state.airframe.id,
+            aircraftType: this.state.aircraftType,
         };
 
         $.ajax({
@@ -903,7 +933,8 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
         const submissionData = {
             startDate: startDate,
             endDate: endDate,
-            airframeID: this.state.airframe.id
+            airframeID: this.state.airframe.id,
+            aircraftType: this.state.aircraftType,
         };
 
         $.ajax({
@@ -1211,6 +1242,35 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
 
                         </tbody>
                     </table>
+                </div>
+            </div>
+        );
+    }
+
+    FilteredFlightImportsSummary() {
+        const flightCount = this.state.statistics.importedFlights;
+        const selectedType = AIRCRAFT_CATEGORIES.find(option => option.value === this.state.aircraftType)?.label;
+        const selectedScope = this.state.airframe.id >= 0 ? this.state.airframe.name : selectedType;
+        const importLabel = flightCount === 1 ? "Successful Flight Import" : "Successful Flight Imports";
+
+        return (
+            <div className="card flex flex-col h-full flex-1">
+                <h4 className="card-header">Uploads</h4>
+                <div className="card-body px-12! flex flex-col justify-center">
+                    <div>
+                        <span
+                            className="badge"
+                            style={{backgroundColor: "var(--c_valid)", color: "white"}}
+                        >
+                            <i className="fa fa-fw fa-check" aria-hidden="true"/>
+                            &nbsp;{formatNumberAsync(flightCount, integerOptions)}
+                        </span>
+                        <span>&nbsp;{importLabel}</span>
+                    </div>
+                    <p className="text-muted mt-3 mb-0">
+                        Pending and failed upload totals are not shown for {selectedScope} because those uploads may
+                        not have aircraft metadata yet.
+                    </p>
                 </div>
             </div>
         );
@@ -1549,8 +1609,12 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                 <TimeHeader
                     className="rounded-lg! bg-(--c_card_header_bg_opaque)! border-(--c_border_alt)! border-1!"
                     name={`Event Statistics Summary ${this.props.aggregate ? "(Aggregate)" : ""}`}
-                    airframes={airframes.map((airframe: AirframeNameID) => airframe.name)}
+                    airframes={airframesForCategory(airframes, this.state.aircraftType)
+                        .map((airframe: AirframeNameID) => airframe.name)}
                     airframe={this.state.airframe.name}
+                    aircraftTypes={AIRCRAFT_CATEGORIES}
+                    aircraftType={this.state.aircraftType}
+                    aircraftTypeChange={(aircraftType: AircraftCategory) => this.aircraftTypeChange(aircraftType)}
                     startYear={startYear}
                     startMonth={startMonth}
                     endYear={endYear}
@@ -1592,7 +1656,11 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
                             {newSummaryTable}
 
                             {/* Uploads Summary */}
-                            {this.props.aggregate ? this.UploadsSummaryAggregate() : this.UploadsSummary()}
+                            {
+                                this.state.aircraftType === "all" && this.state.airframe.id < 0
+                                    ? (this.props.aggregate ? this.UploadsSummaryAggregate() : this.UploadsSummary())
+                                    : this.FilteredFlightImportsSummary()
+                            }
 
                             {/* Aggregate Flight Hours by Airframe Table */}
                             {

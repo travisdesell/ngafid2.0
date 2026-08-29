@@ -12,6 +12,12 @@ import Plotly from 'plotly.js';
 import Tooltip from "react-bootstrap/Tooltip";
 import { OverlayTrigger } from "react-bootstrap";
 import type { AirframeNameID } from "./types";
+import {
+    AIRCRAFT_CATEGORIES,
+    airframesForCategory,
+    aircraftTypeMatchesCategory,
+    type AircraftCategory,
+} from "./aircraft_type_filter";
 
 
 const allAirframes = { name: "All Airframes", id: -1 } as AirframeNameID;
@@ -107,6 +113,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
     // const [eventFleetPercents, setEventFleetPercents] = useState<{ [key: string]: CountsData }>({});
     // const [eventNGAFIDPercents, setEventNGAFIDPercents] = useState<{ [key: string]: CountsData }>({});
     const [airframe, setAirframe] = useState<AirframeNameID>(allAirframes);
+    const [aircraftType, setAircraftType] = useState<AircraftCategory>("all");
     const [startYear, setStartYear] = useState<number>(date.getFullYear());
     const [startMonth, setStartMonth] = useState<number>(1);
     const [endYear, setEndYear] = useState<number>(date.getFullYear());
@@ -269,6 +276,11 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
         const airframeNames: string[] = [];
         const dates: string[] = [];
         const csvValues: CSVValues = {};
+        const visibleAirframeNames = new Set(
+            Object.entries(aircraftTypesByName)
+                .filter(([, type]) => aircraftTypeMatchesCategory(type, aircraftType))
+                .map(([name]) => name)
+        );
 
         for (const [eventName, countsObject] of Object.entries(eventCounts)) {
 
@@ -284,6 +296,9 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
                 //Airframe is Garmin Flight Display, skip
                 if (airframe.name === "Garmin Flight Display")
+                    continue;
+
+                if (!visibleAirframeNames.has(value.airframeName))
                     continue;
 
                 //Airframe is not selected, skip
@@ -469,7 +484,14 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
         const ngafidAgg: Record<string, Aggregator> = {};  // eventName -> all fleets / other fleets
 
         const counts = eventCounts ?? {};
-        const fleetAirframeNames = new Set(airframes.map(a => a.name));
+        const visibleAirframeNames = new Set(
+            Object.entries(aircraftTypesByName)
+                .filter(([, type]) => aircraftTypeMatchesCategory(type, aircraftType))
+                .map(([name]) => name)
+        );
+        const fleetAirframeNames = new Set(
+            airframesForCategory(airframes, aircraftType).map(item => item.name)
+        );
 
         //Build count traces, fill aggregators for percent data
         for (const [eventName, countsObject] of Object.entries(counts)) {
@@ -519,6 +541,9 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
                 //Got skippable airframe, skip
                 if (AIRFRAME_NAMES_SKIP.includes(value.airframeName))
+                    continue;
+
+                if (!visibleAirframeNames.has(value.airframeName))
                     continue;
 
                 //Current airframe isn't selected, skip
@@ -582,7 +607,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
             for (const v of Object.values(countsObject as { [k: string]: TrendsData })) {
 
                 //Airframe not in airframe names list, add it
-                if (!airframeNames.includes(v.airframeName))
+                if (visibleAirframeNames.has(v.airframeName) && !airframeNames.includes(v.airframeName))
                     airframeNames.push(v.airframeName);
 
             }
@@ -699,7 +724,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
 
         $('#loading').hide();
 
-    }, [eventCounts, eventChecked, aggregatePage]);
+    }, [eventCounts, eventChecked, aggregatePage, aircraftType]);
 
 
 
@@ -707,7 +732,7 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
         displayPlots(airframe.name);
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [airframe.name, eventCounts, eventChecked, aggregatePage]);
+    }, [airframe.name, eventCounts, eventChecked, aggregatePage, aircraftType]);
 
     const checkEvent = (eventName: string) => {
 
@@ -811,6 +836,12 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
         setAirframe(airframe);
     };
 
+    const aircraftTypeChange = (category: AircraftCategory) => {
+        setAircraftType(category);
+        setAirframe(allAirframes);
+        setDatesOrAirframeChanged(true);
+    };
+
     const render = () => {
 
         const activePageName = (aggregatePage ? "aggregate_trends" : "trends");
@@ -837,8 +868,12 @@ export function TrendsPage({ aggregate_page }: TrendsPageProps) {
                             <div className="card m-2">
                                 <TimeHeader
                                     name={timeHeaderTitle}
-                                    airframes={airframes.map((airframe: AirframeNameID) => airframe.name)}
+                                    airframes={airframesForCategory(airframes, aircraftType)
+                                        .map((airframe: AirframeNameID) => airframe.name)}
                                     airframe={airframe.name}
+                                    aircraftTypes={AIRCRAFT_CATEGORIES}
+                                    aircraftType={aircraftType}
+                                    aircraftTypeChange={aircraftTypeChange}
                                     startYear={startYear}
                                     startMonth={startMonth}
                                     endYear={endYear}

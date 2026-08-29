@@ -71,7 +71,7 @@ public class StartPageJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> scopes = new HashMap<>();
-            Airframes.AirframeNameID[] airframes = Airframes.getAllWithIds(connection, fleetId);
+            Airframes.TypedAirframeNameID[] airframes = Airframes.getAllWithIdsAndTypes(connection, fleetId);
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", "var airframes = " + GSON.toJson(airframes) + ";\n");

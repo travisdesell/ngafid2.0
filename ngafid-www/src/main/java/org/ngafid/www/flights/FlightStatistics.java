@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.logging.Logger;
 import org.ngafid.core.util.TimeUtils;
+import org.ngafid.core.flights.Airframes.AircraftCategory;
 
 public enum FlightStatistics {;
 
@@ -165,6 +166,44 @@ public enum FlightStatistics {;
                 return 0;
             }
         }
+    }
+
+    public static double getFlightTimeByAircraftCategory(
+            Connection connection,
+            Integer fleetId,
+            LocalDate startDate,
+            LocalDate endDate,
+            AircraftCategory category)
+            throws SQLException {
+        String condition = buildDateClause(startDate, endDate) + " AND " + category.sqlCondition("airframe_id");
+        if (fleetId != null) condition = "fleet_id = " + fleetId + " AND " + condition;
+        return getFlightTimeImpl(connection, "m_fleet_monthly_flight_time", condition);
+    }
+
+    public static int getFlightCountByAircraftCategory(
+            Connection connection,
+            Integer fleetId,
+            LocalDate startDate,
+            LocalDate endDate,
+            AircraftCategory category)
+            throws SQLException {
+        String condition = buildDateClause(startDate, endDate) + " AND " + category.sqlCondition("airframe_id");
+        if (fleetId != null) condition = "fleet_id = " + fleetId + " AND " + condition;
+        return getFlightCountImpl(connection, "m_fleet_monthly_flight_counts", condition);
+    }
+
+    public static double get30DayFlightTimeByAircraftCategory(
+            Connection connection, Integer fleetId, AircraftCategory category) throws SQLException {
+        String condition = category.sqlCondition("airframe_id");
+        if (fleetId != null) condition = "fleet_id = " + fleetId + " AND " + condition;
+        return getFlightTimeImpl(connection, "m_fleet_30_day_flight_time", condition);
+    }
+
+    public static int get30DayFlightCountByAircraftCategory(
+            Connection connection, Integer fleetId, AircraftCategory category) throws SQLException {
+        String condition = category.sqlCondition("airframe_id");
+        if (fleetId != null) condition = "fleet_id = " + fleetId + " AND " + condition;
+        return getFlightCountImpl(connection, "m_fleet_30_day_flight_counts", condition);
     }
 
     public static int getTotalFlightCount(Connection connection, int fleetId, int airframeId) throws SQLException {

@@ -10,6 +10,7 @@ import { closer, container, initializeMap, layers, map, overlay, styles } from "
 import { paletteGenerator } from "./map_utils.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
+import { AIRCRAFT_CATEGORIES } from "./aircraft_type_filter";
 
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
@@ -299,6 +300,7 @@ class TTFCard extends React.Component {
             // The end of the date range that this.state.data corresponds to.
             // This will be null if and only if this.state.data is null
             dataEndDate: null,
+            dataAircraftType: null,
 
             // Data is an object containing the following information:
             //     data = {
@@ -309,6 +311,7 @@ class TTFCard extends React.Component {
             data: null,
 
             datesChanged: true,
+            aircraftType: "all",
 
             minRoll: ROLL_THRESHOLDS.Default,
 
@@ -511,6 +514,9 @@ class TTFCard extends React.Component {
     }
 
     fetchFlightLookupForMissingIds(startDate, endDate, airportIataCode) {
+        const selectedAircraftType = AIRCRAFT_CATEGORIES.find(
+            ({ value }) => value === this.state.aircraftType
+        );
         const overlapFilter = {
             type: 'GROUP',
             condition: 'OR',
@@ -539,6 +545,9 @@ class TTFCard extends React.Component {
             condition: 'AND',
             filters: [
                 { type: 'RULE', inputs: ['Airport', airportIataCode, 'visited'] },
+                ...(selectedAircraftType && selectedAircraftType.value !== 'all'
+                    ? [{ type: 'RULE', inputs: ['Aircraft Type', 'is', selectedAircraftType.label] }]
+                    : []),
                 overlapFilter
             ]
         };
@@ -1077,6 +1086,7 @@ class TTFCard extends React.Component {
             startDate: startDateString,
             endDate: endDateString,
             airport: airport,
+            aircraftType: this.state.aircraftType,
         };
 
         const startDate = this.parseDate(startDateString);
@@ -1195,6 +1205,7 @@ class TTFCard extends React.Component {
                             dataAirport: submissionData.airport,
                             dataStartDate: submissionData.startDate,
                             dataEndDate: submissionData.endDate,
+                            dataAircraftType: submissionData.aircraftType,
                             data: { ttfs: accumulatedTtfs, airports: accumulatedAirports }
                         });
                     }
@@ -1224,7 +1235,8 @@ class TTFCard extends React.Component {
             this.state.data != null
             && this.dateWithinRange(startDate, dataStartDate, dataEndDate)
             && this.dateWithinRange(endDate, dataStartDate, dataEndDate)
-            && airport == this.state.dataAirport) {
+            && airport == this.state.dataAirport
+            && this.state.aircraftType === this.state.dataAircraftType) {
 
             for (const ttf of this.state.data.ttfs) {
                 ttf.enabled = true;
@@ -1309,6 +1321,7 @@ class TTFCard extends React.Component {
                                     dataAirport: submissionData.airport,
                                     dataStartDate: submissionData.startDate,
                                     dataEndDate: submissionData.endDate,
+                                    dataAircraftType: submissionData.aircraftType,
                                     data: { ttfs: accumulatedTtfs, airports: accumulatedAirports }
                                 });
                             }
@@ -1338,6 +1351,10 @@ class TTFCard extends React.Component {
     onAirportFilterChanged(airport) {
         const iataCode = airport;
         this.setState({ selectedAirport: iataCode, selectedRunway: "Any Runway", datesChanged: true, });
+    }
+
+    onAircraftTypeChanged(aircraftType) {
+        this.setState({ aircraftType, datesChanged: true });
     }
 
     onUpdateStartYear(year) {
@@ -1584,6 +1601,9 @@ class TTFCard extends React.Component {
                     buttonContent={'Fetch'}
                     extraHeaderComponents={turnToFinalHeaderComponents}
                     extraRowComponents={rollSlider}
+                    aircraftTypes={AIRCRAFT_CATEGORIES}
+                    aircraftType={this.state.aircraftType}
+                    aircraftTypeChange={(aircraftType) => this.onAircraftTypeChanged(aircraftType)}
                     startYear={this.state.startYear}
                     startMonth={this.state.startMonth}
                     endYear={this.state.endYear}

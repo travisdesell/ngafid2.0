@@ -100,6 +100,8 @@ object EventRoutes : RouteProvider() {
         val eventNames = ctx.queryParam("eventNames")!!
         val tagName = ctx.queryParam("tagName")!!
         val fleetId = user.fleetId
+        val aircraftCategory = Airframes.AircraftCategory.fromQueryValue(ctx.queryParam("aircraftType"))
+        val aircraftTypeCondition = aircraftCategory.sqlCondition("flights.airframe_id")
 
         Database.getConnection().use { connection ->
             val eventNamesArray = eventNames.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -132,18 +134,25 @@ object EventRoutes : RouteProvider() {
                 var totalCount = 0
                 for (defId in definitionIds) {
                     val countQuery = if (tagName == "All Tags") {
-                        "SELECT COUNT(*) FROM events WHERE event_definition_id = ? AND fleet_id = ? AND end_time >= ? AND end_time <= ?"
+                        "SELECT COUNT(*) FROM events " +
+                        "JOIN flights ON events.flight_id = flights.id " +
+                        "WHERE events.event_definition_id = ? " +
+                        "AND events.fleet_id = ? " +
+                        "AND events.end_time >= ? " +
+                        "AND events.end_time <= ? " +
+                        "AND $aircraftTypeCondition"
                     } else {
-                        "SELECT COUNT(*) FROM events, flights, flight_tag_map, flight_tags " +
-                        "WHERE events.flight_id = flights.id " +
-                        "AND flights.id = flight_tag_map.flight_id " +
-                        "AND flight_tag_map.tag_id = flight_tags.id " +
-                        "AND events.fleet_id = flight_tags.fleet_id " +
+                        "SELECT COUNT(*) FROM events " +
+                        "JOIN flights ON events.flight_id = flights.id " +
+                        "JOIN flight_tag_map ON flights.id = flight_tag_map.flight_id " +
+                        "JOIN flight_tags ON flight_tag_map.tag_id = flight_tags.id " +
+                        "WHERE events.fleet_id = flight_tags.fleet_id " +
                         "AND events.event_definition_id = ? " +
                         "AND events.fleet_id = ? " +
                         "AND events.end_time >= ? " +
                         "AND events.end_time <= ? " +
-                        "AND flight_tags.name = ?"
+                        "AND flight_tags.name = ? " +
+                        "AND $aircraftTypeCondition"
                     }
 
                     val countStmt = connection.prepareStatement(countQuery)
@@ -177,6 +186,7 @@ object EventRoutes : RouteProvider() {
         val eventNames = ctx.queryParam("eventNames")!!
         val tagName = ctx.queryParam("tagName")!!
         val fleetId = user.fleetId
+        val aircraftCategory = Airframes.AircraftCategory.fromQueryValue(ctx.queryParam("aircraftType"))
 
         Database.getConnection().use { connection ->
             val eventNamesArray = eventNames.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -198,7 +208,8 @@ object EventRoutes : RouteProvider() {
                     eventName,
                     LocalDate.parse(startDate),
                     LocalDate.parse(endDate),
-                    tagName
+                    tagName,
+                    aircraftCategory
                 )
 
                 eventMap[eventName] = events
@@ -217,6 +228,7 @@ object EventRoutes : RouteProvider() {
 
         val user = SessionUtility.getUser(ctx)
         val fleetId = user.fleetId
+        val aircraftCategory = Airframes.AircraftCategory.fromQueryValue(ctx.queryParam("aircraftType"))
 
         Database.getConnection().use { connection ->
             ctx.json(
@@ -226,7 +238,8 @@ object EventRoutes : RouteProvider() {
                     eventName,
                     LocalDate.parse(startDate),
                     LocalDate.parse(endDate),
-                    tagName
+                    tagName,
+                    aircraftCategory
                 )
             )
         }

@@ -317,6 +317,46 @@ public final class Tails {
         }
     }
 
+    /** Counts aircraft represented by flights in the selected dashboard category. */
+    public static int getNumberTails(Connection connection, int fleetId, Airframes.AircraftCategory category)
+            throws SQLException {
+        if (category == Airframes.AircraftCategory.ALL) return getNumberTails(connection, fleetId);
+
+        String queryString = "SELECT COUNT(*) FROM (SELECT f.fleet_id, f.system_id FROM flights f WHERE "
+                + category.sqlCondition("f.airframe_id");
+        if (fleetId > 0) queryString += " AND f.fleet_id = ?";
+        queryString += " GROUP BY f.fleet_id, f.system_id) selected_aircraft";
+
+        try (PreparedStatement query = connection.prepareStatement(queryString)) {
+            if (fleetId > 0) query.setInt(1, fleetId);
+            try (ResultSet resultSet = query.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1);
+            }
+        }
+    }
+
+    /** Counts aircraft represented by flights for either an exact airframe or a dashboard category. */
+    public static int getNumberTails(
+            Connection connection, int fleetId, Airframes.AircraftCategory category, int airframeId)
+            throws SQLException {
+        if (airframeId < 0) return getNumberTails(connection, fleetId, category);
+
+        String queryString =
+                "SELECT COUNT(*) FROM (SELECT f.fleet_id, f.system_id FROM flights f WHERE f.airframe_id = ?";
+        if (fleetId > 0) queryString += " AND f.fleet_id = ?";
+        queryString += " GROUP BY f.fleet_id, f.system_id) selected_aircraft";
+
+        try (PreparedStatement query = connection.prepareStatement(queryString)) {
+            query.setInt(1, airframeId);
+            if (fleetId > 0) query.setInt(2, fleetId);
+            try (ResultSet resultSet = query.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1);
+            }
+        }
+    }
+
     public static void removeUnused(Connection connection) throws SQLException {
         String queryString = "DELETE FROM tails WHERE NOT EXISTS "
                 + "(SELECT id FROM flights WHERE flights.system_id = tails.system_id "

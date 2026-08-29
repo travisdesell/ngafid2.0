@@ -58,6 +58,7 @@ export type MultifleetSelectWithAccess = {
 export interface AirframeNameID {
     name: string;
     id: number;
+    type?: string;
 }
 declare global {
     const waitingUserCount: number;
@@ -66,6 +67,7 @@ declare global {
     const modifyTailsAccess: boolean;
     const plotMapHidden: boolean;
     const airframes: AirframeNameID[];
+    const aircraftTypesByName: { [airframeName: string]: string };
     const tagNames: string[];
     const eventNames: string[];
 }

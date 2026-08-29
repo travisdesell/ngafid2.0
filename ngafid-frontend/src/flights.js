@@ -69,6 +69,22 @@ const rules = [
     },
 
     {
+        name: "Aircraft Type",
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["is", "is not"],
+            },
+            {
+                type: "select",
+                name: "aircraft type",
+                options: ["Fixed Wing", "Rotorcraft", "UAS"],
+            },
+        ],
+    },
+
+    {
         name: "Tail Number",
         conditions: [
             {

@@ -11,6 +11,7 @@ import org.ngafid.core.Database;
 import org.ngafid.core.agl_converter.MSLtoAGLConverter;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventMetaData;
+import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.Parameters;
@@ -726,6 +727,7 @@ public class HeatmapPointsProcessor {
     public static List<Map<String, Object>> getEvents(
             int fleetId,
             String airframe,
+            Airframes.AircraftCategory aircraftCategory,
             List<Integer> eventDefinitionIds,
             java.sql.Date startDate,
             java.sql.Date endDate,
@@ -752,6 +754,7 @@ public class HeatmapPointsProcessor {
                     + "AND DATE(e.start_time) BETWEEN ? AND ? "
                     + "AND e.min_latitude <= ? AND e.max_latitude >= ? "
                     + "AND e.min_longitude <= ? AND e.max_longitude >= ?");
+            sql.append(" AND ").append(aircraftCategory.sqlCondition("f.airframe_id"));
             if (airframe != null && !airframe.isEmpty() && !airframe.equals("All Airframes")) {
                 sql.append(" AND a.airframe = ?");
             }

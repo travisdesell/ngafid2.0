@@ -229,6 +229,25 @@ public class Event {
             LocalDate endTime,
             String tagName)
             throws SQLException {
+        return getEvents(
+                connection,
+                fleetId,
+                eventName,
+                startTime,
+                endTime,
+                tagName,
+                Airframes.AircraftCategory.ALL);
+    }
+
+    public static HashMap<String, ArrayList<Event>> getEvents(
+            Connection connection,
+            int fleetId,
+            String eventName,
+            LocalDate startTime,
+            LocalDate endTime,
+            String tagName,
+            Airframes.AircraftCategory aircraftCategory)
+            throws SQLException {
 
         // PERFORMANCE LOGGING: Track fetch time for this event type
         long startTimeMs = System.currentTimeMillis();
@@ -238,18 +257,16 @@ public class Event {
         LOG.info("========================================");
 
         // get list of airframes for this fleet so we can set up the hashmap of arraylists for events by airframe
-        ArrayList<String> fleetAirframes = Airframes.getAll(connection, fleetId);
         HashMap<Integer, String> airframeIds = new HashMap<>();
 
         // create the hashmap to be returned by this method
         HashMap<String, ArrayList<Event>> eventsByAirframe = new HashMap<>();
 
         // get a map of the airframe ids to airframe names
-        for (String airframe : fleetAirframes) {
-            airframeIds.put(
-                    Airframes.Airframe.getAirframeByName(connection, airframe).getId(), airframe);
-
-            eventsByAirframe.put(airframe, new ArrayList<>());
+        for (Airframes.TypedAirframeNameID airframe : Airframes.getAllWithIdsAndTypes(connection, fleetId)) {
+            if (!aircraftCategory.matches(airframe.type())) continue;
+            airframeIds.put(airframe.id(), airframe.name());
+            eventsByAirframe.put(airframe.name(), new ArrayList<>());
         }
 
         String query;
@@ -325,6 +342,7 @@ public class Event {
             }
         }
         eventsQuery += ") AND events.fleet_id = ?";
+        eventsQuery += " AND " + aircraftCategory.sqlCondition("flights.airframe_id");
 
         if (startTime != null) {
             eventsQuery += " AND events.end_time >= ?";
