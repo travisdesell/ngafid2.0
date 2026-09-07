@@ -53,8 +53,7 @@ object ReportGenerator {
             appendLine("<body>")
             appendLine("<div class=\"container\">")
             appendLine("<h1>SQL Injection Scan Report</h1>")
-            appendLine("<p>Target: <code>${report.targetUrl}</code> | Scanned: $timestamp</p>")
-
+            appendLine("<p>Target: <code>${escapeHtml(report.targetUrl)}</code> | Scanned: $timestamp</p>")
             //summary cards
             appendLine("<div class=\"summary\">")
             appendLine("""<div class="stat-card inputs"><div class="value">${report.totalInputs}</div><div class="label">Inputs Found</div></div>""")
@@ -70,7 +69,7 @@ object ReportGenerator {
             report.inputsFound.forEachIndexed { i, inp ->
                 val vulnCount = report.results.count { it.inputSource == inp && it.vulnerable }
                 val badge = if (vulnCount > 0) "<span class=\"badge badge-vuln\">VULNERABLE ($vulnCount)</span>" else "<span class=\"badge badge-safe\">CLEAN</span>"
-                appendLine("<tr><td>${i + 1}</td><td>${inp.inputType}</td><td><code>${inp.name}</code></td><td>${inp.location}</td><td>$badge</td></tr>")
+                appendLine("<tr><td>${i + 1}</td><td>${escapeHtml(inp.inputType.toString())}</td><td><code>${inp.name}</code></td><td>${inp.location}</td><td>$badge</td></tr>")
             }
             appendLine("</table></div>")
 
@@ -81,8 +80,8 @@ object ReportGenerator {
                 appendLine("<table><tr><th>Input</th><th>Type</th><th>Payload</th><th>Evidence</th><th>Status</th></tr>")
                 for (r in vulnerableResults) {
                     appendLine("<tr>")
-                    appendLine("<td><code>${r.inputSource.name}</code></td>")
-                    appendLine("<td>${r.inputSource.inputType}</td>")
+                    appendLine("<td><code>${escapeHtml(r.inputSource.name)}</code></td>")
+                    appendLine("<td>${escapeHtml(r.inputSource.inputType.toString())}</td>")
                     appendLine("<td><span class=\"payload\">${escapeHtml(r.payload)}</span></td>")
                     appendLine("<td class=\"evidence\">${escapeHtml(r.evidence)}</td>")
                     appendLine("<td>${r.statusCode ?: "N/A"}</td>")

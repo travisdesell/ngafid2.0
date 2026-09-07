@@ -27,6 +27,7 @@ public final class Config {
     public static final String MUSTACHE_TEMPLATE_DIR;
     public static final String AIRPORTS_FILE;
     public static final String RUNWAYS_FILE;
+    public static final String OBSTACLES_FILE;
     public static final String KAFKA_CONFIG_FILE;
     public static final String EMAIL_INFO_FILE;
     public static final String NGAFID_ADMIN_EMAILS;
@@ -52,6 +53,8 @@ public final class Config {
 
         AIRPORTS_FILE = getStringProperty("ngafid.airports.file");
         RUNWAYS_FILE = getStringProperty("ngafid.runways.file");
+        OBSTACLES_FILE = getStringProperty("ngafid.obstacles.file");
+
         NGAFID_UPLOAD_DIR = getStringProperty("ngafid.upload.dir");
         NGAFID_ARCHIVE_DIR = getStringProperty("ngafid.archive.dir");
         NGAFID_STATIC_DIR = getStringProperty("ngafid.static.dir");

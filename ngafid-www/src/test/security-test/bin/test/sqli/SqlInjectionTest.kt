@@ -26,7 +26,7 @@ import java.io.File
  *   ./gradlew test -Denv.file=.env
  * Add to env
  * .env file format:
- *   TEST_MODE=true                          # true = localhost, false = production host
+ *   TEST_MODE=true                          # true = localhost, false = production host, true also uses destructive sql tests
  *   LOCALHOST_PORT=8181                     # port for localhost (used when TEST_MODE=true)
  *   PRODUCTION_HOST=ngafidbeta.rit.edu:8181 # production host (used when TEST_MODE=false)
  *   TARGET_PATHS=/protected/welcome,/protected/uploads,/protected/bug_report

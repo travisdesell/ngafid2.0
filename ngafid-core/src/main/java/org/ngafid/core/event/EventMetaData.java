@@ -17,7 +17,8 @@ public class EventMetaData {
 
     public enum EventMetaDataKey {
         LATERAL_DISTANCE("lateral_distance"),
-        VERTICAL_DISTANCE("vertical_distance");
+        VERTICAL_DISTANCE("vertical_distance"),
+        OBSTACLE_ID("obstacle_id");
 
         private final String name;
 
@@ -33,6 +34,7 @@ public class EventMetaData {
             return switch (s.toUpperCase()) {
                 case "LATERAL_DISTANCE" -> LATERAL_DISTANCE;
                 case "VERTICAL_DISTANCE" -> VERTICAL_DISTANCE;
+                case "OBSTACLE_ID" -> OBSTACLE_ID;
                 default -> throw new IllegalArgumentException("Unknown event meta data key: " + s);
             };
         }

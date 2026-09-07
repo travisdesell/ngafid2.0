@@ -37,6 +37,7 @@ ngafid.terrain.dir=${ngafid.data.folder}/terrain
 # Local data files
 ngafid.airports.file=${ngafid.data.folder}/airports/airports_parsed.csv
 ngafid.runways.file=${ngafid.data.folder}/runways/runways_parsed.csv
+ngafid.obstacles.file=${ngafid.data.folder}/obstacles/obstacles_parsed.csv
 
 # Docker paths (automatically used when in Docker environment)
 ngafid.docker.repo.path=/app/
@@ -47,7 +48,7 @@ ngafid.docker.terrain.dir=/mnt/ngafid/terrain
 # Docker data files
 ngafid.docker.airports.file=/mnt/ngafid/airports/airports_parsed.csv
 ngafid.docker.runways.file=/mnt/ngafid/runways/runways_parsed.csv
-
+ngafid.docker.obstacles.file=/mnt/ngafid/obstacles/obstacles_parsed.csv
 
 # =============================================================================
 # WEB SERVER CONFIGURATION
