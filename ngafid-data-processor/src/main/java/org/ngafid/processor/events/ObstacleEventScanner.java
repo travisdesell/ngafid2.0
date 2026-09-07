@@ -12,7 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.mutable.MutableDouble;
+import org.jline.utils.Log;
 import org.ngafid.core.Database;
+import org.ngafid.core.airports.Airport;
+import org.ngafid.core.airports.Airports;
 import org.ngafid.core.event.Event;
 import org.ngafid.core.event.EventDefinition;
 import org.ngafid.core.event.EventMetaData;
@@ -94,11 +98,13 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         HashMap<Integer, Event> obstacleEventMap = new HashMap<>();
         HashMap<Integer, String> obstacleLastUpdateMap = new HashMap<>(); 
         HashMap<Event, Integer> untrackedObstacleEvents = new HashMap<>();
+
+        ArrayList<Event> allEvents = new ArrayList<>();
         
         int insertedEvents = 0;
 
         // Loop through all of the flight's entries
-        for (int i = 0; i < lat.size(); i++) {
+        for (int i = 3; i < lat.size(); i++) {
             ArrayList<MarkedObstacle> nearbyObstacles = Obstacles.getNearbyObstaclesWithinRange(lat.get(i), lon.get(i), altAGL.get(i), flight.getAirframeType());
 
             // For each entry, check for all of the nearby objects
@@ -113,15 +119,14 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                     case -10:
                         if (marked.getObstacleRisk() != ObstacleRisk.HIGH) {continue;}
                         break;
-                    // Low risk
-                    case -9:
-                        if (marked.getObstacleRisk() != ObstacleRisk.LOW) {continue;}
-                        break;
                     // Medium risk
-                    case -8:
+                    case -9:
                         if (marked.getObstacleRisk() != ObstacleRisk.MEDIUM) {continue;}
                         break;
-                    
+                    // Low risk
+                    case -8:
+                        if (marked.getObstacleRisk() != ObstacleRisk.LOW) {continue;}
+                        break;
                     default:
                         break;
                 }
@@ -170,10 +175,12 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                     obstacleLastUpdateMap.remove(obstacleId);
                     MarkedObstacle marked = obstacleMap.remove(obstacleId);
                     Event event = obstacleEventMap.remove(obstacleId);
+                    LOG.info(marked.getObstacleID() + "| Start: " + event.getStartLine() + " | End: " + event.getEndLine());
 
                     // Update the Event with metadata
                     event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, marked.getHorizontalDistance()));
                     event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
+                    event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.OBSTACLE_ID, (double) marked.getObstacleID()));
                     
                     // Add to untrackedObstacle list
                     untrackedObstacleEvents.put(event, obstacleId);
@@ -181,8 +188,8 @@ public class ObstacleEventScanner extends AbstractEventScanner {
             }
             
             // Insert all of the untracked obstacles into database
-            insertObstacleEvents(connection, untrackedObstacleEvents);
-            insertedEvents += untrackedObstacleEvents.size();
+            // insertObstacleEvents(connection, untrackedObstacleEvents);
+            allEvents.addAll(untrackedObstacleEvents.keySet());
             untrackedObstacleEvents.clear();
         }
 
@@ -193,15 +200,17 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         for (Integer obstacleID : remainingObstacles) {
             MarkedObstacle marked = obstacleMap.remove(obstacleID);
             Event event = obstacleEventMap.remove(obstacleID);
+            LOG.info(marked.getObstacleID() + "| Start: " + event.getStartLine() + " | End: " + event.getEndLine());
             event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, marked.getHorizontalDistance()));
             event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
+            event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.OBSTACLE_ID, (double) marked.getObstacleID()));
+            
             untrackedObstacleEvents.put(event, obstacleID);
         }
-        insertObstacleEvents(connection, untrackedObstacleEvents);
-        insertedEvents += untrackedObstacleEvents.size();
-
-        LOG.info("Obstacle Events Inserted for " + flight.getAirframeType() + ": " + (insertedEvents));
-        return new ArrayList<>();
+        // insertObstacleEvents(connection, untrackedObstacleEvents);
+        allEvents.addAll(untrackedObstacleEvents.keySet());
+        LOG.info("Obstacle Events Found for " + flight.getAirframeType() + ": " + (allEvents.size()));
+        return allEvents;
     }
 
     /**
@@ -224,24 +233,24 @@ public class ObstacleEventScanner extends AbstractEventScanner {
             e.printStackTrace();
         }
 
-        String sql = """
-                INSERT INTO obstacle_event_keys (event_id, obstacle_id)
-                VALUES (?, ?)
-                """;
+        // String sql = """
+        //         INSERT INTO obstacle_event_keys (event_id, obstacle_id)
+        //         VALUES (?, ?)
+        //         """;
 
-        // Insert the obstacle event keys into db
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        // // Insert the obstacle event keys into db
+        // try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            for (Event event: allEvents) {
-                preparedStatement.setInt(1, event.getId());
-                preparedStatement.setDouble(2, untrackedObstacleEvents.get(event));
-                preparedStatement.addBatch();
-            }
-            preparedStatement.executeBatch();
-        } catch (SQLException e) {
-            LOG.warning("Unable to insert obstacle events keys into database through connection.");
-            e.printStackTrace();
-        }
+        //     for (Event event: allEvents) {
+        //         preparedStatement.setInt(1, event.getId());
+        //         preparedStatement.setDouble(2, untrackedObstacleEvents.get(event));
+        //         preparedStatement.addBatch();
+        //     }
+        //     preparedStatement.executeBatch();
+        // } catch (SQLException e) {
+        //     LOG.warning("Unable to insert obstacle events keys into database through connection.");
+        //     e.printStackTrace();
+        // }
     }
   
     @Override
