@@ -12,6 +12,10 @@ import org.junit.jupiter.api.Test;
  */
 public class UserEmailPreferencesTest {
 
+    /**
+     * Verifies the constructor stores a populated per-type opt-in map and exposes it unchanged via
+     * {@code getEmailTypesUser}.
+     */
     @Test
     @DisplayName("Should create UserEmailPreferences with valid data")
     public void testConstructorWithValidData() {
@@ -27,6 +31,9 @@ public class UserEmailPreferencesTest {
         assertEquals(emailTypesUser, preferences.getEmailTypesUser());
     }
 
+    /**
+     * Verifies an empty opt-in map is accepted and returned as an empty map.
+     */
     @Test
     @DisplayName("Should create UserEmailPreferences with empty email types")
     public void testConstructorWithEmptyEmailTypes() {
@@ -40,6 +47,9 @@ public class UserEmailPreferencesTest {
         assertTrue(preferences.getEmailTypesUser().isEmpty());
     }
 
+    /**
+     * Verifies construction with a null opt-in map succeeds (no exception) and the null map is returned as-is.
+     */
     @Test
     @DisplayName("Should create UserEmailPreferences with null email types")
     public void testConstructorWithNullEmailTypes() {
@@ -54,6 +64,9 @@ public class UserEmailPreferencesTest {
         assertNull(preferences.getEmailTypesUser());
     }
 
+    /**
+     * Verifies {@code getEmailTypesUser} returns the same map instance that was supplied (no defensive copy).
+     */
     @Test
     @DisplayName("Should get email types user")
     public void testGetEmailTypesUser() {
@@ -69,6 +82,9 @@ public class UserEmailPreferencesTest {
         assertSame(emailTypesUser, result); // Should return the same reference
     }
 
+    /**
+     * Verifies {@code getPreference} returns the stored flag (true or false) for email types present in the map.
+     */
     @Test
     @DisplayName("Should get preference for existing email type")
     public void testGetPreferenceForExistingEmailType() {
@@ -84,6 +100,9 @@ public class UserEmailPreferencesTest {
         assertFalse(preferences.getPreference(EmailType.IMPORT_PROCESSED_RECEIPT));
     }
 
+    /**
+     * Verifies {@code getPreference} defaults to false for an email type that is not present in the map.
+     */
     @Test
     @DisplayName("Should get default preference for non-existing email type")
     public void testGetPreferenceForNonExistingEmailType() {
@@ -98,6 +117,9 @@ public class UserEmailPreferencesTest {
         assertFalse(preferences.getPreference(EmailType.AIRSYNC_UPDATE_REPORT));
     }
 
+    /**
+     * Verifies {@code getPreference} throws {@link NullPointerException} when the backing opt-in map is null.
+     */
     @Test
     @DisplayName("Should throw NullPointerException when email types is null")
     public void testGetPreferenceWithNullEmailTypes() {
@@ -110,6 +132,9 @@ public class UserEmailPreferencesTest {
         });
     }
 
+    /**
+     * Verifies {@code getPreference} returns false for any type when the opt-in map is empty.
+     */
     @Test
     @DisplayName("Should get default preference when email types is empty")
     public void testGetPreferenceWithEmptyEmailTypes() {
@@ -121,6 +146,10 @@ public class UserEmailPreferencesTest {
         assertFalse(preferences.getPreference(EmailType.UPLOAD_PROCESS_START));
     }
 
+    /**
+     * Verifies several email types (including those absent from the map) resolve to their correct stored flag or the
+     * false default.
+     */
     @Test
     @DisplayName("Should handle multiple email types correctly")
     public void testMultipleEmailTypes() {
@@ -141,6 +170,9 @@ public class UserEmailPreferencesTest {
         assertFalse(preferences.getPreference(EmailType.ADMIN_EXCEPTION_NOTIFICATION));
     }
 
+    /**
+     * Verifies {@code getPreference} throws {@link NullPointerException} when passed a null email type.
+     */
     @Test
     @DisplayName("Should handle edge case with null email type")
     public void testGetPreferenceWithNullEmailType() {
@@ -156,6 +188,9 @@ public class UserEmailPreferencesTest {
         });
     }
 
+    /**
+     * Verifies preferences resolve correctly when the map contains the full set of standard and admin email types.
+     */
     @Test
     @DisplayName("Should handle large number of email types")
     public void testLargeNumberOfEmailTypes() {
@@ -181,6 +216,10 @@ public class UserEmailPreferencesTest {
         assertFalse(preferences.getPreference(EmailType.AIRSYNC_DAEMON_CRASH));
     }
 
+    /**
+     * Verifies the opt-in map is held by reference (not copied): mutating the original map after construction is
+     * reflected by {@code getEmailTypesUser}.
+     */
     @Test
     @DisplayName("Should maintain immutability of email types")
     public void testEmailTypesImmutability() {
@@ -201,6 +240,9 @@ public class UserEmailPreferencesTest {
         assertEquals(originalEmailTypes, preferences.getEmailTypesUser());
     }
 
+    /**
+     * Verifies admin-prefixed email types resolve to their stored flags like any other type.
+     */
     @Test
     @DisplayName("Should handle admin email types correctly")
     public void testAdminEmailTypes() {

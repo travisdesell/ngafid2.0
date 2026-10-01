@@ -12,6 +12,10 @@ import org.junit.jupiter.api.Test;
  */
 public class AccountExceptionTest {
 
+    /**
+     * Verifies the two-argument constructor stores the title and message, exposes them via the getters, and leaves the
+     * cause null.
+     */
     @Test
     @DisplayName("Should create AccountException with title and message")
     public void testConstructorWithTitleAndMessage() {
@@ -26,6 +30,9 @@ public class AccountExceptionTest {
         assertNull(exception.getCause());
     }
 
+    /**
+     * Verifies the three-argument constructor stores the title, message, and underlying cause.
+     */
     @Test
     @DisplayName("Should create AccountException with title, message, and cause")
     public void testConstructorWithTitleMessageAndCause() {
@@ -41,6 +48,9 @@ public class AccountExceptionTest {
         assertEquals(cause, exception.getCause());
     }
 
+    /**
+     * Verifies a null title is retained as null while the message is still stored.
+     */
     @Test
     @DisplayName("Should handle null title")
     public void testConstructorWithNullTitle() {
@@ -54,6 +64,9 @@ public class AccountExceptionTest {
         assertEquals(message, exception.getMessage());
     }
 
+    /**
+     * Verifies a null message is retained as null while the title is still stored.
+     */
     @Test
     @DisplayName("Should handle null message")
     public void testConstructorWithNullMessage() {
@@ -67,6 +80,9 @@ public class AccountExceptionTest {
         assertNull(exception.getMessage());
     }
 
+    /**
+     * Verifies the two-argument constructor accepts a null title and message together, leaving both null.
+     */
     @Test
     @DisplayName("Should handle null title and message")
     public void testConstructorWithNullTitleAndMessage() {
@@ -80,6 +96,9 @@ public class AccountExceptionTest {
         assertNull(exception.getMessage());
     }
 
+    /**
+     * Verifies the three-argument constructor accepts a null title while still storing the message and cause.
+     */
     @Test
     @DisplayName("Should handle null title with cause")
     public void testConstructorWithNullTitleAndCause() {
@@ -95,6 +114,9 @@ public class AccountExceptionTest {
         assertEquals(cause, exception.getCause());
     }
 
+    /**
+     * Verifies the three-argument constructor accepts a null message while still storing the title and cause.
+     */
     @Test
     @DisplayName("Should handle null message with cause")
     public void testConstructorWithNullMessageAndCause() {
@@ -110,6 +132,9 @@ public class AccountExceptionTest {
         assertEquals(cause, exception.getCause());
     }
 
+    /**
+     * Verifies the three-argument constructor accepts a null cause while still storing the title and message.
+     */
     @Test
     @DisplayName("Should handle null cause")
     public void testConstructorWithNullCause() {
@@ -125,6 +150,9 @@ public class AccountExceptionTest {
         assertNull(exception.getCause());
     }
 
+    /**
+     * Verifies the three-argument constructor tolerates all-null arguments, leaving title, message, and cause null.
+     */
     @Test
     @DisplayName("Should handle all null parameters")
     public void testConstructorWithAllNullParameters() {
@@ -140,6 +168,9 @@ public class AccountExceptionTest {
         assertNull(exception.getCause());
     }
 
+    /**
+     * Verifies empty-string title and message are stored verbatim (not coerced to null).
+     */
     @Test
     @DisplayName("Should handle empty title and message")
     public void testConstructorWithEmptyTitleAndMessage() {
@@ -153,6 +184,9 @@ public class AccountExceptionTest {
         assertEquals("", exception.getMessage());
     }
 
+    /**
+     * Verifies whitespace-only title and message are preserved exactly without trimming.
+     */
     @Test
     @DisplayName("Should handle whitespace title and message")
     public void testConstructorWithWhitespaceTitleAndMessage() {
@@ -166,6 +200,9 @@ public class AccountExceptionTest {
         assertEquals("\t\n", exception.getMessage());
     }
 
+    /**
+     * Verifies long multi-sentence title and message strings are stored without truncation.
+     */
     @Test
     @DisplayName("Should handle long title and message")
     public void testConstructorWithLongTitleAndMessage() {
@@ -182,6 +219,9 @@ public class AccountExceptionTest {
         assertEquals(message, exception.getMessage());
     }
 
+    /**
+     * Verifies punctuation and symbol characters in the title and message are preserved verbatim.
+     */
     @Test
     @DisplayName("Should handle special characters in title and message")
     public void testConstructorWithSpecialCharacters() {
@@ -195,6 +235,9 @@ public class AccountExceptionTest {
         assertEquals(message, exception.getMessage());
     }
 
+    /**
+     * Verifies non-ASCII (Unicode) title and message text is stored and returned intact.
+     */
     @Test
     @DisplayName("Should handle Unicode characters in title and message")
     public void testConstructorWithUnicodeCharacters() {
@@ -208,6 +251,10 @@ public class AccountExceptionTest {
         assertEquals(message, exception.getMessage());
     }
 
+    /**
+     * Verifies the cause may be any Throwable subtype (RuntimeException, IllegalArgumentException, SQLException) and is
+     * stored unchanged in each case.
+     */
     @Test
     @DisplayName("Should handle different exception types as cause")
     public void testConstructorWithDifferentExceptionTypes() {
@@ -229,6 +276,10 @@ public class AccountExceptionTest {
         assertEquals(sqlException, exception3.getCause());
     }
 
+    /**
+     * Verifies {@code getTitle} returns the same string reference that was passed in (no defensive copy), confirming
+     * the title is held directly.
+     */
     @Test
     @DisplayName("Should maintain title immutability")
     public void testTitleImmutability() {
@@ -246,6 +297,10 @@ public class AccountExceptionTest {
         assertEquals("Original Title", exception.getTitle());
     }
 
+    /**
+     * Verifies a multi-level cause chain passed as the cause is preserved so the full chain is walkable via repeated
+     * {@code getCause} calls.
+     */
     @Test
     @DisplayName("Should handle nested exceptions as cause")
     public void testConstructorWithNestedExceptions() {
@@ -269,6 +324,10 @@ public class AccountExceptionTest {
         assertEquals(innerException, exception.getCause().getCause().getCause());
     }
 
+    /**
+     * Verifies an AccountException may itself be the cause of another AccountException, with the inner instance's title
+     * and message remaining accessible through the chain.
+     */
     @Test
     @DisplayName("Should handle AccountException as cause")
     public void testConstructorWithAccountExceptionAsCause() {
