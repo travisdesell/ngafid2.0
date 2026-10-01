@@ -34,6 +34,12 @@ public class UploadProcessedEmail {
     private boolean importFailed = false;
     private final ArrayList<String> importFailedMessages = new ArrayList<String>();
 
+    /**
+     * Constructs an accumulator for the per-upload processing-summary email, addressed to the given recipients.
+     *
+     * @param recipients the primary (To) recipients of the summary email
+     * @param bccRecipients the blind-copy (BCC) recipients of the summary email
+     */
     public UploadProcessedEmail(ArrayList<String> recipients, ArrayList<String> bccRecipients) {
         this.recipients = recipients;
         this.bccRecipients = bccRecipients;
@@ -43,6 +49,11 @@ public class UploadProcessedEmail {
         this.subject = subject;
     }
 
+    /**
+     * Marks the upload's import as failed and records a failure message to include in the summary email.
+     *
+     * @param message the import-failure message to record
+     */
     public void addImportFailure(String message) {
         importFailed = true;
         importFailedMessages.add(message);
@@ -56,6 +67,14 @@ public class UploadProcessedEmail {
         this.exceedencesElapsedTime = exceedencesElapsedTime;
     }
 
+    /**
+     * Records the proximity-calculation timing breakdown for the summary email.
+     *
+     * @param newProxElapsedTime the total elapsed time spent on proximity calculations
+     * @param avgTime the average time per flight
+     * @param avgTimeMatchTime the average time spent matching flights by time
+     * @param avgLocationMatchTime the average time spent matching flights by location
+     */
     public void setProximityElapsedTime(
             double newProxElapsedTime, double avgTime, double avgTimeMatchTime, double avgLocationMatchTime) {
         this.proximityElapsedTime = newProxElapsedTime;
@@ -80,10 +99,23 @@ public class UploadProcessedEmail {
         this.errorFlights = errorFlights;
     }
 
+    /**
+     * Registers a successfully parsed flight in the report.
+     *
+     * @param filename the flight's file name (used as the report key)
+     * @param id the flight's database id
+     * @param length the number of rows in the flight
+     */
     public void addFlight(String filename, int id, int length) {
         flightInfoMap.put(filename, new FlightInfo(filename, id, length));
     }
 
+    /**
+     * Records that a flight failed to import, storing the error message against the flight's file name.
+     *
+     * @param filename the flight's file name
+     * @param errorMessage the import error message
+     */
     public void flightImportError(String filename, String errorMessage) {
         FlightInfo flightInfo = new FlightInfo(filename);
         flightInfo.setError(errorMessage);
@@ -91,19 +123,43 @@ public class UploadProcessedEmail {
         flightInfoMap.put(filename, flightInfo);
     }
 
+    /**
+     * Marks a previously-registered flight as imported cleanly (no warnings or errors).
+     *
+     * @param filename the flight's file name
+     */
     public void flightImportOK(String filename) {
         flightInfoMap.get(filename).setOK();
     }
 
+    /**
+     * Marks a previously-registered flight as imported with a warning.
+     *
+     * @param filename the flight's file name
+     * @param warningMessage the warning message
+     */
     public void flightImportWarning(String filename, String warningMessage) {
         flightInfoMap.get(filename).setWarning(warningMessage);
     }
 
+    /**
+     * Records an exceedence (detected event) found on a flight and increments the running event count.
+     *
+     * @param filename the flight's file name
+     * @param message a description of the exceedence
+     */
     public void addExceedence(String filename, String message) {
         flightInfoMap.get(filename).addExceedence(message);
         numberEvents++;
     }
 
+    /**
+     * Records an error that occurred while computing exceedences for a flight (creating the flight's report entry if
+     * it does not yet exist) and increments the running event-error count.
+     *
+     * @param filename the flight's file name
+     * @param message the exceedence-error message
+     */
     public void addExceedenceError(String filename, String message) {
         if (flightInfoMap.get(filename) == null) {
             flightInfoMap.put(filename, new FlightInfo(filename));
@@ -113,21 +169,48 @@ public class UploadProcessedEmail {
         numberEventErrors++;
     }
 
+    /**
+     * Records a proximity event found on a flight and increments the running proximity-event count.
+     *
+     * @param filename the flight's file name
+     * @param message a description of the proximity event
+     */
     public void addProximity(String filename, String message) {
         flightInfoMap.get(filename).addProximity(message);
         numberProximityEvents++;
     }
 
+    /**
+     * Records an error that occurred while computing proximity events for a flight and increments the running
+     * proximity-error count.
+     *
+     * @param filename the flight's file name
+     * @param message the proximity-error message
+     */
     public void addProximityError(String filename, String message) {
         flightInfoMap.get(filename).addProximityError(message);
         numberProximityErrors++;
     }
 
+    /**
+     * Records an error that occurred while computing the turn-to-final (TTF) analysis for a flight and increments the
+     * running TTF-error count.
+     *
+     * @param filename the flight's file name
+     * @param message the TTF-error message
+     */
     public void addTTFError(String filename, String message) {
         flightInfoMap.get(filename).addTTFError(message);
         numberTTFErrors++;
     }
 
+    /**
+     * Builds the HTML summary of the upload's processing results (per-flight outcomes, event/proximity/TTF counts,
+     * and timing) and sends it as an email to the configured recipients.
+     *
+     * @param connection the database connection used to resolve recipient details while sending
+     * @throws SQLException if sending the email requires a database lookup that fails
+     */
     public void sendEmail(Connection connection) throws SQLException {
 
         StringBuilder body = new StringBuilder();

@@ -64,11 +64,32 @@ public class Event {
                 severity);
     }
 
+    /**
+     * Constructs a basic (non-proximity) event with no associated flight id set yet and no other flight.
+     *
+     * @param startTime the time the event starts
+     * @param endTime the time the event ends
+     * @param startLine the data-file line the event starts on
+     * @param endLine the data-file line the event ends on
+     * @param defId the event definition id this event is an occurrence of
+     * @param severity the computed severity of the event
+     */
     public Event(
             OffsetDateTime startTime, OffsetDateTime endTime, int startLine, int endLine, int defId, double severity) {
         this(startTime, endTime, startLine, endLine, defId, severity, 0, null);
     }
 
+    /**
+     * Constructs a proximity event (one involving a second flight), with the flight id left unset (-1).
+     *
+     * @param startTime the time the event starts
+     * @param endTime the time the event ends
+     * @param startLine the data-file line the event starts on
+     * @param endLine the data-file line the event ends on
+     * @param defId the event definition id this event is an occurrence of
+     * @param severity the computed severity of the event
+     * @param otherFlightId the id of the other flight involved in the proximity event
+     */
     public Event(
             OffsetDateTime startTime,
             OffsetDateTime endTime,
@@ -80,6 +101,19 @@ public class Event {
         this(startTime, endTime, startLine, endLine, defId, severity, -1, otherFlightId);
     }
 
+    /**
+     * Constructs an event with all of its core fields, including the flight id and (optional) other flight id; the
+     * metadata list starts empty.
+     *
+     * @param startTime the time the event starts
+     * @param endTime the time the event ends
+     * @param startLine the data-file line the event starts on
+     * @param endLine the data-file line the event ends on
+     * @param defId the event definition id this event is an occurrence of
+     * @param severity the computed severity of the event
+     * @param flightId the id of the flight this event belongs to
+     * @param otherFlightId the id of the other flight (for proximity events), or null
+     */
     public Event(
             OffsetDateTime startTime,
             OffsetDateTime endTime,
@@ -158,6 +192,24 @@ public class Event {
         this.otherFlightId = otherFlightId;
     }
 
+    /**
+     * Constructs a fully-populated event including the display metadata (system id, tail number, and tag name) used
+     * when presenting events to users, taking the start/end times as parsed {@link OffsetDateTime}s.
+     *
+     * @param id the event's database id
+     * @param fleetId the id of the fleet
+     * @param flightId the id of the flight this event belongs to
+     * @param eventDefinitionId the event definition id this event is an occurrence of
+     * @param startLine the data-file line the event starts on
+     * @param endLine the data-file line the event ends on
+     * @param startTime the time the event starts
+     * @param endTime the time the event ends
+     * @param severity the computed severity of the event
+     * @param otherFlightId the id of the other flight (for proximity events), or null
+     * @param systemId the recorder system id of the flight
+     * @param tail the tail number of the flight
+     * @param tagName the name of a tag associated with the event, or null
+     */
     public Event(
             int id,
             int fleetId,
@@ -426,6 +478,15 @@ public class Event {
         return eventsByAirframe;
     }
 
+    /**
+     * Deletes all stored events of a given definition that involve a flight, whether that flight is the event's
+     * primary flight or the other flight of a proximity event. Used before recomputing that definition's events.
+     *
+     * @param connection the database connection
+     * @param flightId the flight whose events to delete
+     * @param eventDefinitionId the event definition whose occurrences to delete
+     * @throws SQLException if the delete fails
+     */
     public static void deleteEvents(Connection connection, int flightId, int eventDefinitionId) throws SQLException {
         String query = "DELETE FROM events WHERE event_definition_id = ? AND (flight_id = ? OR other_flight_id = ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -436,10 +497,23 @@ public class Event {
         }
     }
 
+    /**
+     * Extends the event's end to a new end time (parsed from an ISO-8601 string) and end line, used as the event
+     * continues across more samples.
+     *
+     * @param newEndTime the new end time as an ISO-8601 string
+     * @param newEndLine the new end line
+     */
     public void updateEnd(String newEndTime, int newEndLine) {
         updateEnd(OffsetDateTime.parse(newEndTime, TimeUtils.getIso8601Format()), newEndLine);
     }
 
+    /**
+     * Extends the event's end to a new end time and end line.
+     *
+     * @param newEndDate the new end time
+     * @param newEndLine the new end line
+     */
     public void updateEnd(OffsetDateTime newEndDate, int newEndLine) {
         endTime = newEndDate;
         endLine = newEndLine;
@@ -515,6 +589,11 @@ public class Event {
         return tail;
     }
 
+    /**
+     * Attaches a metadata item (a named numeric value computed for this event) to the event.
+     *
+     * @param metaData the metadata item to add
+     */
     public void addMetaData(EventMetaData metaData) {
         this.metaDataList.add(metaData);
     }
@@ -610,6 +689,14 @@ public class Event {
         this.maxLongitude = maxLon;
     }
 
+    /**
+     * Creates a prepared statement for inserting an event row (including its bounding-box coordinates), configured to
+     * return the generated event id.
+     *
+     * @param connection the database connection
+     * @return a prepared statement for the event insert, returning generated keys
+     * @throws SQLException if the statement cannot be prepared
+     */
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         String sql = "INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, "
                 + "end_time, severity, other_flight_id, min_latitude, max_latitude, min_longitude, max_longitude) "
@@ -617,6 +704,16 @@ public class Event {
         return connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
     }
 
+    /**
+     * Inserts a flight's events into the database in a single batch, first computing each event's geographic
+     * bounding box from the flight's position data when it has not already been set.
+     *
+     * @param connection the database connection
+     * @param flight the flight the events belong to (used to compute coordinates)
+     * @param events the events to insert
+     * @throws SQLException if the batch insert fails
+     * @throws IOException if reading the flight's series to compute coordinates fails
+     */
     public static void batchInsertion(Connection connection, Flight flight, List<Event> events)
             throws SQLException, IOException {
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
@@ -654,6 +751,16 @@ public class Event {
         }
     }
 
+    /**
+     * Sets this event's fleet, flight, and event-definition ids, binds all of its columns to the given insert
+     * statement, and adds it to the statement's batch.
+     *
+     * @param preparedStatement the event insert statement (from {@link #createPreparedStatement}) to populate
+     * @param fleetIdValue the fleet id to assign
+     * @param flightIdValue the flight id to assign
+     * @param eventDefinitionIdValue the event definition id to assign
+     * @throws SQLException if setting a parameter or adding the batch fails
+     */
     public void addBatch(
             PreparedStatement preparedStatement, int fleetIdValue, int flightIdValue, int eventDefinitionIdValue)
             throws SQLException {
@@ -695,6 +802,17 @@ public class Event {
         preparedStatement.addBatch();
     }
 
+    /**
+     * Persists this single event to the database for the given fleet, flight, and event definition, inserting one
+     * {@code events} row (and populating this event's generated id).
+     *
+     * @param connection the database connection
+     * @param fleetIdUpdated the fleet id to assign
+     * @param flightIdUpdated the flight id to assign
+     * @param eventDefId the event definition id to assign
+     * @throws IOException if computing the event's coordinates fails
+     * @throws SQLException if the insert fails
+     */
     public void updateDatabase(Connection connection, int fleetIdUpdated, int flightIdUpdated, int eventDefId)
             throws IOException, SQLException {
         this.flightId = flightIdUpdated;
