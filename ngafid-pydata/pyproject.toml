@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ngafid-pydata"
+version = "0.1.0"
+description = "Python data-analysis scripts for the NGAFID database."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mysql-connector-python>=9.0",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+# Tooling for local development: the linter/formatter used to keep this
+# package clean (see the repo CLAUDE.md "Linting (required)" section).
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "avro>=1.11",
+]
+
+[project.scripts]
+ngafid-export-events = "foundry_export.export_events:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 200
+target-version = "py310"
+
+[tool.ruff.lint]
+# A small, sensible default rule set: pycodestyle (E/W), pyflakes (F),
+# isort (I), pyupgrade (UP), and flake8-bugbear (B).
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["foundry_export", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"
