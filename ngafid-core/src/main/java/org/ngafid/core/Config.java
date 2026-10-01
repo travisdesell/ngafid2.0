@@ -176,10 +176,25 @@ public final class Config {
     }
 
     // Public methods for property-based configuration
+    /**
+     * Returns the configured string value for a property, resolved from the properties file or a matching system
+     * property.
+     *
+     * @param key the property key to look up
+     * @return the property's string value
+     * @throws RuntimeException if no value is configured for the key
+     */
     public static String getProperty(String key) {
         return getStringProperty(key);
     }
 
+    /**
+     * Returns the configured value for a property parsed as an int.
+     *
+     * @param key the property key to look up
+     * @return the property's value parsed as an integer
+     * @throws RuntimeException if no value is configured for the key, or the value is not a valid integer
+     */
     public static int getIntProperty(String key) {
         String value = getStringProperty(key);
         try {
@@ -200,6 +215,14 @@ public final class Config {
         }
     }
 
+    /**
+     * Returns the configured value for a property parsed as a boolean (via {@link Boolean#parseBoolean}, so any value
+     * other than {@code "true"} ignoring case is treated as false).
+     *
+     * @param key the property key to look up
+     * @return the property's value parsed as a boolean
+     * @throws RuntimeException if no value is configured for the key
+     */
     public static boolean getBooleanProperty(String key) {
         String value = getStringProperty(key);
         return Boolean.parseBoolean(value);

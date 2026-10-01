@@ -139,6 +139,17 @@ public class HeatmapPointsProcessor {
         return Double.NaN;
     }
 
+    /**
+     * Inserts heatmap point rows for a set of proximity events, batching one row per sampled point for both the main
+     * flight and the other (conflicting) flight of each event. Each row records the event id, flight id, coordinates,
+     * timestamp, and altitude AGL (defaulting altitude to 0 when unavailable).
+     *
+     * @param connection the database connection
+     * @param events the proximity events to insert points for
+     * @param mainFlightPointsMap per-event points sampled from the main flight
+     * @param otherFlightPointsMap per-event points sampled from the other (conflicting) flight
+     * @throws SQLException if preparing or executing the batched insert fails
+     */
     public static void insertCoordinatesForProximityEvents(
             Connection connection,
             List<Event> events,
@@ -352,7 +363,15 @@ public class HeatmapPointsProcessor {
         }
     }
 
-    // Fetches proximity points for a given event_id and flight_id
+    /**
+     * Fetches the stored heatmap points for one flight of a proximity event, ordered by timestamp, joined to the
+     * flight's airframe name. Opens its own database connection and returns a map containing the point list (and
+     * associated metadata) suitable for serialization to the web client.
+     *
+     * @param eventId the event whose points to fetch
+     * @param flightId the specific flight (main or other) whose points to fetch
+     * @return a map of the event's points and metadata for the given flight; empty on error
+     */
     public static Map<String, Object> getCoordinates(int eventId, int flightId) {
         Map<String, Object> eventMap = new HashMap<>();
         List<Map<String, Object>> points = new ArrayList<>();
@@ -722,6 +741,27 @@ public class HeatmapPointsProcessor {
         }
     }
 
+    /**
+     * Queries events for the heatmap within a fleet, filtered by date range and a geographic bounding box (events whose
+     * bounding box overlaps the given area), and optionally by airframe, a set of event-definition ids, and a severity
+     * range. The airframe and severity/definition filters are only applied when supplied (the airframe value
+     * {@code "All Airframes"} is treated as no filter). Opens its own database connection. Each returned map describes
+     * one event with its ids, line/time range, severity, bounding box, and airframe names.
+     *
+     * @param fleetId the fleet whose events to query
+     * @param airframe the airframe name to filter by, or null/empty/"All Airframes" for no airframe filter
+     * @param eventDefinitionIds the event-definition ids to include, or null/empty for all definitions
+     * @param startDate the inclusive start of the date range (matched against the event start date)
+     * @param endDate the inclusive end of the date range
+     * @param areaMinLat the minimum latitude of the query area
+     * @param areaMaxLat the maximum latitude of the query area
+     * @param areaMinLon the minimum longitude of the query area
+     * @param areaMaxLon the maximum longitude of the query area
+     * @param minSeverity the minimum event severity, or null for no lower bound
+     * @param maxSeverity the maximum event severity, or null for no upper bound
+     * @return the matching events as a list of attribute maps (empty if none)
+     * @throws SQLException if the query fails
+     */
     public static List<Map<String, Object>> getEvents(
             int fleetId,
             String airframe,

@@ -223,6 +223,14 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         }
     }
 
+    /**
+     * Merges another maintenance record representing the same work order into this one by appending it to this record's
+     * list of combined records. Every differing field is collected for diagnostics; a mismatch on the work order number
+     * is treated as fatal (an error is printed and the JVM exits), since records with different work order numbers must
+     * not be combined.
+     *
+     * @param other the record to combine into this one; expected to share this record's work order number
+     */
     public void combine(MaintenanceRecord other) {
         ArrayList<String> mismatches = new ArrayList<String>();
         if (workorderNumber != other.workorderNumber) mismatches.add("workorderNumber");
@@ -248,6 +256,12 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         combinedRecords.add(other);
     }
 
+    /**
+     * Orders maintenance records chronologically by their open date.
+     *
+     * @param other the record to compare against
+     * @return a negative, zero, or positive value as this record's open date is before, equal to, or after the other's
+     */
     public int compareTo(MaintenanceRecord other) {
         return openDate.compareTo(other.openDate);
     }
@@ -261,6 +275,12 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 .replace("\t", "\\t");
     }
 
+    /**
+     * Serializes this maintenance record to a pretty-printed JSON object, escaping free-text fields (tail number,
+     * airframe, label, problem, and action text) for safe inclusion.
+     *
+     * @return a JSON representation of this record
+     */
     public String toJSON() {
         return "{\n"
                 + "\t\"workorderNumber\" : \"" + workorderNumber + "\",\n"
@@ -281,6 +301,12 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 + "}";
     }
 
+    /**
+     * Returns a human-readable, single-line summary of this maintenance record's key fields for logging and debugging.
+     *
+     * @return a debug string describing this record
+     */
+    @Override
     public String toString() {
         return "[Maintenance Record - WO#: '" + workorderNumber
                 + "', openDateTime: '" + openDateTime

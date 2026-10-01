@@ -26,6 +26,13 @@ public final class Database {
 
     private Database() {}
 
+    /**
+     * Borrows a connection from the shared HikariCP pool. The caller is responsible for closing it (which returns it to
+     * the pool rather than physically closing it).
+     *
+     * @return a pooled database connection
+     * @throws SQLException if a connection cannot be obtained from the pool
+     */
     public static Connection getConnection() throws SQLException {
         var info = CONNECTION_POOL.getHikariPoolMXBean();
         // LOG.info("Connection stats: " + info.getIdleConnections() + " idle / " + info.getActiveConnections()
@@ -37,10 +44,20 @@ public final class Database {
         return CONNECTION_POOL;
     }
 
+    /**
+     * Reports whether the database credentials (URL, username, and password) have all been loaded.
+     *
+     * @return true if the URL, username, and password are all set
+     */
     public static boolean dbInfoExists() {
         return dbUrl != null && dbUser != null && dbPassword != null;
     }
 
+    /**
+     * Returns the name of the configured database implementation, used to select dialect-specific behavior.
+     *
+     * @return {@code "mariadb"} when MariaDB is configured, otherwise {@code "mysql"}
+     */
     public static String getDatabaseImplementation() {
         if (Config.NGAFID_USE_MARIA_DB) return "mariadb";
         else return "mysql";

@@ -11,6 +11,7 @@ public class FleetLabel {
     private String labelText;
     private int displayOrder;
 
+    /** Constructs an empty fleet label; fields are populated when loaded from a result row or after insertion. */
     public FleetLabel() {}
 
     public int getId() {
@@ -29,6 +30,15 @@ public class FleetLabel {
         return displayOrder;
     }
 
+    /**
+     * Loads all predefined label options for a fleet from {@code label_definitions}, ordered by display order and then
+     * label text.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose label definitions to load
+     * @return the fleet's label definitions (empty if none)
+     * @throws SQLException if the query fails
+     */
     public static List<FleetLabel> getByFleet(Connection connection, int fleetId) throws SQLException {
         String sql = "SELECT id, fleet_id, label_text, display_order FROM label_definitions "
                 + "WHERE fleet_id = ? ORDER BY display_order, label_text";
@@ -70,6 +80,18 @@ public class FleetLabel {
         }
     }
 
+    /**
+     * Adds a new label definition for a fleet, assigning it the next display-order slot (one past the fleet's current
+     * maximum). Does nothing and returns null when the label is blank or already defined for the fleet (as reported by
+     * {@link #isAllowedForFleet}). The label text is trimmed before insertion.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to add the label to
+     * @param labelText the label text to add
+     * @return the newly created label (with its generated id and display order), or null if it was blank or already
+     *     existed
+     * @throws SQLException if any of the queries or the insert fail
+     */
     public static FleetLabel insert(Connection connection, int fleetId, String labelText) throws SQLException {
         if (isAllowedForFleet(connection, fleetId, labelText)) return null; // already exists
         int nextOrder = 0;
