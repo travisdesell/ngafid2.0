@@ -113,6 +113,14 @@ public enum EmailType {
         return values();
     }
 
+    /**
+     * Returns the set of email-type keys most recently synced with the database. When {@code doRefresh} is true, the
+     * cache is first rebuilt from the current enum values (and old types pruned from the database if removal is
+     * enabled) before being returned.
+     *
+     * @param doRefresh whether to rebuild the cached key set before returning it
+     * @return the recent email-type keys, in no particular order
+     */
     public static String[] getEmailTypeKeysRecent(boolean doRefresh) {
 
         // Force a refresh of the keys
@@ -122,15 +130,35 @@ public enum EmailType {
         return EMAIL_TYPE_KEYS_RECENT.toArray(keysOut);
     }
 
+    /**
+     * Reports whether an email type is "forced": one that cannot be toggled by the user and is not stored in the
+     * database. Forced types are identified by the substring {@code "FORCED"} in their key.
+     *
+     * @param emailType the email type to test
+     * @return true if the type is forced
+     */
     public static boolean isForced(EmailType emailType) {
         return emailType.getType().contains("FORCED");
     }
 
+    /**
+     * Reports whether an email-type key names a "forced" type (see {@link #isForced(EmailType)}), identified by the
+     * substring {@code "FORCED"} in the key.
+     *
+     * @param emailTypeName the email-type key to test
+     * @return true if the key names a forced type
+     */
     public static boolean isForced(String emailTypeName) {
         return emailTypeName.contains("FORCED");
     }
 
-    // PHP Execution
+    /**
+     * Ensures an {@code email_preferences} row exists for every (user, non-forced email type) pair across all users.
+     * Forced types are skipped (they are not persisted); if old-type removal is enabled, email types no longer defined
+     * in this enum are first deleted from the table. Builds a single UNION-ALL insert over the {@code user} table with
+     * {@code ON DUPLICATE KEY UPDATE} so existing rows are left intact, and refreshes the recent-keys cache as a side
+     * effect. Errors are logged rather than thrown.
+     */
     public static void insertEmailTypesIntoDatabase() {
 
         /*
@@ -191,6 +219,15 @@ public enum EmailType {
         }
     }
 
+    /**
+     * Ensures an {@code email_preferences} row exists for every non-forced email type for a single user, used when a
+     * new account is registered. Behaves like {@link #insertEmailTypesIntoDatabase()} but inserts rows only for the
+     * given user id and runs on the caller's connection (so it can participate in the registration transaction).
+     *
+     * @param connection the database connection to run the insert on
+     * @param userIDTarget the id of the user to generate email-preference rows for
+     * @throws SQLException if the insert fails
+     */
     public static void insertEmailTypesIntoDatabase(Connection connection, int userIDTarget) throws SQLException {
 
         /*
@@ -304,7 +341,13 @@ public enum EmailType {
         }
     }
 
-    // Main
+    /**
+     * Command-line entry point that regenerates the email-preference rows for all users. An optional first argument, if
+     * parseable as a boolean, sets whether email types no longer defined in this enum are removed from the database.
+     * Exits the JVM on completion unless running under a test framework.
+     *
+     * @param args optional single argument: "true" to also remove obsolete email types
+     */
     public static void main(String[] args) {
 
         if (args.length > 0) {

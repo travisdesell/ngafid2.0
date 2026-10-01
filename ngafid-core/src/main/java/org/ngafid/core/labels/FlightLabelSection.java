@@ -32,6 +32,7 @@ public class FlightLabelSection {
 
     private String endTimeStr;
 
+    /** Constructs an empty label section; fields are populated via setters or when loaded from a result row. */
     public FlightLabelSection() {}
 
     public int getId() {
@@ -213,6 +214,15 @@ public class FlightLabelSection {
         LEFT JOIN flight_label_section_param p ON p.label_section_id = s.id
         """;
 
+    /**
+     * Loads all label sections for a single flight, ordered by section id, with each section's associated parameter
+     * names collapsed from the joined rows into one list per section.
+     *
+     * @param connection the database connection
+     * @param flightId the flight whose label sections should be loaded
+     * @return the flight's label sections (empty if none)
+     * @throws SQLException if the query fails
+     */
     public static List<FlightLabelSection> getByFlight(Connection connection, int flightId) throws SQLException {
         return fetchSections(connection, SECTION_SELECT + " WHERE s.flight_id = ? ORDER BY s.id", flightId);
     }
@@ -233,6 +243,19 @@ public class FlightLabelSection {
         return fetchSections(connection, sql, fleetId);
     }
 
+    /**
+     * Persists a new label section. The flight's tail number and airframe are looked up from the flight and stored on
+     * the row (rather than taken from the input), the section row is inserted (preferring the raw time strings over the
+     * {@link Timestamp} values when present, and writing SQL NULL for absent start/end values), and any parameter names
+     * are inserted into the section-parameter join table in a batch. The input object is mutated with the generated id,
+     * tail number, and airframe, then returned.
+     *
+     * @param connection the database connection
+     * @param in the section to insert; its {@code flightId}, index/time/value fields, label text, and parameter names
+     *     are read, and its {@code id}, {@code tailNumber}, and {@code airframe} are filled in
+     * @return the same section instance, updated with the generated id and resolved tail number/airframe
+     * @throws SQLException if any of the lookups or inserts fail
+     */
     public static FlightLabelSection insert(Connection connection, FlightLabelSection in) throws SQLException {
         // Fetch tail_number and airframe from flight
         String tail = null;
@@ -328,6 +351,14 @@ public class FlightLabelSection {
         }
     }
 
+    /**
+     * Updates the label text of an existing label section in place.
+     *
+     * @param connection the database connection
+     * @param id the id of the label section to update
+     * @param labelText the new label text
+     * @throws SQLException if the update fails
+     */
     public static void updateLabelText(Connection connection, int id, String labelText) throws SQLException {
         try (PreparedStatement stmt =
                 connection.prepareStatement("UPDATE flight_label_section SET label_text = ? WHERE id = ?")) {
@@ -337,6 +368,14 @@ public class FlightLabelSection {
         }
     }
 
+    /**
+     * Deletes a single label section by id. Associated rows in {@code flight_label_section_param} are expected to be
+     * removed by the database's cascade.
+     *
+     * @param connection the database connection
+     * @param id the id of the label section to delete
+     * @throws SQLException if the delete fails
+     */
     public static void delete(Connection connection, int id) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM flight_label_section WHERE id = ?")) {
             stmt.setInt(1, id);
@@ -344,6 +383,13 @@ public class FlightLabelSection {
         }
     }
 
+    /**
+     * Deletes all label sections belonging to a flight.
+     *
+     * @param connection the database connection
+     * @param flightId the flight whose label sections should be removed
+     * @throws SQLException if the delete fails
+     */
     public static void deleteByFlight(Connection connection, int flightId) throws SQLException {
         try (PreparedStatement stmt =
                 connection.prepareStatement("DELETE FROM flight_label_section WHERE flight_id = ?")) {
