@@ -17,7 +17,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 REQUIRED_TOPICS = [
     "upload",
@@ -89,15 +88,15 @@ class CheckResult:
     name: str
     ok: bool
     detail: str
-    action: Optional[str] = None
+    action: str | None = None
 
 
 class Validator:
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
-        self.results: List[CheckResult] = []
+        self.results: list[CheckResult] = []
         self.in_docker = Path("/.dockerenv").exists()
-        self.properties: Dict[str, str] = {}
+        self.properties: dict[str, str] = {}
         self.required_topics = REQUIRED_TOPICS
         self.required_prop_keys = REQUIRED_PROP_KEYS
         self.jar_artifacts = JAR_ARTIFACTS
@@ -177,14 +176,14 @@ class Validator:
         name: str,
         ok: bool,
         detail: str,
-        action: Optional[str] = None,
+        action: str | None = None,
     ) -> None:
         self.results.append(CheckResult(category, name, ok, detail, action))
 
     def _pass(self, category: str, name: str, detail: str) -> None:
         self._record(category, name, True, detail)
 
-    def _fail(self, category: str, name: str, detail: str, action: Optional[str] = None) -> None:
+    def _fail(self, category: str, name: str, detail: str, action: str | None = None) -> None:
         self._record(category, name, False, detail, action)
 
     def _check_file_readable(self, category: str, name: str, path: str, action: str) -> bool:
@@ -213,7 +212,7 @@ class Validator:
         self._pass(category, name, f"{path} is {perms} accessible")
         return True
 
-    def _effective_property(self, key: str) -> Optional[str]:
+    def _effective_property(self, key: str) -> str | None:
         if self.in_docker:
             docker_key = f"ngafid.docker.{key.split('ngafid.', 1)[1]}" if key.startswith("ngafid.") else key
             if docker_key in self.properties and self.properties[docker_key].strip():
@@ -243,7 +242,7 @@ class Validator:
                 break
         return current
 
-    def _parse_jdbc_mysql(self, url: str) -> Optional[Tuple[str, int, str]]:
+    def _parse_jdbc_mysql(self, url: str) -> tuple[str, int, str] | None:
         match = re.match(r"^jdbc:mysql://([^/:?#]+)(?::(\d+))?/([^?]+)", url.strip())
         if not match:
             return None
@@ -266,8 +265,8 @@ class Validator:
             return raw.strip().lower() in {"1", "true", "yes", "on"}
         return value.strip().lower() in {"1", "true", "yes", "on"}
 
-    def _parse_properties(self, path: Path) -> Dict[str, str]:
-        properties: Dict[str, str] = {}
+    def _parse_properties(self, path: Path) -> dict[str, str]:
+        properties: dict[str, str] = {}
         if not path.exists():
             return properties
         try:
@@ -286,7 +285,7 @@ class Validator:
         return properties
 
     def _print_summary(self) -> int:
-        log_lines: List[str] = []
+        log_lines: list[str] = []
 
         # Add human-readable date to the top of the log
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -326,7 +325,7 @@ class Validator:
         print(f"Validation log written: {log_path}")
         return 1 if failures else 0
 
-    def _write_results_log(self, lines: List[str], status: str) -> Tuple[str, Optional[str]]:
+    def _write_results_log(self, lines: list[str], status: str) -> tuple[str, str | None]:
         results_dir = Path(self.args.results_dir)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"validationlog_{timestamp}_{status}.log"
@@ -340,7 +339,7 @@ class Validator:
             return str(results_dir / filename), str(exc)
 
 
-def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate NGAFID startup preconditions")
     parser.add_argument(
         "--skip-build-artifacts",
@@ -361,7 +360,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     validator = Validator(args)
     return validator.run()

@@ -19,7 +19,9 @@ print("year, n_tails, n_flights")
 for year in range(2018, datetime.now().year + 1):
     cur = db.cursor()
     cur.execute(
-        "SELECT COUNT(DISTINCT(system_id)) FROM flights WHERE (SELECT id FROM uploads WHERE flights.upload_id = uploads.id AND uploads.sent_to_raise = 1 and YEAR(uploads.end_time) = %s)",
+        "SELECT COUNT(DISTINCT(system_id)) FROM flights "
+        "WHERE (SELECT id FROM uploads WHERE flights.upload_id = uploads.id "
+        "AND uploads.sent_to_raise = 1 and YEAR(uploads.end_time) = %s)",
         (year,),
     )
 
@@ -29,13 +31,14 @@ for year in range(2018, datetime.now().year + 1):
 
     cur = db.cursor()
     cur.execute(
-        """SELECT count(id) FROM flights WHERE 
+        """SELECT count(id) FROM flights WHERE
             (SELECT id FROM uploads WHERE flights.upload_id = uploads.id AND uploads.sent_to_raise = 1)
-            AND YEAR(flights.end_time) = %s 
+            AND YEAR(flights.end_time) = %s
             """,
         (year,),
     )
-    # cur.execute("SELECT SUM(n_valid_flights + n_warning_flights + n_error_flights) FROM uploads WHERE sent_to_raise = 1 AND YEAR(end_time) = %s", (year,));
+    # cur.execute("SELECT SUM(n_valid_flights + n_warning_flights + n_error_flights) "
+    #             "FROM uploads WHERE sent_to_raise = 1 AND YEAR(end_time) = %s", (year,));
 
     n_flights = None
     for row in cur.fetchall():

@@ -57,7 +57,8 @@ try:
 
         cur = db.cursor()
         cur.execute(
-            "SELECT DISTINCT(upload_id) FROM flights WHERE airframe_type_id = (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')"
+            "SELECT DISTINCT(upload_id) FROM flights "
+            "WHERE airframe_type_id = (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')"
         )
 
         archive_base = os.environ["NGAFID_ARCHIVE_DIR"]
@@ -82,7 +83,8 @@ try:
                     continue
 
                 print(
-                    f"\tupload_id: {upload_id}, fleet_id: {fleet_id}, uploader_id: {uploader_id}, filename: '{filename}'"
+                    f"\tupload_id: {upload_id}, fleet_id: {fleet_id}, "
+                    f"uploader_id: {uploader_id}, filename: '{filename}'"
                 )
 
                 source_file = (
@@ -104,7 +106,7 @@ try:
                     result = sftp.put(source_file, target_file)
                     print(f"\tresult from sftp.put was: '{result}'")
 
-                except:
+                except Exception:
                     e = sys.exc_info()
                     print(f"SFTP put raised exception: {e}")
                     exit(1)
@@ -122,7 +124,7 @@ try:
                 count += 1
             print("")
 
-except:
+except Exception:
     print("Connection failure.")
     e = sys.exc_info()
     print(f"Exception: {e}")

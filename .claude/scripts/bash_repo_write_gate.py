@@ -56,21 +56,87 @@ ASK_PATTERNS: tuple[tuple[str, str], ...] = (
 )
 
 
+def _read_token(command: str, start: int) -> tuple[str, int]:
+    """Reads one shell token (handling quotes) beginning at ``start``.
+
+    Args:
+        command: The Bash command string.
+        start: Index at which the token begins.
+
+    Returns:
+        A tuple of the unquoted token text and the index just past it.
+    """
+
+    index = start
+    length = len(command)
+    chars: list[str] = []
+    quote: str | None = None
+    while index < length:
+        char = command[index]
+        if quote:
+            if char == quote:
+                quote = None
+            else:
+                chars.append(char)
+        elif char in ("'", '"'):
+            quote = char
+        elif char in " \t;&|()<>":
+            break
+        else:
+            chars.append(char)
+        index += 1
+    return "".join(chars), index
+
+
 def redirect_targets(command: str) -> list[str]:
     """Finds the files a command redirects or tees output into.
+
+    Scans with quote awareness so a ``>`` inside a quoted argument -- an awk
+    program like ``'$1 > 2'`` or an SQL string -- is not mistaken for a file
+    redirect. Captures the target of each ``>``/``>>`` redirect that appears
+    outside quotes, plus ``tee`` arguments, with surrounding quotes stripped.
+    File-descriptor duplications such as ``2>&1`` and ``>&2`` are skipped.
 
     Args:
         command: The Bash command string.
 
     Returns:
-        Each ``>``/``>>`` redirect target and ``tee`` argument, with quotes
-        stripped. File-descriptor duplications such as ``2>&1`` are skipped.
+        The redirect/tee targets found outside quotes.
     """
 
-    targets = re.findall(r"(?<![0-9&<>-])[0-9]?>>?\s*(?!&)([^\s;&|)]+)", command)
+    targets: list[str] = []
+    index = 0
+    length = len(command)
+    quote: str | None = None
+    while index < length:
+        char = command[index]
+        if quote:
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+            index += 1
+            continue
+        if char == ">":
+            cursor = index + 1
+            if cursor < length and command[cursor] == ">":  # '>>' append
+                cursor += 1
+            while cursor < length and command[cursor] in " \t":
+                cursor += 1
+            if cursor < length and command[cursor] == "&":  # '>&' fd duplication
+                index = cursor + 1
+                continue
+            target, index = _read_token(command, cursor)
+            if target:
+                targets.append(target)
+            continue
+        index += 1
+
     for match in re.finditer(r"\btee\s+((?:-\S+\s+)*)([^\s;&|)]+)", command):
-        targets.append(match.group(2))
-    return [target.strip("'\"") for target in targets]
+        targets.append(match.group(2).strip("'\""))
+    return targets
 
 
 def decide(command: str) -> tuple[str, str] | None:
@@ -93,7 +159,13 @@ def decide(command: str) -> tuple[str, str] | None:
                 "Use Edit/Write (or write the script's output to the scratchpad).",
             )
 
-    unsafe = [t for t in redirect_targets(command) if not t.startswith(SAFE_TARGET_PREFIXES)]
+    # Targets beginning with '$' use an unexpanded variable we cannot resolve
+    # (commonly a temp/scratchpad path); don't flag what we can't evaluate.
+    unsafe = [
+        t
+        for t in redirect_targets(command)
+        if not t.startswith(SAFE_TARGET_PREFIXES) and not t.startswith("$")
+    ]
     if unsafe:
         return (
             "deny",

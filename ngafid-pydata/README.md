@@ -93,3 +93,15 @@ Code in this package is kept clean under [ruff](https://docs.astral.sh/ruff/)
 ```bash
 ruff check .
 ```
+
+## Operational scripts
+
+`scripts/raise/` holds standalone scripts for the RAISE rotorcraft
+data-sharing workflow (`transfer_rotorcraft_data.py`,
+`get_transfer_statistics.py`). They live here so they share this package's
+linting (they are covered by `ruff check .`). They need extra dependencies
+(`mysqlclient`, `pysftp`), installed via the `raise` extra:
+
+```bash
+pip install -e ".[raise]"
+```

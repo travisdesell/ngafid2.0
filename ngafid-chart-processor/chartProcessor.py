@@ -91,8 +91,8 @@ def validate_date(date_str):
 
     try:
         datetime.datetime.strptime(date_str, "%m-%d-%Y")
-    except ValueError:
-        raise argparse.ArgumentTypeError(f"Invalid date format: {date_str}. Expected MM-DD-YYYY.")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"Invalid date format: {date_str}. Expected MM-DD-YYYY.") from exc
     return date_str
 
 def parse_arguments():
@@ -136,7 +136,7 @@ def load_config(config_path):
             return data  # Return the entire configuration
         except json.JSONDecodeError as e:
             logging.error(f"Error parsing JSON in {config_path}: {e}")
-            raise ValueError(f"Error parsing JSON in {config_path}: {e}")
+            raise ValueError(f"Error parsing JSON in {config_path}: {e}") from e
 
 # Load the configuration file
 CONFIG = load_config(parse_arguments().config)
@@ -149,7 +149,7 @@ try:
     logging.info(f"paths = {PATHS}")
 except KeyError as e:
     logging.error(f"Missing required path in configuration: {e}")
-    raise ValueError(f"Missing required path in configuration: {e}")
+    raise ValueError(f"Missing required path in configuration: {e}") from e
 
 
 def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):

@@ -3,15 +3,17 @@ The script serves aviation chart tiles over HTTP and checks for scheduled update
 When the program is first started it will check if today is the date for updates, if it is, the script will call
 chartProcessor.py to download new charts and process them.
 
-If charts chart_processor/charts or any of the subfolders ('sectional', 'terminal-area', 'ifr-enroute-low', 'ifr-enroute-high')
-are missing, the script will start downloading charts, and when done will start the server.
+If charts chart_processor/charts or any of the subfolders ('sectional', 'terminal-area',
+'ifr-enroute-low', 'ifr-enroute-high') are missing, the script will start downloading charts,
+and when done will start the server.
 The script will download tif file from the closest release date.
 
 To invoke fresh download workflow, just delete charts folder and restart WebServer
 
 The script will also check nightly (at 00:00) if the update is due.
 
-For testing purposes, to run charts update for a particular date without WebServer, provide command argument and run python script:
+For testing purposes, to run charts update for a particular date without WebServer, provide a
+command argument and run the python script:
 python3 chartServer.py --test-date 12-26-2024
 
 @Author: Roman Kozulia
@@ -88,7 +90,7 @@ def load_config(config_path):
             return data
         except json.JSONDecodeError as e:
             logging.error(f"Error parsing JSON in {config_path}: {e}")
-            raise ValueError(f"Error parsing JSON in {config_path}: {e}")
+            raise ValueError(f"Error parsing JSON in {config_path}: {e}") from e
 
 CONFIG = load_config(parse_arguments().config)
 PATHS = CONFIG.get("paths", {})
@@ -98,7 +100,7 @@ try:
     CHARTS_DIR = os.path.abspath(PATHS["charts"])
 except KeyError as e:
     logging.error(f"Missing required path in configuration: {e}")
-    raise ValueError(f"Missing required path in configuration: {e}")
+    raise ValueError(f"Missing required path in configuration: {e}") from e
 
 
 

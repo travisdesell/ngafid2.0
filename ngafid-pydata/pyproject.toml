@@ -21,6 +21,11 @@ dev = [
     "pytest>=8.0",
     "avro>=1.11",
 ]
+# Dependencies for the standalone RAISE data-transfer scripts in scripts/raise/.
+raise = [
+    "mysqlclient",
+    "pysftp",
+]
 
 [project.scripts]
 ngafid-export-events = "foundry_export.export_events:main"
