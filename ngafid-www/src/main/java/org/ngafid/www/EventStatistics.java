@@ -166,8 +166,9 @@ public class EventStatistics {
                 if (fleetId == fleet) ec.update(eventName, flightCount, 0, eventCount);
             }
 
-            return eventCounts.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue()
-                    .build()));
+            return eventCounts.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey, entry -> entry.getValue().build()));
         }
     }
 
@@ -256,9 +257,11 @@ public class EventStatistics {
                     eventCounts);
 
             return eventCounts.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().entrySet().stream()
-                            .collect(Collectors.toMap(
-                                    Map.Entry::getKey, e -> e.getValue().build()))));
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> entry.getValue().entrySet().stream()
+                                    .collect(Collectors.toMap(
+                                            Map.Entry::getKey, e -> e.getValue().build()))));
         }
     }
 
@@ -294,8 +297,7 @@ public class EventStatistics {
     }
 
     private static Map<MonthlyCountKey, Integer> getAggregateMonthlyFlightCounts(
-            Connection connection, String dateClause)
-            throws SQLException {
+            Connection connection, String dateClause) throws SQLException {
         String query = """
             SELECT airframe_id, year, month, SUM(count) AS flight_count
             FROM m_fleet_monthly_flight_counts

@@ -308,7 +308,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.10.3</version>
                 <configuration>
                     <java>
                         <includes>
@@ -323,7 +323,10 @@
                         </indent>
                         <removeUnusedImports/>
                         <importOrder/>
-                        <palantirJavaFormat/>
+                        <!-- Pinned to a version that supports modern JDKs (incl. 25+/27). -->
+                        <palantirJavaFormat>
+                            <version>2.100.0</version>
+                        </palantirJavaFormat>
                     </java>
                     <kotlin>
                         <includes>

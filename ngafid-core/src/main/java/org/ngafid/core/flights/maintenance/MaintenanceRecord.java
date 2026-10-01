@@ -136,9 +136,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                     return LocalDate.parse(s, FORMAT_DATE).atStartOfDay();
                 } catch (DateTimeParseException e3) {
                     throw new IllegalArgumentException(
-                            "Cannot parse datetime '" + s
-                                    + "'; expected yyyy-MM-dd HH:mm or yyyy-MM-dd",
-                            e3);
+                            "Cannot parse datetime '" + s + "'; expected yyyy-MM-dd HH:mm or yyyy-MM-dd", e3);
                 }
             }
         }
@@ -165,9 +163,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                     return LocalDate.parse(s, FORMAT_M_D_YY);
                 } catch (DateTimeParseException e3) {
                     throw new IllegalArgumentException(
-                            "Cannot parse date '" + s
-                                    + "'; expected yyyy-MM-dd, MM-dd-yyyy or M/d/yy",
-                            e3);
+                            "Cannot parse date '" + s + "'; expected yyyy-MM-dd, MM-dd-yyyy or M/d/yy", e3);
                 }
             }
         }
@@ -183,12 +179,11 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     public MaintenanceRecord(String line) {
         String[] parts = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
         if (parts.length != 11) {
-            throw new IllegalArgumentException(
-                    "Maintenance CSV line must have exactly 11 columns "
-                            + "(workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,"
-                            + "problem,problem_date,action,cluster_id,cluster_name); got "
-                            + parts.length
-                            + ". If a field contains commas, quote it (e.g. \"text, with comma\").");
+            throw new IllegalArgumentException("Maintenance CSV line must have exactly 11 columns "
+                    + "(workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,"
+                    + "problem,problem_date,action,cluster_id,cluster_name); got "
+                    + parts.length
+                    + ". If a field contains commas, quote it (e.g. \"text, with comma\").");
         }
 
         workorderNumber = Integer.parseInt(parts[0].trim());

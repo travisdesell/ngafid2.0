@@ -25,11 +25,43 @@ for details and per-language commands.
 
 You will need the following software packages:
 
-1. Mysql
+1. MySQL
 2. Maven
-3. Java >= 24
-4. Nodejs
+3. Java (JDK) 24 or 25 — see the version note below
+4. Node.js
 5. Kafka
+
+### Installing the toolchain (macOS / Homebrew)
+
+The JDK, Maven, and Node toolchain used to build, lint, and format the project
+can be installed with [Homebrew](https://brew.sh):
+
+```bash
+brew install --cask temurin@25
+```
+
+```bash
+brew install maven node
+```
+
+Verify they are on your `PATH`:
+
+```bash
+java -version && mvn -v && node -v
+```
+
+**JDK version note:** the project targets Java 24 (CI uses Temurin 24). Temurin
+**24 or 25** both work for building and for the Spotless code formatter. **Avoid
+JDK 27 for formatting** — the Palantir Java formatter that Spotless uses does not
+yet support JDK 27, so `mvn spotless:apply` fails with a javac-internals error on
+it. If you have multiple JDKs installed, point Maven at 24/25 when formatting:
+
+```bash
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn spotless:apply
+```
+
+(Python tooling for the `ngafid-pydata` scripts has its own setup — see
+[`ngafid-pydata/README.md`](ngafid-pydata/README.md).)
 
 ## 1. Clone the repository
 

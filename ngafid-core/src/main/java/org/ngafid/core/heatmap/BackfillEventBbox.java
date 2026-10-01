@@ -148,13 +148,12 @@ public final class BackfillEventBbox {
                     LOG.warning("Failed to update event " + row.id + ": " + e.getMessage());
                     result.errors++;
                 }
-                if ((result.updated + result.skippedNoSeries + result.skippedNoValidCoords + result.errors)
-                        % batchSize == 0) {
+                if ((result.updated + result.skippedNoSeries + result.skippedNoValidCoords + result.errors) % batchSize
+                        == 0) {
                     connection.commit();
-                    System.out.println(
-                            "Updated " + result.updated
-                                    + ", skipped " + (result.skippedNoSeries + result.skippedNoValidCoords)
-                                    + ", errors " + result.errors + " so far.");
+                    System.out.println("Updated " + result.updated
+                            + ", skipped " + (result.skippedNoSeries + result.skippedNoValidCoords)
+                            + ", errors " + result.errors + " so far.");
                 }
             }
             connection.commit();
@@ -233,6 +232,6 @@ public final class BackfillEventBbox {
                 || maxLon == Double.NEGATIVE_INFINITY) {
             return new BboxResult(SkipReason.NO_VALID_COORDS);
         }
-        return new BboxResult(new double[]{minLat, maxLat, minLon, maxLon});
+        return new BboxResult(new double[] {minLat, maxLat, minLon, maxLon});
     }
 }

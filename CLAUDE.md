@@ -13,12 +13,18 @@ and each diff still needs its own review.
 - Make every repo file change with the **Edit** or **Write** tool, whose approval
   prompt shows the user the diff. Break large rewrites into several Edits rather
   than going around the prompt.
-- **Never** modify repo files through Bash: no `sed -i`/`perl -i`, no Python or
-  heredoc scripts that rewrite files, no `>`/`>>` redirects or `tee` into repo
-  paths, no `cp`/`mv`/`rm` of repo files, and no file-changing `git` commands
-  (`checkout`, `restore`, `apply`, `reset`, `stash`, ...) without asking first.
-  Formatters that rewrite files (`black`/`isort` without `--check`/`--diff`,
-  `ruff format`, `spotless:apply`) count too: ask before running them.
+- **Never** make arbitrary (logic) file changes through Bash: no `sed -i`/`perl
+  -i`, no Python or heredoc scripts that rewrite files, no `>`/`>>` redirects or
+  `tee` into repo paths, no `cp`/`mv`/`rm` of repo files, and no file-changing
+  `git` commands (`checkout`, `restore`, `apply`, `reset`, `stash`, ...) without
+  asking first.
+- **Exception — formatter/linter autofixers may run without per-diff review.**
+  Tools that make only formatting/lint fixes (no logic changes) --
+  `mvn spotless:apply`, `ruff --fix`, `ruff format`, `eslint --fix`,
+  `ktlint -F`, `black`, `isort`, `prettier --write` -- may be run directly, but
+  **mention when you run them** and show the resulting diff afterward so the user
+  can review the change set before committing. Anything requiring a manual code
+  edit (renames, logic, bug fixes) still goes through Edit/Write.
 - Scratch output belongs in the session scratchpad (or `/tmp`), never the repo.
   Verification scripts that would otherwise be piped to `python` via a heredoc
   must be written to the scratchpad and run from there.

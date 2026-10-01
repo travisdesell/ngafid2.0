@@ -309,8 +309,7 @@ public final class FlightPhaseProcessor {
             rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
         } catch (Exception ignored) {
             System.err.println(
-                    "Warning: RPM not available for flight " + flight.getId()
-                            + ", using alternative phase detection");
+                    "Warning: RPM not available for flight " + flight.getId() + ", using alternative phase detection");
         }
         return computeFlightPhasesFromTimeSeries(altAgl, groundSpeed, rpm);
     }
@@ -352,8 +351,12 @@ public final class FlightPhaseProcessor {
      * @param numRows the number of rows to process
      * @return the index after the takeoff block
      */
-    private static int markTaxiAndTakeoff(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                           DoubleTimeSeries groundSpeed, DoubleTimeSeries rpm, int numRows) {
+    private static int markTaxiAndTakeoff(
+            List<FlightPhase> phases,
+            DoubleTimeSeries altAgl,
+            DoubleTimeSeries groundSpeed,
+            DoubleTimeSeries rpm,
+            int numRows) {
         int taxiEndIdx = -1;
         for (int i = 0; i < numRows; i++) {
             if (rpm != null
@@ -395,8 +398,12 @@ public final class FlightPhaseProcessor {
      * @param numRows the number of rows to process
      * @return the first index at or above cruise altitude
      */
-    private static int markClimb(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                 DoubleTimeSeries groundSpeed, int takeoffEnd, int numRows) {
+    private static int markClimb(
+            List<FlightPhase> phases,
+            DoubleTimeSeries altAgl,
+            DoubleTimeSeries groundSpeed,
+            int takeoffEnd,
+            int numRows) {
         int climbIdx = takeoffEnd;
         while (climbIdx < numRows) {
             if (phases.get(climbIdx) != FlightPhase.UNKNOWN) {
@@ -442,8 +449,8 @@ public final class FlightPhaseProcessor {
      * @param groundSpeed the ground speed series
      * @param numRows the number of rows to process
      */
-    private static void markDescentAndLanding(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                              DoubleTimeSeries groundSpeed, int numRows) {
+    private static void markDescentAndLanding(
+            List<FlightPhase> phases, DoubleTimeSeries altAgl, DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 1; i < numRows; i++) {
             if (phases.get(i) == FlightPhase.TAKEOFF) continue;
             if (phases.get(i) != FlightPhase.UNKNOWN) continue;
@@ -460,8 +467,7 @@ public final class FlightPhaseProcessor {
                 phases.set(i, FlightPhase.LANDING);
             } else if (alt < CRUISE_ALT_FT
                     && alt >= LANDING_ALT_FT
-                    && (altChange < -DESCENT_ALT_CHANGE_FT
-                            || phases.get(i - 1) == FlightPhase.DESCENT)) {
+                    && (altChange < -DESCENT_ALT_CHANGE_FT || phases.get(i - 1) == FlightPhase.DESCENT)) {
                 phases.set(i, FlightPhase.DESCENT);
             } else if (alt > PATTERN_ALT_FT && altChange < -DESCENT_ALT_CHANGE_FT) {
                 phases.set(i, FlightPhase.DESCENT);
@@ -476,8 +482,8 @@ public final class FlightPhaseProcessor {
      * @param groundSpeed the ground speed series
      * @param numRows the number of rows to process
      */
-    private static void markGround(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                   DoubleTimeSeries groundSpeed, int numRows) {
+    private static void markGround(
+            List<FlightPhase> phases, DoubleTimeSeries altAgl, DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 0; i < numRows; i++) {
             if (phases.get(i) == FlightPhase.TAKEOFF) continue;
             if (phases.get(i) != FlightPhase.UNKNOWN) continue;

@@ -58,7 +58,8 @@ public final class CesiumUploadAuditor {
         Option enqueue = new Option("e", "enqueue", false, "Re-enqueue uploads that fail the Cesium check");
         options.addOption(enqueue);
 
-        Option checkAll = new Option("a", "check-all-flights", false, "Check every flight in each upload (default: first flight only)");
+        Option checkAll = new Option(
+                "a", "check-all-flights", false, "Check every flight in each upload (default: first flight only)");
         options.addOption(checkAll);
 
         Option output = new Option("o", "output", true, "Write failing upload IDs to this file (one per line)");
@@ -134,8 +135,8 @@ public final class CesiumUploadAuditor {
         }
 
         System.out.println();
-        String summary = "Scanned " + uploadIds.size() + " upload(s); " + failedUploadIds.size()
-                + " failed Cesium check.";
+        String summary =
+                "Scanned " + uploadIds.size() + " upload(s); " + failedUploadIds.size() + " failed Cesium check.";
         System.out.println(summary);
 
         if (cmd.hasOption("output") && !failedUploadIds.isEmpty()) {
@@ -181,11 +182,7 @@ public final class CesiumUploadAuditor {
     }
 
     private static void writeReport(
-            File file,
-            String summary,
-            List<String> reportLines,
-            List<Integer> enqueuedUploadIds,
-            boolean enqueued)
+            File file, String summary, List<String> reportLines, List<Integer> enqueuedUploadIds, boolean enqueued)
             throws IOException {
         File parent = file.getParentFile();
         if (parent != null) {
@@ -261,8 +258,7 @@ public final class CesiumUploadAuditor {
         } else if (cmd.hasOption("q")) {
             String where = cmd.getOptionValue("q");
             try (Connection connection = Database.getConnection();
-                    PreparedStatement statement =
-                            connection.prepareStatement("SELECT id FROM uploads WHERE " + where);
+                    PreparedStatement statement = connection.prepareStatement("SELECT id FROM uploads WHERE " + where);
                     ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     ids.add(resultSet.getInt(1));

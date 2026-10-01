@@ -49,7 +49,8 @@ public final class CesiumFlightReadiness {
         }
 
         if (!hasPlayableCesiumSample(latitude, longitude, altAgl, date, time, utcDateTime)) {
-            return new Result(flightId, false, describeNoPlayableSamples(latitude, longitude, altAgl, date, time, utcDateTime));
+            return new Result(
+                    flightId, false, describeNoPlayableSamples(latitude, longitude, altAgl, date, time, utcDateTime));
         }
 
         return new Result(flightId, true, null);
@@ -177,8 +178,7 @@ public final class CesiumFlightReadiness {
         return Math.min(latitude.size(), altAgl.size());
     }
 
-    public static boolean hasValidCesiumPosition(
-            DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
+    public static boolean hasValidCesiumPosition(DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
         if (index >= latitude.size() || index >= longitude.size()) {
             return false;
         }
@@ -188,10 +188,7 @@ public final class CesiumFlightReadiness {
     }
 
     public static boolean hasValidCesiumSample(
-            DoubleTimeSeries latitude,
-            DoubleTimeSeries longitude,
-            DoubleTimeSeries altAgl,
-            int index) {
+            DoubleTimeSeries latitude, DoubleTimeSeries longitude, DoubleTimeSeries altAgl, int index) {
         if (!hasValidCesiumPosition(latitude, longitude, index) || index >= altAgl.size()) {
             return false;
         }
@@ -199,11 +196,7 @@ public final class CesiumFlightReadiness {
     }
 
     public static String formatCesiumRowTimestamp(
-            int index,
-            StringTimeSeries date,
-            StringTimeSeries time,
-            StringTimeSeries utcDateTime,
-            int dateSize) {
+            int index, StringTimeSeries date, StringTimeSeries time, StringTimeSeries utcDateTime, int dateSize) {
         String fromLocal = formatCesiumIsoTimestamp(
                 date != null && index < dateSize ? date.get(index) : null,
                 time != null && index < dateSize ? time.get(index) : null);

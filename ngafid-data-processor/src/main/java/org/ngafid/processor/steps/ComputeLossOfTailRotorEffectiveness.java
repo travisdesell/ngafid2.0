@@ -31,8 +31,10 @@ import org.ngafid.processor.format.FlightBuilder;
  * </pre>
  */
 public class ComputeLossOfTailRotorEffectiveness extends ComputeStep {
-    private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(GND_SPD, WIND_SPEED, WIND_DIRECTION, HDG, YAW_RATE);
-    private static final Set<String> OUTPUT_COLUMNS = Set.of(LTE, LTE_PEDAL_MARGIN, LTE_MRCT_SIGMA, LTE_MU, LTE_RELATIVE_WIND);
+    private static final Set<String> REQUIRED_DOUBLE_COLUMNS =
+            Set.of(GND_SPD, WIND_SPEED, WIND_DIRECTION, HDG, YAW_RATE);
+    private static final Set<String> OUTPUT_COLUMNS =
+            Set.of(LTE, LTE_PEDAL_MARGIN, LTE_MRCT_SIGMA, LTE_MU, LTE_RELATIVE_WIND);
 
     public ComputeLossOfTailRotorEffectiveness(Connection connection, FlightBuilder builder) {
         super(connection, builder);
@@ -67,14 +69,13 @@ public class ComputeLossOfTailRotorEffectiveness extends ComputeStep {
 
     @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        HelicopterSpec spec = withConnection(connection -> RotorcraftAirframeSpecRepository
-                .findByAirframeId(connection, builder.meta.getAirframe().getId()))
-                .orElseThrow(() -> new MalformedFlightFileException(
-                        "No LTE helicopter specification for airframe id "
-                                + builder.meta.getAirframe().getId()
-                                + " ("
-                                + builder.meta.getAirframe().getName()
-                                + ")"));
+        HelicopterSpec spec = withConnection(connection -> RotorcraftAirframeSpecRepository.findByAirframeId(
+                        connection, builder.meta.getAirframe().getId()))
+                .orElseThrow(() -> new MalformedFlightFileException("No LTE helicopter specification for airframe id "
+                        + builder.meta.getAirframe().getId()
+                        + " ("
+                        + builder.meta.getAirframe().getName()
+                        + ")"));
 
         DoubleTimeSeries groundspeed = builder.getDoubleTimeSeries(GND_SPD);
         DoubleTimeSeries windSpeed = builder.getDoubleTimeSeries(WIND_SPEED);
@@ -85,10 +86,14 @@ public class ComputeLossOfTailRotorEffectiveness extends ComputeStep {
 
         int length = groundspeed.size();
         DoubleTimeSeries lte = withConnection(connection -> new DoubleTimeSeries(connection, LTE, Unit.INDEX, length));
-        DoubleTimeSeries pedalMargin = withConnection(connection -> new DoubleTimeSeries(connection, LTE_PEDAL_MARGIN, "pedal margin", length));
-        DoubleTimeSeries mrctSigma = withConnection(connection -> new DoubleTimeSeries(connection, LTE_MRCT_SIGMA, Unit.RATIO, length));
-        DoubleTimeSeries mu = withConnection(connection -> new DoubleTimeSeries(connection, LTE_MU, Unit.RATIO, length));
-        DoubleTimeSeries relativeWind = withConnection(connection -> new DoubleTimeSeries(connection, LTE_RELATIVE_WIND, Unit.DEGREES, length));
+        DoubleTimeSeries pedalMargin = withConnection(
+                connection -> new DoubleTimeSeries(connection, LTE_PEDAL_MARGIN, "pedal margin", length));
+        DoubleTimeSeries mrctSigma =
+                withConnection(connection -> new DoubleTimeSeries(connection, LTE_MRCT_SIGMA, Unit.RATIO, length));
+        DoubleTimeSeries mu =
+                withConnection(connection -> new DoubleTimeSeries(connection, LTE_MU, Unit.RATIO, length));
+        DoubleTimeSeries relativeWind =
+                withConnection(connection -> new DoubleTimeSeries(connection, LTE_RELATIVE_WIND, Unit.DEGREES, length));
 
         for (int i = 0; i < length; i++) {
             double hdg = heading.get(i);
@@ -110,8 +115,8 @@ public class ComputeLossOfTailRotorEffectiveness extends ComputeStep {
             double relWind = LossOfTailRotorEffectiveness.relativeWindDirectionBodyFrameDeg(hdg, wd);
             double trueAirspeed = LossOfTailRotorEffectiveness.calculatedTrueAirspeedKt(gs, ws, relWind);
             double density = LossOfTailRotorEffectiveness.calculatedAirDensityKgM3(msl);
-            Optional<NormalizedInputs> normalized = LossOfTailRotorEffectiveness.normalize(
-                    spec, relWind, density, trueAirspeed, yaw, Double.NaN);
+            Optional<NormalizedInputs> normalized =
+                    LossOfTailRotorEffectiveness.normalize(spec, relWind, density, trueAirspeed, yaw, Double.NaN);
 
             if (normalized.isEmpty()) {
                 addUnsupported(lte, pedalMargin, mrctSigma, mu, relativeWind);

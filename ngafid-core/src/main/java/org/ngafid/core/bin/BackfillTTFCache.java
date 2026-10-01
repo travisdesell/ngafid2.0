@@ -196,8 +196,8 @@ public final class BackfillTTFCache {
                 }
             } else {
                 for (int i = 0; i < toDelete; i++) {
-                    try (PreparedStatement ps = connection.prepareStatement(
-                            "DELETE FROM turn_to_final WHERE flight_id = ?")) {
+                    try (PreparedStatement ps =
+                            connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?")) {
                         ps.setInt(1, flightIds.get(i));
                         ps.executeUpdate();
                     }

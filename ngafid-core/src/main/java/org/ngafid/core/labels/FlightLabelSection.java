@@ -21,6 +21,7 @@ public class FlightLabelSection {
     private Timestamp endTime;
     /** Raw datetime string from DB (preserves value, no timezone conversion). */
     private String startTimeRaw;
+
     private String endTimeRaw;
     private Double startValue;
     private Double endValue;
@@ -28,6 +29,7 @@ public class FlightLabelSection {
     private List<String> parameterNames = new ArrayList<>();
     /** When set, insert uses this literal string instead of Timestamp (preserves value). */
     private String startTimeStr;
+
     private String endTimeStr;
 
     public FlightLabelSection() {}
@@ -176,8 +178,8 @@ public class FlightLabelSection {
         section.labelText = rs.getString("label_text");
     }
 
-    private static List<FlightLabelSection> fetchSections(
-            Connection connection, String sql, int param) throws SQLException {
+    private static List<FlightLabelSection> fetchSections(Connection connection, String sql, int param)
+            throws SQLException {
         List<FlightLabelSection> result = new ArrayList<>();
         FlightLabelSection current = null;
         int currentId = -1;
@@ -317,8 +319,8 @@ public class FlightLabelSection {
      * @throws SQLException if the lookup fails
      */
     public static Integer getFlightIdForLabel(Connection connection, int labelId) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT flight_id FROM flight_label_section WHERE id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT flight_id FROM flight_label_section WHERE id = ?")) {
             stmt.setInt(1, labelId);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? rs.getInt("flight_id") : null;

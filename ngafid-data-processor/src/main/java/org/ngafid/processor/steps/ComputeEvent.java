@@ -80,7 +80,8 @@ public class ComputeEvent extends ComputeStep {
                 .filter(def -> def.getAirframeNameId() == 0
                         || def.getAirframeNameId() == fb.meta.getAirframe().getId())
                 .filter(def -> def.getAirframeTypeId() == null
-                        || def.getAirframeTypeId() == fb.meta.getAirframe().getType().getId())
+                        || def.getAirframeTypeId()
+                                == fb.meta.getAirframe().getType().getId())
                 .toList();
         return applicableEvents.stream()
                 .map(def -> factory(connection, fb, def))
@@ -177,7 +178,7 @@ public class ComputeEvent extends ComputeStep {
     @Override
     public boolean airframeIsValid(Airframes.Airframe airframe) {
         // While we could technically create events for non-fixed wing aircraft, we haven't yet!
-        String airframeType =  builder.meta.getAirframe().getType().getName();
+        String airframeType = builder.meta.getAirframe().getType().getName();
         return airframeType.equals("Fixed Wing") || airframeType.equals("Rotorcraft");
     }
 

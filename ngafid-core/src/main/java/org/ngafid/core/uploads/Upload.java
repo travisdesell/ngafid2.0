@@ -637,8 +637,8 @@ public final class Upload {
         }
     }
 
-    public static int getNumUploadsByStatus(
-            Connection connection, int fleetId, Upload.Status[] types) throws SQLException {
+    public static int getNumUploadsByStatus(Connection connection, int fleetId, Upload.Status[] types)
+            throws SQLException {
 
         String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
 
@@ -821,7 +821,6 @@ public final class Upload {
         zos.setMethod(ZipArchiveOutputStream.DEFLATED);
         zos.setUseZip64(Zip64Mode.Always);
         return zos;
-
     }
 
     public int getFleetId() {

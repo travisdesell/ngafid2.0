@@ -414,8 +414,7 @@ public class HeatmapPointsProcessor {
             for (int i = 0; i < eventIds.size(); i += HEATMAP_POINTS_CHUNK_SIZE) {
                 int end = Math.min(i + HEATMAP_POINTS_CHUNK_SIZE, eventIds.size());
                 List<Integer> chunk = eventIds.subList(i, end);
-                List<Map<String, Object>> chunkResults =
-                        getCoordinatesForEventIdsChunk(connection, chunk, fleetId);
+                List<Map<String, Object>> chunkResults = getCoordinatesForEventIdsChunk(connection, chunk, fleetId);
                 allResults.addAll(chunkResults);
             }
         } catch (SQLException e) {

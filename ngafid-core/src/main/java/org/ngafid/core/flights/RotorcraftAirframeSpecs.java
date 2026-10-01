@@ -480,7 +480,7 @@ public final class RotorcraftAirframeSpecs {
         result.canEdit = userCanEdit;
 
         try (PreparedStatement countQuery =
-                connection.prepareStatement("SELECT COUNT(*) FROM rotorcraft_airframe_specs");
+                        connection.prepareStatement("SELECT COUNT(*) FROM rotorcraft_airframe_specs");
                 ResultSet rs = countQuery.executeQuery()) {
             if (rs.next()) {
                 result.total = rs.getInt(1);

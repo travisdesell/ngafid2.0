@@ -57,8 +57,7 @@ public final class ImportService {
     /**
      * Runs a fleet update, refreshing the bearer token and retrying once on HTTP 401.
      */
-    static void updateFleetWithAuthRetry(AirSyncFleet fleet, Connection connection)
-            throws IOException, SQLException {
+    static void updateFleetWithAuthRetry(AirSyncFleet fleet, Connection connection) throws IOException, SQLException {
         try {
             String status = fleet.update(connection);
             LOG.info("Update status: " + status);
@@ -67,8 +66,7 @@ public final class ImportService {
                 throw e;
             }
 
-            LOG.severe("Fleet " + fleet.getName()
-                    + " got HTTP 401; refreshing bearer token and retrying once");
+            LOG.severe("Fleet " + fleet.getName() + " got HTTP 401; refreshing bearer token and retrying once");
             fleet.refreshAuth();
             String status = fleet.update(connection);
             LOG.info("Update status after auth refresh: " + status);
@@ -179,8 +177,7 @@ public final class ImportService {
                             continue;
                         }
 
-                        LOG.info("Fleet " + fleet.getName()
-                                + ": past timeout! Checking with the AirSync servers now.");
+                        LOG.info("Fleet " + fleet.getName() + ": past timeout! Checking with the AirSync servers now.");
                         fleet.setOverride(connection, false);
 
                         try {
@@ -193,8 +190,8 @@ public final class ImportService {
                             throw e;
                         }
                     } catch (IOException | SQLException e) {
-                        LOG.severe("Fleet " + fleet.getName()
-                                + " update failed; continuing with remaining fleets: " + e.getMessage());
+                        LOG.severe("Fleet " + fleet.getName() + " update failed; continuing with remaining fleets: "
+                                + e.getMessage());
                         e.printStackTrace();
                     }
                 }

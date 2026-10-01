@@ -144,8 +144,7 @@ public class Filter {
     public static String getOffsetDateTime(String datetime, String longOffset) {
         String offset = longOffset.substring(4, 10);
         OffsetDateTime odt = LocalDateTime.parse(
-                normalizeDateTimeInput(datetime),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        normalizeDateTimeInput(datetime), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 .atOffset(ZoneOffset.of(offset));
         String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00"))
                 .format(DateTimeFormatter.ofPattern("yyyy" + "-MM-dd HH:mm:ss"));
@@ -190,10 +189,7 @@ public class Filter {
      * @return the event definition ID subquery
      */
     private String getEventDefinitionIdSubquery(
-            int fleetId,
-            ArrayList<Object> parameters,
-            String eventName,
-            String airframeName) {
+            int fleetId, ArrayList<Object> parameters, String eventName, String airframeName) {
         parameters.add(eventName);
         parameters.add(airframeName);
         parameters.add(fleetId);
@@ -511,7 +507,6 @@ public class Filter {
                 }
 
                 return string.toString();
-
             }
             case "GROUP" -> {
                 StringBuilder string = new StringBuilder();
@@ -521,7 +516,6 @@ public class Filter {
                 }
 
                 return "(" + string + ")";
-
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
@@ -548,7 +542,6 @@ public class Filter {
                 }
 
                 return "(" + string + ")";
-
             }
             case "GROUP" -> {
                 String string = "";
@@ -558,7 +551,6 @@ public class Filter {
                 }
 
                 return "(" + string + ")";
-
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");

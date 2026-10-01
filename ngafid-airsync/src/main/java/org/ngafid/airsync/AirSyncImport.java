@@ -349,16 +349,12 @@ public final class AirSyncImport {
         }
 
         String partnerKey = Integer.toString(uploadId);
-        String confirmUrl = String.format(
-                AirSyncEndpoints.CONFIRM_LOG,
-                id,
-                URLEncoder.encode(partnerKey, StandardCharsets.UTF_8));
+        String confirmUrl =
+                String.format(AirSyncEndpoints.CONFIRM_LOG, id, URLEncoder.encode(partnerKey, StandardCharsets.UTF_8));
 
         LOG.info(String.format(
                 "Sending AirSync log confirmation: airsync_log_id=%d, partner_key=%s (upload_id), tail=%s",
-                id,
-                partnerKey,
-                aircraft.getTailNumber()));
+                id, partnerKey, aircraft.getTailNumber()));
 
         int responseCode = postConfirm(confirmUrl);
 
@@ -371,16 +367,12 @@ public final class AirSyncImport {
         if (responseCode < 200 || responseCode >= 300) {
             throw new IOException(String.format(
                     "AirSync log confirmation failed: airsync_log_id=%d, partner_key=%s, HTTP %d",
-                    id,
-                    partnerKey,
-                    responseCode));
+                    id, partnerKey, responseCode));
         }
 
         LOG.info(String.format(
                 "AirSync log confirmation sent successfully: airsync_log_id=%d, partner_key=%s, HTTP %d",
-                id,
-                partnerKey,
-                responseCode));
+                id, partnerKey, responseCode));
     }
 
     private int postConfirm(String confirmUrl) throws IOException {

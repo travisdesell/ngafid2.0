@@ -124,8 +124,8 @@ public class FleetLabel {
      * @throws SQLException if the lookup fails
      */
     public static Integer getFleetIdForDefinition(Connection connection, int id) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT fleet_id FROM label_definitions WHERE id = ?")) {
+        try (PreparedStatement stmt =
+                connection.prepareStatement("SELECT fleet_id FROM label_definitions WHERE id = ?")) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? rs.getInt("fleet_id") : null;

@@ -67,10 +67,7 @@ public enum UploadStatistics {
             Connection connection, Integer fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
         UploadOutcomeCounts counts = getUploadOutcomeCountsDated(connection, fleetId, startDate, endDate);
         return new UploadCounts(
-                counts.uploadCount(),
-                counts.okUploadCount(),
-                counts.warningUploadCount(),
-                counts.failedUploadCount());
+                counts.uploadCount(), counts.okUploadCount(), counts.warningUploadCount(), counts.failedUploadCount());
     }
 
     /**
@@ -106,7 +103,8 @@ public enum UploadStatistics {
             if (fleetId != null) statement.setInt(parameter++, fleetId);
             if (filterStart) statement.setTimestamp(parameter++, Timestamp.valueOf(startDate.atStartOfDay()));
             if (filterEnd)
-                statement.setTimestamp(parameter, Timestamp.valueOf(endDate.plusDays(1).atStartOfDay()));
+                statement.setTimestamp(
+                        parameter, Timestamp.valueOf(endDate.plusDays(1).atStartOfDay()));
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 resultSet.next();

@@ -76,7 +76,7 @@ class LossOfTailRotorEffectivenessTest {
         var spec = new LossOfTailRotorEffectiveness.HelicopterSpec(
                 "SA319", 4_960.0, Double.NaN, 2_474.0, 3, 434.4, Double.NaN, 420.0);
 
-        assertTrue(LossOfTailRotorEffectiveness.normalize(spec, 90.0, 1.225, 20.0, 10.0, Double.NaN).isEmpty());
+        assertTrue(LossOfTailRotorEffectiveness.normalize(spec, 90.0, 1.225, 20.0, 10.0, Double.NaN)
+                .isEmpty());
     }
-
 }
