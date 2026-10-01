@@ -12,9 +12,9 @@ import org.ngafid.core.event.EventMetaData
 import org.ngafid.core.event.RateOfClosure
 import org.ngafid.core.flights.Airframes
 import org.ngafid.www.routes.*
+import java.sql.SQLException
 import java.time.LocalDate
 import java.util.*
-import java.sql.SQLException
 
 object EventRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
@@ -56,12 +56,12 @@ object EventRoutes : RouteProvider() {
                 get(
                     "count/by-airframe",
                     { ctx -> StatisticsJavalinRoutes.getAllEventCountsByAirframe(ctx, false) },
-                    Role.LOGGED_IN
+                    Role.LOGGED_IN,
                 )
                 get(
                     "count/by-airframe/aggregate",
                     { ctx -> StatisticsJavalinRoutes.getAllEventCountsByAirframe(ctx, true) },
-                    Role.LOGGED_IN
+                    Role.LOGGED_IN,
                 )
                 get(
                     "count/by-airframe/{aid}",
@@ -70,28 +70,22 @@ object EventRoutes : RouteProvider() {
                 get(
                     "count/monthly/by-name",
                     StatisticsJavalinRoutes::getMonthlyEventCounts,
-                    Role.LOGGED_IN
+                    Role.LOGGED_IN,
                 )
-
             }
         }
     }
 
-    fun getEventDescription(ctx: Context): Unit =
-        Database.getConnection().use { connection ->
-            ctx.contentType(ContentType.PLAIN)
-            ctx.result(EventDefinition.getEventDefinition(connection, ctx.pathParam("eventName")).toHumanReadable())
-        }
+    fun getEventDescription(ctx: Context): Unit = Database.getConnection().use { connection ->
+        ctx.contentType(ContentType.PLAIN)
+        ctx.result(EventDefinition.getEventDefinition(connection, ctx.pathParam("eventName")).toHumanReadable())
+    }
 
-    fun getEventRateOfClosure(ctx: Context): Unit =
-        Database.getConnection()
-            .use { ctx.json(RateOfClosure.getRateOfClosureOfEvent(it, ctx.pathParam("eid").toInt())) }
+    fun getEventRateOfClosure(ctx: Context): Unit = Database.getConnection()
+        .use { ctx.json(RateOfClosure.getRateOfClosureOfEvent(it, ctx.pathParam("eid").toInt())) }
 
-
-    fun getEventMetaData(ctx: Context): Unit =
-        Database.getConnection()
-            .use { ctx.json(EventMetaData.getEventMetaData(it, ctx.pathParam("eid").toInt())) }
-
+    fun getEventMetaData(ctx: Context): Unit = Database.getConnection()
+        .use { ctx.json(EventMetaData.getEventMetaData(it, ctx.pathParam("eid").toInt())) }
 
     fun getEventAvailability(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
@@ -115,7 +109,8 @@ object EventRoutes : RouteProvider() {
                 if (eventName == "ANY Event") continue
 
                 // Get event definition IDs
-                val definitionQuery = "SELECT id FROM event_definitions WHERE (fleet_id = 0 OR fleet_id = ?) AND name LIKE ?"
+                val definitionQuery =
+                    "SELECT id FROM event_definitions WHERE (fleet_id = 0 OR fleet_id = ?) AND name LIKE ?"
                 val definitionStmt = connection.prepareStatement(definitionQuery)
                 definitionStmt.setInt(1, fleetId)
                 definitionStmt.setString(2, eventName)
@@ -135,15 +130,15 @@ object EventRoutes : RouteProvider() {
                         "SELECT COUNT(*) FROM events WHERE event_definition_id = ? AND fleet_id = ? AND end_time >= ? AND end_time <= ?"
                     } else {
                         "SELECT COUNT(*) FROM events, flights, flight_tag_map, flight_tags " +
-                        "WHERE events.flight_id = flights.id " +
-                        "AND flights.id = flight_tag_map.flight_id " +
-                        "AND flight_tag_map.tag_id = flight_tags.id " +
-                        "AND events.fleet_id = flight_tags.fleet_id " +
-                        "AND events.event_definition_id = ? " +
-                        "AND events.fleet_id = ? " +
-                        "AND events.end_time >= ? " +
-                        "AND events.end_time <= ? " +
-                        "AND flight_tags.name = ?"
+                            "WHERE events.flight_id = flights.id " +
+                            "AND flights.id = flight_tag_map.flight_id " +
+                            "AND flight_tag_map.tag_id = flight_tags.id " +
+                            "AND events.fleet_id = flight_tags.fleet_id " +
+                            "AND events.event_definition_id = ? " +
+                            "AND events.fleet_id = ? " +
+                            "AND events.end_time >= ? " +
+                            "AND events.end_time <= ? " +
+                            "AND flight_tags.name = ?"
                     }
 
                     val countStmt = connection.prepareStatement(countQuery)
@@ -198,7 +193,7 @@ object EventRoutes : RouteProvider() {
                     eventName,
                     LocalDate.parse(startDate),
                     LocalDate.parse(endDate),
-                    tagName
+                    tagName,
                 )
 
                 eventMap[eventName] = events
@@ -226,21 +221,19 @@ object EventRoutes : RouteProvider() {
                     eventName,
                     LocalDate.parse(startDate),
                     LocalDate.parse(endDate),
-                    tagName
-                )
+                    tagName,
+                ),
             )
         }
     }
 
-    fun getAllEventDefinitions(ctx: Context): Unit =
-        Database.getConnection().use { connection ->
-            ctx.json(EventDefinition.getAll(connection))
-        }
+    fun getAllEventDefinitions(ctx: Context): Unit = Database.getConnection().use { connection ->
+        ctx.json(EventDefinition.getAll(connection))
+    }
 
-    fun getOneEventDefinition(ctx: Context): Unit =
-        Database.getConnection().use { connection ->
-            ctx.json(EventDefinition.getEventDefinition(connection, ctx.pathParam("edid").toInt()))
-        }
+    fun getOneEventDefinition(ctx: Context): Unit = Database.getConnection().use { connection ->
+        ctx.json(EventDefinition.getEventDefinition(connection, ctx.pathParam("edid").toInt()))
+    }
 
     fun postCreateEvent(ctx: Context) {
         val fleetId = 0 // all events work on all fleets for now
@@ -264,7 +257,7 @@ object EventRoutes : RouteProvider() {
                 airframeTypeId,
                 filterJSON,
                 severityColumnNamesJSON,
-                severityType
+                severityType,
             )
 
             ctx.json(Object())
@@ -283,16 +276,17 @@ object EventRoutes : RouteProvider() {
                 }
 
                 if (!airframeNames.containsKey(eventDefinition.airframeNameId)) {
-
                     try {
                         airframeNames[eventDefinition.airframeNameId] =
                             Airframes.Airframe(connection, eventDefinition.airframeNameId).name
                     } catch (e: SQLException) {
-                        println("Got unknown airframe name for ID ${eventDefinition.airframeNameId}, leaving as Unknown Airframe")
+                        println(
+                            "Got unknown airframe name for ID ${eventDefinition.airframeNameId}, leaving as Unknown Airframe",
+                        )
                         e.printStackTrace()
-                        airframeNames[eventDefinition.airframeNameId] = "Unknown Airframe (${eventDefinition.airframeNameId})"
+                        airframeNames[eventDefinition.airframeNameId] =
+                            "Unknown Airframe (${eventDefinition.airframeNameId})"
                     }
-
                 }
 
                 println("${airframeNames[eventDefinition.airframeNameId]} -> ${eventDefinition.toHumanReadable()}")
@@ -304,14 +298,13 @@ object EventRoutes : RouteProvider() {
         }
     }
 
-    fun patchEventDefinition(ctx: Context): Unit =
-        Database.getConnection().use { connection ->
-            // TODO: Validate that this def matches the route.
-            EventJavalinRoutes.GSON.fromJson(
-                ctx.body(),
-                EventDefinition::class.java
-            ).updateSelf(connection)
-        }
+    fun patchEventDefinition(ctx: Context): Unit = Database.getConnection().use { connection ->
+        // TODO: Validate that this def matches the route.
+        EventJavalinRoutes.GSON.fromJson(
+            ctx.body(),
+            EventDefinition::class.java,
+        ).updateSelf(connection)
+    }
 
     fun deleteEventDefinition(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
@@ -323,5 +316,4 @@ object EventRoutes : RouteProvider() {
             EventDefinition.getEventDefinition(connection, ctx.pathParam("edid").toInt()).delete(connection)
         }
     }
-
 }

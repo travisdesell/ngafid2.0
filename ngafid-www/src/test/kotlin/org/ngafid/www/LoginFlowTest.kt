@@ -4,22 +4,20 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
-
 import java.time.Duration
 
 class LoginFlowTest {
     companion object {
         private lateinit var driver: WebDriver
-        private fun requireEnv(name: String): String =
-            System.getenv(name)
-                ?: throw IllegalStateException("Missing required env var: $name")
+        private fun requireEnv(name: String): String = System.getenv(name)
+            ?: throw IllegalStateException("Missing required env var: $name")
+
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
@@ -27,6 +25,7 @@ class LoginFlowTest {
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
             LoginFlowTest.Companion.driver = ChromeDriver(options)
         }
+
         @JvmStatic
         @AfterAll
         fun tearDown() {
@@ -45,6 +44,7 @@ class LoginFlowTest {
 
         return "http://localhost:$port/"
     }
+
     @Test
     fun loginViaModalSucceeds() {
         val baseurl = baseUrlFromProperties()
@@ -59,6 +59,9 @@ class LoginFlowTest {
         modal.findElement(By.cssSelector("button[type='submit']")).click()
         wait.until(ExpectedConditions.invisibilityOf(modal))
         wait.until { driver.currentUrl.orEmpty().contains("/protected") }
-        assertTrue(driver.currentUrl.orEmpty().contains("/protected"), "Expected redirect to protected area after login")
+        assertTrue(
+            driver.currentUrl.orEmpty().contains("/protected"),
+            "Expected redirect to protected area after login",
+        )
     }
 }

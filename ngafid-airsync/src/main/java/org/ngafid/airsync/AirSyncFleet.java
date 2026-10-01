@@ -213,6 +213,13 @@ public class AirSyncFleet extends Fleet {
         }
     }
 
+    /**
+     * Sets the manual-override flag for this fleet in the {@code airsync_fleet_info} table.
+     *
+     * @param connection the database connection
+     * @param value the new override value to persist
+     * @throws SQLException if the update fails
+     */
     public void setOverride(Connection connection, boolean value) throws SQLException {
         String query = """
                     UPDATE airsync_fleet_info SET override = ? WHERE fleet_id = ?
@@ -371,6 +378,9 @@ public class AirSyncFleet extends Fleet {
         return this.authCreds;
     }
 
+    /**
+     * Forces a refresh of this fleet's AirSync bearer token, replacing the cached credentials.
+     */
     public void refreshAuth() {
         LOG.info("Refreshing AirSync bearer token");
         AirSyncAuth.Companion.refreshInstance();

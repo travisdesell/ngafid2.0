@@ -1,9 +1,9 @@
 package org.ngafid.www
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeAll
-import org.openqa.selenium.By
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
@@ -11,14 +11,13 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 class PersistenceTest {
-    private fun requireEnv(name: String): String =
-        System.getenv(name)
-            ?: throw IllegalStateException("Missing required env var: $name")
+    private fun requireEnv(name: String): String = System.getenv(name)
+        ?: throw IllegalStateException("Missing required env var: $name")
     companion object {
         private lateinit var driver: WebDriver
-        private fun requireEnv(name: String): String =
-            System.getenv(name)
-                ?: throw IllegalStateException("Missing required env var: $name")
+        private fun requireEnv(name: String): String = System.getenv(name)
+            ?: throw IllegalStateException("Missing required env var: $name")
+
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
@@ -26,6 +25,7 @@ class PersistenceTest {
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
             PersistenceTest.Companion.driver = ChromeDriver(options)
         }
+
         @JvmStatic
         @AfterAll
         fun tearDown() {
@@ -44,6 +44,7 @@ class PersistenceTest {
 
         return "http://localhost:$port/"
     }
+
     @Test
     fun userStaysLoggedInAfterRefresh() {
         val wait = WebDriverWait(driver, Duration.ofSeconds(10))
@@ -61,11 +62,12 @@ class PersistenceTest {
             wait.until { driver.currentUrl.orEmpty().contains("/protected") }
             driver.navigate().refresh()
             wait.until { driver.currentUrl.orEmpty().contains("/protected") }
-            assertTrue(driver.findElements(By.linkText("Login")).isEmpty(),"User should remain logged in after refresh"
+            assertTrue(
+                driver.findElements(By.linkText("Login")).isEmpty(),
+                "User should remain logged in after refresh",
             )
         } finally {
             driver.quit()
         }
     }
-
 }

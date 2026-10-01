@@ -1,28 +1,27 @@
 package org.ngafid.www
 
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.openqa.selenium.WebDriver
-import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.chrome.ChromeOptions
-import org.junit.jupiter.api.Test
-import java.nio.file.Paths
-import java.time.Duration
-import org.openqa.selenium.support.ui.ExpectedConditions
-import org.openqa.selenium.support.ui.WebDriverWait
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.openqa.selenium.By
 import org.openqa.selenium.JavascriptExecutor
+import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.edge.EdgeDriver
-
+import org.openqa.selenium.support.ui.ExpectedConditions
+import org.openqa.selenium.support.ui.WebDriverWait
+import java.nio.file.Paths
+import java.time.Duration
 
 class UploadFlowTest {
     companion object {
         private lateinit var driver: WebDriver
-        private fun requireEnv(name: String): String =
-            System.getenv(name)
-                ?: throw IllegalStateException("Missing required env var: $name")
+        private fun requireEnv(name: String): String = System.getenv(name)
+            ?: throw IllegalStateException("Missing required env var: $name")
+
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {
@@ -30,6 +29,7 @@ class UploadFlowTest {
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage")
             UploadFlowTest.Companion.driver = ChromeDriver(options)
         }
+
         @JvmStatic
         @AfterAll
         fun tearDown() {
@@ -48,6 +48,7 @@ class UploadFlowTest {
 
         return "http://localhost:$port/"
     }
+
     @Test
     fun uploadSmallFlightFileSucceeds() {
         val baseUrl = baseUrlFromProperties()
@@ -57,7 +58,7 @@ class UploadFlowTest {
         driver.get(baseUrl)
         wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Login"))).click()
         val modal = wait.until(
-            ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog"))
+            ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".modal-dialog")),
         )
         modal.findElement(By.id("loginEmail")).sendKeys(email)
         modal.findElement(By.id("loginPassword")).sendKeys(password)
@@ -66,8 +67,8 @@ class UploadFlowTest {
         try {
             val notNowBtn = WebDriverWait(driver, Duration.ofSeconds(3)).until(
                 ExpectedConditions.elementToBeClickable(
-                    By.xpath("//button[normalize-space()='Not Now']")
-                )
+                    By.xpath("//button[normalize-space()='Not Now']"),
+                ),
             )
             notNowBtn.click()
         } catch (e: Exception) {
@@ -79,16 +80,17 @@ class UploadFlowTest {
         } ?: error("Test file not found")
         val fileInput = wait.until {
             val js = driver as JavascriptExecutor
-            val inputs = js.executeScript("""
+            val inputs = js.executeScript(
+                """
             return Array.from(document.querySelectorAll('input[type="file"]')).filter(i => i.offsetParent !== null || i.type === 'file');
-            """
+            """,
             ) as List<WebElement>
             inputs.firstOrNull()
         } ?: error("No file input found")
         fileInput.sendKeys(filePath)
-        assertTrue(wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Uploaded")), "Expected uploaded flight to be processed"
+        assertTrue(
+            wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Uploaded")),
+            "Expected uploaded flight to be processed",
         )
     }
-
-
 }

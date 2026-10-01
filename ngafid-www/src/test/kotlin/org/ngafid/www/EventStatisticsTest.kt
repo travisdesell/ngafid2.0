@@ -101,10 +101,9 @@ class EventStatisticsTest {
         }
     }
 
-    private fun createConnection(): Connection =
-        DriverManager.getConnection(
-            "jdbc:h2:mem:${System.nanoTime()};MODE=MYSQL;NON_KEYWORDS=YEAR,MONTH;DATABASE_TO_UPPER=FALSE",
-        )
+    private fun createConnection(): Connection = DriverManager.getConnection(
+        "jdbc:h2:mem:${System.nanoTime()};MODE=MYSQL;NON_KEYWORDS=YEAR,MONTH;DATABASE_TO_UPPER=FALSE",
+    )
 
     private fun createSchema(connection: Connection) {
         connection.createStatement().use { statement ->
@@ -216,10 +215,7 @@ class EventStatisticsTest {
         return field.get(counts) as List<String>
     }
 
-    private fun intArray(
-        counts: EventStatistics.MonthlyEventCounts,
-        fieldName: String,
-    ): IntArray {
+    private fun intArray(counts: EventStatistics.MonthlyEventCounts, fieldName: String): IntArray {
         val field = EventStatistics.EventCountsWithAggregate::class.java.getDeclaredField(fieldName)
         field.isAccessible = true
         return field.get(counts) as IntArray

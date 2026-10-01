@@ -30,6 +30,19 @@ public final class AirSyncImport {
     public static final Gson GSON =
             new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
+    /**
+     * Jackson factory that builds an {@link AirSyncImport} from the JSON returned by the AirSync API.
+     *
+     * @param id the AirSync import id
+     * @param aircraftId the AirSync aircraft id this import belongs to
+     * @param origin the origin airport reported by AirSync
+     * @param destination the destination airport reported by AirSync
+     * @param timeStart the flight start time, as an ISO offset date-time string
+     * @param timeEnd the flight end time, as an ISO offset date-time string
+     * @param fileUrl the URL the import's data file can be downloaded from
+     * @param timestampUploaded the upload timestamp, as an ISO offset date-time string
+     * @return the constructed import
+     */
     @JsonCreator
     public static AirSyncImport create(
             @JsonProperty("id") int id,
@@ -104,12 +117,28 @@ public final class AirSyncImport {
         return AIRSYNC_UPLOADER_ID;
     }
 
+    /**
+     * Creates a prepared statement for inserting a row into the {@code airsync_imports} table.
+     *
+     * @param connection the database connection
+     * @return a prepared statement for the import insert
+     * @throws SQLException if the statement cannot be prepared
+     */
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         String sql = "INSERT INTO airsync_imports(id, tail, time_received, upload_id, fleet_id, flight_id) VALUES "
                 + "(?, ?, ?, ?, ?, ?)";
         return connection.prepareStatement(sql);
     }
 
+    /**
+     * Inserts a batch of imports into the database, associating them with the given flight.
+     * Duplicate primary keys are ignored.
+     *
+     * @param connection the database connection
+     * @param imports the imports to insert
+     * @param flight the flight the imports produced, or null if none
+     * @throws SQLException if a database error other than a duplicate-key violation occurs
+     */
     public static void batchCreateImport(Connection connection, List<AirSyncImport> imports, Flight flight)
             throws SQLException {
         for (var imp : imports)
@@ -384,6 +413,13 @@ public final class AirSyncImport {
         return connection.getResponseCode();
     }
 
+    /**
+     * Checks whether a record of this import already exists in the database.
+     *
+     * @param connection the database connection
+     * @return true if an {@code airsync_imports} row with this import's id exists
+     * @throws SQLException if the query fails
+     */
     public boolean exists(Connection connection) throws SQLException {
         try (PreparedStatement query =
                         connection.prepareStatement("SELECT 1 FROM airsync_imports WHERE id = " + id + " LIMIT 1");
@@ -406,6 +442,13 @@ public final class AirSyncImport {
         }
     }
 
+    /**
+     * Binds this import's fields to the given prepared statement and adds it to the statement's batch.
+     *
+     * @param query the prepared statement to populate, created by {@link #createPreparedStatement(Connection)}
+     * @param flight the flight this import produced, or null if no flight was imported
+     * @throws SQLException if setting a parameter or adding the batch fails
+     */
     public void addBatch(PreparedStatement query, Flight flight) throws SQLException {
         query.setInt(1, this.id);
         query.setString(2, this.aircraft.getTailNumber());

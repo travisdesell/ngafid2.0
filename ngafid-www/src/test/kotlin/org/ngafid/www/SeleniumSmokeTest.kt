@@ -26,6 +26,7 @@ class SeleniumSmokeTest {
                 ?: "http://localhost:8181/"
             if (url.endsWith("/")) url else "$url/"
         }
+
         @BeforeAll
         @JvmStatic
         fun verifyServerIsUp() {
@@ -33,10 +34,11 @@ class SeleniumSmokeTest {
                 java.net.URL(baseUrl).openConnection().connect()
             } catch (e: Exception) {
                 throw IllegalStateException(
-                    "NGAFID server is not reachable at $baseUrl, check if the server is up first"
+                    "NGAFID server is not reachable at $baseUrl, check if the server is up first",
                 )
             }
         }
+
         @JvmStatic
         @BeforeAll
         fun setUpDriver() {

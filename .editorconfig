@@ -7,6 +7,9 @@ root = true
 
 [*.{kt,kts}]
 ktlint_code_style = intellij_idea
+# Allow wildcard imports, consistent with the Java side (Checkstyle's AvoidStarImport
+# is off) and the idiomatic Javalin routing DSL import `io.javalin.apibuilder.ApiBuilder.*`.
+ktlint_standard_no-wildcard-imports = disabled
 max_line_length = 120
 indent_size = 4
 indent_style = space

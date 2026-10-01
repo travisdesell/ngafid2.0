@@ -43,7 +43,7 @@ object UploadRoutes : RouteProvider() {
         app.router.apiBuilder {
             path("/api/upload") {
                 get(UploadRoutes::getUploads, Role.LOGGED_IN)
-                get("imported", UploadRoutes::getImported, Role.LOGGED_IN);
+                get("imported", UploadRoutes::getImported, Role.LOGGED_IN)
                 post(UploadRoutes::postNewUpload, Role.LOGGED_IN, Role.UPLOADER_ONLY)
 
                 path("{uid}") {
@@ -66,7 +66,7 @@ object UploadRoutes : RouteProvider() {
     class UploadsResponse(
         @JsonProperty var uploads: List<Upload>,
         @JsonProperty var numberPages: Int,
-        @JsonProperty var currentPage: Int
+        @JsonProperty var currentPage: Int,
     )
 
     private fun calculateNumberPages(totalItems: Int, pageSize: Int): Int {
@@ -99,7 +99,7 @@ object UploadRoutes : RouteProvider() {
     class ImportsResponse(
         @JsonProperty var imports: List<Upload>,
         @JsonProperty var numberPages: Int,
-        @JsonProperty var currentPage: Int
+        @JsonProperty var currentPage: Int,
     )
 
     fun getImported(ctx: Context) {
@@ -116,7 +116,7 @@ object UploadRoutes : RouteProvider() {
                 connection,
                 user.fleetId,
                 Upload.Status.getImportedSet(),
-                " LIMIT " + (currentPage * pageSize) + "," + pageSize
+                " LIMIT " + (currentPage * pageSize) + "," + pageSize,
             )
 
             ctx.json(ImportsResponse(imports, numberPages, currentPage))
@@ -138,7 +138,7 @@ object UploadRoutes : RouteProvider() {
 
         if (rawFilename != filename) {
             ImportUploadJavalinRoutes.LOG.info(
-                "Sanitized upload filename '$rawFilename' -> '$filename'"
+                "Sanitized upload filename '$rawFilename' -> '$filename'",
             )
         }
 
@@ -147,7 +147,7 @@ object UploadRoutes : RouteProvider() {
 
             val errorResponse = ErrorResponse(
                 "File Upload Failure",
-                "Upload zip filename contains unsupported characters. NGAFID only allows letters (A-Z), digits (0-9), dashes ('-'), underscores ('_'), and periods ('.'). Characters such as spaces (' ') and parentheses ('(' or ')') are not accepted. Rename the zip and retry."
+                "Upload zip filename contains unsupported characters. NGAFID only allows letters (A-Z), digits (0-9), dashes ('-'), underscores ('_'), and periods ('.'). Characters such as spaces (' ') and parentheses ('(' or ')') are not accepted. Rename the zip and retry.",
             )
 
             ctx.json(errorResponse)
@@ -164,7 +164,7 @@ object UploadRoutes : RouteProvider() {
             if (upload == null) {
                 upload = Upload.createNewUpload(
                     connection, uploaderId, fleetId, filename, identifier,
-                    Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash
+                    Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash,
                 )
 
                 ctx.json(upload)
@@ -180,9 +180,11 @@ object UploadRoutes : RouteProvider() {
                     ctx.json(
                         ErrorResponse(
                             "File Already Exists",
-                            ("This file has already been uploaded to the server as '" + dbFilename
-                                    + "' and does not need to be uploaded again.")
-                        )
+                            (
+                                "This file has already been uploaded to the server as '" + dbFilename +
+                                    "' and does not need to be uploaded again."
+                                ),
+                        ),
                     )
                 } else {
                     // 2. file does exist and has not finished uploading -- restart upload
@@ -190,8 +192,8 @@ object UploadRoutes : RouteProvider() {
                         Upload.getUploadByUser(
                             connection,
                             uploaderId,
-                            md5Hash
-                        )
+                            md5Hash,
+                        ),
                     )
                 }
             }
@@ -218,7 +220,7 @@ object UploadRoutes : RouteProvider() {
 
         val file = upload.getArchivePath().toFile()
 
-        //File was found, attempt to send the file to the client
+        // File was found, attempt to send the file to the client
         if (file.exists()) {
             ctx.contentType("application/zip")
             ctx.header("Content-Disposition", "attachment; filename=" + upload.getFilename())
@@ -273,8 +275,9 @@ object UploadRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             val upload = Upload.getUploadById(connection, id) ?: throw NotFoundResponse("Upload with id $id not found.")
 
-            if (upload.fleetId != user.fleetId)
+            if (upload.fleetId != user.fleetId) {
                 throw UnauthorizedResponse("User ${user.id} does not belong to the same fleet as upload.")
+            }
 
             val chunkDirectory = upload.chunkDirectory
             File(chunkDirectory).mkdirs()
@@ -283,7 +286,7 @@ object UploadRoutes : RouteProvider() {
             Files.copy(
                 (ctx.uploadedFile("chunk") ?: throw BadRequestResponse("Missing file attachment")).content(),
                 Paths.get(chunkFilename),
-                StandardCopyOption.REPLACE_EXISTING
+                StandardCopyOption.REPLACE_EXISTING,
             )
 
             val chunkSize = File(chunkFilename).length()
@@ -291,8 +294,9 @@ object UploadRoutes : RouteProvider() {
             upload.getLockedUpload(connection).use { locked ->
                 locked.chunkUploaded(chunkNumber, chunkSize)
 
-                if (upload.completed())
+                if (upload.completed()) {
                     locked.complete()
+                }
             }
 
             ctx.json(upload)
@@ -306,8 +310,9 @@ object UploadRoutes : RouteProvider() {
             val upload = Upload.getUploadById(connection, uploadId)
                 ?: throw NotFoundResponse("Upload with id $uploadId not found.")
 
-            if (upload.getFleetId() != user.fleetId)
+            if (upload.getFleetId() != user.fleetId) {
                 throw UnauthorizedResponse("User or upload is not a part of the correct fleet.")
+            }
 
             upload.getLockedUpload(connection).use { locked -> locked.remove() }
             Tails.removeUnused(connection)

@@ -41,8 +41,9 @@ object AirSyncRoutes : RouteProvider() {
             val numberPages = totalImports / pageSize
 
             val imports = AirSyncImport.getImports(
-                connection, fleetId,
-                " LIMIT " + (currentPage * pageSize) + "," + pageSize
+                connection,
+                fleetId,
+                " LIMIT " + (currentPage * pageSize) + "," + pageSize,
             )
             ctx.json(PaginationResponse(imports, numberPages))
         }
@@ -59,14 +60,14 @@ object AirSyncRoutes : RouteProvider() {
             val numberPages = totalUploads / pageSize
 
             val uploads = AirSyncImport.getUploads(
-                connection, fleetId,
-                " LIMIT " + (currentPage * pageSize) + "," + pageSize
+                connection,
+                fleetId,
+                " LIMIT " + (currentPage * pageSize) + "," + pageSize,
             )
 
             ctx.json(PaginationResponse(uploads, numberPages))
         }
     }
-
 
     fun patchAirSyncManualUpdate(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
@@ -78,7 +79,6 @@ object AirSyncRoutes : RouteProvider() {
             ctx.json("OK")
         }
     }
-
 
     fun patchAirSyncTimeout(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
@@ -92,6 +92,5 @@ object AirSyncRoutes : RouteProvider() {
 
             ctx.json(newTimeout)
         }
-
     }
 }

@@ -13,15 +13,15 @@ import org.ngafid.core.labels.FlightLabelSection
 import org.ngafid.core.util.FlightTag
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.*
-import java.util.*
 import java.sql.PreparedStatement
 import java.sql.Timestamp
-import java.time.LocalDate
-import kotlin.booleanArrayOf
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.*
+import kotlin.booleanArrayOf
 
 object FlightRoutes : RouteProvider() {
     override fun bind(app: JavalinConfig) {
@@ -31,7 +31,11 @@ object FlightRoutes : RouteProvider() {
                 get("double-series", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames, Role.LOGGED_IN)
                 get("turn-to-final", AnalysisJavalinRoutes::postTurnToFinal, Role.LOGGED_IN)
                 get("flight_hours_by_airframe", FlightRoutes::getFlightHoursByAirframe, Role.LOGGED_IN)
-                get("aggregate/flight_hours_by_airframe", FlightRoutes::getAggregateFlightHoursByAirframe, Role.LOGGED_IN)
+                get(
+                    "aggregate/flight_hours_by_airframe",
+                    FlightRoutes::getAggregateFlightHoursByAirframe,
+                    Role.LOGGED_IN,
+                )
 
                 RouteUtility.getStat("time/past-month") { ctx, stats -> ctx.json(stats.monthFlightTime()) }
                 RouteUtility.getStat("time/past-year") { ctx, stats -> ctx.json(stats.yearFlightTime()) }
@@ -77,7 +81,7 @@ object FlightRoutes : RouteProvider() {
                     path("tag") {
                         // Delete all tags
                         delete(FlightRoutes::deleteAllFlightTags, Role.LOGGED_IN)
-                        get("unassociated", FlightRoutes::getUnassociatedTags, Role.LOGGED_IN);
+                        get("unassociated", FlightRoutes::getUnassociatedTags, Role.LOGGED_IN)
                         get(FlightRoutes::getFlightTags, Role.LOGGED_IN)
 
                         path("{tid}") {
@@ -92,7 +96,6 @@ object FlightRoutes : RouteProvider() {
                     // TODO
                     // get(FlightRoutes::getFlight, Role.LOGGED_IN)
                 }
-
             }
         }
     }
@@ -102,8 +105,8 @@ object FlightRoutes : RouteProvider() {
             ctx.json(
                 Objects.requireNonNullElse<Any>(
                     Flight.getTags(connection, ctx.pathParam("fid").toInt()),
-                    ErrorResponse("error", "No tags found for flight.")
-                )
+                    ErrorResponse("error", "No tags found for flight."),
+                ),
             )
         }
     }
@@ -122,12 +125,10 @@ object FlightRoutes : RouteProvider() {
         @field:JsonProperty val startValue: Double?,
         @field:JsonProperty val endValue: Double?,
         @field:JsonProperty val labelText: String?,
-        @field:JsonProperty val parameterNames: List<String>
+        @field:JsonProperty val parameterNames: List<String>,
     )
 
-    data class FlightLabelUpdateDto(
-        @field:JsonProperty val labelText: String?
-    )
+    data class FlightLabelUpdateDto(@field:JsonProperty val labelText: String?)
 
     fun getFlightLabels(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
@@ -148,12 +149,15 @@ object FlightRoutes : RouteProvider() {
                     endIndex = it.endIndex,
                     startTime = it.startTime.time / 1000,
                     endTime = it.endTime.time / 1000,
-                    startTimeDisplay = it.startTimeRaw?.trim()?.takeIf { s -> s.isNotEmpty() } ?: formatTimestampForDisplay(it.startTime),
-                    endTimeDisplay = it.endTimeRaw?.trim()?.takeIf { s -> s.isNotEmpty() } ?: formatTimestampForDisplay(it.endTime),
+                    startTimeDisplay =
+                    it.startTimeRaw?.trim()?.takeIf { s -> s.isNotEmpty() }
+                        ?: formatTimestampForDisplay(it.startTime),
+                    endTimeDisplay =
+                    it.endTimeRaw?.trim()?.takeIf { s -> s.isNotEmpty() } ?: formatTimestampForDisplay(it.endTime),
                     startValue = it.startValue,
                     endValue = it.endValue,
                     labelText = it.labelText,
-                    parameterNames = it.parameterNames
+                    parameterNames = it.parameterNames,
                 )
             }
             ctx.json(sections)
@@ -181,7 +185,9 @@ object FlightRoutes : RouteProvider() {
         if (ts == null) return ""
         val epochMs = if (flightStartMs != null && ts.toLocalDateTime().year < 1980) {
             flightStartMs + ts.time
-        } else ts.time
+        } else {
+            ts.time
+        }
         return Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC).format(csvDateTimeFormat)
     }
 
@@ -209,10 +215,14 @@ object FlightRoutes : RouteProvider() {
             }
             val sections = FlightLabelSection.getByFlight(connection, flightId)
             val flightStartMs = java.sql.Timestamp.valueOf(flight.getStartDateTime()).time
-            val header = "flight_id,tail_number,airframe,start_time,end_time,start_index,end_index,start_value,end_value,label_text,parameter_names"
+            val header =
+                "flight_id,tail_number,airframe,start_time,end_time,start_index," +
+                    "end_index,start_value,end_value,label_text,parameter_names"
             val rows = sections.map { s ->
-                val startStr = s.startTimeRaw?.trim()?.takeIf { it.isNotEmpty() } ?: formatTimestampForCsv(s.startTime, flightStartMs)
-                val endStr = s.endTimeRaw?.trim()?.takeIf { it.isNotEmpty() } ?: formatTimestampForCsv(s.endTime, flightStartMs)
+                val startStr = s.startTimeRaw?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: formatTimestampForCsv(s.startTime, flightStartMs)
+                val endStr = s.endTimeRaw?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: formatTimestampForCsv(s.endTime, flightStartMs)
                 listOf(
                     s.flightId.toString(),
                     escapeCsv(s.tailNumber),
@@ -224,7 +234,7 @@ object FlightRoutes : RouteProvider() {
                     s.startValue?.toString() ?: "",
                     s.endValue?.toString() ?: "",
                     escapeCsv(s.labelText),
-                    escapeCsv(s.parameterNames.joinToString("|"))
+                    escapeCsv(s.parameterNames.joinToString("|")),
                 ).joinToString(",")
             }
             val csv = (listOf(header) + rows).joinToString("\n")
@@ -259,7 +269,9 @@ object FlightRoutes : RouteProvider() {
             val labelTextIdx = header.indexOf("label_text").takeIf { it >= 0 } ?: header.indexOf("labeltext")
             val paramNamesIdx = header.indexOf("parameter_names").takeIf { it >= 0 } ?: header.indexOf("parameternames")
             if (startIndexIdx < 0 || endIndexIdx < 0 || startTimeIdx < 0 || endTimeIdx < 0) {
-                ctx.status(400).json(mapOf("error" to "CSV must include start_index, end_index, start_time, end_time columns"))
+                ctx.status(
+                    400,
+                ).json(mapOf("error" to "CSV must include start_index, end_index, start_time, end_time columns"))
                 return
             }
             fun parseCsvLine(line: String): List<String> {
@@ -271,9 +283,17 @@ object FlightRoutes : RouteProvider() {
                         i++
                         while (i < line.length) {
                             if (line[i] == '"') {
-                                if (i + 1 < line.length && line[i + 1] == '"') { sb.append('"'); i += 2 }
-                                else { i++; break }
-                            } else { sb.append(line[i]); i++ }
+                                if (i + 1 < line.length && line[i + 1] == '"') {
+                                    sb.append('"')
+                                    i += 2
+                                } else {
+                                    i++
+                                    break
+                                }
+                            } else {
+                                sb.append(line[i])
+                                i++
+                            }
                         }
                         out.add(sb.toString())
                     } else {
@@ -304,7 +324,9 @@ object FlightRoutes : RouteProvider() {
                 val labelText = if (labelTextIdx >= 0 && labelTextIdx < row.size) row[labelTextIdx] else ""
                 val paramNames = if (paramNamesIdx >= 0 && paramNamesIdx < row.size) {
                     row[paramNamesIdx].split("|").map { it.trim() }.filter { it.isNotEmpty() }
-                } else emptyList()
+                } else {
+                    emptyList()
+                }
                 val section = FlightLabelSection().apply {
                     setFlightId(flightId)
                     setStartIndex(startIndex)
@@ -372,8 +394,8 @@ object FlightRoutes : RouteProvider() {
                     startValue = saved.startValue,
                     endValue = saved.endValue,
                     labelText = saved.labelText,
-                    parameterNames = saved.parameterNames
-                )
+                    parameterNames = saved.parameterNames,
+                ),
             )
         }
     }
@@ -425,8 +447,9 @@ object FlightRoutes : RouteProvider() {
 
         Database.getConnection().use { connection ->
             val flight = Flight.getFlight(connection, flightId)
-            if (flight == null || flight.fleetId != user.fleetId)
+            if (flight == null || flight.fleetId != user.fleetId) {
                 throw NotFoundResponse("Flight with id $flightId not found.")
+            }
 
             FlightLabelSection.deleteByFlight(connection, flightId)
             ctx.status(204)
@@ -449,10 +472,10 @@ object FlightRoutes : RouteProvider() {
 
         Database.getConnection().use { connection ->
 
-            //Attempt to associate the tag with the flight
+            // Attempt to associate the tag with the flight
             Flight.associateTag(flightId, tagId, connection)
 
-            //Verify that the tag is now associated with the flight
+            // Verify that the tag is now associated with the flight
             ctx.json(Objects.requireNonNull<FlightTag>(Flight.getTag(connection, tagId)))
         }
     }
@@ -461,8 +484,9 @@ object FlightRoutes : RouteProvider() {
         val flightId = ctx.pathParam("fid").toInt()
 
         Database.getConnection().use { connection ->
-            if (Flight.getFlight(connection, flightId) == null)
+            if (Flight.getFlight(connection, flightId) == null) {
                 throw NotFoundResponse("Flight with id $flightId not found.")
+            }
 
             Flight.disassociateAllTags(flightId, connection)
             ctx.json(Object())
@@ -474,18 +498,18 @@ object FlightRoutes : RouteProvider() {
         val tagId = ctx.pathParam("tid").toInt()
 
         Database.getConnection().use { connection ->
-            if (Flight.getFlight(connection, flightId) == null)
+            if (Flight.getFlight(connection, flightId) == null) {
                 throw NotFoundResponse("Flight with id $flightId not found.")
+            }
 
             Flight.disassociateTags(tagId, connection, flightId)
             ctx.json(Object())
         }
     }
 
-
     class EventInfo(
         @field:JsonProperty val events: List<Event>,
-        @field:JsonProperty val definitions: List<EventDefinition>?
+        @field:JsonProperty val definitions: List<EventDefinition>?,
     )
 
     fun getFlightEvents(ctx: Context) {
@@ -510,11 +534,9 @@ object FlightRoutes : RouteProvider() {
             output = output.replace("NaN".toRegex(), "null")
             ctx.result(output)
         }
-
     }
 
     fun getFlightHoursByAirframe(ctx: Context) {
-
         val user = SessionUtility.getUser(ctx)
         val fleetId = user.fleetId
 
@@ -523,7 +545,6 @@ object FlightRoutes : RouteProvider() {
 
         val startDate = if (startDateIn != null) LocalDate.parse(startDateIn) else LocalDate.MIN
         val endDate = if (endDateIn != null) LocalDate.parse(endDateIn) else LocalDate.MAX
-
 
         Database.getConnection().use { connection ->
             val results = mutableListOf<Map<String, Any>>()
@@ -557,7 +578,6 @@ object FlightRoutes : RouteProvider() {
 
             stmt.setInt(3, fleetId)
 
-
             val rs = stmt.executeQuery()
             while (rs.next()) {
                 results.add(
@@ -565,13 +585,12 @@ object FlightRoutes : RouteProvider() {
                         "airframe" to rs.getString("airframe"),
                         "airframe_id" to rs.getInt("airframe_id"),
                         "num_flights" to rs.getInt("num_flights"),
-                        "total_flight_hours" to rs.getDouble("total_flight_hours")
-                    )
+                        "total_flight_hours" to rs.getDouble("total_flight_hours"),
+                    ),
                 )
             }
             ctx.json(results)
         }
-
     }
 
     fun getAggregateFlightHoursByAirframe(ctx: Context) {
@@ -582,13 +601,11 @@ object FlightRoutes : RouteProvider() {
         //     return
         // }
 
-
         val startDateIn = ctx.queryParam("startDate")
         val endDateIn = ctx.queryParam("endDate")
 
         val startDate = if (startDateIn != null) LocalDate.parse(startDateIn) else LocalDate.MIN
         val endDate = if (endDateIn != null) LocalDate.parse(endDateIn) else LocalDate.MAX
-
 
         Database.getConnection().use { connection ->
             val results = mutableListOf<Map<String, Any>>()
@@ -620,7 +637,6 @@ object FlightRoutes : RouteProvider() {
             stmt.setInt(1, airframeId)
             stmt.setInt(2, airframeId)
 
-
             val rs = stmt.executeQuery()
             while (rs.next()) {
                 results.add(
@@ -628,8 +644,8 @@ object FlightRoutes : RouteProvider() {
                         "airframe" to rs.getString("airframe"),
                         "airframe_id" to rs.getInt("airframe_id"),
                         "num_flights" to rs.getInt("num_flights"),
-                        "total_flight_hours" to rs.getDouble("total_flight_hours")
-                    )
+                        "total_flight_hours" to rs.getDouble("total_flight_hours"),
+                    ),
                 )
             }
             ctx.json(results)
