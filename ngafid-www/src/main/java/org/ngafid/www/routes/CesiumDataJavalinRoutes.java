@@ -207,6 +207,11 @@ public class CesiumDataJavalinRoutes {
         throw new UnsupportedOperationException("Utility class");
     }
 
+    /**
+     * Registers this class's Cesium flight-data routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/ngafid_cesium", CesiumDataJavalinRoutes::handleGetNgafidCesium);
         app.post("/protected/cesium_data", CesiumDataJavalinRoutes::handlePostCesiumData);

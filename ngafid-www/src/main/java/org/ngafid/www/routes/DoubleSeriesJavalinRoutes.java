@@ -28,6 +28,13 @@ public class DoubleSeriesJavalinRoutes {
         @JsonProperty
         private final List<String> names = new ArrayList<String>();
 
+        /**
+         * Loads the catalog of all known double-series names (every row of {@code double_series_names}, ordered by
+         * name) into this response.
+         *
+         * @param connection the database connection used to load the names
+         * @throws SQLException if the query fails
+         */
         public AllDoubleSeriesNames(Connection connection) throws SQLException {
             try (PreparedStatement query =
                     connection.prepareStatement("SELECT name FROM double_series_names ORDER BY name")) {
@@ -51,6 +58,16 @@ public class DoubleSeriesJavalinRoutes {
         @JsonProperty
         private final double[] y;
 
+        /**
+         * Loads one named double time series for a flight into parallel plot arrays: {@code y} holds the series
+         * values and {@code x} holds their sample indices as strings. If the series is absent the arrays are empty.
+         *
+         * @param connection the database connection used to load the series
+         * @param flightId the flight to load the series for
+         * @param name the name of the double series to load
+         * @throws SQLException if the query fails
+         * @throws IOException if reading the series data fails
+         */
         public DoubleSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
             LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name
@@ -83,6 +100,14 @@ public class DoubleSeriesJavalinRoutes {
         @JsonProperty
         private final List<String> names = new ArrayList<String>();
 
+        /**
+         * Loads the names of the double series that are actually present for a specific flight (ordered by name)
+         * into this response.
+         *
+         * @param connection the database connection used to load the names
+         * @param flightId the flight whose available series names are loaded
+         * @throws SQLException if the query fails
+         */
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
             try (PreparedStatement query = connection.prepareStatement("SELECT dsn.name FROM double_series AS ds "
                     + "INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id "
@@ -102,6 +127,11 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the catalog of all known double-series names. Responds 500 on a database error.
+     *
+     * @param ctx the Javalin request context, whose response is written as JSON
+     */
     public static void getAllDoubleSeriesNames(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             ctx.json(new AllDoubleSeriesNames(connection));
@@ -111,6 +141,14 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, a single named double time series for a flight (identified by the {@code fid} and
+     * {@code series} path parameters), after verifying the user has access to the flight. Responds 401 if access is
+     * denied and 500 on a database or I/O error.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code fid}/{@code series} path
+     *     parameters
+     */
     public static void postDoubleSeries(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
@@ -134,6 +172,13 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the names of the double series available for a flight (identified by the {@code fid} path
+     * parameter), after verifying the user has access to the flight. Responds 401 if access is denied and 500 on a
+     * database error.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code fid} path parameter
+     */
     public static void postDoubleSeriesNames(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
@@ -154,6 +199,12 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
+    /**
+     * Intended to register this class's double-series routes on the given Javalin app. Currently a no-op: the route
+     * registrations are commented out, so no double-series routes are active.
+     *
+     * @param app the Javalin application the routes would be registered on
+     */
     public static void bindRoutes(Javalin app) {
         // app.get("/protected/all_double_series_names", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames);
         // app.post("/protected/double_series", DoubleSeriesJavalinRoutes::postDoubleSeries);

@@ -15,6 +15,15 @@ public class Navbar {
         // Utility class
     }
 
+    /**
+     * Builds the JavaScript snippet that initializes the navigation bar for the current page. It inspects the
+     * session user and queries the database to set the client-side flags the navbar needs -- whether the user is a
+     * fleet manager, the count of users awaiting approval, whether AirSync is enabled for the fleet, tail-modify and
+     * upload access, and the count of unconfirmed tails.
+     *
+     * @param ctx the Javalin request context supplying the session user
+     * @return a JavaScript source string defining the navbar state variables
+     */
     public static String getJavascript(Context ctx) {
 
         User user = ctx.sessionAttribute("user");

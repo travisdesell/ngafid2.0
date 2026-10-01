@@ -202,6 +202,17 @@ public final class ApiTokenManagementRoutes {
         private final Timestamp expiresAt;
         private final String warning;
 
+        /**
+         * Constructs the JSON response returned when a new API token is created. This is the only time the
+         * plaintext {@code token} is exposed, so the client must store it immediately.
+         *
+         * @param id the new token's id
+         * @param token the generated plaintext token value (shown only once)
+         * @param name the human-readable token name
+         * @param createdAt when the token was created
+         * @param expiresAt when the token expires, or null if it does not expire
+         * @param warning an optional warning message (e.g. about expiration), or null
+         */
         public CreatedTokenResponse(
                 int id, String token, String name, Timestamp createdAt, Timestamp expiresAt, String warning) {
             this.id = id;
@@ -247,6 +258,18 @@ public final class ApiTokenManagementRoutes {
         private final Timestamp lastUsedAt;
         private final boolean active;
 
+        /**
+         * Constructs a summary of an API token for listing, carrying its lifecycle timestamps but never the secret
+         * token value.
+         *
+         * @param id the token's id
+         * @param name the human-readable token name
+         * @param createdAt when the token was created
+         * @param expiresAt when the token expires, or null if it does not expire
+         * @param revokedAt when the token was revoked, or null if it has not been revoked
+         * @param lastUsedAt when the token was last used, or null if never used
+         * @param active whether the token is currently active (not expired or revoked)
+         */
         public TokenSummary(
                 int id,
                 String name,

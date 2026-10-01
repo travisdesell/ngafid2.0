@@ -266,6 +266,11 @@ public class StatusJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Registers this class's service-status routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(io.javalin.Javalin app) {
         // These are non-privileged routes.
         app.get("/api/status/{service-name}", StatusJavalinRoutes::getServiceStatus);

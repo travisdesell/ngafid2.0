@@ -62,6 +62,13 @@ public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
     private Javalin app;
 
+    /**
+     * Constructs the Javalin-backed web server. The superclass constructor drives the full configuration lifecycle
+     * (which the overridden {@code configure*} methods implement against Javalin).
+     *
+     * @param port the port the server will listen on
+     * @param staticFilesLocation the location static files are served from
+     */
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
         LOG.info(() -> "Using static files location: " + staticFilesLocation);

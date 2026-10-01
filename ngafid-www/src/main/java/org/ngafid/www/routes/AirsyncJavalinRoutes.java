@@ -106,6 +106,11 @@ public class AirsyncJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's AirSync management routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/airsync_uploads", AirsyncJavalinRoutes::getAirsyncUploads);
         // app.post("/protected/airsync_uploads", AirsyncJavalinRoutes::postAirsyncUploads);

@@ -48,6 +48,16 @@ public class AccountJavalinRoutes {
         @JsonProperty
         private final User user;
 
+        /**
+         * Constructs the JSON response describing the outcome of a login attempt.
+         *
+         * @param loggedOut true if the session is now logged out
+         * @param waiting true if the account is awaiting approval/activation
+         * @param denied true if the login was denied (e.g. bad credentials or access refused)
+         * @param loggedIn true if the login succeeded and the session is now authenticated
+         * @param message a human-readable status message for the client
+         * @param user the authenticated user when login succeeded, otherwise null
+         */
         public LoginResponse(
                 boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -99,6 +109,15 @@ public class AccountJavalinRoutes {
         @JsonProperty
         private final User user;
 
+        /**
+         * Constructs the JSON response describing the outcome of a logout request.
+         *
+         * @param loggedOut true if the session was successfully logged out
+         * @param waiting true if the account is awaiting approval/activation
+         * @param loggedIn true if the session is still authenticated
+         * @param message a human-readable status message for the client
+         * @param user the user the session belonged to, or null
+         */
         public LogoutResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
             this.waiting = waiting;
@@ -135,6 +154,13 @@ public class AccountJavalinRoutes {
         @JsonProperty
         private final boolean registeredEmail;
 
+        /**
+         * Constructs the JSON response for a forgot-password request.
+         *
+         * @param message a human-readable status message for the client
+         * @param registeredEmail true if the submitted email matched a registered account (and a reset email was
+         *     therefore sent)
+         */
         public ForgotPasswordResponse(String message, boolean registeredEmail) {
             this.message = message;
             this.registeredEmail = registeredEmail;
@@ -156,6 +182,12 @@ public class AccountJavalinRoutes {
         @JsonProperty
         private final User user;
 
+        /**
+         * Constructs the JSON response describing a newly created account.
+         *
+         * @param accountType the type of account that was created
+         * @param user the newly created user
+         */
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
             this.user = user;
@@ -189,6 +221,16 @@ public class AccountJavalinRoutes {
         @JsonProperty
         private final User user;
 
+        /**
+         * Constructs the JSON response describing the outcome of a password reset.
+         *
+         * @param loggedOut true if the session is now logged out
+         * @param waiting true if the account is awaiting approval/activation
+         * @param denied true if the reset was denied (e.g. an invalid or expired token)
+         * @param loggedIn true if the user is authenticated after the reset
+         * @param message a human-readable status message for the client
+         * @param user the affected user, or null
+         */
         public ResetSuccessResponse(
                 boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -228,6 +270,11 @@ public class AccountJavalinRoutes {
         @JsonProperty
         private final User user;
 
+        /**
+         * Constructs a profile response wrapping the given user.
+         *
+         * @param user the user whose profile is returned
+         */
         public Profile(User user) {
             this.user = user;
         }
@@ -237,6 +284,12 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the account-creation page ({@code create_account.html}), including any invite information needed to
+     * prefill the form.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getCreateAccount(Context ctx) {
         final String templateFile = "create_account.html";
         HashMap<String, Object> scopes = new HashMap<String, Object>();
@@ -280,6 +333,11 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the forgot-password page ({@code forgot_password.html}) where a user can request a reset email.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getForgotPassword(Context ctx) {
         final String templateFile = "forgot_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
@@ -290,6 +348,11 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Renders the password-reset page ({@code reset_password.html}) that a user reaches from a reset-email link.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getResetPassword(Context ctx) {
         final String templateFile = "reset_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
@@ -300,6 +363,11 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Renders the change-password page ({@code update_password.html}) for the logged-in user.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getUpdatePassword(Context ctx) {
         final String templateFile = "update_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
@@ -314,6 +382,11 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Renders the edit-profile page ({@code update_profile.html}) for the logged-in user.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getUpdateProfile(Context ctx) {
         final String templateFile = "update_profile.html";
         Map<String, Object> scopes = new HashMap<>();
@@ -327,6 +400,12 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Renders the two-factor-authentication settings page ({@code two_factor_settings.html}) for the logged-in
+     * user.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getTwoFactorSettings(Context ctx) {
         final String templateFile = "two_factor_settings.html";
         Map<String, Object> scopes = new HashMap<>();
@@ -345,6 +424,12 @@ public class AccountJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Renders the user-preferences page ({@code preferences_page.html}) for the logged-in user, injecting their
+     * current preferences for the client.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getUserPreferencesPage(Context ctx) {
         final String templateFile = "preferences_page.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -377,6 +462,12 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * Processes an email-unsubscribe request submitted from an unsubscribe link, identified by the {@code id} form
+     * parameter and validated against the accompanying {@code token}, updating that user's email preferences.
+     *
+     * @param ctx the Javalin request context supplying the {@code id} and {@code token} form parameters
+     */
     public static void getEmailUnsubscribe(Context ctx) {
         final int id = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
         final String token = ctx.formParam("token");
@@ -433,6 +524,12 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's account routes (login/logout, account creation, password reset/update, profile and
+     * preferences pages, two-factor settings, and email unsubscribe) on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/create_account", AccountJavalinRoutes::getCreateAccount);
         app.get("/forgot_password", AccountJavalinRoutes::getForgotPassword);

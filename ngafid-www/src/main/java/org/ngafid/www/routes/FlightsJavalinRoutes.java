@@ -216,6 +216,13 @@ public class FlightsJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the flights matching the filter supplied in the {@code filterQuery} query parameter (parsed
+     * from JSON into a {@link Filter}), scoped to the logged-in user's fleet. Responds 401 if the user lacks view
+     * access to the fleet.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code filterQuery} parameter
+     */
     public static void postFlights(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
@@ -273,6 +280,11 @@ public class FlightsJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's flights routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/flight", FlightsJavalinRoutes::getFlight);
         app.get("/protected/flights", FlightsJavalinRoutes::getFlights);

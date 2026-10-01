@@ -384,6 +384,16 @@ public final class ApiExternalUploadRoutes {
         private final long sizeBytes;
         private final int fleetId;
 
+        /**
+         * Constructs the JSON response acknowledging an accepted external upload.
+         *
+         * @param uploadId the id assigned to the new upload
+         * @param status the upload's initial processing status
+         * @param filename the uploaded file's name
+         * @param md5Hash the MD5 hash of the uploaded file
+         * @param sizeBytes the uploaded file's size in bytes
+         * @param fleetId the fleet the upload belongs to
+         */
         public UploadResponse(
                 int uploadId, String status, String filename, String md5Hash, long sizeBytes, int fleetId) {
             this.uploadId = uploadId;
@@ -426,6 +436,15 @@ public final class ApiExternalUploadRoutes {
         private final String existingFilename;
         private final String error;
 
+        /**
+         * Constructs the JSON response returned when an upload duplicates one that already exists, carrying the
+         * existing upload's details so the client can reconcile.
+         *
+         * @param id the id of the existing (duplicate) upload
+         * @param status the existing upload's status
+         * @param filename the existing upload's filename
+         * @param error a message describing the duplicate-upload condition
+         */
         public DuplicateUploadResponse(int id, String status, String filename, String error) {
             this.existingUploadId = id;
             this.existingStatus = status;
@@ -458,6 +477,15 @@ public final class ApiExternalUploadRoutes {
         private final String startTime;
         private final String endTime;
 
+        /**
+         * Constructs a compact summary of an upload, used in paged upload listings.
+         *
+         * @param id the upload id
+         * @param filename the upload's filename
+         * @param status the upload's processing status
+         * @param startTime the earliest flight start time in the upload, as a string
+         * @param endTime the latest flight end time in the upload, as a string
+         */
         public UploadSummary(int id, String filename, String status, String startTime, String endTime) {
             this.id = id;
             this.filename = filename;
@@ -497,6 +525,17 @@ public final class ApiExternalUploadRoutes {
         private final String endTime;
         private final int fleetId;
 
+        /**
+         * Constructs the full detail view of a single upload.
+         *
+         * @param id the upload id
+         * @param filename the upload's filename
+         * @param status the upload's processing status
+         * @param md5Hash the MD5 hash of the uploaded file
+         * @param startTime the earliest flight start time in the upload, as a string
+         * @param endTime the latest flight end time in the upload, as a string
+         * @param fleetId the fleet the upload belongs to
+         */
         public UploadDetail(
                 int id, String filename, String status, String md5Hash, String startTime, String endTime, int fleetId) {
             this.id = id;
@@ -544,6 +583,15 @@ public final class ApiExternalUploadRoutes {
         private final int pageSize;
         private final int total;
 
+        /**
+         * Constructs a generic paged response wrapping one page of items together with the paging metadata needed
+         * to navigate the full result set.
+         *
+         * @param items the items on the current page
+         * @param page the zero-based index of the current page
+         * @param pageSize the maximum number of items per page
+         * @param total the total number of items across all pages
+         */
         public PagedResponse(List<T> items, int page, int pageSize, int total) {
             this.items = items;
             this.page = page;

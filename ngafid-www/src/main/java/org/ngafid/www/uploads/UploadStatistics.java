@@ -48,19 +48,53 @@ public final class UploadStatistics {
         }
     }
 
+    /**
+     * Returns the all-time upload counts (total, OK, warning, error) for a fleet.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to scope to
+     * @return the fleet's upload counts
+     * @throws SQLException if the query fails
+     */
     public static UploadCounts getUploadCounts(Connection connection, int fleetId) throws SQLException {
         return getUploadCountImpl(connection, "v_fleet_upload_counts", "fleet_id = " + fleetId);
     }
 
+    /**
+     * Returns the upload counts for a fleet over the given date range.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to scope to
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @return the fleet's upload counts over the range
+     * @throws SQLException if the query fails
+     */
     public static UploadCounts getUploadCountsDated(
             Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
         return getUploadCountsDatedImpl(connection, fleetId, startDate, endDate);
     }
 
+    /**
+     * Returns the all-time upload counts (total, OK, warning, error) across all fleets.
+     *
+     * @param connection the database connection
+     * @return the aggregate upload counts
+     * @throws SQLException if the query fails
+     */
     public static UploadCounts getAggregateUploadCounts(Connection connection) throws SQLException {
         return getUploadCountImpl(connection, "v_aggregate_upload_counts", null);
     }
 
+    /**
+     * Returns the upload counts across all fleets over the given date range.
+     *
+     * @param connection the database connection
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @return the aggregate upload counts over the range
+     * @throws SQLException if the query fails
+     */
     public static UploadCounts getAggregateUploadCountsDated(
             Connection connection, LocalDate startDate, LocalDate endDate) throws SQLException {
         return getUploadCountsDatedImpl(connection, null, startDate, endDate);

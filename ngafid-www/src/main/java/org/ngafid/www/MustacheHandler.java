@@ -16,6 +16,15 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 public class MustacheHandler implements FileRenderer {
+    /**
+     * Compiles the named Mustache template from the template directory and renders it with the given scope values,
+     * returning the rendered output as a string.
+     *
+     * @param templateFilename the template file name (relative to the Mustache template directory)
+     * @param scopes the values made available to the template during rendering
+     * @return the rendered template output
+     * @throws IOException if the template cannot be read or rendered
+     */
     public static String handle(String templateFilename, Map<String, ?> scopes) throws IOException {
         MustacheFactory mf = new DefaultMustacheFactory(new File(MUSTACHE_TEMPLATE_DIR));
         String templateFile = MUSTACHE_TEMPLATE_DIR + "/" + templateFilename;

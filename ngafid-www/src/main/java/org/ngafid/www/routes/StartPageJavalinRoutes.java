@@ -87,6 +87,11 @@ public class StartPageJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's start/landing page routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/", ctx -> getHome(ctx, null));
         app.get(

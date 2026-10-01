@@ -28,6 +28,17 @@ public class EventStatistics {
     private final String airframeName;
     private ArrayList<AirframeStatistics> events;
 
+    /**
+     * Builds the event statistics for one airframe within a fleet: loads every event definition applicable to the
+     * airframe (the fleet's own definitions plus the global {@code fleet_id = 0} ones) and computes an
+     * {@link AirframeStatistics} summary for each.
+     *
+     * @param connection the database connection used to load the definitions and their counts
+     * @param airframeNameId the airframe-name id these statistics are for
+     * @param airframeName the human-readable airframe name
+     * @param fleetId the fleet the statistics are scoped to
+     * @throws SQLException if loading the event definitions or their statistics fails
+     */
     public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId)
             throws SQLException {
         this.airframeNameId = airframeNameId;
@@ -48,11 +59,33 @@ public class EventStatistics {
     // NOTES: You are going to have to mess with the js code that calls this,
     // because it wont look in the aggregate fields for osme reason.
     // this isnt a problem w the monthly stuff.
+    /**
+     * Convenience overload that returns aggregate (all-fleet) event counts over the given date range.
+     *
+     * @param connection the database connection
+     * @param startTime the inclusive start of the date range
+     * @param endTime the inclusive end of the date range
+     * @return a map from event name to its aggregate counts
+     * @throws SQLException if the query fails
+     */
     public static Map<String, EventCounts> getEventCounts(Connection connection, LocalDate startTime, LocalDate endTime)
             throws SQLException {
         return getEventCounts(connection, -1, startTime, endTime);
     }
 
+    /**
+     * Returns the event counts keyed by event name over the given date range, scoped to a fleet (or all fleets
+     * when {@code fleetId} is -1). Only events that occur at least once in the range are included, but every
+     * applicable airframe is represented (even with zero occurrences) so per-airframe percentages are not skewed.
+     * Null dates default to an open range (year 0 through today).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to scope to, or -1 for all fleets
+     * @param startDate the inclusive start of the date range, or null for no lower bound
+     * @param endDate the inclusive end of the date range, or null for today
+     * @return a map from event name to its counts
+     * @throws SQLException if the query fails
+     */
     public static Map<String, EventCounts> getEventCounts(
             Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
         if (startDate == null) startDate = LocalDate.of(0, 1, 1);
@@ -172,6 +205,18 @@ public class EventStatistics {
         }
     }
 
+    /**
+     * Returns per-month event counts for the given date range, grouped first by airframe name and then by event
+     * name, scoped to a fleet (or all fleets when {@code fleetId} is -1). Each {@link MonthlyEventCounts} holds the
+     * month-by-month series used to render the trend charts.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to scope to, or -1 for all fleets
+     * @param startDateNullable the inclusive start of the date range, or null for no lower bound
+     * @param endDateNullable the inclusive end of the date range, or null for today
+     * @return a map from airframe name to a map of event name to that event's monthly counts
+     * @throws SQLException if the query fails
+     */
     public static Map<String, Map<String, MonthlyEventCounts>> getMonthlyEventCounts(
             Connection connection, int fleetId, LocalDate startDateNullable, LocalDate endDateNullable)
             throws SQLException {
@@ -566,11 +611,32 @@ public class EventStatistics {
         return getEventCount(connection, "v_aggregate_total_event_count", null);
     }
 
+    /**
+     * Convenience overload returning the aggregate (all-fleet) total event count over the date range, across all
+     * airframes.
+     *
+     * @param connection the database connection
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @return the total number of events across all fleets in the range
+     * @throws SQLException if the query fails
+     */
     public static int getAggregateTotalEventCountDated(Connection connection, LocalDate startDate, LocalDate endDate)
             throws SQLException {
         return getAggregateTotalEventCountDated(connection, startDate, endDate, -1);
     }
 
+    /**
+     * Returns the aggregate (all-fleet) total event count over the date range, optionally restricted to a single
+     * airframe, by querying the dated aggregate event-count view with a date (or date-plus-airframe) clause.
+     *
+     * @param connection the database connection
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @param airframeID the airframe id to restrict to, or a negative value for all airframes
+     * @return the total number of events across all fleets matching the filters
+     * @throws SQLException if the query fails
+     */
     public static int getAggregateTotalEventCountDated(
             Connection connection, LocalDate startDate, LocalDate endDate, int airframeID) throws SQLException {
 
@@ -595,11 +661,33 @@ public class EventStatistics {
         return getEventCount(connection, "v_fleet_total_event_counts", "fleet_id = " + fleetId);
     }
 
+    /**
+     * Convenience overload returning a fleet's total event count over the date range, across all airframes.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to scope to
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @return the total number of events for the fleet in the range
+     * @throws SQLException if the query fails
+     */
     public static int getTotalEventCountDated(
             Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
         return getTotalEventCountDated(connection, fleetId, startDate, endDate, -1);
     }
 
+    /**
+     * Returns a fleet's total event count over the date range, optionally restricted to a single airframe, by
+     * querying the dated fleet event-count view with the fleet id plus a date (or date-plus-airframe) clause.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to scope to
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @param airframeID the airframe id to restrict to, or a negative value for all airframes
+     * @return the total number of events for the fleet matching the filters
+     * @throws SQLException if the query fails
+     */
     public static int getTotalEventCountDated(
             Connection connection, int fleetId, LocalDate startDate, LocalDate endDate, int airframeID)
             throws SQLException {
@@ -626,6 +714,13 @@ public class EventStatistics {
         // with that airframe.
         private final Map<Integer, Integer> aggregateCounts = new HashMap<>();
 
+        /**
+         * Builds the flight-count lookup tables from a result set of {@code (airframe_id, fleet_id, flight_count)}
+         * rows, populating the airframe-to-fleet, fleet-to-airframe, and aggregate-per-airframe maps.
+         *
+         * @param results the result set to consume (iterated to completion)
+         * @throws SQLException if reading a row fails
+         */
         public FlightCounts(ResultSet results) throws SQLException {
             while (results.next()) {
                 int airframeId = results.getInt("airframe_id");
@@ -652,6 +747,12 @@ public class EventStatistics {
             return aggregateCounts;
         }
 
+        /**
+         * Returns the per-airframe flight counts for a single fleet.
+         *
+         * @param fleetId the fleet to look up
+         * @return a map from airframe id to flight count for that fleet, or null if the fleet has no recorded rows
+         */
         public Map<Integer, Integer> getFleetCounts(int fleetId) {
             return fleetToAirframeCounts.get(fleetId);
         }
@@ -1020,6 +1121,14 @@ public class EventStatistics {
         protected final Map<String, Integer> aggregateTotalEventsMap = new HashMap<>();
         protected final TreeSet<String> keys = new TreeSet<>();
 
+        /**
+         * Projects a key-to-count map onto an array aligned with the given ordered key list, substituting 0 for any
+         * key absent from the map. Used to turn the builder's sparse maps into dense, chart-ready arrays.
+         *
+         * @param keys the ordered keys defining the output positions
+         * @param map the key-to-count map to project
+         * @return an array of counts, one per key in {@code keys} and in that order
+         */
         public static int[] linearize(List<String> keys, Map<String, Integer> map) {
             int[] out = new int[keys.size()];
 
@@ -1028,8 +1137,22 @@ public class EventStatistics {
             return out;
         }
 
+        /**
+         * Builds the immutable event-counts value object from the counts accumulated so far.
+         *
+         * @return the built counts object
+         */
         public abstract T build();
 
+        /**
+         * Accumulates per-fleet counts for the given key, summing them into the running totals and registering the
+         * key so it appears in the built output.
+         *
+         * @param key the grouping key (an event name or a month label)
+         * @param flightsWithEvent the number of flights that had the event, added to the running total
+         * @param totalFlights the number of total flights, added to the running total
+         * @param totalEvents the number of event occurrences, added to the running total
+         */
         public void update(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
             keys.add(key);
 
@@ -1038,6 +1161,15 @@ public class EventStatistics {
             totalEventsMap.merge(key, totalEvents, Integer::sum);
         }
 
+        /**
+         * Like {@link #update} but combines {@code totalFlights} by taking the maximum rather than summing, used
+         * when the same total-flights figure is reported by multiple rows and must not be double-counted.
+         *
+         * @param key the grouping key (an event name or a month label)
+         * @param flightsWithEvent the number of flights that had the event, added to the running total
+         * @param totalFlights the total-flights value to combine via max
+         * @param totalEvents the number of event occurrences, added to the running total
+         */
         public void updateWithTotalFlightsMax(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
             keys.add(key);
 
@@ -1046,6 +1178,15 @@ public class EventStatistics {
             totalEventsMap.merge(key, totalEvents, Integer::sum);
         }
 
+        /**
+         * Accumulates all-fleet (aggregate) counts for the given key, summing them into the separate aggregate
+         * running totals and registering the key.
+         *
+         * @param key the grouping key (an event name or a month label)
+         * @param flightsWithEvent the number of flights that had the event, added to the aggregate total
+         * @param totalFlights the number of total flights, added to the aggregate total
+         * @param totalEvents the number of event occurrences, added to the aggregate total
+         */
         public void updateAggregate(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
             keys.add(key);
 
@@ -1054,6 +1195,15 @@ public class EventStatistics {
             aggregateTotalEventsMap.merge(key, totalEvents, Integer::sum);
         }
 
+        /**
+         * Like {@link #updateAggregate} but combines the aggregate {@code totalFlights} by taking the maximum
+         * rather than summing, to avoid double-counting a repeated total-flights figure.
+         *
+         * @param key the grouping key (an event name or a month label)
+         * @param flightsWithEvent the number of flights that had the event, added to the aggregate total
+         * @param totalFlights the aggregate total-flights value to combine via max
+         * @param totalEvents the number of event occurrences, added to the aggregate total
+         */
         public void updateAggregateWithTotalFlightsMax(
                 String key, int flightsWithEvent, int totalFlights, int totalEvents) {
             keys.add(key);
@@ -1073,6 +1223,17 @@ public class EventStatistics {
         private final int[] aggregateTotalFlightsCounts;
         private final int[] aggregateTotalEventsCounts;
 
+        /**
+         * Stores the six parallel count arrays (the fleet and aggregate variants of flights-with-event,
+         * total-flights, and total-events), each indexed by the same ordered key list.
+         *
+         * @param flightsWithEventCounts per-key count of flights that had the event (fleet scope)
+         * @param totalFlightsCounts per-key total flight count (fleet scope)
+         * @param totalEventsCounts per-key total event count (fleet scope)
+         * @param aggregateFlightsWithEventCounts per-key count of flights that had the event (all-fleet scope)
+         * @param aggregateTotalFlightsCounts per-key total flight count (all-fleet scope)
+         * @param aggregateTotalEventsCounts per-key total event count (all-fleet scope)
+         */
         public EventCountsWithAggregate(
                 int[] flightsWithEventCounts,
                 int[] totalFlightsCounts,
@@ -1099,6 +1260,20 @@ public class EventStatistics {
         private final String eventName;
         private final List<String> dates;
 
+        /**
+         * Constructs a monthly event-counts series for one airframe/event, pairing the inherited count arrays with
+         * the month labels they are indexed by.
+         *
+         * @param airframeName the airframe the counts are for
+         * @param eventName the event the counts are for
+         * @param dates the month labels, one per array position
+         * @param flightsWithEventCounts per-month count of flights that had the event (fleet scope)
+         * @param totalFlightsCounts per-month total flight count (fleet scope)
+         * @param totalEventsCounts per-month total event count (fleet scope)
+         * @param aggregateFlightsWithEventCounts per-month count of flights that had the event (all-fleet scope)
+         * @param aggregateTotalFlightsCounts per-month total flight count (all-fleet scope)
+         * @param aggregateTotalEventsCounts per-month total event count (all-fleet scope)
+         */
         public MonthlyEventCounts(
                 String airframeName,
                 String eventName,
@@ -1129,6 +1304,15 @@ public class EventStatistics {
 
         private final List<String> dates;
 
+        /**
+         * Constructs a builder for one airframe/event's monthly counts, precomputing the list of month labels (one
+         * per month from {@code startDate} up to {@code endDate}) that the accumulated counts are aligned to.
+         *
+         * @param airframeName the airframe the counts are for
+         * @param eventName the event the counts are for
+         * @param startDate the first month to include
+         * @param endDate the exclusive end bound for the month range
+         */
         public MonthlyEventCountsBuilder(
                 String airframeName, String eventName, LocalDate startDate, LocalDate endDate) {
             this.airframeName = airframeName;
@@ -1164,6 +1348,19 @@ public class EventStatistics {
         private final String airframeName;
         private final List<String> names;
 
+        /**
+         * Constructs an event-counts result for one airframe, pairing the inherited count arrays with the event
+         * names they are indexed by.
+         *
+         * @param airframeName the airframe the counts are for
+         * @param names the event names, one per array position
+         * @param flightsWithEventCounts per-event count of flights that had the event (fleet scope)
+         * @param totalFlightsCounts per-event total flight count (fleet scope)
+         * @param totalEventsCounts per-event total event count (fleet scope)
+         * @param aggregateFlightsWithEventCounts per-event count of flights that had the event (all-fleet scope)
+         * @param aggregateTotalFlightsCounts per-event total flight count (all-fleet scope)
+         * @param aggregateTotalEventsCounts per-event total event count (all-fleet scope)
+         */
         public EventCounts(
                 String airframeName,
                 List<String> names,
@@ -1193,19 +1390,44 @@ public class EventStatistics {
     public static class EventCountsBuilder extends EventCountsWithAggregateBuilder<EventCounts> {
         private final String airframeName;
 
+        /**
+         * Constructs an event-counts builder for the given airframe.
+         *
+         * @param airframeName the airframe whose event counts will be accumulated
+         */
         public EventCountsBuilder(String airframeName) {
             this.airframeName = airframeName;
         }
 
+        /**
+         * Ensures the given event name appears in the built output even if it has no counts, by registering it as a
+         * key.
+         *
+         * @param eventName the event name to include
+         */
         public void ensureEventKey(String eventName) {
             keys.add(eventName);
         }
 
+        /**
+         * Sets (replacing, not summing) the per-fleet total-flights value for an event, also registering the event
+         * key.
+         *
+         * @param eventName the event name
+         * @param totalFlights the total flight count to set for the event
+         */
         public void setTotalFlights(String eventName, int totalFlights) {
             keys.add(eventName);
             totalFlightsMap.put(eventName, totalFlights);
         }
 
+        /**
+         * Sets (replacing, not summing) the aggregate (all-fleet) total-flights value for an event, also
+         * registering the event key.
+         *
+         * @param eventName the event name
+         * @param totalFlights the aggregate total flight count to set for the event
+         */
         public void setAggregateTotalFlights(String eventName, int totalFlights) {
             keys.add(eventName);
             aggregateTotalFlightsMap.put(eventName, totalFlights);

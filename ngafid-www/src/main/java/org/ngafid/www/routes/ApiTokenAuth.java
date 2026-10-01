@@ -141,6 +141,11 @@ public final class ApiTokenAuth {
     public static final class ApiError {
         private final String error;
 
+        /**
+         * Constructs a generic JSON error body carrying a single error message.
+         *
+         * @param error the error message to return to the client
+         */
         public ApiError(String error) {
             this.error = error;
         }
