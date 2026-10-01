@@ -67,6 +67,19 @@ public class Flight {
     private List<Event> events = new ArrayList<>();
     private transient List<MalformedFlightFileException> exceptions = new ArrayList<>();
 
+    /**
+     * Constructs a flight from freshly processed data. The flight's status is {@code SUCCESS} when there are no
+     * exceptions and {@code WARNING} otherwise; metadata (fleet, uploader, upload, airframe, system id, hashes, and
+     * UTC-to-SQL start/end times) is copied from {@code meta}; the row count is inferred from the first double
+     * series, and all series are asserted to share that length.
+     *
+     * @param meta the flight metadata (fleet, uploader, upload, airframe, filename, times, etc.)
+     * @param doubleTimeSeries the double-valued series keyed by name
+     * @param stringTimeSeries the string-valued series keyed by name
+     * @param itinerary the flight's itinerary (airport/runway visits)
+     * @param exceptions the non-fatal exceptions encountered while processing (drive the SUCCESS/WARNING status)
+     * @param events the events detected for the flight
+     */
     public Flight(
             FlightMeta meta,
             Map<String, DoubleTimeSeries> doubleTimeSeries,
@@ -103,6 +116,15 @@ public class Flight {
         for (var series : stringTimeSeries.values()) assert series.size() == numberRows;
     }
 
+    /**
+     * Reconstructs a flight from a {@code flights} result row, additionally resolving the airframe, the fleet's tail
+     * number for the system id, the itinerary, and the flight's tags. Time-series data is not loaded here (it is
+     * fetched lazily on demand).
+     *
+     * @param connection the database connection used to resolve the airframe, tail, itinerary and tags
+     * @param resultSet the result set positioned on the row to read
+     * @throws SQLException if reading the row or resolving the related data fails
+     */
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
@@ -129,12 +151,28 @@ public class Flight {
         this.tags = getTags(connection, id);
     }
 
+    /**
+     * Returns all flights that belong to a given upload.
+     *
+     * @param connection the database connection
+     * @param uploadId the upload whose flights to fetch
+     * @return the flights produced by the upload
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE upload_id = " + uploadId;
 
         return getFlightsFromDb(connection, queryString);
     }
 
+    /**
+     * Returns all flights for a fleet (no row limit).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose flights to fetch
+     * @return the fleet's flights
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
         return getFlights(connection, fleetId, 0);
     }
@@ -252,6 +290,15 @@ public class Flight {
         // CHECKSTYLE:ON
     }
 
+    /**
+     * Returns the flights for a fleet, optionally capped at {@code limit} rows.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose flights to fetch
+     * @param limit the maximum number of flights to return, or {@code <= 0} for no limit
+     * @return the fleet's flights
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " + fleetId;
         if (limit > 0) queryString += " LIMIT " + limit;
@@ -272,10 +319,28 @@ public class Flight {
         }
     }
 
+    /**
+     * Returns the flights for a fleet that match the given filter (no row limit).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose flights to fetch
+     * @param filter the filter the flights must match
+     * @return the matching flights
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
         return getFlights(connection, fleetId, filter, 0);
     }
 
+    /**
+     * Returns the total number of flights for a fleet, with no filter applied.
+     *
+     * @param connection the database connection
+     * @param flightId the fleet id to count flights for (note: the parameter is named {@code flightId} but is used
+     *     as the fleet id)
+     * @return the number of flights for the fleet
+     * @throws SQLException if the query fails
+     */
     public static int getNumFlights(Connection connection, int flightId) throws SQLException {
         return getNumFlights(connection, flightId, null);
     }
@@ -329,6 +394,22 @@ public class Flight {
         }
     }
 
+    /**
+     * Returns one page of a fleet's filtered flights, sorted by the requested column. Columns that require counting
+     * rows in related tables ({@code tail_number}, {@code itinerary}, {@code flight_tags}, {@code events},
+     * {@code airports_visited}) are dispatched to specialized sort helpers; any other ordering parameter falls back
+     * to a generic {@code ORDER BY} with pagination.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose flights to fetch
+     * @param filter the filter the flights must match
+     * @param currentPage the zero-based page index
+     * @param pageSize the number of flights per page
+     * @param orderingParameter the column/dimension to sort by
+     * @param isAscending true to sort ascending, false descending
+     * @return the requested page of sorted, filtered flights
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlightsSorted(
             Connection connection,
             int fleetId,
@@ -362,6 +443,18 @@ public class Flight {
         };
     }
 
+    /**
+     * Returns one page of a fleet's filtered flights, in default order, using {@code currentPage}/{@code pageSize}
+     * to build the SQL {@code LIMIT offset,count} clause.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose flights to fetch
+     * @param filter the filter the flights must match
+     * @param currentPage the zero-based page index
+     * @param pageSize the number of flights per page
+     * @return the requested page of matching flights
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlights(
             Connection connection, int fleetId, Filter filter, int currentPage, int pageSize) throws SQLException {
         return Flight.getFlights(connection, fleetId, filter, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
@@ -505,6 +598,17 @@ public class Flight {
         }
     }
 
+    /**
+     * Returns the fleet's filtered flights. When {@code limit} is positive the result is capped at 100 rows (the
+     * {@code limit} argument currently acts only as an on/off switch for that 100-row cap, not as the exact count).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose flights to fetch
+     * @param filter the filter the flights must match
+     * @param limit if positive, caps the result at 100 rows; otherwise no cap is applied
+     * @return the matching flights
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, int limit)
             throws SQLException {
         String lim = "";
@@ -514,6 +618,18 @@ public class Flight {
         return getFlights(connection, fleetId, filter, lim);
     }
 
+    /**
+     * Returns a window of a fleet's filtered flights, using {@code lowerId} as the SQL row offset and
+     * {@code upperId - lowerId} as the count (i.e. a {@code LIMIT offset,count} page, not an id range).
+     *
+     * @param connection the database connection
+     * @param filter the filter the flights must match
+     * @param fleetId the fleet whose flights to fetch
+     * @param lowerId the row offset to start from
+     * @param upperId the exclusive upper row bound ({@code upperId - lowerId} rows are returned)
+     * @return the windowed list of matching flights
+     * @throws SQLException if the query fails
+     */
     public static List<Flight> getFlightsByRange(
             Connection connection, Filter filter, int fleetId, int lowerId, int upperId) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<>();
@@ -524,6 +640,17 @@ public class Flight {
         return getFlightsFromQueryString(connection, fleetId, parameters, queryString);
     }
 
+    /**
+     * Returns a window of a fleet's flights (unfiltered), using {@code lowerId} as the SQL row offset and
+     * {@code upperId - lowerId} as the count.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose flights to fetch
+     * @param lowerId the row offset to start from
+     * @param upperId the exclusive upper row bound ({@code upperId - lowerId} rows are returned)
+     * @return the windowed list of flights
+     * @throws SQLException if the query fails
+     */
     public static List<Flight> getFlightsByRange(Connection connection, int fleetId, int lowerId, int upperId)
             throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " + fleetId + " LIMIT "
@@ -532,6 +659,14 @@ public class Flight {
         return getFlightsFromDb(connection, queryString);
     }
 
+    /**
+     * Returns all flights matching a raw SQL condition appended to the {@code flights} query (no limit).
+     *
+     * @param connection the database connection
+     * @param extraCondition the SQL boolean expression to filter flights by
+     * @return the matching flights
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition) throws SQLException {
         return getFlights(connection, extraCondition, 0);
     }
@@ -582,6 +717,14 @@ public class Flight {
         }
     }
 
+    /**
+     * Loads a single flight by its id, or returns {@code null} if no flight with that id exists.
+     *
+     * @param connection the database connection
+     * @param flightId the id of the flight to load
+     * @return the flight, or {@code null} if not found
+     * @throws SQLException if the query fails
+     */
     public static Flight getFlight(Connection connection, int flightId) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE id = " + flightId;
         try (PreparedStatement query = connection.prepareStatement(queryString);
@@ -995,6 +1138,14 @@ public class Flight {
         }
     }
 
+    /**
+     * Registers a simulator-aircraft model path for a fleet by inserting a {@code sim_aircraft} row.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to register the sim aircraft for
+     * @param path the simulator aircraft model path
+     * @throws SQLException if the insert fails
+     */
     public static void addSimAircraft(Connection connection, int fleetId, String path) throws SQLException {
         String queryString = "INSERT INTO sim_aircraft (fleet_id, path) VALUES(?,?)";
 
@@ -1006,6 +1157,14 @@ public class Flight {
         }
     }
 
+    /**
+     * Removes a simulator-aircraft model path registration for a fleet by deleting its {@code sim_aircraft} row.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to remove the sim aircraft from
+     * @param path the simulator aircraft model path to remove
+     * @throws SQLException if the delete fails
+     */
     public static void removeSimAircraft(Connection connection, int fleetId, String path) throws SQLException {
         String queryString = "DELETE FROM sim_aircraft WHERE fleet_id = ? AND path = ?";
 
@@ -1017,6 +1176,14 @@ public class Flight {
         }
     }
 
+    /**
+     * Returns the registered simulator-aircraft model paths for a fleet.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose sim aircraft to list
+     * @return the list of sim-aircraft model paths (empty if none)
+     * @throws SQLException if the query fails
+     */
     public static List<String> getSimAircraft(Connection connection, int fleetId) throws SQLException {
         String queryString = "SELECT path FROM sim_aircraft WHERE fleet_id = " + fleetId;
 
@@ -1031,6 +1198,18 @@ public class Flight {
         }
     }
 
+    /**
+     * Computes the loss-of-control-inflight (LOCI) probability metric at a single sample. The instantaneous yaw rate
+     * is derived from the change between the current heading and a lagged heading (normalized across the 0/360
+     * wrap-around), combined with the roll angle and a true-airspeed term to produce the LOCI value for that index.
+     *
+     * @param hdg the heading series (degrees)
+     * @param index the sample index to evaluate
+     * @param roll the roll series (degrees)
+     * @param tas the true-airspeed series
+     * @param laggedHdg the heading from the lagged sample used to estimate yaw rate (NaN yields a zero yaw rate)
+     * @return the LOCI metric value at the given index
+     */
     public static double calculateLOCI(
             DoubleTimeSeries hdg, int index, DoubleTimeSeries roll, DoubleTimeSeries tas, double laggedHdg) {
         double yawRate = Double.isNaN(laggedHdg) ? 0 : 180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
@@ -1042,6 +1221,15 @@ public class Flight {
         return Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
     }
 
+    /**
+     * Persists a batch of flights to the database in one pass, inserting each flight row and its associated data.
+     * Batching the inserts avoids a round trip per flight when a whole upload is being stored.
+     *
+     * @param connection the database connection
+     * @param flights the flights to insert
+     * @throws IOException if compressing a flight's series data fails
+     * @throws SQLException if a database error occurs during the batch insert
+     */
     public static void batchUpdateDatabase(Connection connection, Iterable<Flight> flights)
             throws IOException, SQLException {
 
@@ -1219,6 +1407,15 @@ public class Flight {
                         """, Statement.RETURN_GENERATED_KEYS);
     }
 
+    /**
+     * Records that the given event definitions have been computed for this flight, inserting a row per definition
+     * into {@code flight_processed} ({@code INSERT IGNORE}, so already-recorded definitions are skipped). This marks
+     * the flight as processed for those events so they are not recomputed later.
+     *
+     * @param connection the database connection
+     * @param eventDefinitions the event definitions that were computed for this flight
+     * @throws SQLException if the insert fails
+     */
     public void insertComputedEvents(Connection connection, List<EventDefinition> eventDefinitions)
             throws SQLException {
         String query = """
@@ -1266,6 +1463,15 @@ public class Flight {
         }
     }
 
+    /**
+     * Returns which of the requested series are not available for this flight, checking both the in-memory series
+     * and the database. Used to verify that a computation's required input columns are present before running it.
+     *
+     * @param seriesNames the names of the double series required by a calculation
+     * @return the subset of {@code seriesNames} that this flight does not have (empty if all are present)
+     * @throws IOException if loading a series to check availability fails
+     * @throws SQLException if a database lookup fails
+     */
     public List<String> checkCalculationParameters(String[] seriesNames) throws IOException, SQLException {
         List<String> missingParams = new ArrayList<>();
         for (String param : seriesNames) {
@@ -1280,6 +1486,11 @@ public class Flight {
         return id;
     }
 
+    /**
+     * Reports whether this flight's tags have been loaded (the tag list is non-null).
+     *
+     * @return true if the tags have been loaded
+     */
     public boolean hasTags() {
         return this.tags != null;
     }
@@ -1364,6 +1575,11 @@ public class Flight {
         return status;
     }
 
+    /**
+     * Reports whether this flight has finished processing (its status is anything other than {@code PROCESSING}).
+     *
+     * @return true if the flight is no longer in the processing state
+     */
     public boolean insertCompleted() {
         return status != FlightStatus.PROCESSING;
     }
@@ -1376,6 +1592,12 @@ public class Flight {
         return endDateTime;
     }
 
+    /**
+     * Adds (or replaces) a double time series in this flight's in-memory series map, keyed by the given name.
+     *
+     * @param name the key to store the series under
+     * @param dts the double time series to add
+     */
     public void addDoubleTimeSeries(String name, DoubleTimeSeries dts) {
         this.doubleTimeSeries.put(name, dts);
     }
@@ -1388,6 +1610,15 @@ public class Flight {
         return stringTimeSeries;
     }
 
+    /**
+     * Returns the named double time series for this flight, serving it from the in-memory cache when present and
+     * otherwise loading it from the database (opening its own connection) and caching the result.
+     *
+     * @param name the series name
+     * @return the series, or {@code null} if the flight has no such series
+     * @throws IOException if decompressing a loaded series fails
+     * @throws SQLException if the database lookup fails
+     */
     public DoubleTimeSeries getDoubleTimeSeries(String name) throws IOException, SQLException {
         if (this.doubleTimeSeries.containsKey(name)) {
             return this.doubleTimeSeries.get(name);
@@ -1402,16 +1633,40 @@ public class Flight {
         }
     }
 
+    /**
+     * Returns the named string time series from this flight's in-memory map (does not load from the database).
+     *
+     * @param name the series name
+     * @return the cached string series, or {@code null} if it is not loaded
+     */
     public StringTimeSeries getStringTimeSeries(String name) {
         return stringTimeSeries.get(name);
     }
 
+    /**
+     * Loads the named double time series from the database using the supplied connection, caches it on this flight,
+     * and returns it.
+     *
+     * @param connection the database connection to load with
+     * @param name the series name
+     * @return the loaded series, or {@code null} if the flight has no such series
+     * @throws SQLException if the database lookup fails
+     */
     public DoubleTimeSeries getDoubleTimeSeries(Connection connection, String name) throws SQLException {
         DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, id, name);
         this.doubleTimeSeries.put(name, series);
         return series;
     }
 
+    /**
+     * Loads the named string time series from the database using the supplied connection, caches it on this flight,
+     * and returns it.
+     *
+     * @param connection the database connection to load with
+     * @param name the series name
+     * @return the loaded series, or {@code null} if the flight has no such series
+     * @throws SQLException if the database lookup fails
+     */
     public StringTimeSeries getStringTimeSeries(Connection connection, String name) throws SQLException {
         StringTimeSeries series = StringTimeSeries.getStringTimeSeries(connection, id, name);
         this.stringTimeSeries.put(name, series);
