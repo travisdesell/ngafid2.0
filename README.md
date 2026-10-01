@@ -12,6 +12,13 @@ The NGAFID2.0 is an open source flight data management tool. The project is brok
 - `ngafid-static`: Directory from which static files are served.
 - `ngafid-www`: Java backend for the web application.
 
+# Contributing
+
+Before opening a pull request, make sure your code is linted and formatted. Run
+`scripts/lint.sh` to check every language at once (Java, Kotlin, Python, JS/TS)
+with the same checks CI runs. See [CONTRIBUTING.md](CONTRIBUTING.md#linting-and-formatting)
+for details and per-language commands.
+
 # Steps for running the NGAFID2.0 website
 
 ## 0. Requirements

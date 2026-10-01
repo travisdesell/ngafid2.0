@@ -1,6 +1,6 @@
 # flake8: noqa: E501
-from urllib.parse import urlparse
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 def run_check(validator):

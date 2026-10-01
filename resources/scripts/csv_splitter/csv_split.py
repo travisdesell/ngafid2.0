@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys, getopt, re
+import re
+import sys
 
 header = ''
 def get_date(datestr):
@@ -18,7 +19,7 @@ def get_header(lines):
             l = l + 1
             header = header + line
     return l
-        
+
 def is_header(line):
     #rexp to match header lines
     return re.match(r'[a-zA-Z#]{3}(.*?)', line)
@@ -33,7 +34,7 @@ def main(argv):
     inputFile = ''
 
     try:
-        inputFile = open(argv[1], 'r')
+        inputFile = open(argv[1])
     except FileNotFoundError:
         print("file not found!", file = sys.stderr)
         sys.exit(1)
@@ -49,7 +50,7 @@ def main(argv):
         line = lines[i].replace('\n','')
         tokens = line.split(',')
         date = get_date(tokens[0])
-        time = get_time(tokens[1]) 
+        time = get_time(tokens[1])
         if (outfile == ''):
             print('creating file:')
             outfile = 'flight_' + date + '_' + time[0] + '.csv'
@@ -63,7 +64,7 @@ def main(argv):
             outfile.close()
             outfile = ''
             ltime = sys.maxsize
-            
+
         ltime = int(time[1])
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
 #!/usr/bin/python
+import os
+import os.path
+import sys
 from datetime import datetime
 
 import MySQLdb
-import os
-import os.path
 import pysftp
-
 
 db_password = os.environ["NGAFID_DB_PASSWORD"]
 sftp_password = os.environ["RAISE_PASSWORD"]
@@ -125,6 +125,6 @@ try:
 except:
     print("Connection failure.")
     e = sys.exc_info()
-    print("Exception: {0}".format(e))
+    print(f"Exception: {e}")
 
 db.close()

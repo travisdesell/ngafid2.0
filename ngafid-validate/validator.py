@@ -13,11 +13,11 @@ import importlib.util
 import os
 import re
 import sys
-from datetime import datetime
+from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
-
+from typing import Dict, List, Optional, Tuple
 
 REQUIRED_TOPICS = [
     "upload",

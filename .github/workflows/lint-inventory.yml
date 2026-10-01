@@ -1,0 +1,61 @@
+name: Lint Inventory (report only)
+
+# Report-only and non-blocking. Runs scripts/lint.sh --report -- the SAME checks
+# a developer runs locally with scripts/lint.sh -- across every language, then
+# uploads the full reports and writes a per-language summary to the run's
+# Summary tab. It never fails and never runs on pull requests, so it cannot gate
+# a merge; it exists to let developers (and us) see the current linting backlog.
+#
+# Run it manually from the Actions tab (workflow_dispatch).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    name: Lint inventory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          java-version: "24"
+          distribution: "temurin"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ngafid-frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Install frontend dependencies
+        working-directory: ngafid-frontend
+        run: npm ci
+
+      - name: Install DAT2CSV dependency (needed to resolve the Maven build)
+        run: mvn -B -ntp install:install-file -Dfile=resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
+
+      - name: Run lint inventory (report only)
+        run: bash scripts/lint.sh --report
+
+      - name: Upload lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: lint-reports/
+          retention-days: 14

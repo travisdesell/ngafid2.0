@@ -198,6 +198,16 @@ export default defineConfig([
             //https://eslint.org/docs/latest/rules/no-unreachable
             "no-unreachable": "error",
 
+
+
+            /* Line Length Rules */
+            //https://eslint.org/docs/latest/rules/max-len
+            "max-len": ["error", {
+                "code": 120,
+                "ignoreUrls": true,          /* URLs can't be sensibly wrapped */
+                "ignoreRegExpLiterals": true, /* regex literals can't be wrapped */
+            }],
+
         },
 
     },

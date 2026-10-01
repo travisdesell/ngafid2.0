@@ -16,19 +16,19 @@ python3 chartServer.py --test-date 12-26-2024
 
 @Author: Roman Kozulia
 """
-import os
-import json
-import threading
 import argparse
-from datetime import datetime, timedelta
-from http.server import SimpleHTTPRequestHandler, HTTPServer
-from socketserver import ThreadingMixIn
-import subprocess
+import json
 import logging
-from logging.handlers import RotatingFileHandler
-import signal
-import sys
+import os
 import platform
+import signal
+import subprocess
+import sys
+import threading
+from datetime import datetime
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from logging.handlers import RotatingFileHandler
+from socketserver import ThreadingMixIn
 
 """Configure logging. Log files will be rotating if the size will reach 10 MB"""""
 log_file = "./chart_server.log"
@@ -81,7 +81,7 @@ def load_config(config_path):
         logging.error(f"Configuration file {config_path} not found.")
         raise FileNotFoundError(f"Configuration file {config_path} not found.")
 
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         try:
             data = json.load(f)
             logging.info("Configuration file loaded successfully.")
@@ -315,7 +315,7 @@ def initial_download():
 
     # Check if the charts directory exists
     if not os.path.exists(charts_dir):
-        logging.info(f"Charts directory does not exist. Proceeding with initial download.")
+        logging.info("Charts directory does not exist. Proceeding with initial download.")
         os.makedirs(charts_dir, exist_ok=True)
         missing_subdirs = required_subdirs  # All subdirectories are missing if the main directory doesn't exist
     else:

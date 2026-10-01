@@ -45,6 +45,14 @@ ASK_PATTERNS: tuple[tuple[str, str], ...] = (
     (r"\bblack\b(?![^|;&]*--(check|diff))", "black reformatting files"),
     (r"\bisort\b(?![^|;&]*--(check|diff))", "isort rewriting files"),
     (r"\bruff\s+format\b(?![^|;&]*--(check|diff))", "ruff format rewriting files"),
+    # In-place linters/fixers that rewrite files -- use their --check/--diff mode,
+    # or apply fixes via Edit/Write so the diff is reviewed.
+    (r"\bruff\b[^|;&]*--fix\b", "ruff applying fixes in place (--fix)"),
+    (r"\beslint\b[^|;&]*--fix\b", "eslint applying fixes in place (--fix)"),
+    (r"\bktlint\b[^|;&]*(--format|\s-F\b)", "ktlint reformatting files"),
+    (r"\bprettier\b[^|;&]*--write\b", "prettier rewriting files"),
+    (r"\bspotless:apply\b", "Spotless rewriting files (spotless:apply)"),
+    (r"\bnpm\s+run\s+\S+\s+--\s+--fix\b", "an npm script applying --fix in place"),
 )
 
 

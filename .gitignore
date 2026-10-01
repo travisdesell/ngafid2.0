@@ -68,5 +68,10 @@ ngafid-www/src/test/security-test/build/
 !validationlog_EXAMPLE.log
 
 
+# Lint tooling (scripts/lint.sh): downloaded tool cache and generated reports:
+.lint-cache/
+lint-reports/
+
+
 # All files/folders containing 'IGNORE' in their name:
 **IGNORE**

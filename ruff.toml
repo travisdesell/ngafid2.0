@@ -1,0 +1,20 @@
+# Repo-wide Python lint configuration (ruff).
+#
+# Mirrors ngafid-pydata/pyproject.toml's ruleset so every Python file in the
+# monorepo is linted the same way. Files under ngafid-pydata/ are governed by
+# that package's own pyproject.toml (ruff uses the nearest config); this file
+# governs the rest -- ngafid-chart-processor, ngafid-validate,
+# resources/scripts, and any future standalone scripts.
+#
+# target-version is pinned to py39 as a conservative floor for the standalone
+# scripts (ngafid-pydata targets py310 in its own config). Pyupgrade (UP) fixes
+# should be verified against the script's actual runtime before applying.
+line-length = 120
+target-version = "py39"
+
+# .claude/ holds Claude Code agent tooling (hooks), not shipped project source.
+extend-exclude = [".claude"]
+
+[lint]
+# pycodestyle (E/W), pyflakes (F), isort (I), pyupgrade (UP), flake8-bugbear (B).
+select = ["E", "F", "W", "I", "UP", "B"]

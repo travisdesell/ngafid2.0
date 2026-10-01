@@ -12,20 +12,21 @@ The script downloads and processes tif files,and generates tiles for aviation ch
 
 @Author: Roman Kozulia
 """
+import argparse
+import datetime
+import json
+import logging
 import os
+import shutil
 import subprocess
-import requests
+import sys
+import tempfile
 import zipfile
 from enum import Enum
-import json
-import argparse
-import tempfile
-import logging
-import datetime
-import shutil
-import sys
-
 from logging.handlers import RotatingFileHandler
+
+import requests
+
 
 def check_dependencies():
     """Dependency that may need to be installed manually"""
@@ -129,7 +130,7 @@ def load_config(config_path):
         logging.error(f"Configuration file {config_path} not found.")
         raise FileNotFoundError(f"Configuration file {config_path} not found.")
 
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         try:
             data = json.load(f)
             return data  # Return the entire configuration
@@ -365,7 +366,7 @@ def convert_to_rgb(cropped_tifs_path, output_tifs_path):
             command = [
                 "gdal_translate",
                 "-of", "GTiff",
-                "-expand", "rgb",  
+                "-expand", "rgb",
                 "-co", "COMPRESS=LZW",
                 "-co", "TILED=YES",
                 input_tif,

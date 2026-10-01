@@ -25,22 +25,35 @@ The workflow is relatively simple:
    recompilation of the java
    source and react modules, or creation of new tables via liquibase.
 
-## Linting
+## Linting and formatting
 
-A tool called spotbug works with maven to automatically identify and enumerate code that contains problems of various
-kinds. You can run it with:
+All code must pass linting (and be formatted) before you open a PR; CI enforces
+this. The quickest way to verify everything at once is the helper script, which
+runs every language's checks -- the same ones CI runs -- and simply skips any
+whose toolchain you don't have installed:
 
 ```
-mvn spotbugs:check
+scripts/lint.sh            # check everything; exits non-zero if anything fails
+scripts/lint.sh python     # check one language: java | kotlin | python | js | format | checkstyle
+scripts/lint.sh --report   # run everything without failing, and print counts
 ```
 
-These concerns should be properly addressed before requesting a review
+The individual checks, and how to run / auto-fix each directly:
 
-## Formatting
+| Scope | Tool | Check | Auto-fix |
+| --- | --- | --- | --- |
+| Java (style + Javadoc, max line 120) | Checkstyle | `scripts/lint.sh checkstyle` | mostly `mvn spotless:apply`; Javadoc/naming are manual |
+| Java + Kotlin (formatting) | Spotless (Palantir Java Format + ktlint) | `mvn spotless:check` | `mvn spotless:apply` |
+| Python | ruff | `ruff check .` | `ruff check --fix .` |
+| JS / TS | ESLint | `cd ngafid-frontend && npm run check` | `npm run check -- --fix` |
 
-Our codebase will (eventually) be automatically formatted using a tool called `spotless`.
+Rule configs live where each tool expects them: `.github/linters/checkstyle.xml`
+(Java), `ruff.toml` plus `ngafid-pydata/pyproject.toml` (Python), `.editorconfig`
+(Kotlin/ktlint), and `ngafid-frontend/eslint.config.mjs` (JS/TS).
 
-```angular2html
-mvn spotless:check # To search for formatting issues
-mvn spotless:apply # To automatically search for and fix formatting issues.
-```
+To see the current repo-wide backlog without installing every toolchain, run the
+**Lint Inventory** workflow from the GitHub Actions tab: it runs the same
+`scripts/lint.sh --report` and uploads the full per-language reports as an
+artifact.
+
+These concerns should be properly addressed before requesting a review.

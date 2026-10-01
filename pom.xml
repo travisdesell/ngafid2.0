@@ -336,6 +336,8 @@
                             <spaces>true</spaces>
                             <spacesPerTab>4</spacesPerTab>
                         </indent>
+                        <!-- Lint + format Kotlin via ktlint; rules come from .editorconfig. -->
+                        <ktlint/>
                     </kotlin>
                 </configuration>
             </plugin>

@@ -5,7 +5,7 @@ import importlib
 def run_check(validator):
     category = "KAFKA"
     try:
-        kafka_admin_client = getattr(importlib.import_module("kafka"), "KafkaAdminClient")
+        kafka_admin_client = importlib.import_module("kafka").KafkaAdminClient
     except (ImportError, AttributeError) as exc:
         validator._fail(
             category,

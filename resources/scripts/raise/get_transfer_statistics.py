@@ -1,11 +1,9 @@
 #!/usr/bin/python
+import os
+import os.path
 from datetime import datetime
 
 import MySQLdb
-import os
-import os.path
-import pysftp
-
 
 db_password = os.environ["NGAFID_DB_PASSWORD"]
 
@@ -17,7 +15,7 @@ db = MySQLdb.connect(
     db="ngafid",  # name of the data base
 )
 
-print(f"year, n_tails, n_flights")
+print("year, n_tails, n_flights")
 for year in range(2018, datetime.now().year + 1):
     cur = db.cursor()
     cur.execute(

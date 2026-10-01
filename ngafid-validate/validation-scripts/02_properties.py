@@ -1,6 +1,6 @@
 # flake8: noqa: E501
-import re
 import os
+import re
 from pathlib import Path
 
 

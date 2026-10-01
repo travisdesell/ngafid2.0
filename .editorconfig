@@ -1,0 +1,14 @@
+# EditorConfig -- https://editorconfig.org
+#
+# Scoped to Kotlin so it configures ktlint (run via Spotless and the lint
+# inventory) without changing editor behavior for other file types. Keep the
+# max line length aligned with the Java Checkstyle LineLength (120).
+root = true
+
+[*.{kt,kts}]
+ktlint_code_style = intellij_idea
+max_line_length = 120
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
