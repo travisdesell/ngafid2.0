@@ -107,18 +107,18 @@ public final class FlightPhaseProcessor {
     /**
      * Validation result: isValid, touch-and-go split indices (for phase marking),
      * and maxAltAGL. File splitting uses {@link #detectProlongedTaxiSplits}.
+     *
+     * @param isValid whether the flight passed validation (max AltAGL above the ground-context threshold)
+     * @param splitIndices the touch-and-go split indices used for phase marking
+     * @param maxAltAGL the maximum altitude AGL observed, in feet
      */
-    public static class FlightValidationResult {
-        public final boolean isValid;
-        public final List<Integer> splitIndices;
-        public final double maxAltAGL;
+    public record FlightValidationResult(boolean isValid, List<Integer> splitIndices, double maxAltAGL) {
 
-        public FlightValidationResult(boolean isValid, List<Integer> splitIndices, double maxAltAGL) {
-            this.isValid = isValid;
-            this.splitIndices = splitIndices;
-            this.maxAltAGL = maxAltAGL;
-        }
-
+        /**
+         * Reports whether the flight contains any touch-and-go events.
+         *
+         * @return true if at least one touch-and-go split index was detected
+         */
         public boolean hasTouchAndGo() {
             return !splitIndices.isEmpty();
         }
@@ -572,7 +572,8 @@ public final class FlightPhaseProcessor {
     private static String getSustainedTrend(double[] altAglArray, int i) {
         int start = Math.max(0, i - NOISE_WINDOW_ROWS + 1);
         if (start >= i || i >= altAglArray.length) return "flat";
-        double first = Double.NaN, last = Double.NaN;
+        double first = Double.NaN;
+        double last = Double.NaN;
         for (int k = start; k <= i && k < altAglArray.length; k++) {
             if (Double.isNaN(altAglArray[k])) continue;
             if (Double.isNaN(first)) first = altAglArray[k];
@@ -660,7 +661,7 @@ public final class FlightPhaseProcessor {
 
         // 1. Touch-and-go: ±10 rows around split points; TOUCH_AND_GO only if rolling speed ≥ 15 kts, else GROUND
         if (validation != null && validation.hasTouchAndGo()) {
-            for (int splitIndex : validation.splitIndices) {
+            for (int splitIndex : validation.splitIndices()) {
                 int start = Math.max(0, splitIndex - GO_AROUND_WINDOW_ROWS);
                 int end = Math.min(phaseData.getPhases().size() - 1, splitIndex + GO_AROUND_WINDOW_ROWS);
                 boolean hasRollingSpeed = false;

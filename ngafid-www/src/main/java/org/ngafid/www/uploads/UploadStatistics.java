@@ -7,8 +7,11 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 
-public enum UploadStatistics {
-    ;
+public final class UploadStatistics {
+
+    private UploadStatistics() {
+        // Utility class; not instantiable.
+    }
 
     public record UploadCounts(int count, int okUploadCount, int warningUploadCount, int errorUploadCount) {}
 
@@ -73,6 +76,13 @@ public enum UploadStatistics {
     /**
      * Returns all upload and flight outcome totals in one query. Dashboard callers should use this method rather
      * than issuing a separate aggregate query for each displayed value.
+     *
+     * @param connection the database connection to query
+     * @param fleetId the fleet to filter by, or {@code null} to include all fleets
+     * @param startDate the inclusive lower bound on upload start time ({@link LocalDate#MIN} to disable)
+     * @param endDate the exclusive upper bound on upload start time ({@link LocalDate#MAX} to disable)
+     * @return the aggregated upload and flight outcome counts for the matching uploads
+     * @throws SQLException if the query fails
      */
     public static UploadOutcomeCounts getUploadOutcomeCountsDated(
             Connection connection, Integer fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
@@ -125,6 +135,13 @@ public enum UploadStatistics {
      * Returns issue totals for non-derived uploads in the requested fleet and date range: uploads that failed or
      * contain rejected flights, flights with warnings, and rejected flights. The flight counters are used because
      * {@code PROCESSED_WARNING} represents both warning-only and partially successful uploads.
+     *
+     * @param connection the database connection to query
+     * @param fleetId the fleet to filter by, or a value {@code <= 0} to include all fleets
+     * @param startDate the inclusive lower bound on upload start time ({@link LocalDate#MIN} to disable)
+     * @param endDate the exclusive upper bound on upload start time ({@link LocalDate#MAX} to disable)
+     * @return the aggregated upload and flight issue counts for the matching uploads
+     * @throws SQLException if the query fails
      */
     public static UploadIssueCounts getUploadIssueCountsDated(
             Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {

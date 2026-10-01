@@ -70,7 +70,15 @@ public final class CesiumFlightReadiness {
     }
 
     /**
-     * @return null if all required series are present
+     * Describes which flight data series required for a Cesium replay are missing.
+     *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @return a human-readable description of the missing series, or null if all required series are present
      */
     public static String describeMissingCesiumSeries(
             DoubleTimeSeries latitude,
@@ -109,7 +117,15 @@ public final class CesiumFlightReadiness {
     }
 
     /**
-     * @return null when at least one playable sample exists
+     * Describes why a flight has no Cesium-playable samples, when that is the case.
+     *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @return a human-readable description of why no playable sample exists, or null when at least one exists
      */
     public static String describeNoPlayableSamples(
             DoubleTimeSeries latitude,

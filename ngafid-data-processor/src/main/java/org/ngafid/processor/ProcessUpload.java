@@ -335,7 +335,8 @@ public final class ProcessUpload {
                 UploadError.insertError(
                         connection,
                         uploadId,
-                        "No flights were imported from the archive. Check the archive contents and upload consumer logs.");
+                        "No flights were imported from the archive. "
+                                + "Check the archive contents and upload consumer logs.");
             }
             status = resolveStatusFromFlightCounts(validFlights, warningFlights, errorFlights);
         }

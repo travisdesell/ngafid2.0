@@ -56,6 +56,11 @@ public final class ImportService {
 
     /**
      * Runs a fleet update, refreshing the bearer token and retrying once on HTTP 401.
+     *
+     * @param fleet the AirSync fleet to update
+     * @param connection the database connection used to perform the update
+     * @throws IOException if the AirSync request fails for a reason other than an expired token
+     * @throws SQLException if the database update fails
      */
     static void updateFleetWithAuthRetry(AirSyncFleet fleet, Connection connection) throws IOException, SQLException {
         try {

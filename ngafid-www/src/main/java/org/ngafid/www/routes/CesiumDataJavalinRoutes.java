@@ -65,6 +65,12 @@ public class CesiumDataJavalinRoutes {
     /**
      * Lists stored series that Cesium requires but are absent for this flight.
      *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
      * @return null if all required series are present
      */
     static String describeMissingCesiumSeries(
@@ -80,6 +86,13 @@ public class CesiumDataJavalinRoutes {
     /**
      * Explains why a flight with stored series still produced an empty Cesium path.
      *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @param response the computed Cesium response to inspect for path data
      * @return null when {@code response} contains path data
      */
     static String describeEmptyCesiumPath(
@@ -170,7 +183,16 @@ public class CesiumDataJavalinRoutes {
         return CesiumFlightReadiness.hasValidCesiumPosition(latitude, longitude, index);
     }
 
-    /** Valid 3D sample: position plus a defined AGL (0 ft on the ground is allowed). */
+    /**
+     * Reports whether the sample at {@code index} is a valid 3D sample: position plus a defined
+     * AGL (0 ft on the ground is allowed).
+     *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param index the sample index to check
+     * @return true if the sample has a valid position and a defined AGL value
+     */
     private static boolean hasValidCesiumSample(
             DoubleTimeSeries latitude, DoubleTimeSeries longitude, DoubleTimeSeries altAgl, int index) {
         return CesiumFlightReadiness.hasValidCesiumSample(latitude, longitude, altAgl, index);

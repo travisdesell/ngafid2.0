@@ -27,7 +27,7 @@ You will need the following software packages:
 
 1. MySQL
 2. Maven
-3. Java (JDK) 24 or 25 — see the version note below
+3. Java (JDK) 25 — see the version note below
 4. Node.js
 5. Kafka
 
@@ -50,11 +50,34 @@ Verify they are on your `PATH`:
 java -version && mvn -v && node -v
 ```
 
-**JDK version note:** the project targets Java 24 (CI uses Temurin 24). Temurin
-**24 or 25** both work for building and for the Spotless code formatter. **Avoid
-JDK 27 for formatting** — the Palantir Java formatter that Spotless uses does not
-yet support JDK 27, so `mvn spotless:apply` fails with a javac-internals error on
-it. If you have multiple JDKs installed, point Maven at 24/25 when formatting:
+**JDK version note:** the project targets **Java 25** (CI uses Temurin 25). The
+build is pinned to a JDK 25 **Maven toolchain** (`maven-toolchains-plugin` in the
+root `pom.xml`), so the compiler, tests, and Javadoc run on 25 even if a different
+JDK launches Maven. This requires a matching entry in `~/.m2/toolchains.xml`; on CI
+`actions/setup-java` registers one automatically. On your machine, create it once
+(adjust `jdkHome` to your install path — `/usr/libexec/java_home -v 25` prints it):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<toolchains>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>25</version>
+            <vendor>temurin</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home</jdkHome>
+        </configuration>
+    </toolchain>
+</toolchains>
+```
+
+**Avoid JDK 27 for formatting** — the Palantir Java formatter that Spotless uses
+does not yet support JDK 27 (it fails with a javac-internals error), and unlike the
+compiler, Spotless runs in the JVM that *launches* Maven, not the toolchain JDK. The
+`scripts/lint.sh` formatter step selects a JDK 25 launcher automatically when one is
+installed. If you run Spotless directly, point Maven at 25 yourself:
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn spotless:apply
@@ -320,7 +343,7 @@ npm install
 npm run build
 ```
 
-Make sure Java 24+ is installed.
+Make sure Java (JDK) 25 is installed (see the JDK version note above).
 
 Download terrain, airports, and runways data from the NGAFID Setup Data Google Drive into `data-local`. You need `data-local/airports/airports_parsed.csv` and `data-local/runways/runways_parsed.csv` in place (from the same folder).
 

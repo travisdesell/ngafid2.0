@@ -69,7 +69,8 @@ public final class CesiumUploadAuditor {
                 "r",
                 "report",
                 true,
-                "Write a full audit/reprocess report to this file (default: run/cesium_reprocess_<timestamp>.log when -e is used)");
+                "Write a full audit/reprocess report to this file "
+                        + "(default: run/cesium_reprocess_<timestamp>.log when -e is used)");
         options.addOption(report);
 
         Option limit = new Option("l", "limit", true, "Maximum number of uploads to scan");

@@ -27,8 +27,9 @@ ngafid-frontend/.webpack_cache/*
 ngafid-static/js/*
 
 
-# Java build artifacts:
-*/target/*
+# Java build artifacts (root aggregator + per-module target/ directories,
+# including Spotless's local incremental cache target/spotless-index):
+target/
 
 
 # Generated charts:

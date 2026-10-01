@@ -991,6 +991,8 @@ public final class ExtractMaintenanceFlights {
      * @param flight          the flight
      * @param when            the when string
      * @param fileSplitIndices indices where to split CSV into multiple files (prolonged taxi), empty = single file
+     * @param phaseData        the computed flight phase data used to annotate the output
+     * @param debugPhases      whether to emit per-phase debug output
      * @throws IOException  if there is an error writing the file
      * @throws SQLException if there is an error with the SQL query
      */
@@ -1258,7 +1260,7 @@ public final class ExtractMaintenanceFlights {
                 // 2. Validate: must have left ground (max AGL > 10 ft)
                 FlightPhaseProcessor.FlightValidationResult validation =
                         FlightPhaseProcessor.validateAndDetectTouchAndGo(altAGLValues);
-                if (!validation.isValid) {
+                if (!validation.isValid()) {
                     System.err.println("Skipping flight " + flight.getId() + ": never left ground (max AGL <= 10 ft)");
                     continue;
                 }
@@ -1392,7 +1394,11 @@ public final class ExtractMaintenanceFlights {
     // Manifest: one manifest_<clusterId>.json per cluster (e.g. manifest_c_44.json)
     // -------------------------------------------------------------------------
 
-    /** Write one manifest file per cluster for extracted outputs. */
+    /**
+     * Writes one manifest file per cluster for extracted outputs.
+     *
+     * @param outputDirectory the directory the manifest files are written to
+     */
     private static void generateManifest(String outputDirectory) {
         try {
             HashMap<String, String> clusterNames = new HashMap<>();
@@ -1440,6 +1446,13 @@ public final class ExtractMaintenanceFlights {
     /**
      * Writes manifest_<clusterId>.json for one cluster. Returns false if the cluster
      * has no extracted flights (no file written).
+     *
+     * @param outputDirectory the root directory holding the extracted cluster outputs
+     * @param manifestDir the directory the manifest file is written to
+     * @param clusterId the identifier of the cluster to write a manifest for
+     * @param clusterNames a map from cluster id to human-readable cluster name
+     * @return true if a manifest file was written, false if the cluster had no extracted flights
+     * @throws IOException if there is an error writing the manifest file
      */
     private static boolean writeClusterManifest(
             String outputDirectory, File manifestDir, String clusterId, HashMap<String, String> clusterNames)
@@ -1598,7 +1611,10 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Escapes special characters in JSON strings
+     * Escapes special characters in JSON strings.
+     *
+     * @param str the raw string to escape, may be null
+     * @return the escaped string, or an empty string if {@code str} is null
      */
     private static String escapeJson(String str) {
         if (str == null) return "";
@@ -1611,6 +1627,12 @@ public final class ExtractMaintenanceFlights {
 
     /**
      * Collects sorted CSV paths for one phase into the given list (used for manifest).
+     *
+     * @param labelId the cluster label id the paths belong to
+     * @param workorderTail the tail number of the work order being collected
+     * @param workorderDir the work-order directory containing the per-phase subdirectories
+     * @param phase the phase subdirectory to collect (e.g. before/during/after)
+     * @param outPaths the list that collected CSV paths are appended to
      */
     private static void collectPhasePaths(
             String labelId, String workorderTail, File workorderDir, String phase, java.util.List<String> outPaths) {
@@ -1624,7 +1646,10 @@ public final class ExtractMaintenanceFlights {
             java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)(?:-(\\d+))?.*\\.csv");
             java.util.regex.Matcher m1 = p.matcher(n1);
             java.util.regex.Matcher m2 = p.matcher(n2);
-            int base1 = 0, base2 = 0, suffix1 = 0, suffix2 = 0;
+            int base1 = 0;
+            int base2 = 0;
+            int suffix1 = 0;
+            int suffix2 = 0;
             if (m1.matches()) {
                 base1 = Integer.parseInt(m1.group(1));
                 suffix1 = m1.group(2) != null ? Integer.parseInt(m1.group(2)) : 0;
@@ -1661,7 +1686,12 @@ public final class ExtractMaintenanceFlights {
         }
     }
 
-    /** Returns JSON array of quoted path strings, e.g. ["a/b/c.csv"]. */
+    /**
+     * Returns a JSON array of quoted path strings, e.g. {@code ["a/b/c.csv"]}.
+     *
+     * @param paths the list of paths to serialize
+     * @return a JSON array literal containing the quoted, escaped paths
+     */
     private static String pathListToJson(java.util.List<String> paths) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < paths.size(); i++) {

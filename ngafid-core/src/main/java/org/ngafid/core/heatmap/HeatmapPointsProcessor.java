@@ -403,6 +403,7 @@ public class HeatmapPointsProcessor {
      * runs one SELECT per chunk, and merges results.
      *
      * @param eventIds list of event IDs (up to 100k supported; will be chunked)
+     * @param fleetId the fleet the events belong to, used to scope the query
      * @return list of maps, each with event_id, flight_id, points, flight_airframe (same structure as getCoordinates)
      */
     public static List<Map<String, Object>> getCoordinatesForEventIds(List<Integer> eventIds, int fleetId) {
@@ -429,6 +430,7 @@ public class HeatmapPointsProcessor {
      * Groups rows by (event_id, flight_id) and returns one map per pair.
      * @param connection the database connection
      * @param eventIds the event ids to load
+     * @param fleetId the fleet the events belong to, used to scope the query
      * @return the grouped heatmap point results for the chunk
      * @throws SQLException if a database error occurs
      */

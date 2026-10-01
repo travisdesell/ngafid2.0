@@ -11,8 +11,11 @@ import java.time.LocalDate;
 import java.util.logging.Logger;
 import org.ngafid.core.util.TimeUtils;
 
-public enum FlightStatistics {
-    ;
+public final class FlightStatistics {
+
+    private FlightStatistics() {
+        // Utility class; not instantiable.
+    }
 
     private static final Logger LOG = Logger.getLogger(FlightStatistics.class.getName());
 

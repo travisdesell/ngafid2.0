@@ -148,6 +148,9 @@ public final class Airframes {
 
     /**
      * Maps a Garmin recorder {@code airframe_name} to a rotorcraft airframe code, or empty when unknown.
+     *
+     * @param recorderName the Garmin recorder {@code airframe_name} to resolve
+     * @return the matching rotorcraft airframe code, or {@link Optional#empty()} if none matches
      */
     public static Optional<String> resolveGarminRotorcraftAirframeCode(String recorderName) {
         if (recorderName == null || recorderName.isBlank()) {

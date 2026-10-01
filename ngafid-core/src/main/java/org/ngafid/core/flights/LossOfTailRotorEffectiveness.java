@@ -286,7 +286,8 @@ public final class LossOfTailRotorEffectiveness {
     public record NormalizedInputs(double relativeWindDeg, double mrctSigma, double mu, double yawRateDps) {}
 
     /**
-     * Approximates aircraft operating weight using the same policy as RAISE's {@code helispec_get_weight_lbs(..., 0.75)}:
+     * Approximates aircraft operating weight using the same policy as RAISE's
+     * {@code helispec_get_weight_lbs(..., 0.75)}:
      *
      * <pre>
      * if minimum flying weight is known:
@@ -529,6 +530,9 @@ public final class LossOfTailRotorEffectiveness {
      * Validates the helispec fields required by the RAISE LTE formulas. Rows with blank values such as
      * {@code MR_inboard_blade_chord_in} must not be evaluated because they would produce invalid rotor solidity or
      * tip-speed calculations.
+     *
+     * @param spec the helicopter specification to validate
+     * @return {@code true} if every field required by the LTE formulas is present and positive
      */
     private static boolean isValidSpec(HelicopterSpec spec) {
         return spec != null
@@ -549,6 +553,10 @@ public final class LossOfTailRotorEffectiveness {
      * <pre>
      * output_i = tanh(0.5 * dot(input, weights_i))
      * </pre>
+     *
+     * @param input the input activations feeding the layer
+     * @param weights the per-neuron weight vectors, one row per output neuron
+     * @return the layer's output activations, one element per neuron
      */
     private static double[] evaluateLayer(double[] input, double[][] weights) {
         double[] output = new double[weights.length];
@@ -562,7 +570,12 @@ public final class LossOfTailRotorEffectiveness {
         return output;
     }
 
-    /** Appends the neural-network bias value {@code 1.0}. */
+    /**
+     * Appends the neural-network bias value {@code 1.0} to the input vector.
+     *
+     * @param input the input vector to extend
+     * @return a new array holding {@code input} followed by a trailing {@code 1.0} bias element
+     */
     private static double[] appendBias(double[] input) {
         double[] output = new double[input.length + 1];
         System.arraycopy(input, 0, output, 0, input.length);

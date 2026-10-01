@@ -21,8 +21,11 @@
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <kotlin.compiler.jdkHome>${env.JAVA_HOME}</kotlin.compiler.jdkHome>
-        <jvm.target>24</jvm.target>
-        <maven.compiler.release>24</maven.compiler.release>
+        <!-- Project JDK baseline. Temurin 25 is the supported toolchain: the Palantir
+             formatter Spotless uses does not yet run on JDK 27, and CI builds on 25. -->
+        <jdk.version>25</jdk.version>
+        <jvm.target>25</jvm.target>
+        <maven.compiler.release>25</maven.compiler.release>
         <jacoco.skip>false</jacoco.skip>
 
         <spark.version>2.7.2</spark.version>
@@ -232,7 +235,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.6.3</version>
                     <configuration>
-                        <source>24</source>
+                        <source>${maven.compiler.release}</source>
                         <doclint>none</doclint>
                         <failOnError>false</failOnError>
 
@@ -281,7 +284,37 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Code Coverage Plugin (0.8.14+ for Java 24 class files) -->
+            <!--
+                Pin the build to a JDK 25 toolchain so the compiler, tests, and Javadoc
+                run on Temurin 25 regardless of the JDK that launches Maven. Requires a
+                matching entry in ~/.m2/toolchains.xml (CI's actions/setup-java registers
+                one automatically; see README "JDK version note"). NOTE: Spotless's Palantir
+                formatter runs in the launcher JVM, not the toolchain, so local formatting
+                must still be launched under JDK 25 (scripts/lint.sh handles this).
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-toolchains-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>toolchain</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <toolchains>
+                        <jdk>
+                            <!-- Match on version only; vendor strings differ between CI's
+                                 actions/setup-java registration and local installs. -->
+                            <version>${jdk.version}</version>
+                        </jdk>
+                    </toolchains>
+                </configuration>
+            </plugin>
+
+            <!-- JaCoCo Code Coverage Plugin (0.8.14+ for Java 25 class files) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

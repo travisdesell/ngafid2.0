@@ -743,6 +743,11 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
     /**
      * Resolves a registry identity from either the file prefix or its immediate parent directory. Garmin exports
      * commonly use generic {@code log_*} basenames inside a tail-number directory.
+     *
+     * @param connection the database connection used to look up registered tails
+     * @param path the archive-relative path of the file being processed
+     * @return the resolved filename identity, or {@link Optional#empty()} if none could be determined
+     * @throws SQLException if the registry lookup fails
      */
     static Optional<ParsedFilename> resolveRegisteredFilenameIdentity(Connection connection, String path)
             throws SQLException {

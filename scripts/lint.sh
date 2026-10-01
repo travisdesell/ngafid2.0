@@ -68,6 +68,22 @@ record() {
     fi
 }
 
+# Resolve a JDK 25 home for the Spotless step. The Palantir formatter Spotless
+# runs crashes on JDK 27 (an internal javac API changed), so prefer a JDK 25
+# launcher when one is available. Order: $JAVA25_HOME, then macOS java_home -v 25.
+# Falls back to the current JAVA_HOME/PATH (CI installs JDK 25 directly, so no
+# override is needed there). Maven's toolchain pins the compiler/tests to 25
+# separately; this only fixes the launcher JVM that Spotless itself runs in.
+JDK25_HOME=""
+resolve_jdk25() {
+    if [[ -n "${JAVA25_HOME:-}" && -x "${JAVA25_HOME}/bin/java" ]]; then
+        JDK25_HOME="$JAVA25_HOME"
+    elif [[ -x /usr/libexec/java_home ]]; then
+        JDK25_HOME="$(/usr/libexec/java_home -v 25 2>/dev/null || true)"
+    fi
+}
+resolve_jdk25
+
 lint_python() {
     echo
     echo "=== Python (ruff) ==="
@@ -118,7 +134,13 @@ lint_format() {
         return
     fi
     local report="$REPORTS_DIR/spotless.txt"
-    mvn -B -ntp spotless:check | tee "$report"
+    # Launch under JDK 25 when available (Spotless's Palantir formatter breaks on 27).
+    local mvn_env=()
+    if [[ -n "$JDK25_HOME" ]]; then
+        mvn_env=(env "JAVA_HOME=$JDK25_HOME")
+        echo "(using JDK 25 launcher: $JDK25_HOME)"
+    fi
+    "${mvn_env[@]}" mvn -B -ntp spotless:check | tee "$report"
     local status=${PIPESTATUS[0]}
     if [[ "$status" -eq 0 ]]; then
         record "Formatting (Spotless)" "OK" "all files formatted"

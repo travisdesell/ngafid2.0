@@ -8,8 +8,11 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 /**
  * Utility class for {@link EventObserver} and {@link EventConsumer}.
  */
-public enum Events {
-    ;
+public final class Events {
+
+    private Events() {
+        // Utility class; not instantiable.
+    }
 
     public static final long MAX_POLL_INTERVAL_MS = 10 * 60 * 1000;
     public static final long N_RECORDS = 50;
