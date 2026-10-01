@@ -130,6 +130,12 @@ public final class Airports {
         return iataCodes.stream().collect(Collectors.toMap(Function.identity(), Airports::getAirport));
     }
 
+    /**
+     * Returns the airport with the given IATA code from the in-memory lookup, or {@code null} if unknown.
+     *
+     * @param iataCode the airport IATA code
+     * @return the matching airport, or {@code null} if none is loaded for that code
+     */
     public static Airport getAirport(String iataCode) {
         return IATA_TO_AIRPORT.get(iataCode);
     }
@@ -180,6 +186,16 @@ public final class Airports {
         return Airports.calculateDistanceInFeet(plat, plon, plat + dy, plon + dx);
     }
 
+    /**
+     * Computes the great-circle distance in kilometers between two latitude/longitude points using the haversine
+     * formula.
+     *
+     * @param lat1 the first point's latitude, in degrees
+     * @param lon1 the first point's longitude, in degrees
+     * @param lat2 the second point's latitude, in degrees
+     * @param lon2 the second point's longitude, in degrees
+     * @return the distance between the points, in kilometers
+     */
     public static double calculateDistanceInKilometer(double lat1, double lon1, double lat2, double lon2) {
         double latDistance = Math.toRadians(lat1 - lat2);
         double lngDistance = Math.toRadians(lon1 - lon2);
@@ -195,14 +211,42 @@ public final class Airports {
         return AVERAGE_RADIUS_OF_EARTH_KM * c;
     }
 
+    /**
+     * Computes the great-circle distance in meters between two latitude/longitude points.
+     *
+     * @param lat1 the first point's latitude, in degrees
+     * @param lon1 the first point's longitude, in degrees
+     * @param lat2 the second point's latitude, in degrees
+     * @param lon2 the second point's longitude, in degrees
+     * @return the distance between the points, in meters
+     */
     public static double calculateDistanceInMeter(double lat1, double lon1, double lat2, double lon2) {
         return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * 1000.0;
     }
 
+    /**
+     * Computes the great-circle distance in feet between two latitude/longitude points.
+     *
+     * @param lat1 the first point's latitude, in degrees
+     * @param lon1 the first point's longitude, in degrees
+     * @param lat2 the second point's latitude, in degrees
+     * @param lon2 the second point's longitude, in degrees
+     * @return the distance between the points, in feet
+     */
     public static double calculateDistanceInFeet(double lat1, double lon1, double lat2, double lon2) {
         return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * Airports.FT_PER_KM;
     }
 
+    /**
+     * Finds the airport nearest to a coordinate within a maximum distance, searching only the geohash buckets around
+     * the point for efficiency. When an airport is found, its distance is written into {@code airportDistance}.
+     *
+     * @param latitude the query point's latitude, in degrees
+     * @param longitude the query point's longitude, in degrees
+     * @param maxDistanceFt the maximum search radius, in feet
+     * @param airportDistance an out-parameter that receives the distance (feet) to the nearest airport found
+     * @return the nearest airport within the radius, or {@code null} if none is within range
+     */
     public static Airport getNearestAirportWithin(
             double latitude, double longitude, double maxDistanceFt, MutableDouble airportDistance) {
         String[] geoHashes = GeoHash.getNearbyGeoHashes(latitude, longitude);
@@ -232,11 +276,25 @@ public final class Airports {
         return nearestAirport;
     }
 
+    /**
+     * Reports whether the airport with the given IATA code is known and has runway information.
+     *
+     * @param iataCode the airport IATA code
+     * @return true if the airport exists and has runways recorded
+     */
     public static boolean hasRunwayInfo(String iataCode) {
         Airport ap = IATA_TO_AIRPORT.get(iataCode);
         return ap != null && ap.hasRunways();
     }
 
+    /**
+     * Test-only hook that replaces the in-memory airport lookup maps (by IATA code, by site number, and by geohash)
+     * with the supplied data. Throws unless the class is in test mode.
+     *
+     * @param iata the IATA-code-to-airport map to install
+     * @param site the site-number-to-airport map to install
+     * @param geo the geohash-to-airports map to install
+     */
     public static void injectTestData(
             Map<String, Airport> iata, Map<String, Airport> site, Map<String, ArrayList<Airport>> geo) {
         if (!TEST_MODE) {
