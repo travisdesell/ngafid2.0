@@ -21,12 +21,23 @@ public class EmailTypeTest {
 
     private Connection connection;
 
+    /**
+     * No-op per-test setup; the connection is opened lazily only by the tests that actually touch the database.
+     *
+     * @throws SQLException never thrown here (declared for symmetry with database-backed setup)
+     */
     @BeforeEach
     public void setUp() throws SQLException {
         // Only get connection for tests that actually need it
         // Most tests don't need database connection
     }
 
+    /**
+     * Removes any test email-preference rows (test_-prefixed types or the reserved test user ids) created by tests that
+     * opened a connection, leaving the shared database clean.
+     *
+     * @throws SQLException if the cleanup delete fails
+     */
     @AfterEach
     public void tearDown() throws SQLException {
         // Clean up test data only if connection was used
@@ -38,6 +49,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies {@code isForced(EmailType)} returns true for the three FORCED types and false for all standard and admin
+     * types.
+     */
     @Test
     @DisplayName("Should test isForced with EmailType enum")
     public void testIsForcedWithEnum() {
@@ -55,6 +70,10 @@ public class EmailTypeTest {
         assertFalse(EmailType.isForced(EmailType.AIRSYNC_DAEMON_CRASH));
     }
 
+    /**
+     * Verifies {@code isForced(String)} returns true whenever the key contains the substring {@code FORCED} and false
+     * otherwise (including the empty string).
+     */
     @Test
     @DisplayName("Should test isForced with String parameter")
     public void testIsForcedWithString() {
@@ -73,6 +92,9 @@ public class EmailTypeTest {
         assertFalse(EmailType.isForced("normal_email_type"));
     }
 
+    /**
+     * Verifies each enum constant's {@code getType} returns its exact stored key string.
+     */
     @Test
     @DisplayName("Should test getType method")
     public void testGetType() {
@@ -87,6 +109,9 @@ public class EmailTypeTest {
         assertEquals("FORCED_bug_report", EmailType.BUG_REPORT.getType());
     }
 
+    /**
+     * Verifies {@code getEmailTypeCount} reports the total number of defined email types (9).
+     */
     @Test
     @DisplayName("Should test getEmailTypeCount")
     public void testGetEmailTypeCount() {
@@ -94,6 +119,9 @@ public class EmailTypeTest {
         assertEquals(9, count); // Total number of email types
     }
 
+    /**
+     * Verifies {@code getEmailTypeCountNonForced} reports the number of non-FORCED types (6 = 9 total minus 3 forced).
+     */
     @Test
     @DisplayName("Should test getEmailTypeCountNonForced")
     public void testGetEmailTypeCountNonForced() {
@@ -101,6 +129,9 @@ public class EmailTypeTest {
         assertEquals(6, count); // Non-FORCED email types (9 total - 3 FORCED = 6)
     }
 
+    /**
+     * Verifies {@code getAllTypes} returns all nine enum constants.
+     */
     @Test
     @DisplayName("Should test getAllTypes")
     public void testGetAllTypes() {
@@ -120,6 +151,9 @@ public class EmailTypeTest {
         assertTrue(typesList.contains(EmailType.BUG_REPORT));
     }
 
+    /**
+     * Verifies {@code getEmailTypeKeysRecent(false)} returns a non-null array without forcing a database refresh.
+     */
     @Test
     @DisplayName("Should test getEmailTypeKeysRecent without refresh")
     public void testGetEmailTypeKeysRecentWithoutRefresh() {
@@ -129,6 +163,10 @@ public class EmailTypeTest {
         assertTrue(keys.length >= 0);
     }
 
+    /**
+     * Verifies {@code getEmailTypeKeysRecent(true)} returns a populated array when the forced refresh succeeds,
+     * tolerating an exception if the environment has no database.
+     */
     @Test
     @DisplayName("Should test getEmailTypeKeysRecent with refresh")
     public void testGetEmailTypeKeysRecentWithRefresh() {
@@ -143,6 +181,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies via reflection that the public static {@code insertEmailTypesIntoDatabase(Connection, int)} overload
+     * exists and can be made accessible.
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase method exists and is accessible")
     public void testInsertEmailTypesIntoDatabaseMethodExists() throws Exception {
@@ -157,6 +199,10 @@ public class EmailTypeTest {
         assertTrue(method.isAccessible());
     }
 
+    /**
+     * Verifies every enum constant has a non-empty key and that {@code isForced} agrees with a direct
+     * {@code FORCED}-substring check of the key.
+     */
     @Test
     @DisplayName("Should test enum values and their properties")
     public void testEnumValuesAndProperties() {
@@ -171,6 +217,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies {@code isForced} edge cases: a null EmailType throws, the empty string is not forced, {@code FORCED} as
+     * a substring in any position counts, and the check is case-sensitive (only uppercase {@code FORCED} matches).
+     */
     @Test
     @DisplayName("Should test edge cases for isForced")
     public void testIsForcedEdgeCases() {
@@ -193,6 +243,10 @@ public class EmailTypeTest {
         assertTrue(EmailType.isForced("FORCED")); // uppercase
     }
 
+    /**
+     * Verifies that counting forced/non-forced types by iterating the enum yields 3/6/9 and matches the values reported
+     * by {@code getEmailTypeCount} and {@code getEmailTypeCountNonForced}.
+     */
     @Test
     @DisplayName("Should test email type counts match expected values")
     public void testEmailTypeCounts() {
@@ -215,6 +269,9 @@ public class EmailTypeTest {
         assertEquals(EmailType.getEmailTypeCountNonForced(), nonForcedCount);
     }
 
+    /**
+     * Verifies via reflection that the {@code removeOldEmailTypes} flag field exists and is a private static boolean.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypes flag functionality")
     public void testRemoveOldEmailTypesFlag() {
@@ -228,6 +285,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Verifies {@code main} runs without surfacing a failure for the {@code "false"}, {@code "true"}, and no-argument
+     * invocations (tolerating an exception when no database is configured).
+     */
     @Test
     @DisplayName("Should test main method with removeOldEmailTypes flag")
     public void testMainMethodWithRemoveFlag() {
@@ -261,6 +322,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies via reflection that {@code removeOldEmailTypesFromDatabase(Set)} has the expected signature: one Set
+     * parameter, void return, and private static modifiers.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method signature")
     public void testRemoveOldEmailTypesFromDatabaseMethodSignature() {
@@ -278,6 +343,9 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Verifies the private {@code removeOldEmailTypesFromDatabase(Set)} method can be made accessible via reflection.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method accessibility")
     public void testRemoveOldEmailTypesFromDatabaseAccessibility() {
@@ -290,6 +358,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Invokes the private {@code removeOldEmailTypesFromDatabase} with an empty set via reflection, asserting that any
+     * resulting failure is an environment/initialization error (missing database) rather than a logic error.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase with empty set")
     public void testRemoveOldEmailTypesFromDatabaseWithEmptySet() {
@@ -315,6 +387,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Invokes the private {@code removeOldEmailTypesFromDatabase} with the full set of current types via reflection,
+     * asserting any failure is an environment/initialization error rather than a logic error.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase with current email types")
     public void testRemoveOldEmailTypesFromDatabaseWithCurrentTypes() {
@@ -342,6 +418,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Re-verifies the {@code removeOldEmailTypesFromDatabase(Set)} signature and private static modifiers via
+     * reflection.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method logic")
     public void testRemoveOldEmailTypesFromDatabaseMethodLogic() {
@@ -362,6 +442,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Exercises the no-argument {@code insertEmailTypesIntoDatabase} to cover its try/catch path, tolerating an
+     * exception when no database is configured.
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase try-catch block coverage")
     public void testInsertEmailTypesIntoDatabaseTryCatchCoverage() {
@@ -377,6 +461,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Exercises the no-argument {@code insertEmailTypesIntoDatabase} to cover its SQLException handling, tolerating an
+     * exception when no database is configured.
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase SQLException handling")
     public void testInsertEmailTypesIntoDatabaseSQLExceptionHandling() {
@@ -392,6 +480,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies via reflection that the no-argument {@code insertEmailTypesIntoDatabase} is a public static void method
+     * taking no parameters.
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase method structure")
     public void testInsertEmailTypesIntoDatabaseMethodStructure() {
@@ -408,6 +500,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Verifies via reflection that the {@code insertEmailTypesIntoDatabase(Connection, int)} overload is a public
+     * static void method taking a Connection and an int.
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase with connection parameter")
     public void testInsertEmailTypesIntoDatabaseWithConnection() {
@@ -427,6 +523,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Exercises the no-argument {@code insertEmailTypesIntoDatabase} to confirm exceptions are handled, tolerating a
+     * failure when no database is configured.
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase exception handling")
     public void testInsertEmailTypesIntoDatabaseExceptionHandling() {
@@ -442,6 +542,9 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies via reflection that the no-argument {@code insertEmailTypesIntoDatabase} is public and callable.
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase method accessibility")
     public void testInsertEmailTypesIntoDatabaseMethodAccessibility() {
@@ -453,6 +556,10 @@ public class EmailTypeTest {
         });
     }
 
+    /**
+     * Verifies via reflection that the private {@code removeOldEmailTypesFromDatabase(Set)} method exists and can be
+     * made accessible.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method exists and is accessible")
     public void testRemoveOldEmailTypesFromDatabaseMethodExists() throws Exception {
@@ -467,6 +574,11 @@ public class EmailTypeTest {
         assertTrue(method.isAccessible());
     }
 
+    /**
+     * Reproduces the removal logic end to end against H2: seeds current and obsolete email-preference rows, selects
+     * distinct types, identifies the two obsolete ones as not in the current set, deletes them, and verifies only the
+     * current types remain.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase logic simulation")
     public void testRemoveOldEmailTypesFromDatabaseLogicSimulation() throws Exception {
@@ -568,6 +680,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Invokes the private {@code removeOldEmailTypesFromDatabase} via reflection purely for coverage, asserting only
+     * that the call completes or throws (it is expected to fail without configured properties).
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method call for coverage")
     public void testRemoveOldEmailTypesFromDatabaseMethodCall() throws Exception {
@@ -595,6 +711,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Seeds current and obsolete email-preference rows against H2 and confirms the current-types set is prepared
+     * correctly, without invoking the real method (which would call {@code System.exit}).
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase with real database connection")
     public void testRemoveOldEmailTypesFromDatabaseWithRealConnection() throws Exception {
@@ -644,6 +764,10 @@ public class EmailTypeTest {
         assertTrue(currentEmailTypes.contains(EmailType.IMPORT_PROCESSED_RECEIPT.getType()));
     }
 
+    /**
+     * Invokes the private {@code removeOldEmailTypesFromDatabase} via reflection a second time for coverage, asserting
+     * only that the call completes or throws.
+     */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase method execution for coverage")
     public void testRemoveOldEmailTypesFromDatabaseMethodExecution() throws Exception {
@@ -671,6 +795,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies via reflection that the {@code removeOldEmailTypes} flag can be toggled on and is read back as true,
+     * then restores its original value (avoiding the real method's {@code System.exit}).
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase with removeOldEmailTypes enabled")
     public void testInsertEmailTypesIntoDatabaseWithRemoveOldEmailTypesEnabled() throws Exception {
@@ -693,6 +821,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * With a live H2 connection, verifies the {@code removeOldEmailTypes} flag can be toggled on and read back, then
+     * restores its original value (without invoking the real method, which would exit the JVM).
+     */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase with connection and removeOldEmailTypes enabled")
     public void testInsertEmailTypesIntoDatabaseWithConnectionAndRemoveOldEmailTypesEnabled() throws Exception {
@@ -718,6 +850,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies via reflection that the {@code removeOldEmailTypes} flag can be toggled on and read back as true (the
+     * path {@code refreshEmailTypeKeysRecent} would consult), then restores its original value.
+     */
     @Test
     @DisplayName("Should test refreshEmailTypeKeysRecent with removeOldEmailTypes enabled")
     public void testRefreshEmailTypeKeysRecentWithRemoveOldEmailTypesEnabled() throws Exception {
@@ -740,6 +876,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies basic insert, count, and delete operations against the {@code email_preferences} table using H2,
+     * confirming a row can be added, found, removed, and confirmed gone.
+     */
     @Test
     @DisplayName("Should test database operations for email preferences")
     public void testDatabaseOperationsForEmailPreferences() throws Exception {
@@ -793,6 +933,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies full CRUD against {@code email_preferences} using H2: inserts a mix of current and obsolete rows,
+     * queries by type, deletes the obsolete ones, and confirms only the current rows remain.
+     */
     @Test
     @DisplayName("Should test email preferences CRUD operations")
     public void testEmailPreferencesCrudOperations() throws Exception {
@@ -869,6 +1013,9 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies that starting from an empty {@code email_preferences} table, a single insert produces exactly one row.
+     */
     @Test
     @DisplayName("Should test email preferences with empty database")
     public void testEmailPreferencesWithEmptyDatabase() throws Exception {
@@ -908,6 +1055,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Seeds a mix of current and obsolete email-preference rows in H2 and verifies the total count and the counts
+     * returned when querying the current-only and obsolete-only type sets.
+     */
     @Test
     @DisplayName("Should test email preferences with mixed types")
     public void testEmailPreferencesWithMixedTypes() throws Exception {
@@ -986,6 +1137,10 @@ public class EmailTypeTest {
         }
     }
 
+    /**
+     * Verifies a seeded test row can be found and then deleted by type in H2, simulating removal of a type absent from
+     * the current set.
+     */
     @Test
     @DisplayName("Should test email preferences with empty current types set")
     public void testEmailPreferencesWithEmptyCurrentTypesSet() throws Exception {

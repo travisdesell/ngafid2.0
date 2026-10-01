@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
  */
 public class FleetTest {
 
+    /**
+     * Verifies the constructor stores a valid id and name and exposes them via the getters.
+     */
     @Test
     @DisplayName("Should create Fleet with valid id and name")
     public void testFleetConstructor() {
@@ -24,6 +27,9 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
+    /**
+     * Verifies a negative id is accepted and stored unchanged.
+     */
     @Test
     @DisplayName("Should create Fleet with negative id")
     public void testFleetConstructorWithNegativeId() {
@@ -37,6 +43,9 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
+    /**
+     * Verifies a zero id is accepted and stored unchanged.
+     */
     @Test
     @DisplayName("Should create Fleet with zero id")
     public void testFleetConstructorWithZeroId() {
@@ -50,6 +59,9 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
+    /**
+     * Verifies a null name is accepted at construction and returned as null.
+     */
     @Test
     @DisplayName("Should create Fleet with null name")
     public void testFleetConstructorWithNullName() {
@@ -63,6 +75,9 @@ public class FleetTest {
         assertNull(fleet.getName());
     }
 
+    /**
+     * Verifies an empty name is stored verbatim (not coerced to null).
+     */
     @Test
     @DisplayName("Should create Fleet with empty name")
     public void testFleetConstructorWithEmptyName() {
@@ -76,6 +91,9 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
+    /**
+     * Verifies a long name containing special characters is stored without truncation or alteration.
+     */
     @Test
     @DisplayName("Should create Fleet with long name")
     public void testFleetConstructorWithLongName() {
@@ -89,6 +107,9 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
+    /**
+     * Verifies {@code getId} returns the configured fleet id.
+     */
     @Test
     @DisplayName("Should get fleet id")
     public void testGetId() {
@@ -98,6 +119,9 @@ public class FleetTest {
         assertEquals(id, fleet.getId());
     }
 
+    /**
+     * Verifies {@code getName} returns the configured fleet name.
+     */
     @Test
     @DisplayName("Should get fleet name")
     public void testGetName() {
@@ -107,6 +131,9 @@ public class FleetTest {
         assertEquals(name, fleet.getName());
     }
 
+    /**
+     * Verifies {@code toString} includes the fleet id and name in the expected {@code Fleet id: ... name: ...} format.
+     */
     @Test
     @DisplayName("Should return string representation")
     public void testToString() {
@@ -120,6 +147,10 @@ public class FleetTest {
         assertTrue(toString.contains("name:"), "toString should contain 'name:'");
     }
 
+    /**
+     * Verifies {@code equals} treats fleets as equal only when both id and name match, is symmetric and reflexive, and
+     * distinguishes differing id or name.
+     */
     @Test
     @DisplayName("Should test fleet equality")
     public void testFleetEquals() {
@@ -142,6 +173,9 @@ public class FleetTest {
         assertTrue(fleet1.equals(fleet1), "Same object should be equal");
     }
 
+    /**
+     * Verifies {@code equals} returns false when compared against null.
+     */
     @Test
     @DisplayName("Should test fleet equality with null")
     public void testFleetEqualsWithNull() {
@@ -150,6 +184,9 @@ public class FleetTest {
         assertFalse(fleet.equals(null), "Fleet should not equal null");
     }
 
+    /**
+     * Verifies {@code equals} returns false when compared against an object of an unrelated type.
+     */
     @Test
     @DisplayName("Should test fleet equality with different object type")
     public void testFleetEqualsWithDifferentType() {
@@ -159,6 +196,9 @@ public class FleetTest {
         assertFalse(fleet.equals(notAFleet), "Fleet should not equal different type");
     }
 
+    /**
+     * Verifies {@code equals} returns false when compared against an instance of a different class.
+     */
     @Test
     @DisplayName("Should test fleet equality with different class")
     public void testFleetEqualsWithDifferentClass() {
@@ -168,6 +208,10 @@ public class FleetTest {
         assertFalse(fleet.equals(notAFleet), "Fleet should not equal different class");
     }
 
+    /**
+     * Documents that {@code equals} does not handle null names gracefully: comparing two fleets with null names throws
+     * {@link NullPointerException}.
+     */
     @Test
     @DisplayName("Should handle fleet with null name in equality")
     public void testFleetEqualsWithNullName() {
@@ -182,6 +226,9 @@ public class FleetTest {
         });
     }
 
+    /**
+     * Verifies fleets with equal empty names (and matching id) are equal, and differ from one with a non-empty name.
+     */
     @Test
     @DisplayName("Should handle fleet with empty name in equality")
     public void testFleetEqualsWithEmptyName() {
@@ -193,6 +240,9 @@ public class FleetTest {
         assertFalse(fleet1.equals(fleet3), "Fleet with empty name should not equal fleet with name");
     }
 
+    /**
+     * Verifies equality compares special-character names exactly.
+     */
     @Test
     @DisplayName("Should handle fleet with special characters in equality")
     public void testFleetEqualsWithSpecialCharacters() {
@@ -205,6 +255,9 @@ public class FleetTest {
         assertFalse(fleet1.equals(fleet3), "Fleet with special characters should not equal different name");
     }
 
+    /**
+     * Verifies equality compares Unicode names correctly.
+     */
     @Test
     @DisplayName("Should handle fleet with unicode characters in equality")
     public void testFleetEqualsWithUnicodeCharacters() {
@@ -217,6 +270,9 @@ public class FleetTest {
         assertFalse(fleet1.equals(fleet3), "Fleet with unicode characters should not equal different name");
     }
 
+    /**
+     * Verifies equality compares long names in full.
+     */
     @Test
     @DisplayName("Should handle fleet with very long name in equality")
     public void testFleetEqualsWithLongName() {
@@ -230,6 +286,9 @@ public class FleetTest {
         assertFalse(fleet1.equals(fleet3), "Fleet with long name should not equal different name");
     }
 
+    /**
+     * Verifies equality treats matching negative ids as equal and distinguishes a negative id from a positive one.
+     */
     @Test
     @DisplayName("Should handle fleet with negative ID in equality")
     public void testFleetEqualsWithNegativeId() {
@@ -241,6 +300,9 @@ public class FleetTest {
         assertFalse(fleet1.equals(fleet3), "Fleet with negative ID should not equal fleet with positive ID");
     }
 
+    /**
+     * Verifies equality treats matching zero ids as equal and distinguishes a zero id from a positive one.
+     */
     @Test
     @DisplayName("Should handle fleet with zero ID in equality")
     public void testFleetEqualsWithZeroId() {

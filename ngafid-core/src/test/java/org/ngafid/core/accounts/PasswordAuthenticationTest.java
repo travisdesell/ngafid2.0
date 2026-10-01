@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
  */
 public class PasswordAuthenticationTest {
 
+    /**
+     * Verifies the no-argument constructor builds an instance using the default hashing cost.
+     */
     @Test
     @DisplayName("Should create PasswordAuthentication with default cost")
     public void testDefaultConstructor() {
@@ -18,6 +21,9 @@ public class PasswordAuthenticationTest {
         assertNotNull(auth);
     }
 
+    /**
+     * Verifies the constructor accepts an in-range cost value.
+     */
     @Test
     @DisplayName("Should create PasswordAuthentication with valid cost")
     public void testValidCostConstructor() {
@@ -25,6 +31,9 @@ public class PasswordAuthenticationTest {
         assertNotNull(auth);
     }
 
+    /**
+     * Verifies the constructor rejects a negative cost with {@link IllegalArgumentException}.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for negative cost")
     public void testNegativeCost() {
@@ -33,6 +42,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies the constructor rejects a cost above the supported maximum (30) with {@link IllegalArgumentException}.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for cost greater than 30")
     public void testCostTooHigh() {
@@ -41,6 +53,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies 31 (one past the maximum) is rejected, pinning the upper bound of the valid cost range.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for cost exactly 31")
     public void testCostExactly31() {
@@ -49,6 +64,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies the minimum valid cost (0) is accepted.
+     */
     @Test
     @DisplayName("Should accept cost of 0")
     public void testCostZero() {
@@ -56,6 +74,9 @@ public class PasswordAuthenticationTest {
         assertNotNull(auth);
     }
 
+    /**
+     * Verifies the maximum valid cost (30) is accepted.
+     */
     @Test
     @DisplayName("Should accept cost of 30")
     public void testCostThirty() {
@@ -63,6 +84,9 @@ public class PasswordAuthenticationTest {
         assertNotNull(auth);
     }
 
+    /**
+     * Verifies {@code hash} produces a non-empty token in the expected {@code $31$}-prefixed layout.
+     */
     @Test
     @DisplayName("Should hash password successfully")
     public void testHashPassword() {
@@ -76,6 +100,9 @@ public class PasswordAuthenticationTest {
         assertTrue(hash.length() > 10); // Should be a substantial hash
     }
 
+    /**
+     * Verifies {@code authenticate} returns true when the supplied password matches the hash.
+     */
     @Test
     @DisplayName("Should authenticate with correct password")
     public void testAuthenticateCorrectPassword() {
@@ -88,6 +115,9 @@ public class PasswordAuthenticationTest {
         assertTrue(result);
     }
 
+    /**
+     * Verifies {@code authenticate} returns false when the supplied password does not match the hash.
+     */
     @Test
     @DisplayName("Should not authenticate with incorrect password")
     public void testAuthenticateIncorrectPassword() {
@@ -101,6 +131,9 @@ public class PasswordAuthenticationTest {
         assertFalse(result);
     }
 
+    /**
+     * Verifies {@code authenticate} rejects a token that does not match the expected layout at all.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for invalid token format")
     public void testInvalidTokenFormat() {
@@ -113,6 +146,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies {@code authenticate} rejects a token whose version prefix is not {@code $31$}.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for malformed token with wrong prefix")
     public void testMalformedTokenWrongPrefix() {
@@ -125,6 +161,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies {@code authenticate} rejects a token whose encoded cost is out of range.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for token with invalid cost")
     public void testTokenWithInvalidCost() {
@@ -137,6 +176,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies {@code authenticate} rejects a token missing the hash segment.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for token with missing parts")
     public void testTokenWithMissingParts() {
@@ -149,6 +191,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies {@code authenticate} rejects an empty token string.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for empty token")
     public void testEmptyToken() {
@@ -161,6 +206,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies {@code authenticate} throws {@link NullPointerException} when the token is null.
+     */
     @Test
     @DisplayName("Should throw IllegalArgumentException for null token")
     public void testNullToken() {
@@ -172,6 +220,9 @@ public class PasswordAuthenticationTest {
         });
     }
 
+    /**
+     * Verifies hashes produced at different costs (5 and 20) each authenticate successfully against their own hash.
+     */
     @Test
     @DisplayName("Should handle different cost values in authentication")
     public void testDifferentCostValues() {
@@ -187,6 +238,10 @@ public class PasswordAuthenticationTest {
         assertTrue(auth20.authenticate(password, hash20));
     }
 
+    /**
+     * Documents that the PBKDF2 algorithm/key-spec catch blocks are unreachable in practice by exercising a normal
+     * hash-then-authenticate round trip (the reachable success path) rather than attempting to trigger them.
+     */
     @Test
     @DisplayName("Should document unreachable catch blocks in pbkdf2 method")
     public void testUnreachableCatchBlocks() {
@@ -212,6 +267,9 @@ public class PasswordAuthenticationTest {
         // This test documents that fact rather than trying to trigger them
     }
 
+    /**
+     * Verifies hashing and authentication succeed for a very long (1000-character) password.
+     */
     @Test
     @DisplayName("Should handle edge case with very long password")
     public void testVeryLongPassword() {
@@ -232,6 +290,9 @@ public class PasswordAuthenticationTest {
         assertTrue(result);
     }
 
+    /**
+     * Verifies hashing and authentication succeed for a single-character password.
+     */
     @Test
     @DisplayName("Should handle edge case with very short password")
     public void testVeryShortPassword() {
@@ -246,6 +307,9 @@ public class PasswordAuthenticationTest {
         assertTrue(result);
     }
 
+    /**
+     * Verifies hashing and authentication succeed for a password composed of special characters.
+     */
     @Test
     @DisplayName("Should handle edge case with special characters in password")
     public void testSpecialCharactersPassword() {
