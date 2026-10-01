@@ -42,6 +42,8 @@ public class ObstacleEventScanner extends AbstractEventScanner {
 
     private static Logger LOG = Logger.getLogger(ObstacleEventScanner.class.getName());
     private static final double MAX_DETECTION_DISTANCE = 1200;
+    private static final double MAX_AIRPORT_DISTANCE = 10000;
+    private static final double OBSTACLE_AGL_DETECTION_LIMIT = 300;
     private static final int OBSTACLE_SCAN_STOP_BUFFER = 30;
     private Flight flight;
 
@@ -100,13 +102,16 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         HashMap<Event, Integer> untrackedObstacleEvents = new HashMap<>();
 
         ArrayList<Event> allEvents = new ArrayList<>();
-        
-        int insertedEvents = 0;
 
         // Loop through all of the flight's entries
-        for (int i = 30; i < lat.size(); i++) {
-            ArrayList<MarkedObstacle> nearbyObstacles = Obstacles.getNearbyObstaclesWithinRange(lat.get(i), lon.get(i), altAGL.get(i), flight.getAirframeType());
+        for (int i = 3; i < lat.size(); i++) {
 
+            // Ignore this entry if the flight is too low on the ground.
+            if (altAGL.get(i) <= OBSTACLE_AGL_DETECTION_LIMIT) {
+                continue;
+            }
+
+            ArrayList<MarkedObstacle> nearbyObstacles = Obstacles.getNearbyObstaclesWithinRange(lat.get(i), lon.get(i), altAGL.get(i), flight.getAirframeType());
             Set<Integer> trackingObstacles = new HashSet<>();
 
             // For each entry, check for all of the nearby objects
@@ -138,8 +143,7 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                 if (!obstacleEventMap.containsKey(obstacleId)) {
                     Event event = new Event(utcSeries.get(i), utcSeries.get(i), i, i, super.definition.getId(), marked.getTotalDistance());
                     obstacleMap.put(obstacleId, marked);
-                    obstacleEventMap.put(obstacleId, event);
-                    
+                    obstacleEventMap.put(obstacleId, event);                    
                 }
 
                 // If they are tracked, update their end time
@@ -180,12 +184,12 @@ public class ObstacleEventScanner extends AbstractEventScanner {
                     obstacleStopBufferMap.remove(obstacleId);
                     MarkedObstacle marked = obstacleMap.remove(obstacleId);
                     Event event = obstacleEventMap.remove(obstacleId);
-                    LOG.info(marked.getObstacleID() + "| Start: " + event.getStartLine() + " | End: " + event.getEndLine());
+                    // LOG.info(marked.getObstacleID() + "| Start: " + event.getStartLine() + " | End: " + event.getEndLine());
 
                     // Update the Event with metadata
-                    // event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, marked.getHorizontalDistance()));
-                    // event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
-                    // event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.OBSTACLE_ID, (double) marked.getObstacleID()));
+                    event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, marked.getHorizontalDistance()));
+                    event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
+                    event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.OBSTACLE_ID, (double) marked.getObstacleID()));
                     
                     // Add to untrackedObstacle list
                     untrackedObstacleEvents.put(event, obstacleId);
@@ -206,16 +210,16 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         for (Integer obstacleID : remainingObstacles) {
             MarkedObstacle marked = obstacleMap.remove(obstacleID);
             Event event = obstacleEventMap.remove(obstacleID);
-            LOG.info(marked.getObstacleID() + "| Start: " + event.getStartLine() + " | End: " + event.getEndLine());
-            // event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, marked.getHorizontalDistance()));
-            // event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
-            // event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.OBSTACLE_ID, (double) marked.getObstacleID()));
+            // LOG.info(marked.getObstacleID() + "| Start: " + event.getStartLine() + " | End: " + event.getEndLine());
+            event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.LATERAL_DISTANCE, marked.getHorizontalDistance()));
+            event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.VERTICAL_DISTANCE, marked.getVerticalDistance()));
+            event.addMetaData(new EventMetaData(EventMetaData.EventMetaDataKey.OBSTACLE_ID, (double) marked.getObstacleID()));
             
             untrackedObstacleEvents.put(event, obstacleID);
         }
         // insertObstacleEvents(connection, untrackedObstacleEvents);
         allEvents.addAll(untrackedObstacleEvents.keySet());
-        LOG.info("Obstacle Events Found for " + flight.getAirframeType() + ": " + (allEvents.size()));
+        LOG.info("Obstacle Events (" + definition.getId() + ") Found for " + flight.getAirframeType() + ": " + (allEvents.size()));
         return allEvents;
     }
   
@@ -225,9 +229,5 @@ public class ObstacleEventScanner extends AbstractEventScanner {
         try (Connection connection = Database.getConnection()) {
             return processObstacles(connection, doubleTimeSeries, stringTimeSeries);
         }
-            
     }
-
-
-
 }

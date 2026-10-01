@@ -172,7 +172,7 @@ public class ObstaclesTest {
         expectedIdsAndDistance.put(37, 372.1);
         expectedIdsAndDistance.put(26, 481.6);
 
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange(30.257120, -88.114400, 150, 500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange(30.257120, -88.114400, 150, "Fixed Wing");
         assertEquals(expectedIdsAndDistance.size(), obstacles.size());
 
         for (MarkedObstacle marked : obstacles) {
@@ -209,7 +209,7 @@ public class ObstaclesTest {
         expectedIdsAndDistance.put(22, 666.7);
         expectedIdsAndDistance.put(45, 830.3);
 
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange(30.257120, -88.114400, 150, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange(30.257120, -88.114400, 150, "Fixed Wing");
         assertEquals(expectedIdsAndDistance.size(), obstacles.size());
         
         for (MarkedObstacle marked : obstacles) {
@@ -246,7 +246,7 @@ public class ObstaclesTest {
         expectedIdsAndDistance.put(22, 666.7);
         expectedIdsAndDistance.put(45, 830.3);
 
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange(30.257120, -88.114400, 150, 1500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange(30.257120, -88.114400, 150, "Fixed Wing");
         assertEquals(expectedIdsAndDistance.size(), obstacles.size());
         
         for (MarkedObstacle marked : obstacles) {
@@ -260,7 +260,7 @@ public class ObstaclesTest {
     @Test
     public void testParseOrangeBeach500() {
         generateData(ORANGE_BEACH);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         assertEquals(expectedIdsAndDistance.size(), obstacles.size());
     }
@@ -268,7 +268,7 @@ public class ObstaclesTest {
     @Test
     public void testParseOrangeBeach1000() {
         generateData(ORANGE_BEACH);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         expectedIdsAndDistance.put(115, 767.8);
         expectedIdsAndDistance.put(110, 785.4);
@@ -292,7 +292,7 @@ public class ObstaclesTest {
     public void testParseOrangeBeach1500() {
 
         generateData(ORANGE_BEACH);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         expectedIdsAndDistance.put(115, 767.8);
         expectedIdsAndDistance.put(110, 785.4);
@@ -316,7 +316,7 @@ public class ObstaclesTest {
     @Test
     public void testParseGulfShore500() {
         generateData(GULF_SHORE);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.293888, -87.682203, 100, 500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.293888, -87.682203, 100, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         expectedIdsAndDistance.put(131, 303.1);
         expectedIdsAndDistance.put(132, 303.8);
@@ -339,7 +339,7 @@ public class ObstaclesTest {
     @Test
     public void testParseGulfShore1000() {
         generateData(GULF_SHORE);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.293888, -87.682203, 100, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.293888, -87.682203, 100, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         expectedIdsAndDistance.put(131, 303.1);
         expectedIdsAndDistance.put(132, 303.8);
@@ -367,7 +367,7 @@ public class ObstaclesTest {
     @Test
     public void testParseGulfShore1500() {
         generateData(GULF_SHORE);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.293888, -87.682203, 100, 1500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.293888, -87.682203, 100, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         expectedIdsAndDistance.put(131, 303.1);
         expectedIdsAndDistance.put(132, 303.8);
@@ -395,7 +395,7 @@ public class ObstaclesTest {
     @Test
     public void testParseFairHope500() {
         generateData(FAIR_HOPE);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, 500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         assertEquals(expectedIdsAndDistance.size(), obstacles.size());
     }
@@ -403,7 +403,7 @@ public class ObstaclesTest {
     @Test
     public void testParseFairHope1000() {
         generateData(FAIR_HOPE);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         assertEquals(expectedIdsAndDistance.size(), obstacles.size());
     }
@@ -411,7 +411,7 @@ public class ObstaclesTest {
     @Test
     public void testParseFairHope1500() {
         generateData(FAIR_HOPE);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, 1500);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         assertEquals(expectedIdsAndDistance.size(), obstacles.size());
     }
@@ -419,7 +419,7 @@ public class ObstaclesTest {
     @Test
     public void testParseFairHope2000() {
         generateData(FAIR_HOPE);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, 2000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.416254, -87.857078, 180, "Fixed Wing");
         HashMap<Integer, Double> expectedIdsAndDistance = new HashMap<>();
         expectedIdsAndDistance.put(227, 1517.4);
         expectedIdsAndDistance.put(228, 1539.8);
@@ -448,7 +448,7 @@ public class ObstaclesTest {
     public void testHighRiskObstacle() {
         String csv = "-87.681418,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 53.10W,30.290059,-87.681418,TOWER,1,110,130,N,4,D,N,2026ASO00001OE,A,2026223";
         generateData(csv);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
 
         assertEquals(1, obstacles.size());
         MarkedObstacle obstacle = obstacles.getFirst();
@@ -462,7 +462,7 @@ public class ObstaclesTest {
     public void testHighRiskObstacleLowHorizontalLowVertical() {
         String csv = "-87.681418,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 53.10W,30.290059,-87.681418,TOWER,1,130,150,N,4,D,N,2026ASO00001OE,A,2026223";
         generateData(csv);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
 
         assertEquals(1, obstacles.size());
         MarkedObstacle obstacle = obstacles.getFirst();
@@ -476,7 +476,7 @@ public class ObstaclesTest {
     public void testMediumRiskObstacleCloseHorizontal() {
         String csv = "-87.681418,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 53.10W,30.290059,-87.681418,TOWER,1,180,200,N,4,D,N,2026ASO00001OE,A,2026223";
         generateData(csv);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
 
         assertEquals(1, obstacles.size());
         MarkedObstacle obstacle = obstacles.getFirst();
@@ -491,7 +491,7 @@ public class ObstaclesTest {
     public void testMediumRiskObstacleCloseVertical() {
         String csv = "-87.679833,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 47.40W,30.290059,-87.679833,TOWER,1,90,110,N,4,D,N,2026ASO00001OE,A,2026223";
         generateData(csv);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
 
         assertEquals(1, obstacles.size());
         MarkedObstacle obstacle = obstacles.getFirst();
@@ -506,7 +506,7 @@ public class ObstaclesTest {
     public void testLowRiskObstacle() {
         String csv = "-87.679833,30.290059,999,01-099999,U,US,AL,GULF SHORES,30 17 24.21N,087 40 47.40W,30.290059,-87.679833,TOWER,1,180,200,N,4,D,N,2026ASO00001OE,A,2026223";
         generateData(csv);
-        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, 1000);
+        ArrayList<MarkedObstacle> obstacles = Obstacles.getNearbyObstaclesWithinRange( 30.290059, -87.682052, 100, "Fixed Wing");
 
         assertEquals(1, obstacles.size());
         MarkedObstacle obstacle = obstacles.getFirst();
