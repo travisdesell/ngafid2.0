@@ -15,7 +15,7 @@ const R_values = ["FF", "D6", "AB", "80"];                            // heavier
 
 // populate hashmap of event definition IDs to RGB values
 const eventColorScheme = {};
-const LOWEST_EVENT_ID = -7;
+const LOWEST_EVENT_ID = -11;
 const HIGHEST_EVENT_ID = 70;
 const ABS_EVENT_ID = Math.abs(LOWEST_EVENT_ID);
 

@@ -23,6 +23,7 @@ import org.ngafid.processor.events.LowEndingFuelScanner
 import org.ngafid.processor.events.SpinEventScanner
 import org.ngafid.processor.events.proximity.ProximityEventScanner
 import org.ngafid.core.heatmap.HeatmapPointsProcessor
+import org.ngafid.processor.events.ObstacleEventScanner
 
 import java.sql.Connection
 import java.sql.SQLException
@@ -216,6 +217,7 @@ class EventConsumer protected constructor(
                 EventScanner(def)
             } else {
                 when (def.id) {
+                    -10, -9, -8 -> ObstacleEventScanner(flight, def)
                     -6, -5, -4 -> LowEndingFuelScanner(flight.airframe, def)
                     -3, -2 -> SpinEventScanner(def)
                     -1 -> ProximityEventScanner(flight, def)
