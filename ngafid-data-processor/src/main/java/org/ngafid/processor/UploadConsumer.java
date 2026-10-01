@@ -41,6 +41,14 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
     // This should not be modified.
     private static long N_RECORDS = 1;
 
+    /**
+     * Entry point for the upload-consumer daemon. Starts the Docker service heartbeat, configures the Kafka
+     * consumer for the uploads topic, and then continuously polls for upload ids, processing each uploaded archive
+     * as it arrives and committing offsets only after successful processing.
+     *
+     * @param args command-line arguments (unused)
+     * @throws UnknownHostException if the local host name needed to configure the Kafka client cannot be resolved
+     */
     public static void main(String[] args) throws UnknownHostException {
 
         /* Start Docker Service Heartbeat Producer */
@@ -62,6 +70,13 @@ public class UploadConsumer extends DisjointConsumer<String, Integer> {
         }
     }
 
+    /**
+     * Constructs an upload consumer backed by the given Kafka clients, binding it to the current thread as its
+     * {@link DisjointConsumer} owner. Exposed (protected) so tests can inject mock consumer/producer clients.
+     *
+     * @param consumer the Kafka consumer that receives upload ids to process
+     * @param producer the Kafka producer used to emit downstream messages
+     */
     protected UploadConsumer(KafkaConsumer<String, Integer> consumer, KafkaProducer<String, Integer> producer) {
         super(Thread.currentThread(), consumer, producer);
     }

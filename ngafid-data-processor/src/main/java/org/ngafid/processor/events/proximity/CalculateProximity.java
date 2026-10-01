@@ -16,6 +16,19 @@ public class CalculateProximity {
     // can be excluded from the regular event calculation process
     private static final Logger LOG = Logger.getLogger(CalculateProximity.class.getName());
 
+    /**
+     * Computes the straight-line 3D distance in feet between two aircraft positions, combining the great-circle
+     * lateral distance between the two latitude/longitude points with the absolute altitude difference
+     * (distance = hypotenuse of the lateral distance and the altitude difference).
+     *
+     * @param flightLatitude the primary aircraft's latitude, in degrees
+     * @param flightLongitude the primary aircraft's longitude, in degrees
+     * @param flightAltitude the primary aircraft's altitude, in feet
+     * @param otherFlightLatitude the other aircraft's latitude, in degrees
+     * @param otherFlightLongitude the other aircraft's longitude, in degrees
+     * @param otherFlightAltitude the other aircraft's altitude, in feet
+     * @return the 3D separation between the two aircraft, in feet
+     */
     public static double calculateDistance(
             double flightLatitude,
             double flightLongitude,
@@ -31,6 +44,16 @@ public class CalculateProximity {
         return Math.sqrt((lateralDistance * lateralDistance) + (altDiffFt * altDiffFt));
     }
 
+    /**
+     * Computes the lateral (horizontal) great-circle distance in feet between two latitude/longitude points,
+     * ignoring altitude.
+     *
+     * @param flightLatitude the primary aircraft's latitude, in degrees
+     * @param flightLongitude the primary aircraft's longitude, in degrees
+     * @param otherFlightLatitude the other aircraft's latitude, in degrees
+     * @param otherFlightLongitude the other aircraft's longitude, in degrees
+     * @return the horizontal distance between the two points, in feet
+     */
     public static double calculateLateralDistance(
             double flightLatitude, double flightLongitude, double otherFlightLatitude, double otherFlightLongitude) {
 
@@ -38,11 +61,33 @@ public class CalculateProximity {
                 flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
     }
 
+    /**
+     * Computes the vertical separation in feet between two aircraft as the absolute difference of their altitudes.
+     *
+     * @param flightAltitude the primary aircraft's altitude, in feet
+     * @param otherFlightAltitude the other aircraft's altitude, in feet
+     * @return the absolute altitude difference, in feet
+     */
     public static double calculateVerticalDistance(double flightAltitude, double otherFlightAltitude) {
 
         return Math.abs(flightAltitude - otherFlightAltitude);
     }
 
+    /**
+     * Computes the per-sample rate of closure between two aircraft across a proximity event, i.e. how quickly the
+     * 3D distance between them changes over time. The analysis window is padded by a few samples on each side of
+     * the event, then the two flights' time series are stepped through in epoch-time lockstep (skipping samples
+     * with a zero/missing timestamp); for each aligned step the change in 3D distance from the previous step is
+     * recorded. A positive value means the aircraft are closing, a negative value means they are separating.
+     *
+     * @param flightInfo the primary flight's loaded time/location series
+     * @param otherInfo the other flight's loaded time/location series
+     * @param startLine the primary flight's event start index
+     * @param endLine the primary flight's event end index
+     * @param otherStartLine the other flight's event start index
+     * @param otherEndLine the other flight's event end index
+     * @return the rate-of-closure values (feet per step) sampled across the padded event window
+     */
     public static double[] calculateRateOfClosure(
             FlightTimeLocation flightInfo,
             FlightTimeLocation otherInfo,
@@ -140,6 +185,15 @@ public class CalculateProximity {
         return roc;
     }
 
+    /**
+     * Appends a proximity event to the list, guarding against bad or redundant entries: a null event is logged and
+     * ignored, a self-referential event (whose other-flight id equals its own flight id) is skipped, and an event
+     * that duplicates one already in the list (same flight id, same other-flight id, and same start and end times)
+     * is skipped. Otherwise the event is added.
+     *
+     * @param eventList the list of accumulated proximity events to add to
+     * @param testEvent the candidate event to add; may be null (ignored)
+     */
     public static void addProximityIfNotInList(ArrayList<Event> eventList, Event testEvent) {
         // Validate input
         if (testEvent == null) {

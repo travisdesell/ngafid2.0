@@ -16,6 +16,12 @@ import org.ngafid.processor.format.FlightBuilder;
  */
 public class ComputeScanEagleStartEndTime extends ComputeStep {
 
+    /**
+     * Constructs the ScanEagle start/end-time compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeScanEagleStartEndTime(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }

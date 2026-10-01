@@ -43,6 +43,13 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
      */
     public static class G5FlightBuilder extends FlightBuilder {
 
+        /**
+         * Constructs a Garmin G5 flight builder from already-parsed series.
+         *
+         * @param meta the flight metadata
+         * @param doubleTimeSeries the double time series keyed by name
+         * @param stringTimeSeries the string time series keyed by name
+         */
         public G5FlightBuilder(
                 FlightMeta meta,
                 Map<String, DoubleTimeSeries> doubleTimeSeries,
@@ -58,6 +65,15 @@ public final class G5CSVFileProcessor extends CSVFileProcessor {
         }
     }
 
+    /**
+     * Constructs a Garmin G5 CSV flight-file processor.
+     *
+     * @param connection the database connection to use
+     * @param stream the input stream of the file to process
+     * @param filename the name of the file being processed
+     * @param pipeline the processing pipeline this processor belongs to
+     * @throws IOException if reading the input stream fails
+     */
     public G5CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
         super(connection, stream, filename, pipeline);

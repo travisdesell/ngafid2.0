@@ -29,9 +29,23 @@ import org.ngafid.processor.format.FlightBuilder;
 public abstract class ComputeStep {
 
     public interface Factory {
+        /**
+         * Creates a compute step bound to the given connection and flight builder.
+         *
+         * @param connection the database connection the step may use
+         * @param builder the flight builder the step reads from and writes to
+         * @return the constructed compute step
+         */
         ComputeStep create(Connection connection, FlightBuilder builder);
     }
 
+    /**
+     * Wraps a factory so that every step it creates is marked as required (a required step that cannot be
+     * computed causes a {@link MalformedFlightFileException}).
+     *
+     * @param factory the factory to wrap
+     * @return a factory that produces required steps
+     */
     public static Factory required(Factory factory) {
         return (c, b) -> {
             var step = factory.create(c, b);
@@ -46,18 +60,45 @@ public abstract class ComputeStep {
     // This grabs the lock on the object so only one thread is using the connection at any given point in time.
     private Connection connection;
 
+    /**
+     * Constructs a compute step.
+     *
+     * @param connection the database connection the step may use (accessed only via {@link #withConnection})
+     * @param builder the flight builder the step reads from and writes to
+     */
     public ComputeStep(Connection connection, FlightBuilder builder) {
         this.connection = connection;
         this.builder = builder;
     }
 
     // These should probably return references to static immutable Sets.
+
+    /**
+     * Returns the double-series columns this step requires as input.
+     *
+     * @return the set of required double-series column names
+     */
     public abstract Set<String> getRequiredDoubleColumns();
 
+    /**
+     * Returns the string-series columns this step requires as input.
+     *
+     * @return the set of required string-series column names
+     */
     public abstract Set<String> getRequiredStringColumns();
 
+    /**
+     * Returns all columns this step requires as input.
+     *
+     * @return the set of required column names
+     */
     public abstract Set<String> getRequiredColumns();
 
+    /**
+     * Returns the columns this step produces.
+     *
+     * @return the set of output column names
+     */
     public abstract Set<String> getOutputColumns();
 
     private boolean required = false;
@@ -68,17 +109,35 @@ public abstract class ComputeStep {
         return required;
     }
 
-    // Whether this ProcessStep can be performed for a given airframe
+    /**
+     * Reports whether this step can be performed for the given airframe. The default implementation applies to
+     * all airframes; subtypes restricted to specific aircraft override this.
+     *
+     * @param airframe the airframe to check
+     * @return true if the step applies to the airframe
+     */
     public boolean airframeIsValid(Airframes.Airframe airframe) {
         return true;
     }
 
+    /**
+     * Reports whether this step is applicable to the current flight: its airframe is valid and all required
+     * string and double columns are present.
+     *
+     * @return true if the step can be computed for the current flight
+     */
     public boolean applicable() {
         return airframeIsValid(builder.meta.getAirframe())
                 && builder.getStringTimeSeriesKeySet().containsAll(getRequiredStringColumns())
                 && builder.getDoubleTimeSeriesKeySet().containsAll(getRequiredDoubleColumns());
     }
 
+    /**
+     * Returns a human-readable explanation of whether this step is applicable to the current flight, listing the
+     * reasons it cannot be applied (invalid airframe or missing required columns) when it is not.
+     *
+     * @return a description of the step's applicability
+     */
     public final String explainApplicability() {
         if (applicable()) {
             return "is applicable - all required columns are present and the airframeName is valid)";
@@ -107,11 +166,26 @@ public abstract class ComputeStep {
     }
 
     protected interface ConnectionFunctor<T> {
+        /**
+         * Performs work using the supplied connection.
+         *
+         * @param connection the database connection to use
+         * @return the computed value
+         * @throws SQLException if the database operation fails
+         */
         T compute(Connection connection) throws SQLException;
     }
 
-    // This interface must be used to access the connection so that we can guarantee that only one
-    // thread is using it at any given time.
+    /**
+     * Runs the given functor with exclusive access to the step's database connection. This is the only
+     * supported way to use the connection; it synchronizes on the connection so at most one thread uses it at a
+     * time.
+     *
+     * @param functor the work to perform with the connection
+     * @param <T> the type of value the functor returns
+     * @return the value computed by the functor
+     * @throws SQLException if the functor's database operation fails
+     */
     public final <T> T withConnection(ConnectionFunctor<T> functor) throws SQLException {
         T value = null;
 
@@ -122,5 +196,12 @@ public abstract class ComputeStep {
         return value;
     }
 
+    /**
+     * Performs this step's computation, modifying the flight builder (typically by adding its output columns).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws MalformedFlightFileException if the flight data is malformed for this step
+     * @throws FatalFlightFileException if an unrecoverable error occurs processing the flight
+     */
     public abstract void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException;
 }

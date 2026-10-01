@@ -18,6 +18,13 @@ import org.ngafid.core.flights.StringTimeSeries;
 public class LowEndingFuelScanner extends AbstractEventScanner {
     private final Airframes.Airframe airframe;
 
+    /**
+     * Constructs a scanner that flags at most one low-fuel event at the end of a flight. The airframe selects the
+     * fuel threshold applied during the scan.
+     *
+     * @param airframe the airframe whose low-fuel threshold applies
+     * @param eventDefinition the low-ending-fuel event definition this scanner detects
+     */
     public LowEndingFuelScanner(Airframes.Airframe airframe, EventDefinition eventDefinition) {
         super(eventDefinition);
         this.airframe = airframe;

@@ -142,6 +142,14 @@ public class ComputeEvent extends ComputeStep {
 
     private final HashSet<String> requiredDoubleColumns = new HashSet<>();
 
+    /**
+     * Constructs a compute step that scans a flight for occurrences of a single event definition.
+     *
+     * @param connection the database connection the step may use
+     * @param fb the flight builder this step reads from and writes to
+     * @param def the event definition to evaluate
+     * @param scanner the scanner that detects occurrences of the event
+     */
     public ComputeEvent(Connection connection, FlightBuilder fb, EventDefinition def, AbstractEventScanner scanner) {
         super(connection, fb);
         definition = def;

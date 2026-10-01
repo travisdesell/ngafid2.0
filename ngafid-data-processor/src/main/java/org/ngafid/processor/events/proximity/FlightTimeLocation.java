@@ -45,6 +45,17 @@ public final class FlightTimeLocation {
     // CHECKSTYLE:ON
     private static final Logger LOG = Logger.getLogger(FlightTimeLocation.class.getName());
 
+    /**
+     * Loads the time span and spatial bounds (min/max latitude, longitude and MSL altitude) required to test this
+     * flight for proximity against others, querying each series' extent from the database. If the flight has no
+     * start/end time or is missing any required series, the instance is marked invalid (see {@link #isValid()})
+     * and the unavailable bounds are left unset instead of an exception being thrown; only genuine database
+     * failures propagate.
+     *
+     * @param connection the database connection used to query the series extents
+     * @param flight the flight whose time and location bounds are computed
+     * @throws SQLException if querying a series extent from the database fails
+     */
     public FlightTimeLocation(Connection connection, Flight flight) throws SQLException {
         this.fleetId = flight.getFleetId();
         this.flightId = flight.getId();
@@ -93,7 +104,15 @@ public final class FlightTimeLocation {
         valid = true;
     }
 
-    // Constructor for testing only. Omits database connection
+    /**
+     * Test-only constructor that sets the spatial bounds directly, without a database connection, leaving the time
+     * span and time-series data unpopulated. Used to exercise the geometry checks in isolation.
+     *
+     * @param minLat the minimum latitude of the flight's bounding box
+     * @param maxLat the maximum latitude of the flight's bounding box
+     * @param minLon the minimum longitude of the flight's bounding box
+     * @param maxLon the maximum longitude of the flight's bounding box
+     */
     public FlightTimeLocation(double minLat, double maxLat, double minLon, double maxLon) {
         this.minLatitude = minLat;
         this.maxLatitude = maxLat;
@@ -178,6 +197,12 @@ public final class FlightTimeLocation {
         return valid;
     }
 
+    /**
+     * Reports whether this flight's position and altitude time series have been loaded (via {@code getSeriesData})
+     * and are therefore available for the per-sample proximity calculations.
+     *
+     * @return true if the series data has been loaded
+     */
     public boolean hasSeriesData() {
         return hasSeriesData;
     }

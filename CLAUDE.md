@@ -77,6 +77,22 @@ with all of the applicable sections:
   a value, document that; don't leave stale or placeholder argument lines.
 
 
+**Be behavior-focused, not signature-restating.** The summary and body should
+explain *what the method does and how* — the meaningful work, algorithm or
+approach, side effects (what state it mutates, what it writes to the DB, files,
+or caches), important edge cases, and any non-obvious behavior or assumptions —
+rather than paraphrasing the method name or parameter types. A reader who cannot
+see the body should understand the method's contract from the docstring.
+- Prefer "Splits the flight into phases by scanning AltAGL for touch-and-go
+  transitions, returning one section per detected phase" over "Processes the
+  flight." Avoid empty restatements like "Gets the name" for `getName`, or
+  "@param connection the connection" — say what the connection is used *for*.
+- Each `@param`/`Args` entry should add information beyond the parameter's name
+  and type (its role, units, valid range, null handling), not echo it.
+- Genuinely trivial members — plain getters/setters, constructors that only
+  store their arguments — may keep a short one-line description; there is no
+  value in inventing detail that isn't there.
+
 Document public and private methods alike, plus nested functions and classes
 that carry real logic. Trivial one-line lambdas/closures whose behavior is
 fully covered by their enclosing function's docstring may be left undocumented.

@@ -31,6 +31,15 @@ import org.ngafid.processor.Pipeline;
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 
+    /**
+     * Constructs a JSON flight-file processor.
+     *
+     * @param connection the database connection to use
+     * @param stream the input stream of the file to process
+     * @param filename the name of the file being processed
+     * @param pipeline the processing pipeline this processor belongs to
+     * @throws IOException if reading the input stream fails
+     */
     public JSONFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
         super(connection, stream, filename, pipeline);

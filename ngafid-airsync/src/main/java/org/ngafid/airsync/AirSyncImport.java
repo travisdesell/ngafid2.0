@@ -31,7 +31,10 @@ public final class AirSyncImport {
             new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     /**
-     * Jackson factory that builds an {@link AirSyncImport} from the JSON returned by the AirSync API.
+     * Jackson factory that builds an {@link AirSyncImport} from the JSON returned by the AirSync API. Beyond
+     * copying the raw fields, it parses the three ISO-offset timestamp strings ({@code timestampUploaded},
+     * {@code timeStart}, {@code timeEnd}) into the corresponding {@link LocalDateTime} fields used elsewhere, so a
+     * malformed timestamp surfaces here as a {@link java.time.format.DateTimeParseException}.
      *
      * @param id the AirSync import id
      * @param aircraftId the AirSync aircraft id this import belongs to
@@ -41,7 +44,7 @@ public final class AirSyncImport {
      * @param timeEnd the flight end time, as an ISO offset date-time string
      * @param fileUrl the URL the import's data file can be downloaded from
      * @param timestampUploaded the upload timestamp, as an ISO offset date-time string
-     * @return the constructed import
+     * @return the constructed import, with its parsed date-time fields populated
      */
     @JsonCreator
     public static AirSyncImport create(

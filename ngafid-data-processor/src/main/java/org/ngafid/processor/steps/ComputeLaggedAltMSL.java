@@ -25,6 +25,12 @@ public class ComputeLaggedAltMSL extends ComputeStep {
     private static final Set<String> AIRFRAME_BLACKLIST = Set.of(AIRFRAME_SCAN_EAGLE, AIRFRAME_DJI);
     private static final int LAG = 10;
 
+    /**
+     * Constructs the lagged-altitude-MSL compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeLaggedAltMSL(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
@@ -45,12 +51,29 @@ public class ComputeLaggedAltMSL extends ComputeStep {
         return OUTPUT_COLUMNS;
     }
 
+    /**
+     * Reports whether this step applies to the given airframe name.
+     *
+     * @param airframe the airframe name to check
+     * @return true if the step applies to the airframe
+     */
     public boolean airframeIsValid(String airframe) {
         for (String blacklisted : AIRFRAME_BLACKLIST) if (airframe.contains(blacklisted)) return false;
 
         return true;
     }
 
+    /**
+     * Builds the {@code ALT_MSL_LAG_DIFF} series: for each sample it stores the change in MSL altitude over the
+     * preceding {@value #LAG}-sample (10-second) window, i.e. {@code altMSL[i] - altMSL[i - LAG]}. The first
+     * {@value #LAG} samples have no prior value to compare against and are filled with 0. The resulting series is
+     * added to the flight builder.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws MalformedFlightFileException if the flight data is malformed for this step
+     * @throws FatalFlightFileException if an unrecoverable error occurs processing the flight
+     */
+    @Override
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         DoubleTimeSeries altMSL = builder.getDoubleTimeSeries(ALT_MSL);
         DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(ALT_MSL_LAG_DIFF, Parameters.Unit.FT_AGL, altMSL.size());

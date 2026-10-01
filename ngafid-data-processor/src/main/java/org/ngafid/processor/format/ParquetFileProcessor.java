@@ -26,12 +26,25 @@ public class ParquetFileProcessor {
     private final InputFile inputFile;
     private final String filename;
 
+    /**
+     * Constructs a Parquet flight-file processor.
+     *
+     * @param connection the database connection to use
+     * @param inputFile the Parquet input file to read
+     * @param filename the name of the file being processed
+     */
     public ParquetFileProcessor(Connection connection, InputFile inputFile, String filename) {
         this.connection = connection;
         this.inputFile = inputFile;
         this.filename = filename;
     }
 
+    /**
+     * Parses the Parquet file into a stream of flight builders.
+     *
+     * @return a stream of the flights parsed from the file
+     * @throws FlightProcessingException if the file cannot be parsed
+     */
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         LOG.info("Parsing Parquet file: " + filename);
         List<FlightBuilder> flightBuilders = new ArrayList<>();

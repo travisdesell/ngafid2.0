@@ -15,6 +15,12 @@ import org.ngafid.processor.format.FlightBuilder;
  * Computes the start and end time for the flight by looking at the first valid date found in the UTC_DATE_TIME series.
  */
 public class ComputeStartEndTime extends ComputeStep {
+    /**
+     * Constructs the start/end-time compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeStartEndTime(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }

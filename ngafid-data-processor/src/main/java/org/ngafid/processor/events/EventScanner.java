@@ -32,6 +32,13 @@ public class EventScanner extends AbstractEventScanner {
     private int stopCount;
     private double severity;
 
+    /**
+     * Constructs a generic, filter-driven event scanner. Builds the {@link Conditional} that evaluates the
+     * definition's filter against each sample, and captures the start/stop debounce buffers that control how many
+     * consecutive satisfying (or non-satisfying) samples are required before an event begins or ends.
+     *
+     * @param eventDefinition the event definition supplying the filter and the start/stop buffer sizes
+     */
     public EventScanner(EventDefinition eventDefinition) {
         super(eventDefinition);
 

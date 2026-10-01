@@ -34,6 +34,14 @@ public class ProximityEventScanner extends AbstractEventScanner {
     private final Map<Event, List<ProximityPointData>> otherFlightPointsMap = new HashMap<>();
     private final Flight flight;
 
+    /**
+     * Constructs a proximity-event scanner for a single primary flight. The scanner detects dangerous-proximity
+     * events between this flight and other flights that overlap it in time and space; the flights to compare
+     * against are supplied later via {@link #processFlight}.
+     *
+     * @param flight the primary flight being scanned for proximity events
+     * @param eventDefinition the proximity event definition this scanner detects
+     */
     public ProximityEventScanner(Flight flight, EventDefinition eventDefinition) {
         super(eventDefinition);
         this.flight = flight;
@@ -45,6 +53,21 @@ public class ProximityEventScanner extends AbstractEventScanner {
                 Parameters.ALT_MSL, Parameters.ALT_AGL, Parameters.LATITUDE, Parameters.LONGITUDE, Parameters.IAS);
     }
 
+    /**
+     * Scans a single pair of flights for proximity events over the window where they overlap in time. Walking the
+     * two flights' synchronized position samples, it measures lateral and vertical separation (and rate of
+     * closure) and opens an event for each span where the aircraft are within the definition's distance
+     * thresholds, recording per-point data for both flights so the event carries the geometry of the encounter.
+     *
+     * @param connection the database connection used to load any series not already cached
+     * @param flightParam the primary flight
+     * @param flightInfo the primary flight's precomputed time/location bounds and series data
+     * @param otherFlight the other flight being compared against the primary
+     * @param otherFlightInfo the other flight's precomputed time/location bounds and series data
+     * @return the proximity events detected for the primary flight; empty if the flights never come close enough
+     * @throws SQLException if loading series data from the database fails
+     * @throws NullPointerException if required position series are missing for either flight
+     */
     public List<Event> scanFlightPair(
             Connection connection,
             Flight flightParam,
@@ -343,6 +366,17 @@ public class ProximityEventScanner extends AbstractEventScanner {
         otherEvent.setMaxLongitude(maxLon);
     }
 
+    /**
+     * Computes all proximity events for the given flight: it loads the flight's time/location bounds, selects the
+     * other flights whose time span and spatial extent overlap it, and scans each candidate pair via
+     * {@link #scanFlightPair}, accumulating the resulting events. The per-flight point maps are reset at the start
+     * of each call so state does not leak between flights.
+     *
+     * @param connection the database connection used to query candidate flights and load their series
+     * @param flightParam the flight to compute proximity events for
+     * @return the proximity events detected for the flight; empty if no overlapping flight comes close enough
+     * @throws SQLException if a database query fails
+     */
     public List<Event> processFlight(Connection connection, Flight flightParam) throws SQLException {
 
         LOG.info("Processing flight: " + flightParam.getId() + ", " + flightParam.getFilename());

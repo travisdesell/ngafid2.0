@@ -24,6 +24,13 @@ public class SRTMTile {
 
     private final int[][] altitudesFt;
 
+    /**
+     * Loads the SRTM terrain tile whose south-west corner is at the given integer latitude/longitude.
+     *
+     * @param latitudeS the integer latitude of the tile's southern edge
+     * @param longitudeW the integer longitude of the tile's western edge
+     * @throws NoSuchFileException if the tile's data file does not exist
+     */
     public SRTMTile(int latitudeS, int longitudeW) throws NoSuchFileException {
         this.latitudeS = latitudeS;
         this.longitudeW = longitudeW;
@@ -88,6 +95,13 @@ public class SRTMTile {
         // LOG.info("min: " + min);
     }
 
+    /**
+     * Returns the terrain elevation (in feet above sea level) at the given coordinate within this tile.
+     *
+     * @param latitude the latitude of the point
+     * @param longitude the longitude of the point
+     * @return the terrain elevation in feet
+     */
     public double getAltitudeFt(double latitude, double longitude) {
         double latDiff = Math.ceil(latitude) - latitude;
         double lonDiff = longitude - Math.floor(longitude);

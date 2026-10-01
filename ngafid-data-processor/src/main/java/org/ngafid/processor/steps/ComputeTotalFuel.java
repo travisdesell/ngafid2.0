@@ -24,6 +24,12 @@ public class ComputeTotalFuel extends ComputeStep {
     private static Set<String> OUTPUT_COLUMNS = Set.of(TOTAL_FUEL);
     private static Set<String> AIRFRAME_BLACKLIST = Set.of(AIRFRAME_SCAN_EAGLE, AIRFRAME_DJI);
 
+    /**
+     * Constructs the total-fuel compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeTotalFuel(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
@@ -48,6 +54,12 @@ public class ComputeTotalFuel extends ComputeStep {
         return OUTPUT_COLUMNS;
     }
 
+    /**
+     * Reports whether this step applies to the given airframe name.
+     *
+     * @param airframe the airframe name to check
+     * @return true if the step applies to the airframe
+     */
     public boolean airframeIsValid(String airframe) {
         return !AIRFRAME_BLACKLIST.contains(airframe);
     }

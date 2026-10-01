@@ -15,6 +15,13 @@ import org.ngafid.processor.steps.*;
 
 public class ParquetFlightBuilder extends FlightBuilder {
 
+    /**
+     * Constructs a Parquet flight builder from already-parsed series.
+     *
+     * @param meta the flight metadata
+     * @param doubleTimeSeries the double time series keyed by name
+     * @param stringTimeSeries the string time series keyed by name
+     */
     public ParquetFlightBuilder(
             FlightMeta meta,
             Map<String, DoubleTimeSeries> doubleTimeSeries,

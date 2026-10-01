@@ -44,6 +44,17 @@ public class TerrainCache {
     // each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
     // the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
     // numbers start at 01, which corresponds to W180 ... W175, 02 is W174 ... 169, etc
+    /**
+     * Returns the name of the terrain-data subdirectory that groups the SRTM tile for the given integer
+     * latitude/longitude. The SRTM distribution buckets tiles into coarse bands: the latitude is divided into
+     * 4-degree bands encoded as a letter ({@code 'A'} + latitude/4, prefixed with {@code 'S'} for southern
+     * latitudes) and the longitude into 6-degree bands encoded as a 1-based number ((longitude + 180) / 6 + 1),
+     * e.g. {@code "K11"}.
+     *
+     * @param latitude the integer latitude of the tile's south-west corner
+     * @param longitude the integer longitude of the tile's south-west corner
+     * @return the subdirectory name that groups the tile
+     */
     public static String getDirectoryFromLatLon(int latitude, int longitude) {
         String directory = "";
         if (latitude < 0) {
@@ -64,6 +75,15 @@ public class TerrainCache {
         return directory;
     }
 
+    /**
+     * Returns the SRTM {@code .hgt} file name that holds the tile for the given integer latitude/longitude. The
+     * name encodes the tile's south-west corner as a hemisphere-prefixed latitude and a hemisphere-prefixed,
+     * zero-padded three-digit longitude, e.g. {@code "N42W074.hgt"} or {@code "S09E119.hgt"}.
+     *
+     * @param latitude the integer latitude of the tile's south-west corner
+     * @param longitude the integer longitude of the tile's south-west corner
+     * @return the {@code .hgt} file name for the tile
+     */
     public static String getFilenameFromLatLon(int latitude, int longitude) {
         String ns = "N";
         if (latitude < 0) ns = "S";
@@ -80,6 +100,16 @@ public class TerrainCache {
         return ns + ilatitude + ew + strLongitude + ".hgt";
     }
 
+    /**
+     * Returns the altitude above ground level (in feet) for a point, computed as its MSL altitude minus the
+     * terrain elevation at the given coordinate.
+     *
+     * @param msl the aircraft's altitude above mean sea level, in feet
+     * @param latitude the latitude of the point
+     * @param longitude the longitude of the point
+     * @return the altitude above ground level, in feet
+     * @throws TerrainUnavailableException if terrain data for the coordinate is not available
+     */
     public static int getAltitudeFt(double msl, double latitude, double longitude) throws TerrainUnavailableException {
         // cout << "getting tile for latitude: " << latitude << " and longitude: " << longitude << endl;
         TileCoordinate coordinate = TileCoordinate.fromLatLon(latitude, longitude);

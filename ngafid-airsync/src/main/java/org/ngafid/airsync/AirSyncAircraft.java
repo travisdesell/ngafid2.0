@@ -35,12 +35,14 @@ public final class AirSyncAircraft {
     private AirSyncFleet fleet;
 
     /**
-     * Jackson factory that builds an {@link AirSyncAircraft} from the JSON returned by the AirSync API.
+     * Jackson factory that builds an {@link AirSyncAircraft} from the JSON returned by the AirSync API. Jackson
+     * uses this in place of the private constructor when deserializing an aircraft; the fleet is not part of the
+     * API payload and is attached separately afterward.
      *
      * @param id the aircraft's AirSync id
      * @param tailNumber the aircraft's tail number
      * @param accountToken the AirSync account token the aircraft belongs to
-     * @return the constructed aircraft
+     * @return the constructed aircraft, with no fleet yet associated
      */
     @JsonCreator
     public static AirSyncAircraft create(

@@ -379,7 +379,9 @@ public class AirSyncFleet extends Fleet {
     }
 
     /**
-     * Forces a refresh of this fleet's AirSync bearer token, replacing the cached credentials.
+     * Forces a refresh of this fleet's AirSync bearer token: it asks the shared {@link AirSyncAuth} singleton to
+     * obtain a new token and then caches that refreshed credential on this fleet. Call this after a request fails
+     * with HTTP 401 so the next request uses a valid token.
      */
     public void refreshAuth() {
         LOG.info("Refreshing AirSync bearer token");

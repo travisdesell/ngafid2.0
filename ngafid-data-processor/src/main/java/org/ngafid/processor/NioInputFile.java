@@ -17,6 +17,11 @@ public class NioInputFile implements InputFile {
     private final Path path;
     private long length = -1;
 
+    /**
+     * Constructs a Parquet {@link org.apache.parquet.io.InputFile} backed by an NIO {@link Path}.
+     *
+     * @param file the file to read
+     */
     public NioInputFile(Path file) {
         path = file;
     }

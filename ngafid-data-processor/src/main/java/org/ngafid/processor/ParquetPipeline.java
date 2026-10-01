@@ -42,6 +42,13 @@ public class ParquetPipeline {
 
     private static ForkJoinPool pool = null;
 
+    /**
+     * Constructs a pipeline that processes flights from a Parquet file.
+     *
+     * @param connection the database connection to use
+     * @param upload the upload being processed
+     * @param parquetFilePath the path to the Parquet file to process
+     */
     public ParquetPipeline(Connection connection, Upload upload, Path parquetFilePath) {
         this.connection = connection;
         this.upload = upload;

@@ -16,6 +16,12 @@ import org.ngafid.processor.format.FlightBuilder;
 public class ComputeTurnToFinal extends ComputeStep {
     private static Logger LOG = Logger.getLogger(ComputeTurnToFinal.class.getName());
 
+    /**
+     * Constructs the turn-to-final compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeTurnToFinal(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }

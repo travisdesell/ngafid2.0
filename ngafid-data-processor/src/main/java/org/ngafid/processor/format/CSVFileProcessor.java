@@ -156,6 +156,15 @@ public class CSVFileProcessor extends FlightFileProcessor {
         return factory.create(connection, bis, filename, pipeline);
     }
 
+    /**
+     * Constructs a CSV flight-file processor.
+     *
+     * @param connection the database connection to use
+     * @param stream the input stream of the file to process
+     * @param filename the name of the file being processed
+     * @param pipeline the processing pipeline this processor belongs to
+     * @throws IOException if reading the input stream fails
+     */
     protected CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
         super(connection, stream, filename, pipeline);

@@ -27,6 +27,13 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
      */
     public static class ScanEagleFlightBuilder extends FlightBuilder {
 
+        /**
+         * Constructs a ScanEagle flight builder from already-parsed series.
+         *
+         * @param meta the flight metadata
+         * @param doubleTimeSeries the double time series keyed by name
+         * @param stringTimeSeries the string time series keyed by name
+         */
         public ScanEagleFlightBuilder(
                 FlightMeta meta,
                 Map<String, DoubleTimeSeries> doubleTimeSeries,
@@ -60,6 +67,15 @@ public final class ScanEagleCSVFileProcessor extends CSVFileProcessor {
         }
     }
 
+    /**
+     * Constructs a ScanEagle CSV flight-file processor.
+     *
+     * @param connection the database connection to use
+     * @param stream the input stream of the file to process
+     * @param filename the name of the file being processed
+     * @param pipeline the processing pipeline this processor belongs to
+     * @throws IOException if reading the input stream fails
+     */
     public ScanEagleCSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
         super(connection, stream, filename, pipeline);

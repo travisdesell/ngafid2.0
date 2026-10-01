@@ -36,6 +36,12 @@ public class ComputeLossOfTailRotorEffectiveness extends ComputeStep {
     private static final Set<String> OUTPUT_COLUMNS =
             Set.of(LTE, LTE_PEDAL_MARGIN, LTE_MRCT_SIGMA, LTE_MU, LTE_RELATIVE_WIND);
 
+    /**
+     * Constructs the loss-of-tail-rotor-effectiveness (LTE) compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeLossOfTailRotorEffectiveness(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }

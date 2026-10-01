@@ -169,6 +169,14 @@ public class DependencyGraph {
         handleExceptions();
     }
 
+    /**
+     * Executes every compute step in the graph on the calling thread, in a dependency-respecting (topologically
+     * sorted) order so each step runs only after the steps that produce its required columns. Each step's run time
+     * is measured for logging. Non-fatal step failures are collected; if any fatal exception occurs, they are
+     * aggregated and rethrown once all runnable steps have been attempted.
+     *
+     * @throws FlightProcessingException if one or more steps fail with a fatal error
+     */
     public void computeSequential() throws FlightProcessingException {
         topologicalSort().forEach(x -> {
             long startnano = System.nanoTime();
@@ -208,6 +216,11 @@ public class DependencyGraph {
         }
     }
 
+    /**
+     * Validates the graph's structure before it is executed by running two sanity checks: that it contains no
+     * dependency cycles, and that no required step depends on an optional step (which could leave a required step
+     * unsatisfiable). Detected problems are reported via the logger.
+     */
     public void scrutinize() {
         cycleCheck();
         requiredCheck();
