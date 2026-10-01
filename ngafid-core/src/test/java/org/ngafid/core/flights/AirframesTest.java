@@ -18,6 +18,12 @@ import org.ngafid.core.TestWithConnection;
  */
 public class AirframesTest extends TestWithConnection {
 
+    /**
+     * Resets the airframe fixtures before each test by clearing any leftover rows and re-inserting the known test
+     * airframe types, airframes, and fleet-airframe relationships.
+     *
+     * @throws SQLException if clearing or inserting the fixtures fails
+     */
     @BeforeEach
     public void setUp() throws SQLException {
         // Clear any existing test data
@@ -26,6 +32,11 @@ public class AirframesTest extends TestWithConnection {
         insertTestData();
     }
 
+    /**
+     * Removes the seeded airframe fixtures after each test so the shared in-memory database is left clean.
+     *
+     * @throws SQLException if the cleanup deletes fail
+     */
     @AfterEach
     public void tearDown() throws SQLException {
         // Clean up test data
@@ -138,6 +149,9 @@ public class AirframesTest extends TestWithConnection {
 
     // ========== CONSTANTS AND STATIC FIELDS TESTS ==========
 
+    /**
+     * Verifies each public airframe-name constant holds its expected display string.
+     */
     @Test
     @DisplayName("Should have correct airframe constants")
     public void testAirframeConstants() {
@@ -166,6 +180,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals("Quest Kodiak 100", Airframes.AIRFRAME_QUEST_KODIAK_100);
     }
 
+    /**
+     * Verifies the {@code FIXED_WING_AIRFRAMES} set contains every expected fixed-wing type and excludes rotorcraft.
+     */
     @Test
     @DisplayName("Should have correct fixed wing airframes set")
     public void testFixedWingAirframes() {
@@ -194,6 +211,10 @@ public class AirframesTest extends TestWithConnection {
         assertFalse(fixedWing.contains("Robinson R44"));
     }
 
+    /**
+     * Verifies {@code resolveGarminRotorcraftAirframeCode} maps Garmin rotorcraft display names (and already-canonical
+     * codes) to their registry codes, and returns empty for a non-rotorcraft name.
+     */
     @Test
     @DisplayName("Should resolve Garmin rotorcraft airframe names to registry codes")
     public void testGarminRotorcraftAirframeAliases() {
@@ -205,6 +226,9 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(Airframes.resolveGarminRotorcraftAirframeCode("Cessna 172S").isEmpty());
     }
 
+    /**
+     * Verifies the {@code ROTORCRAFT} set contains exactly the two expected rotorcraft names.
+     */
     @Test
     @DisplayName("Should have correct rotorcraft set")
     public void testRotorcraftSet() {
@@ -215,12 +239,19 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(2, rotorcraft.size());
     }
 
+    /**
+     * Verifies the {@code FLEET_ID_ALL} sentinel equals -1.
+     */
     @Test
     @DisplayName("Should have correct fleet ID constant")
     public void testFleetIdAll() {
         assertEquals(-1, Airframes.FLEET_ID_ALL);
     }
 
+    /**
+     * Verifies the {@code AIRFRAME_ALIASES} map contains the expected default and fleet-scoped alias keys and maps each
+     * to its canonical airframe name (empty string for the unknown placeholder).
+     */
     @Test
     @DisplayName("Should have correct airframe aliases")
     public void testAirframeAliases() {
@@ -245,6 +276,9 @@ public class AirframesTest extends TestWithConnection {
 
     // ========== ALIASKEY RECORD TESTS ==========
 
+    /**
+     * Verifies the {@code AliasKey} record exposes the name and fleet id passed to its constructor.
+     */
     @Test
     @DisplayName("Should create AliasKey with name and fleetId")
     public void testAliasKeyConstructor() {
@@ -257,6 +291,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(fleetId, aliasKey.fleetId());
     }
 
+    /**
+     * Verifies {@code AliasKey} accepts a null name and still returns the supplied fleet id.
+     */
     @Test
     @DisplayName("Should create AliasKey with null name")
     public void testAliasKeyWithNullName() {
@@ -266,6 +303,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(123, aliasKey.fleetId());
     }
 
+    /**
+     * Verifies {@code AliasKey} accepts a negative fleet id.
+     */
     @Test
     @DisplayName("Should create AliasKey with negative fleetId")
     public void testAliasKeyWithNegativeFleetId() {
@@ -275,6 +315,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(-1, aliasKey.fleetId());
     }
 
+    /**
+     * Verifies {@code AliasKey} equality depends on both name and fleet id, and is reflexive.
+     */
     @Test
     @DisplayName("Should test AliasKey equality")
     public void testAliasKeyEquals() {
@@ -289,6 +332,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(key1, key1);
     }
 
+    /**
+     * Verifies equal {@code AliasKey} values share a hash code and differing ones generally do not.
+     */
     @Test
     @DisplayName("Should test AliasKey hashCode")
     public void testAliasKeyHashCode() {
@@ -300,6 +346,9 @@ public class AirframesTest extends TestWithConnection {
         assertNotEquals(key1.hashCode(), key3.hashCode());
     }
 
+    /**
+     * Verifies the {@code AliasKey} record's {@code toString} includes its name and fleet id.
+     */
     @Test
     @DisplayName("Should test AliasKey toString")
     public void testAliasKeyToString() {
@@ -311,6 +360,9 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(toString.contains("123"));
     }
 
+    /**
+     * Verifies {@code defaultAlias} builds an {@code AliasKey} with the given name and the all-fleets id (-1).
+     */
     @Test
     @DisplayName("Should create default alias")
     public void testDefaultAlias() {
@@ -321,6 +373,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(-1, aliasKey.fleetId());
     }
 
+    /**
+     * Verifies {@code defaultAlias} accepts a null name while still defaulting the fleet id to -1.
+     */
     @Test
     @DisplayName("Should create default alias with null name")
     public void testDefaultAliasWithNullName() {
@@ -332,6 +387,9 @@ public class AirframesTest extends TestWithConnection {
 
     // ========== AIRFRAMENAMEID RECORD TESTS ==========
 
+    /**
+     * Verifies the {@code AirframeNameID} record exposes the name and id passed to its constructor.
+     */
     @Test
     @DisplayName("Should create AirframeNameID with name and id")
     public void testAirframeNameIDConstructor() {
@@ -344,6 +402,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(id, airframeNameID.id());
     }
 
+    /**
+     * Verifies {@code AirframeNameID} accepts a null name while still returning the supplied id.
+     */
     @Test
     @DisplayName("Should create AirframeNameID with null name")
     public void testAirframeNameIDWithNullName() {
@@ -353,6 +414,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(123, airframeNameID.id());
     }
 
+    /**
+     * Verifies {@code AirframeNameID} accepts a negative id.
+     */
     @Test
     @DisplayName("Should create AirframeNameID with negative id")
     public void testAirframeNameIDWithNegativeId() {
@@ -362,6 +426,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(-1, airframeNameID.id());
     }
 
+    /**
+     * Verifies {@code AirframeNameID} equality depends on both name and id, and is reflexive.
+     */
     @Test
     @DisplayName("Should test AirframeNameID equality")
     public void testAirframeNameIDEquals() {
@@ -376,6 +443,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(id1, id1);
     }
 
+    /**
+     * Verifies equal {@code AirframeNameID} values share a hash code and differing ones generally do not.
+     */
     @Test
     @DisplayName("Should test AirframeNameID hashCode")
     public void testAirframeNameIDHashCode() {
@@ -387,6 +457,9 @@ public class AirframesTest extends TestWithConnection {
         assertNotEquals(id1.hashCode(), id3.hashCode());
     }
 
+    /**
+     * Verifies the {@code AirframeNameID} record's {@code toString} includes its name and id.
+     */
     @Test
     @DisplayName("Should test AirframeNameID toString")
     public void testAirframeNameIDToString() {
@@ -400,6 +473,9 @@ public class AirframesTest extends TestWithConnection {
 
     // ========== TYPE INNER CLASS TESTS ==========
 
+    /**
+     * Verifies a {@code Type} can be constructed from a name alone (cache-only, no database lookup).
+     */
     @Test
     @DisplayName("Should create Type with name")
     public void testTypeConstructorWithName() {
@@ -411,6 +487,12 @@ public class AirframesTest extends TestWithConnection {
         // and the getName() method might not be accessible or might require database connection
     }
 
+    /**
+     * Verifies a {@code Type} can be constructed from a connection and name (resolving/inserting the id against the
+     * database).
+     *
+     * @throws SQLException if the lookup or insert fails
+     */
     @Test
     @DisplayName("Should create Type with connection and name")
     public void testTypeConstructorWithConnectionAndName() throws SQLException {
@@ -420,6 +502,11 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(type);
     }
 
+    /**
+     * Verifies a {@code Type} can be constructed from a connection and an existing id.
+     *
+     * @throws SQLException if the lookup fails
+     */
     @Test
     @DisplayName("Should create Type with connection and id")
     public void testTypeConstructorWithConnectionAndId() throws SQLException {
@@ -429,6 +516,10 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(type);
     }
 
+    /**
+     * Verifies a name-only {@code Type} is constructable (indirectly covering its {@code getTableName} wiring, which is
+     * protected and not called directly).
+     */
     @Test
     @DisplayName("Should get table name")
     public void testTypeGetTableName() {
@@ -438,6 +529,10 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(type);
     }
 
+    /**
+     * Disabled scenario (its {@code @Test} is commented out): would verify a {@code Type} can be constructed from a
+     * null name.
+     */
     // @Test
     // @DisplayName("Should handle Type with null name")
     public void testTypeWithNullName() {
@@ -445,6 +540,9 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(type);
     }
 
+    /**
+     * Verifies a {@code Type} can be constructed from an empty name.
+     */
     @Test
     @DisplayName("Should handle Type with empty name")
     public void testTypeWithEmptyName() {
@@ -452,6 +550,9 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(type);
     }
 
+    /**
+     * Verifies a {@code Type} can be constructed from a name containing special characters.
+     */
     @Test
     @DisplayName("Should handle Type with special characters in name")
     public void testTypeWithSpecialCharacters() {
@@ -460,6 +561,9 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(type);
     }
 
+    /**
+     * Verifies a {@code Type} can be constructed from a Unicode name.
+     */
     @Test
     @DisplayName("Should handle Type with unicode characters in name")
     public void testTypeWithUnicodeCharacters() {
@@ -468,6 +572,9 @@ public class AirframesTest extends TestWithConnection {
         assertNotNull(type);
     }
 
+    /**
+     * Verifies a {@code Type} can be constructed from a very long name.
+     */
     @Test
     @DisplayName("Should handle Type with very long name")
     public void testTypeWithLongName() {
@@ -479,6 +586,9 @@ public class AirframesTest extends TestWithConnection {
 
     // ========== AIRFRAME INNER CLASS TESTS ==========
 
+    /**
+     * Verifies an {@code Airframe} built from a name and type exposes them and defaults its id to -1 (not persisted).
+     */
     @Test
     @DisplayName("Should create Airframe with name and type")
     public void testAirframeConstructorWithNameAndType() {
@@ -493,6 +603,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(-1, airframe.getId());
     }
 
+    /**
+     * Verifies an {@code Airframe} accepts a null name while retaining the given type and the default id of -1.
+     */
     @Test
     @DisplayName("Should create Airframe with null name and type")
     public void testAirframeConstructorWithNullNameAndType() {
@@ -506,6 +619,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(-1, airframe.getId());
     }
 
+    /**
+     * Verifies an {@code Airframe} accepts a null type while retaining the given name and the default id of -1.
+     */
     @Test
     @DisplayName("Should create Airframe with name and null type")
     public void testAirframeConstructorWithNameAndNullType() {
@@ -519,6 +635,9 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(-1, airframe.getId());
     }
 
+    /**
+     * Verifies an {@code Airframe} accepts both a null name and null type, keeping the default id of -1.
+     */
     @Test
     @DisplayName("Should create Airframe with null name and null type")
     public void testAirframeConstructorWithNullNameAndNullType() {
@@ -530,6 +649,12 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(-1, airframe.getId());
     }
 
+    /**
+     * Verifies the connection-based constructor resolves (or inserts) a known airframe name and type, yielding a
+     * positive persisted id.
+     *
+     * @throws SQLException if the lookup or insert fails
+     */
     @Test
     @DisplayName("Should create Airframe with connection, name, and type")
     public void testAirframeConstructorWithConnectionNameAndType() throws SQLException {
@@ -544,6 +669,12 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframe.getId() > 0);
     }
 
+    /**
+     * Verifies the connection-based constructor resolves an existing airframe by name even when a null type is passed,
+     * populating the type from the database and yielding a positive id.
+     *
+     * @throws SQLException if the lookup fails
+     */
     @Test
     @DisplayName("Should create Airframe with connection, name, and null type")
     public void testAirframeConstructorWithConnectionNameAndNullType() throws SQLException {
@@ -557,6 +688,12 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframe.getId() > 0);
     }
 
+    /**
+     * Disabled scenario (its {@code @Test} is commented out): would verify constructing an {@code Airframe} from a
+     * connection and an existing id.
+     *
+     * @throws SQLException if the lookup fails
+     */
     // @Test
     // @DisplayName("Should create Airframe with connection and id")
     public void testAirframeConstructorWithConnectionAndId() throws SQLException {
@@ -570,6 +707,12 @@ public class AirframesTest extends TestWithConnection {
         assertEquals(id, airframe.getId());
     }
 
+    /**
+     * Verifies the connection-based constructor throws {@link SQLException} when the name does not exist and no type is
+     * supplied to create it.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle Airframe with non-existent name")
     public void testAirframeWithNonExistentName() throws SQLException {
@@ -581,6 +724,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies constructing an {@code Airframe} from a non-existent id throws {@link SQLException}.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle Airframe with non-existent id")
     public void testAirframeWithNonExistentId() throws SQLException {
@@ -591,6 +739,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies the static {@code getAirframeByName} resolves a known airframe, populating its type and a positive id.
+     *
+     * @throws SQLException if the lookup fails
+     */
     @Test
     @DisplayName("Should get airframe by name using static method")
     public void testGetAirframeByName() throws SQLException {
@@ -604,6 +757,11 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframe.getId() > 0);
     }
 
+    /**
+     * Verifies {@code getAirframeByName} throws {@link SQLException} for a non-existent name.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle getAirframeByName with non-existent name")
     public void testGetAirframeByNameWithNonExistentName() throws SQLException {
@@ -614,6 +772,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAirframeByName} throws {@link SQLException} for an empty name.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle getAirframeByName with empty name")
     public void testGetAirframeByNameWithEmptyName() throws SQLException {
@@ -622,6 +785,12 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAirframeByName} throws {@link SQLException} for a name with special characters that matches no
+     * airframe.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle getAirframeByName with special characters")
     public void testGetAirframeByNameWithSpecialCharacters() throws SQLException {
@@ -632,6 +801,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAirframeByName} throws {@link SQLException} for a Unicode name that matches no airframe.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle getAirframeByName with unicode characters")
     public void testGetAirframeByNameWithUnicodeCharacters() throws SQLException {
@@ -642,6 +816,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAirframeByName} throws {@link SQLException} for a very long name that matches no airframe.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle getAirframeByName with very long name")
     public void testGetAirframeByNameWithLongName() throws SQLException {
@@ -653,6 +832,9 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAirframeByName} throws {@link NullPointerException} when given a null connection.
+     */
     @Test
     @DisplayName("Should handle getAirframeByName with null connection")
     public void testGetAirframeByNameWithNullConnection() {
@@ -661,6 +843,10 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies the connection-based {@code Airframe} constructor throws {@link NullPointerException} for a null
+     * connection.
+     */
     @Test
     @DisplayName("Should handle Airframe with null connection")
     public void testAirframeWithNullConnection() {
@@ -669,6 +855,10 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Disabled scenario (its {@code @Test} is commented out): would verify the id-based {@code Airframe} constructor
+     * throws {@link NullPointerException} for a null connection.
+     */
     // @Test
     // @DisplayName("Should handle Airframe with null connection and id")
     public void testAirframeWithNullConnectionAndId() {
@@ -677,6 +867,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies constructing an {@code Airframe} from a negative id throws {@link SQLException}.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle Airframe with negative id")
     public void testAirframeWithNegativeId() throws SQLException {
@@ -687,6 +882,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies constructing an {@code Airframe} from id 0 throws {@link SQLException}.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle Airframe with zero id")
     public void testAirframeWithZeroId() throws SQLException {
@@ -697,6 +897,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies constructing an {@code Airframe} from {@code Integer.MAX_VALUE} (no such row) throws SQLException.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle Airframe with very large id")
     public void testAirframeWithVeryLargeId() throws SQLException {
@@ -707,6 +912,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies constructing an {@code Airframe} from {@code Integer.MIN_VALUE} (no such row) throws SQLException.
+     *
+     * @throws SQLException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should handle Airframe with very small id")
     public void testAirframeWithVerySmallId() throws SQLException {
@@ -719,6 +929,12 @@ public class AirframesTest extends TestWithConnection {
 
     // ========== STATIC METHODS TESTS ==========
 
+    /**
+     * Verifies {@code setAirframeFleet} inserts a fleet-airframe relationship row that can then be found in
+     * {@code fleet_airframes}.
+     *
+     * @throws SQLException if the insert or verification query fails
+     */
     @Test
     @DisplayName("Should set airframe fleet relationship")
     public void testSetAirframeFleet() throws SQLException {
@@ -741,6 +957,11 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code setAirframeFleet} is idempotent: calling it twice for the same pair leaves exactly one row.
+     *
+     * @throws SQLException if the inserts or verification query fail
+     */
     @Test
     @DisplayName("Should handle setAirframeFleet with existing relationship")
     public void testSetAirframeFleetWithExistingRelationship() throws SQLException {
@@ -766,6 +987,11 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code getAll(connection, fleetId)} returns an empty list for a fleet with no airframes.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes for fleet with no airframes")
     public void testGetAllForFleetWithNoAirframes() throws SQLException {
@@ -777,6 +1003,11 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.isEmpty());
     }
 
+    /**
+     * Verifies {@code getAll(connection, fleetId)} returns an empty list for a negative fleet id.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes for fleet with negative ID")
     public void testGetAllForFleetWithNegativeId() throws SQLException {
@@ -788,6 +1019,11 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.isEmpty());
     }
 
+    /**
+     * Verifies {@code getAll(connection, fleetId)} returns an empty list for {@code Integer.MAX_VALUE}.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes for fleet with very large ID")
     public void testGetAllForFleetWithVeryLargeId() throws SQLException {
@@ -799,6 +1035,11 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.isEmpty());
     }
 
+    /**
+     * Verifies {@code getAll(connection, fleetId)} returns an empty list for {@code Integer.MIN_VALUE}.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes for fleet with very small ID")
     public void testGetAllForFleetWithVerySmallId() throws SQLException {
@@ -810,6 +1051,9 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.isEmpty());
     }
 
+    /**
+     * Verifies {@code getAll(connection, fleetId)} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @DisplayName("Should handle getAll with null connection")
     public void testGetAllWithNullConnection() {
@@ -818,6 +1062,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAll(connection)} returns a non-empty list of non-blank airframe names across all fleets.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes regardless of fleet")
     public void testGetAllAirframes() throws SQLException {
@@ -836,6 +1085,9 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code getAll(connection)} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @DisplayName("Should handle getAll with null connection")
     public void testGetAllWithNullConnectionNoFleet() {
@@ -844,6 +1096,11 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAllWithIds(connection)} returns all airframes as name/id records with positive ids.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes with IDs regardless of fleet")
     public void testGetAllWithIds() throws SQLException {
@@ -860,6 +1117,11 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code getAllWithIds(connection, fleetId)} returns a specific fleet's airframes as name/id records.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes with IDs for specific fleet")
     public void testGetAllWithIdsForFleet() throws SQLException {
@@ -878,6 +1140,11 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code getAllWithIds} with a negative fleet id (the all-fleets sentinel) returns every airframe.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with negative ID")
     public void testGetAllWithIdsForFleetWithNegativeId() throws SQLException {
@@ -889,6 +1156,11 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.length >= 3); // Should return all airframes
     }
 
+    /**
+     * Verifies {@code getAllWithIds} returns an empty array for fleet id 0 (no such fleet).
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with zero ID")
     public void testGetAllWithIdsForFleetWithZeroId() throws SQLException {
@@ -900,6 +1172,11 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.length == 0);
     }
 
+    /**
+     * Verifies {@code getAllWithIds} returns an empty array for {@code Integer.MIN_VALUE} (no such fleet).
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all airframes with IDs for fleet with very small ID")
     public void testGetAllWithIdsForFleetWithVerySmallId() throws SQLException {
@@ -911,6 +1188,9 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(airframes.length == 0);
     }
 
+    /**
+     * Verifies {@code getAllWithIds(connection)} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @DisplayName("Should handle getAllWithIds with null connection")
     public void testGetAllWithIdsWithNullConnection() {
@@ -919,6 +1199,9 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getAllWithIds(connection, fleetId)} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @DisplayName("Should handle getAllWithIds with null connection and fleet ID")
     public void testGetAllWithIdsWithNullConnectionAndFleetId() {
@@ -927,6 +1210,12 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getIdToNameMap(connection)} returns a map of positive ids to non-empty airframe names across all
+     * fleets.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get ID to name map")
     public void testGetIdToNameMap() throws SQLException {
@@ -944,6 +1233,11 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code getIdToNameMap(connection, fleetId)} returns the id-to-name map scoped to a specific fleet.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get ID to name map for specific fleet")
     public void testGetIdToNameMapForFleet() throws SQLException {
@@ -963,6 +1257,11 @@ public class AirframesTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code getIdToNameMap(connection, fleetId)} returns an empty map for a fleet with no airframes.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get ID to name map for fleet with no airframes")
     public void testGetIdToNameMapForFleetWithNoAirframes() throws SQLException {
@@ -974,6 +1273,11 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(idToNameMap.isEmpty());
     }
 
+    /**
+     * Verifies {@code getIdToNameMap(connection, fleetId)} returns an empty map for {@code Integer.MIN_VALUE}.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get ID to name map for fleet with very small ID")
     public void testGetIdToNameMapForFleetWithVerySmallId() throws SQLException {
@@ -985,6 +1289,9 @@ public class AirframesTest extends TestWithConnection {
         assertTrue(idToNameMap.isEmpty());
     }
 
+    /**
+     * Verifies {@code getIdToNameMap(connection)} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @DisplayName("Should handle getIdToNameMap with null connection")
     public void testGetIdToNameMapWithNullConnection() {
@@ -993,6 +1300,9 @@ public class AirframesTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code getIdToNameMap(connection, fleetId)} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @DisplayName("Should handle getIdToNameMap with null connection and fleet ID")
     public void testGetIdToNameMapWithNullConnectionAndFleetId() {

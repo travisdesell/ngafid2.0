@@ -34,6 +34,14 @@ public class H2Database {
         }
     }
 
+    /**
+     * Borrows a connection from the in-memory H2 test connection pool. The pool and its schema are created once in a
+     * static initializer (an H2 MySQL-compatibility database populated by running the Liquibase test changelog), so
+     * tests share one migrated in-memory database.
+     *
+     * @return a pooled connection to the in-memory test database
+     * @throws SQLException if a connection cannot be obtained from the pool
+     */
     public static Connection getConnection() throws SQLException {
         return CONNECTION_POOL.getConnection();
     }
