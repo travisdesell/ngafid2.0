@@ -475,6 +475,14 @@ public final class LossOfTailRotorEffectiveness {
         return output;
     }
 
+    /**
+     * Classifies a loss-of-tail-rotor-effectiveness (LTE) sample using the default event yaw-rate threshold. See
+     * {@link #classify(double, double, double)} for the returned codes.
+     *
+     * @param predictedPedalMargin the model's predicted pedal margin
+     * @param yawRateDps the yaw rate, in degrees per second
+     * @return the LTE output code (see {@link #classify(double, double, double)})
+     */
     public static int classify(double predictedPedalMargin, double yawRateDps) {
         return classify(predictedPedalMargin, yawRateDps, DEFAULT_EVENT_YAW_THRESHOLD_DPS);
     }

@@ -8,6 +8,14 @@ public class ProximityPointData {
     private final OffsetDateTime timestamp;
     private final double altitudeAGL;
 
+    /**
+     * Constructs an immutable sampled point for a proximity event: its position, timestamp, and altitude above ground.
+     *
+     * @param latitude the point's latitude, in degrees
+     * @param longitude the point's longitude, in degrees
+     * @param timestamp the time the sample was recorded
+     * @param altitudeAGL the altitude above ground level, in feet
+     */
     public ProximityPointData(double latitude, double longitude, OffsetDateTime timestamp, double altitudeAGL) {
         this.latitude = latitude;
         this.longitude = longitude;

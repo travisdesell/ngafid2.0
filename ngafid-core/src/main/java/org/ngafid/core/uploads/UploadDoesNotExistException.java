@@ -7,6 +7,11 @@ package org.ngafid.core.uploads;
 public class UploadDoesNotExistException extends Exception {
     private final int id;
 
+    /**
+     * Constructs the exception for a specific missing upload, retaining its id for the message.
+     *
+     * @param id the id of the upload that was expected but not found
+     */
     public UploadDoesNotExistException(int id) {
         this.id = id;
     }

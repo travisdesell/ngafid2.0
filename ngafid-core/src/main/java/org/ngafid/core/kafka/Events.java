@@ -33,10 +33,22 @@ public final class Events {
         return props;
     }
 
+    /**
+     * Creates a Kafka producer configured for event records (string key/value serialization and the shared base
+     * configuration).
+     *
+     * @return a new Kafka producer for event messages
+     */
     public static KafkaProducer<String, String> createProducer() {
         return new KafkaProducer<>(getProperties());
     }
 
+    /**
+     * Creates a Kafka consumer for event records, already subscribed to the event and event-retry topics and configured
+     * with the event poll limits and JSON deserialization into {@link EventToCompute}.
+     *
+     * @return a new Kafka consumer subscribed to the event topics
+     */
     public static KafkaConsumer<String, String> createConsumer() {
         var consumer = new KafkaConsumer<String, String>(getProperties());
         consumer.subscribe(List.of(Topic.EVENT.toString(), Topic.EVENT_RETRY.toString()));

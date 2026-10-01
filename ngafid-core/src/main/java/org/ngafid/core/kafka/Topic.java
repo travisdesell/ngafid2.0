@@ -39,10 +39,25 @@ public enum Topic {
         return this.name;
     }
 
+    /**
+     * Subscribes the given Kafka consumer to this topic.
+     *
+     * @param consumer the consumer to subscribe to this topic
+     * @param <K> the consumer's key type
+     * @param <V> the consumer's value type
+     */
     public <K, V> void subscribeWith(KafkaConsumer<K, V> consumer) {
         consumer.subscribe(List.of(this.toString()));
     }
 
+    /**
+     * Command-line entry point that provisions the Kafka topics. Always (re)creates every topic in this enum with 6
+     * partitions and a replication factor of 1; if the first argument is {@code "drain"}, the topics named by the
+     * remaining arguments are deleted first.
+     *
+     * @param args optional {@code "drain"} followed by topic names to delete before (re)creating all topics
+     * @throws Exception if communicating with the Kafka admin client fails
+     */
     public static void main(String[] args) throws Exception {
         try (AdminClient adminClient = AdminClient.create(Configuration.getProperties())) {
             if (args.length != 0 && args[0].equals("drain")) {

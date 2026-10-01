@@ -26,6 +26,15 @@ public final class BackfillTTFCache {
 
     private BackfillTTFCache() {}
 
+    /**
+     * Command-line entry point for rebuilding the turn-to-final cache, typically run after a deployment that changes
+     * {@code TurnToFinal.serialVersionUID}. Parses optional flags — {@code --batch N}, {@code --limit N},
+     * {@code --dry-run}, {@code --full} (pre-populate from itinerary), and {@code --update-version-only} (fast path
+     * that only bumps the stored version) — then runs the selected operation and prints a summary. Exits non-zero on
+     * failure.
+     *
+     * @param args the command-line flags described above
+     */
     public static void main(String[] args) {
         int batchSize = 100;
         Integer limit = null;

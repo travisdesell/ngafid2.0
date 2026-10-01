@@ -10,6 +10,14 @@ import org.ngafid.core.flights.Flight;
 public final class ExtractFlights {
     private ExtractFlights() {}
 
+    /**
+     * Command-line tool that exports flights to CSV. Requires {@code -f/--flight_ids} (one or more flight ids) and
+     * {@code -o/--output_file_prefix}; loads each flight (warning and skipping ids not in the database) and writes one
+     * {@code <prefix><flightId>.csv} file per flight. Prints usage and exits on argument errors.
+     *
+     * @param arguments the command-line arguments ({@code -f} flight ids and {@code -o} output prefix)
+     * @throws Exception if database access or writing a flight's CSV fails
+     */
     public static void main(String[] arguments) throws Exception {
         Connection connection = Database.getConnection();
         Options options = new Options();

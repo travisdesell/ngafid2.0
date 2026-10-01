@@ -94,6 +94,13 @@ public class FleetAccess implements Serializable {
      */
     private FleetAccess() {}
 
+    /**
+     * Constructs a fleet-access entry linking a user to a fleet with a given access level.
+     *
+     * @param fleetId the fleet id
+     * @param userId the user id
+     * @param accessType the access level (e.g. manager, upload, view, or a pending-access marker)
+     */
     protected FleetAccess(int fleetId, int userId, String accessType) {
         this.fleetId = fleetId;
         this.userId = userId;

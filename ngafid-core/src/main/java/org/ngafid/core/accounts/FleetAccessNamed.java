@@ -16,6 +16,14 @@ public final class FleetAccessNamed extends FleetAccess implements Serializable 
         return fleetName;
     }
 
+    /**
+     * Resolves and caches the fleet's display name by looking up the fleet by its id, so this access entry carries the
+     * name alongside the id.
+     *
+     * @param connection the database connection used to look up the fleet
+     * @throws SQLException if the lookup fails
+     * @throws AccountException if the fleet cannot be resolved
+     */
     public void updateFleetName(Connection connection) throws SQLException, AccountException {
 
         fleetName = Fleet.get(connection, fleetId).getName();

@@ -69,6 +69,12 @@ public final class FlightPhaseProcessor {
         private final List<FlightPhase> phases;
         private final int numberOfRows;
 
+        /**
+         * Constructs the per-index phase data for a flight.
+         *
+         * @param phases the detected flight phase at each time index
+         * @param numberOfRows the number of time-series rows the phases cover
+         */
         public FlightPhaseData(List<FlightPhase> phases, int numberOfRows) {
             this.phases = phases;
             this.numberOfRows = numberOfRows;

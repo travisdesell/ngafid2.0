@@ -21,6 +21,12 @@ public class Tail {
         confirmed = resultSet.getBoolean(4);
     }
 
+    /**
+     * Returns a short human-readable summary of the tail (its tail number and system id).
+     *
+     * @return a debug string describing this tail
+     */
+    @Override
     public String toString() {
         return "Tail " + tail + ", sys. id: " + systemId;
     }

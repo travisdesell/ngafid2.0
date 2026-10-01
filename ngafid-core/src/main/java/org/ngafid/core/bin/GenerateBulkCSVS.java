@@ -122,6 +122,13 @@ public class GenerateBulkCSVS {
         this.displayInfo();
     }
 
+    /**
+     * Builds a flight-search {@link Filter} that matches any of the given aircraft (airframe) names, OR-ing together
+     * one {@code "Airframe is <name>"} clause per name.
+     *
+     * @param aircraftNamesList the airframe names to include
+     * @return an OR filter matching flights whose airframe is any of the given names
+     */
     public static Filter parseAircraftFilter(List<String> aircraftNamesList) {
         ArrayList<String> aircraftFilterArgs = new ArrayList<>();
 

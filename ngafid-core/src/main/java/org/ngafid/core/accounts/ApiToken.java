@@ -183,6 +183,14 @@ public final class ApiToken implements Serializable {
         }
     }
 
+    /**
+     * Loads an API token by its primary key.
+     *
+     * @param connection the database connection
+     * @param id the API token's id
+     * @return the matching token, or null if no token has that id
+     * @throws SQLException if the query fails
+     */
     public static ApiToken getById(Connection connection, int id) throws SQLException {
         try (PreparedStatement query =
                 connection.prepareStatement("SELECT " + DEFAULT_COLUMNS + " FROM api_token WHERE id = ?")) {

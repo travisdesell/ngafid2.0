@@ -41,6 +41,9 @@ public final class PasswordAuthentication {
 
     private final int cost;
 
+    /**
+     * Creates a password manager using the default hashing cost ({@link #DEFAULT_COST}).
+     */
     public PasswordAuthentication() {
         this(DEFAULT_COST);
     }

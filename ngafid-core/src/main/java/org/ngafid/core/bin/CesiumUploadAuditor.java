@@ -79,6 +79,18 @@ public final class CesiumUploadAuditor {
         return options;
     }
 
+    /**
+     * Command-line entry point that audits uploads for Cesium readiness by sampling their flights against the
+     * {@link CesiumFlightReadiness} rules and, when enabled, re-enqueues failing uploads through the normal Kafka
+     * upload pipeline. Supports selecting uploads by fleet ({@code -f}) and capping the scan ({@code -l/--limit}), and
+     * can write
+     * a full audit/reprocess report to a file ({@code --report}). Prints usage and exits on argument errors.
+     *
+     * @param arguments the command-line arguments selecting what to scan and whether to reprocess
+     * @throws SQLException if a database operation fails
+     * @throws UploadDoesNotExistException if an upload selected for reprocessing no longer exists
+     * @throws IOException if reading inputs or writing the report fails
+     */
     public static void main(String[] arguments) throws SQLException, UploadDoesNotExistException, IOException {
         Options options = buildCLIOptions();
         CommandLineParser parser = new DefaultParser();
