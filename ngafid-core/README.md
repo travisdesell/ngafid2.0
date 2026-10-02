@@ -12,31 +12,28 @@ Docker engine is therefore required** to run `mvn test`.
 
 On a standard Docker install (Linux, or CI) this works with no extra configuration.
 
-### Docker Desktop quirk (local macOS/Windows)
+### Potential Docker Desktop issue (local macOS)
 
-Recent Docker Desktop releases expose a socket proxy and ship a daemon whose minimum API version is newer than the one
-Testcontainers' bundled Docker client negotiates by default. When that happens, `mvn test` fails before any test runs
-with an error such as:
+Recent Docker Desktop releases expose a proxied socket and ship a daemon whose minimum API version is newer than the
+one Testcontainers' bundled Docker client negotiates by default. On some setups this makes `mvn test` fail before any
+test runs, with an error such as `Could not find a valid Docker environment` or
+`client version 1.xx is too old. Minimum supported API version is 1.40`.
 
-- `Could not find a valid Docker environment`, or
-- `client version 1.xx is too old. Minimum supported API version is 1.40`
+If you hit this, create a `~/.testcontainers.properties` file that points Testcontainers at the Docker Desktop socket:
 
-If you hit this, point Testcontainers at the Docker Desktop socket and pin the Docker API version to your daemon's:
-
-```bash
-# Use your daemon's API version (find it with the command below):
-API_VERSION=$(docker version --format '{{.Server.APIVersion}}')
-
-DOCKER_HOST="unix://$HOME/.docker/run/docker.sock" \
-TESTCONTAINERS_RYUK_DISABLED=true \
-  mvn -pl ngafid-core test -DargLine="-Dapi.version=$API_VERSION"
+```properties
+docker.host=unix:///Users/<you>/.docker/run/docker.sock
+ryuk.disabled=true
 ```
 
-Notes:
+- Use `unix:///Users/<you>/Library/Containers/com.docker.docker/Data/docker.raw.sock` if the `~/.docker/run` socket is
+  not present.
+- `ryuk.disabled=true` skips the Ryuk reaper container, whose socket bind-mount can fail under Docker Desktop's proxied
+  socket; test containers are still stopped when the JVM exits.
 
-- `DOCKER_HOST` can also point at `unix://$HOME/Library/Containers/com.docker.docker/Data/docker.raw.sock` if the
-  `~/.docker/run/docker.sock` path is not present.
-- `TESTCONTAINERS_RYUK_DISABLED=true` skips the Ryuk reaper container, whose socket bind-mount can fail under Docker
-  Desktop's custom socket; containers are still cleaned up when the JVM exits.
-- To make this permanent for your machine, put the equivalent settings in `~/.testcontainers.properties`
-  (`docker.host=...`, `ryuk.disabled=true`) rather than exporting them each time.
+If the `client version ... is too old` error persists after that, also pin the Docker API version to your daemon's when
+running the tests:
+
+```bash
+mvn -pl ngafid-core test -DargLine="-Dapi.version=$(docker version --format '{{.Server.APIVersion}}')"
+```
