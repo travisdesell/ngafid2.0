@@ -22,6 +22,13 @@ public class UserTest extends TestWithConnection {
     private User user3fleet1; // User 3 with DENIED access to fleet 1
     private User user1Fleet2Waiting; // User 1 with WAITING access to fleet 2
 
+    /**
+     * Seeds the shared test data and loads the handful of {@link User} fixtures (various user/fleet access
+     * combinations) that the tests reference, before each test runs.
+     *
+     * @throws SQLException if seeding or loading a user fails
+     * @throws AccountException if a fixture user has no valid fleet access
+     */
     @BeforeEach
     public void initUsers() throws SQLException, AccountException {
         // Set up test data first
@@ -163,6 +170,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Cleans up fleet-access and other records created during a test after it runs, restoring the baseline test data so
+     * tests remain independent.
+     *
+     * @throws SQLException if a cleanup statement fails
+     */
     @AfterEach
     public void cleanupTestData() throws SQLException {
         // Clean up any fleet access records created during tests
@@ -182,6 +195,13 @@ public class UserTest extends TestWithConnection {
 
     // ==================== GET USER BY ID TESTS ====================
 
+    /**
+     * Verifies {@code User.get(connection, userId, fleetId)} loads the expected user for a valid user/fleet pair, with
+     * all profile fields matching a reference user built from the same data.
+     *
+     * @throws SQLException if the lookup fails
+     * @throws AccountException if the user has no valid access to the fleet
+     */
     @Test
     @DisplayName("Should get user with valid ID and fleet ID")
     public void getUserWithValidIdAndFleetId() throws SQLException, AccountException {
@@ -208,6 +228,13 @@ public class UserTest extends TestWithConnection {
         assertEquals(expectedUser, actualUser);
     }
 
+    /**
+     * Verifies {@code User.get} loads the same user against a second fleet they belong to, with the selected fleet id
+     * reflecting that fleet.
+     *
+     * @throws SQLException if the lookup fails
+     * @throws AccountException if the user has no valid access to the fleet
+     */
     @Test
     @DisplayName("Should get user with valid ID and different fleet ID")
     public void getUserWithValidIdAndDifferentFleetId() throws SQLException, AccountException {
@@ -234,6 +261,13 @@ public class UserTest extends TestWithConnection {
         assertEquals(expectedUser, actualUser);
     }
 
+    /**
+     * Verifies {@code User.get} loads an admin user with the admin and aggregate-view flags set true, matching a
+     * reference admin user.
+     *
+     * @throws SQLException if the lookup fails
+     * @throws AccountException if the user has no valid access to the fleet
+     */
     @Test
     @DisplayName("Should get admin user")
     public void getUserWithAdminUser() throws SQLException, AccountException {
@@ -262,6 +296,11 @@ public class UserTest extends TestWithConnection {
 
     // ==================== FLIGHT ACCESS TESTS ====================
 
+    /**
+     * Verifies {@code hasFlightAccess} returns false for an invalid flight id (0), which matches no flight.
+     *
+     * @throws SQLException if the access check query fails
+     */
     @Test
     @DisplayName("Should deny flight access with invalid flight ID")
     public void hasFlightAccessWithInvalidFlightId() throws SQLException {
@@ -271,6 +310,11 @@ public class UserTest extends TestWithConnection {
         assertFalse(hasAccess);
     }
 
+    /**
+     * Verifies {@code hasFlightAccess} returns false for a user whose fleet access is DENIED.
+     *
+     * @throws SQLException if the access check query fails
+     */
     @Test
     @DisplayName("Should deny flight access for denied user")
     public void hasFlightAccessWithDeniedUser() throws SQLException {
@@ -280,6 +324,11 @@ public class UserTest extends TestWithConnection {
         assertFalse(hasAccess);
     }
 
+    /**
+     * Verifies {@code hasFlightAccess} returns false for a user whose fleet access is still WAITING (not yet approved).
+     *
+     * @throws SQLException if the access check query fails
+     */
     @Test
     @DisplayName("Should deny flight access for waiting user")
     public void hasFlightAccessWithWaitingUser() throws SQLException {
@@ -290,6 +339,12 @@ public class UserTest extends TestWithConnection {
         assertFalse(hasAccess);
     }
 
+    /**
+     * Verifies {@code hasFlightAccess} returns false when the flight belongs to a fleet other than the user's selected
+     * fleet.
+     *
+     * @throws SQLException if the access check query fails
+     */
     @Test
     @DisplayName("Should deny flight access for user from different fleet")
     public void hasFlightAccessWithDifferentFleet() throws SQLException {
@@ -300,6 +355,11 @@ public class UserTest extends TestWithConnection {
         assertFalse(hasAccess);
     }
 
+    /**
+     * Verifies {@code hasFlightAccess} returns true for a flight in the user's own fleet to which they have access.
+     *
+     * @throws SQLException if the access check query fails
+     */
     @Test
     @DisplayName("Should grant flight access for valid flight in same fleet")
     public void hasFlightAccessWithValidFlightInSameFleet() throws SQLException {
@@ -310,6 +370,11 @@ public class UserTest extends TestWithConnection {
         assertTrue(hasAccess);
     }
 
+    /**
+     * Verifies {@code hasFlightAccess} returns true for each of several flights in the user's own fleet.
+     *
+     * @throws SQLException if an access check query fails
+     */
     @Test
     @DisplayName("Should grant flight access for multiple valid flights")
     public void hasFlightAccessWithMultipleValidFlights() throws SQLException {
@@ -323,6 +388,11 @@ public class UserTest extends TestWithConnection {
         assertTrue(hasAccess2);
     }
 
+    /**
+     * Verifies {@code hasFlightAccess} returns true for an admin user accessing a flight in their fleet.
+     *
+     * @throws SQLException if the access check query fails
+     */
     @Test
     @DisplayName("Should grant flight access for admin user")
     public void hasFlightAccessWithAdminUser() throws SQLException {
@@ -335,6 +405,13 @@ public class UserTest extends TestWithConnection {
 
     // ==================== CREATE NEW FLEET USER TESTS ====================
 
+    /**
+     * Verifies {@code createNewFleetUser} throws {@link AccountException} when both the email and the fleet name
+     * already exist. Runs in a rolled-back transaction so no data persists.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should throw exception when creating user with duplicate email and fleet")
     public void createNewFleetUserWithDuplicateEmailAndFleet() throws SQLException, AccountException {
@@ -361,6 +438,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code createNewFleetUser} throws {@link AccountException} when the email already exists, even though
+     * the fleet name is new. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should throw exception when creating user with duplicate email")
     public void createNewFleetUserWithDuplicateEmail() throws SQLException, AccountException {
@@ -387,6 +471,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code createNewFleetUser} throws {@link AccountException} when the fleet name already exists, even
+     * though the email is new. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException declared; the body asserts the throw occurs
+     */
     @Test
     @DisplayName("Should throw exception when creating user with duplicate fleet")
     public void createNewFleetUserWithDuplicateFleet() throws SQLException, AccountException {
@@ -413,6 +504,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code createNewFleetUser} succeeds for a brand-new email and fleet, returning a user whose email and
+     * first/last name match the supplied values. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if user creation is rejected
+     */
     @Test
     @DisplayName("Should create user with unique email and fleet")
     public void createNewFleetUserWithUniqueEmailAndFleet() throws SQLException, AccountException {
@@ -444,6 +542,9 @@ public class UserTest extends TestWithConnection {
 
     // ==================== GETTER TESTS ====================
 
+    /**
+     * Verifies {@code getId} returns the user's id.
+     */
     @Test
     @DisplayName("Should get user ID")
     public void getIdWithValidUser() {
@@ -454,6 +555,9 @@ public class UserTest extends TestWithConnection {
         assertEquals(1, userId);
     }
 
+    /**
+     * Verifies {@code getEmail} returns the user's email address.
+     */
     @Test
     @DisplayName("Should get user email")
     public void getEmailWithValidUser() {
@@ -464,6 +568,9 @@ public class UserTest extends TestWithConnection {
         assertEquals("test@email.com", email);
     }
 
+    /**
+     * Verifies {@code getFullName} returns the user's first and last name joined (e.g. "John Doe").
+     */
     @Test
     @DisplayName("Should get user full name")
     public void getFullNameWithValidUser() {
@@ -474,6 +581,9 @@ public class UserTest extends TestWithConnection {
         assertEquals("John Doe", fullName);
     }
 
+    /**
+     * Verifies {@code getFleetId} returns the user's fleet id.
+     */
     @Test
     @DisplayName("Should get fleet ID")
     public void getFleetIdWithValidUser() {
@@ -484,6 +594,9 @@ public class UserTest extends TestWithConnection {
         assertEquals(1, fleetId);
     }
 
+    /**
+     * Verifies {@code getFleetAccessType} returns the user's access level for their fleet (e.g. "VIEW").
+     */
     @Test
     @DisplayName("Should get fleet access type")
     public void getFleetAccessTypeWithValidUser() {
@@ -494,6 +607,11 @@ public class UserTest extends TestWithConnection {
         assertEquals("VIEW", accessType);
     }
 
+    /**
+     * Verifies {@code getWaitingUserCount} returns the number of users with WAITING access to the user's fleet.
+     *
+     * @throws SQLException if the count query fails
+     */
     @Test
     @DisplayName("Should get waiting user count")
     public void getWaitingUserCountWithValidUser() throws SQLException {
@@ -506,6 +624,9 @@ public class UserTest extends TestWithConnection {
 
     // ==================== PERMISSION TESTS ====================
 
+    /**
+     * Verifies {@code isAdmin} returns false for a non-admin user.
+     */
     @Test
     @DisplayName("Should return false for admin status of regular user")
     public void isAdminWithRegularUser() {
@@ -516,6 +637,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(isAdmin);
     }
 
+    /**
+     * Verifies {@code hasAggregateView} returns false for a regular (non-aggregate) user.
+     */
     @Test
     @DisplayName("Should return false for aggregate view status of regular user")
     public void hasAggregateViewWithRegularUser() {
@@ -526,6 +650,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(hasAggregateView);
     }
 
+    /**
+     * Verifies {@code managesFleet} returns false for a user who is not a manager of the given fleet.
+     */
     @Test
     @DisplayName("Should return false for fleet management of non-manager user")
     public void managesFleetWithNonManagerUser() {
@@ -537,6 +664,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(managesFleet);
     }
 
+    /**
+     * Verifies {@code managesFleet} returns true for a user with MANAGER access to the given fleet.
+     */
     @Test
     @DisplayName("Should return true for fleet management of manager user")
     public void managesFleetWithManagerUser() {
@@ -548,6 +678,9 @@ public class UserTest extends TestWithConnection {
         assertTrue(managesFleet);
     }
 
+    /**
+     * Verifies {@code hasUploadAccess} returns false for a user without upload rights to the given fleet.
+     */
     @Test
     @DisplayName("Should return false for upload access of non-upload user")
     public void hasUploadAccessWithNonUploadUser() {
@@ -559,6 +692,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(hasUploadAccess);
     }
 
+    /**
+     * Verifies {@code hasUploadAccess} returns true for a user with upload (or higher) rights to the given fleet.
+     */
     @Test
     @DisplayName("Should return true for upload access of upload user")
     public void hasUploadAccessWithUploadUser() {
@@ -570,6 +706,9 @@ public class UserTest extends TestWithConnection {
         assertTrue(hasUploadAccess);
     }
 
+    /**
+     * Verifies {@code hasViewAccess} returns true for a user with view access to their own fleet.
+     */
     @Test
     @DisplayName("Should return true for view access of valid user")
     public void hasViewAccessWithValidUser() {
@@ -581,6 +720,9 @@ public class UserTest extends TestWithConnection {
         assertTrue(hasViewAccess);
     }
 
+    /**
+     * Verifies {@code hasViewAccess} returns true for a manager (view access is implied by management rights).
+     */
     @Test
     @DisplayName("Should return true for view access of manager user")
     public void hasViewAccessWithManagerUser() {
@@ -592,6 +734,9 @@ public class UserTest extends TestWithConnection {
         assertTrue(hasViewAccess);
     }
 
+    /**
+     * Verifies {@code hasViewAccess} returns false when the queried fleet is not the user's accessible fleet.
+     */
     @Test
     @DisplayName("Should return false for view access of user from different fleet")
     public void hasViewAccessWithDifferentFleet() {
@@ -603,6 +748,10 @@ public class UserTest extends TestWithConnection {
         assertFalse(hasViewAccess);
     }
 
+    /**
+     * Verifies {@code hasViewAccess} returns false even for an admin when querying a fleet that is not their own
+     * (per-fleet access is not granted by the admin flag alone).
+     */
     @Test
     @DisplayName("Should return false for view access of admin user from different fleet")
     public void hasViewAccessWithAdminUserFromDifferentFleet() {
@@ -616,6 +765,13 @@ public class UserTest extends TestWithConnection {
 
     // ==================== USER AUTHENTICATION TESTS ====================
 
+    /**
+     * Verifies {@code User.get(connection, email, password)} returns null (rather than throwing) for a user who
+     * authenticates correctly but has no fleet access. Seeds the user and sets their password in a rolled-back
+     * transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should return null for user with valid email and password but no fleet access")
     public void getUserWithValidEmailAndPasswordButNoFleetAccess() throws SQLException {
@@ -656,6 +812,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.get(connection, email, password)} returns the user when they authenticate and have a single
+     * fleet access, populating fleet id, access type, and email preferences. Seeds the user, grants VIEW access, and
+     * sets the password in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should get user with valid email, password, and single fleet access")
     public void getUserWithValidEmailAndPasswordAndSingleFleetAccess() throws SQLException {
@@ -717,6 +880,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.get(connection, userId, fleetId)} returns null for a user id that does not exist.
+     *
+     * @throws SQLException if the query fails
+     * @throws AccountException if access resolution unexpectedly fails
+     */
     @Test
     @DisplayName("Should return null for non-existent user ID")
     public void getUserWithNonExistentUserId() throws SQLException, AccountException {
@@ -728,6 +897,12 @@ public class UserTest extends TestWithConnection {
         assertNull(result, "User with non-existent ID should return null");
     }
 
+    /**
+     * Verifies {@code User.get(connection, email, password)} throws {@link AccountException} when the password is
+     * incorrect. Sets a known password in a rolled-back transaction first.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should throw AccountException for invalid password")
     public void getUserWithInvalidPassword() throws SQLException {
@@ -743,6 +918,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.get(connection, email, password)} returns null when the email matches no user.
+     *
+     * @throws SQLException if the query fails
+     * @throws AccountException if access resolution unexpectedly fails
+     */
     @Test
     @DisplayName("Should return null for non-existent email")
     public void getUserWithNonExistentEmail() throws SQLException, AccountException {
@@ -754,6 +935,12 @@ public class UserTest extends TestWithConnection {
         assertNull(user);
     }
 
+    /**
+     * Verifies {@code User.get(connection, email)} (email-only overload) returns the matching user with the expected
+     * email and id.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get user by email only")
     public void getUserWithEmailOnly() throws SQLException {
@@ -766,6 +953,11 @@ public class UserTest extends TestWithConnection {
         assertEquals(1, user.getId());
     }
 
+    /**
+     * Verifies {@code User.get(connection, email)} (email-only overload) returns null when the email matches no user.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should return null for non-existent email only")
     public void getUserWithNonExistentEmailOnly() throws SQLException {
@@ -776,6 +968,11 @@ public class UserTest extends TestWithConnection {
         assertNull(user);
     }
 
+    /**
+     * Verifies {@code User.exists} returns true for an email that is present in the database.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should return true for existing email")
     public void existsWithExistingEmail() throws SQLException {
@@ -786,6 +983,11 @@ public class UserTest extends TestWithConnection {
         assertTrue(exists);
     }
 
+    /**
+     * Verifies {@code User.exists} returns false for an email that is not in the database.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should return false for non-existent email")
     public void existsWithNonExistentEmail() throws SQLException {
@@ -798,6 +1000,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== USER VALIDATION TESTS ====================
 
+    /**
+     * Verifies {@code user.validate} returns true when the supplied password matches the stored hash. Sets the password
+     * in a rolled-back transaction first.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should validate correct password")
     public void validateWithCorrectPassword() throws SQLException {
@@ -814,6 +1022,11 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code user.validate} returns false when the supplied password does not match the stored hash.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should reject incorrect password")
     public void validateWithIncorrectPassword() throws SQLException {
@@ -831,6 +1044,11 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.validatePassphrase} returns a boolean result (does not throw) for a candidate passphrase.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should validate passphrase with valid passphrase")
     public void validatePassphraseWithValidPassphrase() throws SQLException {
@@ -842,6 +1060,12 @@ public class UserTest extends TestWithConnection {
         assertNotNull(Boolean.valueOf(isValid));
     }
 
+    /**
+     * Verifies {@code User.validatePassphrase} returns false for a passphrase that does not match the stored reset
+     * phrase.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should reject invalid passphrase")
     public void validatePassphraseWithInvalidPassphrase() throws SQLException {
@@ -855,6 +1079,13 @@ public class UserTest extends TestWithConnection {
 
     // ==================== USER CREATION TESTS ====================
 
+    /**
+     * Verifies {@code createExistingFleetUser} creates a user attached to an existing fleet, returning a user with the
+     * expected email and full name. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if user creation is rejected
+     */
     @Test
     @DisplayName("Should create user for existing fleet with valid data")
     public void createExistingFleetUserWithValidData() throws SQLException, AccountException {
@@ -892,6 +1123,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code createExistingFleetUser} throws {@link AccountException} when the email already belongs to
+     * another user. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should throw exception when creating user with duplicate email")
     public void createExistingFleetUserWithDuplicateEmail() throws SQLException {
@@ -927,6 +1164,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code createExistingFleetUser} throws {@link AccountException} when the named fleet does not exist.
+     * Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should throw exception when creating user with non-existent fleet")
     public void createExistingFleetUserWithNonExistentFleet() throws SQLException {
@@ -964,6 +1207,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== USER PROFILE UPDATE TESTS ====================
 
+    /**
+     * Verifies {@code updateProfile} applies new name/location fields so the user's full name reflects the updated
+     * first and last names. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update profile with valid data")
     public void updateProfileWithValidData() throws SQLException {
@@ -995,6 +1244,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code updateProfile} with a complete valid field set updates the user so {@code getFullName} returns
+     * the new "first last" combination. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update profile with valid values")
     public void updateProfileWithValidValues() throws SQLException {
@@ -1027,6 +1282,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== PASSWORD UPDATE TESTS ====================
 
+    /**
+     * Verifies the instance {@code updatePassword} completes without error for a valid new password. Runs in a
+     * rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update password with valid password")
     public void updatePasswordWithValidPassword() throws SQLException {
@@ -1041,6 +1302,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies the static {@code User.updatePassword(connection, email, password)} completes without error. Runs in a
+     * rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update password with email and password")
     public void updatePasswordWithEmailAndPassword() throws SQLException {
@@ -1055,6 +1322,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.updateResetPhrase} completes without error for a valid email and reset phrase. Runs in a
+     * rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update reset phrase with valid data")
     public void updateResetPhraseWithValidData() throws SQLException {
@@ -1071,6 +1344,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== USER PREFERENCES TESTS ====================
 
+    /**
+     * Verifies {@code User.getUserPreferences} returns a non-null preferences object with a metrics list and a
+     * non-negative decimal precision for an existing user.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get user preferences with valid user ID")
     public void getUserPreferencesWithValidUserId() throws SQLException {
@@ -1083,6 +1362,12 @@ public class UserTest extends TestWithConnection {
         assertTrue(preferences.getDecimalPrecision() >= 0);
     }
 
+    /**
+     * Verifies {@code User.storeUserPreferences} persists a default preferences object without error. Runs in a
+     * rolled-back transaction.
+     *
+     * @throws SQLException if the store fails
+     */
     @Test
     @DisplayName("Should store user preferences with valid data")
     public void storeUserPreferencesWithValidData() throws SQLException {
@@ -1097,6 +1382,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies that updating a default preferences object's precision reports a change and stores the new value (tests
+     * the {@link UserPreferences#update} path used before persistence). Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should update user preferences precision with valid data")
     public void updateUserPreferencesPrecisionWithValidData() throws SQLException {
@@ -1113,6 +1404,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies the static {@code User.updateUserPreferencesPrecision} persists and returns the updated preferences
+     * (with a populated metrics list). Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update user preferences precision using static method")
     public void updateUserPreferencesPrecisionStaticMethod() throws SQLException {
@@ -1128,6 +1425,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.addUserPreferenceMetric} completes without error after the metric name is registered in
+     * {@code double_series_names}. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should add user preference metric with valid data")
     public void addUserPreferenceMetricWithValidData() throws SQLException {
@@ -1148,6 +1451,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.removeUserPreferenceMetric} completes without error for a metric name. Runs in a rolled-back
+     * transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should remove user preference metric with valid data")
     public void removeUserPreferenceMetricWithValidData() throws SQLException {
@@ -1164,6 +1473,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== EMAIL PREFERENCES TESTS ====================
 
+    /**
+     * Verifies the static {@code User.getUserEmailPreferences(connection, userId)} returns a non-null object with a
+     * populated per-type opt-in map.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get user email preferences with valid user ID")
     public void getUserEmailPreferencesWithValidUserId() throws SQLException {
@@ -1175,6 +1490,12 @@ public class UserTest extends TestWithConnection {
         assertNotNull(emailPreferences.getEmailTypesUser());
     }
 
+    /**
+     * Verifies the instance {@code user.getUserEmailPreferences(connection)} returns a non-null object with a populated
+     * per-type opt-in map.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get user email preferences with valid user")
     public void getUserEmailPreferencesWithValidUser() throws SQLException {
@@ -1186,6 +1507,12 @@ public class UserTest extends TestWithConnection {
         assertNotNull(emailPreferences.getEmailTypesUser());
     }
 
+    /**
+     * Verifies {@code User.updateUserEmailPreferences} persists a supplied per-type map and returns the updated
+     * preferences. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update user email preferences with valid data")
     public void updateUserEmailPreferencesWithValidData() throws SQLException {
@@ -1203,6 +1530,9 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies the in-memory {@code setEmailPreferences} setter accepts an email-preferences object without error.
+     */
     @Test
     @DisplayName("Should set email preferences with valid preferences")
     public void setEmailPreferencesWithValidPreferences() {
@@ -1216,6 +1546,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== FLEET UPDATE TESTS ====================
 
+    /**
+     * Verifies the instance {@code updateFleet} refreshes the user's fleet from the database without error.
+     *
+     * @throws SQLException if the refresh query fails
+     * @throws AccountException if fleet access resolution fails
+     */
     @Test
     @DisplayName("Should update fleet with valid connection")
     public void updateFleetWithValidConnection() throws SQLException, AccountException {
@@ -1228,6 +1564,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== LOGIN TRACKING TESTS ====================
 
+    /**
+     * Verifies {@code updateLastLoginTimeStamp} records the current time as the user's last login without error. Runs
+     * in a rolled-back transaction.
+     *
+     * @throws SQLException if the update fails
+     */
     @Test
     @DisplayName("Should update last login timestamp with valid user")
     public void updateLastLoginTimeStampWithValidUser() throws SQLException {
@@ -1243,6 +1585,12 @@ public class UserTest extends TestWithConnection {
 
     // ==================== USER COUNT TESTS ====================
 
+    /**
+     * Verifies {@code User.getNumberUsers} returns a non-negative count for a specific fleet id (tolerating an H2
+     * type-coercion error message in environments where the query's typing differs).
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get number of users with valid fleet ID")
     public void getNumberUsersWithValidFleetId() throws SQLException {
@@ -1257,6 +1605,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.getNumberUsers} returns a non-negative count when passed fleet id 0 (the aggregate/all
+     * query path).
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get number of users with zero fleet ID")
     public void getNumberUsersWithZeroFleetId() throws SQLException {
@@ -1273,6 +1627,14 @@ public class UserTest extends TestWithConnection {
 
     // ==================== PASSWORD RESET EMAIL TESTS ====================
 
+    /**
+     * Verifies {@code User.sendPasswordResetEmail} reaches the email-sending path, tolerating the infrastructure
+     * failures expected in the test environment (missing {@code ngafid.properties}, unavailable Kafka, etc.) by
+     * asserting the thrown exception is one of those configuration/infrastructure errors. Runs in a rolled-back
+     * transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should send password reset email with valid email")
     public void sendPasswordResetEmailWithValidEmail() throws SQLException {
@@ -1331,6 +1693,9 @@ public class UserTest extends TestWithConnection {
 
     // ==================== TWO-FACTOR AUTHENTICATION TESTS ====================
 
+    /**
+     * Verifies {@code isTwoFactorEnabled} defaults to false for a freshly loaded user.
+     */
     @Test
     @DisplayName("Should return false for two-factor authentication with default user")
     public void isTwoFactorEnabledWithDefaultUser() {
@@ -1341,6 +1706,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(isEnabled);
     }
 
+    /**
+     * Verifies {@code setTwoFactorEnabled(true)} is reflected by {@code isTwoFactorEnabled}.
+     */
     @Test
     @DisplayName("Should set two-factor authentication enabled with true value")
     public void setTwoFactorEnabledWithTrueValue() {
@@ -1351,6 +1719,9 @@ public class UserTest extends TestWithConnection {
         assertTrue(user.isTwoFactorEnabled());
     }
 
+    /**
+     * Verifies {@code getTwoFactorSecret} defaults to null for a freshly loaded user.
+     */
     @Test
     @DisplayName("Should return null for two-factor secret with default user")
     public void getTwoFactorSecretWithDefaultUser() {
@@ -1361,6 +1732,9 @@ public class UserTest extends TestWithConnection {
         assertNull(secret);
     }
 
+    /**
+     * Verifies {@code setTwoFactorSecret} stores the secret so {@code getTwoFactorSecret} returns it.
+     */
     @Test
     @DisplayName("Should set two-factor secret with valid secret")
     public void setTwoFactorSecretWithValidSecret() {
@@ -1372,6 +1746,9 @@ public class UserTest extends TestWithConnection {
         assertEquals(secret, user.getTwoFactorSecret());
     }
 
+    /**
+     * Verifies {@code getBackupCodes} defaults to null for a freshly loaded user.
+     */
     @Test
     @DisplayName("Should return null for backup codes with default user")
     public void getBackupCodesWithDefaultUser() {
@@ -1382,6 +1759,9 @@ public class UserTest extends TestWithConnection {
         assertNull(backupCodes);
     }
 
+    /**
+     * Verifies {@code setBackupCodes} stores the codes so {@code getBackupCodes} returns them.
+     */
     @Test
     @DisplayName("Should set backup codes with valid codes")
     public void setBackupCodesWithValidCodes() {
@@ -1393,6 +1773,9 @@ public class UserTest extends TestWithConnection {
         assertEquals(backupCodes, user.getBackupCodes());
     }
 
+    /**
+     * Verifies {@code isTwoFactorSetupComplete} defaults to false for a freshly loaded user.
+     */
     @Test
     @DisplayName("Should return false for two-factor setup completion with default user")
     public void isTwoFactorSetupCompleteWithDefaultUser() {
@@ -1403,6 +1786,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(isComplete);
     }
 
+    /**
+     * Verifies {@code setTwoFactorSetupComplete(true)} is reflected by {@code isTwoFactorSetupComplete}.
+     */
     @Test
     @DisplayName("Should set two-factor setup complete with true value")
     public void setTwoFactorSetupCompleteWithTrueValue() {
@@ -1417,6 +1803,9 @@ public class UserTest extends TestWithConnection {
 
     // ==================== EQUALS TESTS ====================
 
+    /**
+     * Verifies {@code User.equals} returns true when comparing a user instance with itself.
+     */
     @Test
     @DisplayName("Should return true when comparing same user")
     public void equalsWithSameUser() {
@@ -1428,6 +1817,9 @@ public class UserTest extends TestWithConnection {
         assertTrue(isEqual);
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when comparing two distinct users.
+     */
     @Test
     @DisplayName("Should return false when comparing different users")
     public void equalsWithDifferentUser() {
@@ -1439,6 +1831,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(isEqual);
     }
 
+    /**
+     * Verifies {@code User.equals(null)} returns false.
+     */
     @Test
     @DisplayName("Should return false when comparing with null object")
     public void equalsWithNullObject() {
@@ -1450,6 +1845,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(isEqual);
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when compared against an object that is not a User.
+     */
     @Test
     @DisplayName("Should return false when comparing with non-user object")
     public void equalsWithNonUserObject() {
@@ -1461,6 +1859,13 @@ public class UserTest extends TestWithConnection {
         assertFalse(isEqual);
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their id. Seeds a second user and compares,
+     * in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different IDs")
     public void equalsWithDifferentId() throws SQLException, AccountException {
@@ -1496,6 +1901,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their email. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different emails")
     public void equalsWithDifferentEmail() throws SQLException, AccountException {
@@ -1531,6 +1943,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their first name. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different first names")
     public void equalsWithDifferentFirstName() throws SQLException, AccountException {
@@ -1566,6 +1985,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their last name. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different last names")
     public void equalsWithDifferentLastName() throws SQLException, AccountException {
@@ -1601,6 +2027,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their country. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different countries")
     public void equalsWithDifferentCountry() throws SQLException, AccountException {
@@ -1636,6 +2069,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their state. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different states")
     public void equalsWithDifferentState() throws SQLException, AccountException {
@@ -1671,6 +2111,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their city. Seeds a second user and compares,
+     * in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different cities")
     public void equalsWithDifferentCity() throws SQLException, AccountException {
@@ -1706,6 +2153,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their address. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different addresses")
     public void equalsWithDifferentAddress() throws SQLException, AccountException {
@@ -1741,6 +2195,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their phone number. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different phone numbers")
     public void equalsWithDifferentPhoneNumber() throws SQLException, AccountException {
@@ -1776,6 +2237,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their zip code. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different zip codes")
     public void equalsWithDifferentZipCode() throws SQLException, AccountException {
@@ -1811,6 +2279,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their admin flag. Seeds a second user and
+     * compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different admin status")
     public void equalsWithDifferentAdminStatus() throws SQLException, AccountException {
@@ -1846,6 +2321,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their aggregate-view flag. Seeds a second
+     * user and compares, in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different aggregate view")
     public void equalsWithDifferentAggregateView() throws SQLException, AccountException {
@@ -1881,6 +2363,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.equals} returns false for the same user loaded against two different fleets (differing fleet
+     * access makes the instances unequal).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading a comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different fleet access")
     public void equalsWithDifferentFleetAccess() throws SQLException, AccountException {
@@ -1892,6 +2381,12 @@ public class UserTest extends TestWithConnection {
         assertFalse(result);
     }
 
+    /**
+     * Verifies {@code User.equals} returns false for two different users in different fleets.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading a comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different fleet")
     public void equalsWithDifferentFleet() throws SQLException, AccountException {
@@ -1903,6 +2398,12 @@ public class UserTest extends TestWithConnection {
         assertFalse(result);
     }
 
+    /**
+     * Verifies {@code User.equals} returns true for the same user instance (identical fields).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the user fails
+     */
     @Test
     @DisplayName("Should return true when comparing identical users")
     public void equalsWithIdenticalUsers() throws SQLException, AccountException {
@@ -1914,6 +2415,12 @@ public class UserTest extends TestWithConnection {
         assertTrue(result);
     }
 
+    /**
+     * Verifies {@code User.getUserPreferences} returns the stored custom precision and a non-empty metrics list when a
+     * user has both a preferences row and an associated metric. Seeds the rows in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should get user preferences with existing preferences and metrics")
     public void getUserPreferencesWithExistingPreferencesAndMetrics() throws SQLException {
@@ -1956,6 +2463,13 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.getUserPreferences} returns the default precision (1) and a non-null metrics list when a
+     * preferences row exists but no metric rows are associated. (Note: the test seeds a custom precision but asserts
+     * the default, pinning the observed behavior.) Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should get user preferences with existing preferences but no metrics")
     public void getUserPreferencesWithExistingPreferencesButNoMetrics() throws SQLException {
@@ -1979,6 +2493,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.getUserPreferences} returns the stored precision and a non-empty metrics list when a user
+     * has several associated metrics. Seeds two metrics in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should get user preferences with multiple metrics")
     public void getUserPreferencesWithMultipleMetrics() throws SQLException {
@@ -2033,6 +2553,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code User.storeUserPreferences} persists a preferences object carrying flight metrics without error.
+     * Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should store user preferences with flight metrics")
     public void storeUserPreferencesWithFlightMetrics() throws SQLException {
@@ -2075,6 +2601,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code user.validate} returns false when the user's id (overwritten via reflection to a non-existent
+     * value) matches no row. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if the validation query fails
+     */
     @Test
     @DisplayName("Should return false when validating non-existent user")
     public void validateWithNonExistentUser() throws SQLException {
@@ -2098,6 +2630,12 @@ public class UserTest extends TestWithConnection {
         connection.rollback();
     }
 
+    /**
+     * Verifies {@code Fleet.hasAirsync} executes against a loaded fleet without throwing.
+     *
+     * @throws SQLException if the query fails
+     * @throws AccountException if the fleet cannot be loaded
+     */
     @Test
     @DisplayName("Should return boolean for fleet hasAirsync")
     public void testFleetHasAirsync() throws SQLException, AccountException {
@@ -2108,6 +2646,12 @@ public class UserTest extends TestWithConnection {
         fleet.hasAirsync(connection);
     }
 
+    /**
+     * Verifies {@code Fleet.getAllFleets} returns a non-null list in which every fleet has a positive id and a non-null
+     * name.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should get all fleets with valid data")
     public void testFleetGetAllFleets() throws SQLException {
@@ -2123,6 +2667,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Fleet.getNumberFleets} returns a non-negative count equal to the size of
+     * {@code Fleet.getAllFleets}.
+     *
+     * @throws SQLException if a query fails
+     */
     @Test
     @DisplayName("Should get number of fleets matching getAllFleets count")
     public void testFleetGetNumberFleets() throws SQLException {
@@ -2135,6 +2685,13 @@ public class UserTest extends TestWithConnection {
     }
 
     // FleetAccess tests
+    /**
+     * Verifies a {@link FleetAccess} created via {@code FleetAccess.create} exposes the user id, fleet id, and access
+     * type it was created with (clearing any pre-existing row first).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creation fails
+     */
     @Test
     @DisplayName("Should get fleet access getters")
     public void testFleetAccessGetters() throws SQLException, AccountException {
@@ -2150,6 +2707,13 @@ public class UserTest extends TestWithConnection {
         assertEquals(FleetAccess.MANAGER, fleetAccess.getAccessType());
     }
 
+    /**
+     * Verifies the {@code FleetAccess} type-predicate methods ({@code isManager}, {@code isUpload}, {@code isView},
+     * {@code isWaiting}, {@code isDenied}) each return true only for their matching access type, across all five types.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creating an access entry fails
+     */
     @Test
     @DisplayName("Should check fleet access type checks")
     public void testFleetAccessTypeChecks() throws SQLException, AccountException {
@@ -2202,6 +2766,13 @@ public class UserTest extends TestWithConnection {
         assertFalse(deniedAccess.isManager());
     }
 
+    /**
+     * Verifies {@code FleetAccess.getAllFleetAccessEntries} returns all of a user's access entries, including both a
+     * MANAGER and a VIEW entry seeded across two fleets.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creating an access entry fails
+     */
     @Test
     @DisplayName("Should get fleet access by user ID")
     public void testFleetAccessGetByUserId() throws SQLException, AccountException {
@@ -2234,6 +2805,13 @@ public class UserTest extends TestWithConnection {
         assertTrue(foundView, "View access should be found");
     }
 
+    /**
+     * Verifies {@code FleetAccess.get(connection, userId, fleetId)} returns the single access entry matching that
+     * user/fleet pair with the expected access type.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creating the access entry fails
+     */
     @Test
     @DisplayName("Should get fleet access by user ID and fleet ID")
     public void testFleetAccessGetByUserIdAndFleetId() throws SQLException, AccountException {
@@ -2251,6 +2829,11 @@ public class UserTest extends TestWithConnection {
         assertEquals(FleetAccess.UPLOAD, access.getAccessType());
     }
 
+    /**
+     * Verifies {@code FleetAccess.get} returns null for a user/fleet pair that has no access entry.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @DisplayName("Should return null for non-existent fleet access")
     public void testFleetAccessGetNotFound() throws SQLException {
@@ -2258,6 +2841,13 @@ public class UserTest extends TestWithConnection {
         assertNull(access);
     }
 
+    /**
+     * Verifies {@code FleetAccess.create} inserts a new access entry (after clearing any existing one) that can then be
+     * read back via {@code FleetAccess.get} with the expected access type.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creation fails
+     */
     @Test
     public void testFleetAccessCreate() throws SQLException, AccountException {
         // Create a new fleet access entry using a user/fleet combination that doesn't exist
@@ -2280,6 +2870,13 @@ public class UserTest extends TestWithConnection {
         assertEquals(FleetAccess.MANAGER, retrievedAccess.getAccessType());
     }
 
+    /**
+     * Verifies {@code FleetAccess.create} throws {@link AccountException} when an access entry already exists for the
+     * user/fleet pair.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if the first creation unexpectedly fails
+     */
     @Test
     public void testFleetAccessCreateDuplicate() throws SQLException, AccountException {
         // First delete the existing VIEW access for user 1 and fleet 1
@@ -2297,6 +2894,13 @@ public class UserTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code FleetAccess.update} changes an entry's access type (confirmed by re-reading it), restoring the
+     * original type afterward; falls back to creating an entry first if none exists.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creating an access entry fails
+     */
     @Test
     public void testFleetAccessUpdate() throws SQLException, AccountException {
         // Use existing fleet access entry and update it
@@ -2326,6 +2930,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code FleetAccess.update} can move an entry through several access types (UPLOAD, WAITING, DENIED),
+     * each confirmed by re-reading, then restores the original type.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creating an access entry fails
+     */
     @Test
     public void testFleetAccessUpdateToDifferentTypes() throws SQLException, AccountException {
         // Use existing fleet access entry and update it through different types
@@ -2358,6 +2969,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code FleetAccess.update} on a non-existent user/fleet pair does not throw (it simply updates zero
+     * rows).
+     *
+     * @throws SQLException if the update query fails
+     */
     @Test
     public void testFleetAccessUpdateNonExistent() throws SQLException {
         // This should not throw an exception, just update 0 rows
@@ -2366,6 +2983,12 @@ public class UserTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code FleetAccess.update} executes without throwing for both an existing and a non-existent entry (a
+     * coverage-focused direct exercise of the update path).
+     *
+     * @throws SQLException if the update query fails
+     */
     @Test
     public void testFleetAccessUpdateDirect() throws SQLException {
         // Direct test of the update method - this will execute the method even if no rows are updated
@@ -2380,6 +3003,12 @@ public class UserTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code FleetAccess.update} runs for several user/fleet pairs without error (a coverage-focused direct
+     * exercise of the update method).
+     *
+     * @throws SQLException if an update query fails
+     */
     @Test
     public void testFleetAccessUpdateMethod() throws SQLException {
         // Simple test that directly calls the update method to ensure coverage
@@ -2388,6 +3017,12 @@ public class UserTest extends TestWithConnection {
         FleetAccess.update(connection, 3, 1, FleetAccess.DENIED);
     }
 
+    /**
+     * Verifies {@code FleetAccess.getUserId} returns the user id of entries loaded for different users.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if loading an access entry fails
+     */
     @Test
     public void testFleetAccessGetUserId() throws SQLException, AccountException {
         // Test the getUserId() method by creating a FleetAccess object and calling getUserId()
@@ -2407,6 +3042,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code FleetAccess.equals}: two entries for the same user/fleet are equal (symmetrically), entries for
+     * different users are unequal, and an entry is unequal to null and to an unrelated type.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if creating an access entry fails
+     */
     @Test
     public void testFleetAccessEquals() throws SQLException, AccountException {
         try (PreparedStatement stmt =
@@ -2437,6 +3079,10 @@ public class UserTest extends TestWithConnection {
         assertNotEquals(access1, "not a FleetAccess");
     }
 
+    /**
+     * Verifies the {@code FleetAccess} access-type string constants hold their expected values (MANAGER, UPLOAD, VIEW,
+     * WAITING, DENIED).
+     */
     @Test
     public void testFleetAccessConstants() {
         assertEquals("MANAGER", FleetAccess.MANAGER);
@@ -2446,6 +3092,10 @@ public class UserTest extends TestWithConnection {
         assertEquals("DENIED", FleetAccess.DENIED);
     }
 
+    /**
+     * Verifies {@code User.equals} returns true when a user instance is compared with itself (a second variant of the
+     * same-user equality check).
+     */
     @Test
     public void testUserEqualsWithSameUser() {
         User user1 = user1Fleet1;
@@ -2456,6 +3106,9 @@ public class UserTest extends TestWithConnection {
         assertTrue(isEqual);
     }
 
+    /**
+     * Verifies {@code User.equals(null)} returns false (a second variant of the null-comparison check).
+     */
     @Test
     public void testUserEqualsWithNullObject() {
         User user = user1Fleet1;
@@ -2466,6 +3119,9 @@ public class UserTest extends TestWithConnection {
         assertFalse(isEqual);
     }
 
+    /**
+     * Verifies {@code User.equals} returns false against a non-User object (a second variant of the wrong-type check).
+     */
     @Test
     @DisplayName("Should return false when comparing user with non-user object")
     public void testUserEqualsWithNonUserObject() {
@@ -2477,6 +3133,13 @@ public class UserTest extends TestWithConnection {
         assertFalse(isEqual);
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their id (rollback-safe variant: the seeded
+     * row is cleaned up in a try/finally).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different IDs")
     public void testUserEqualsWithDifferentId() throws SQLException, AccountException {
@@ -2514,6 +3177,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their email (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different emails")
     public void testUserEqualsWithDifferentEmail() throws SQLException, AccountException {
@@ -2551,6 +3220,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their first name (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different first names")
     public void testUserEqualsWithDifferentFirstName() throws SQLException, AccountException {
@@ -2588,6 +3263,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their last name (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different last names")
     public void testUserEqualsWithDifferentLastName() throws SQLException, AccountException {
@@ -2625,6 +3306,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their country (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different countries")
     public void testUserEqualsWithDifferentCountry() throws SQLException, AccountException {
@@ -2662,6 +3349,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their state (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different states")
     public void testUserEqualsWithDifferentState() throws SQLException, AccountException {
@@ -2700,6 +3393,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their city (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different cities")
     public void testUserEqualsWithDifferentCity() throws SQLException, AccountException {
@@ -2737,6 +3436,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their address (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different addresses")
     public void testUserEqualsWithDifferentAddress() throws SQLException, AccountException {
@@ -2774,6 +3479,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their phone number (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different phone numbers")
     public void testUserEqualsWithDifferentPhoneNumber() throws SQLException, AccountException {
@@ -2811,6 +3522,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their zip code (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different zip codes")
     public void testUserEqualsWithDifferentZipCode() throws SQLException, AccountException {
@@ -2848,6 +3565,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their admin flag (rollback-safe variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different admin status")
     public void testUserEqualsWithDifferentAdminStatus() throws SQLException, AccountException {
@@ -2885,6 +3608,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns false when two users differ in their aggregate-view flag (rollback-safe
+     * variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the comparison user fails
+     */
     @Test
     @DisplayName("Should return false when comparing users with different aggregate view")
     public void testUserEqualsWithDifferentAggregateView() throws SQLException, AccountException {
@@ -2922,6 +3652,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code User.equals} returns true for the same user instance with identical fields (rollback-safe
+     * variant).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if loading the user fails
+     */
     @Test
     @DisplayName("Should return true when comparing identical users")
     public void testUserEqualsWithIdenticalUsers() throws SQLException, AccountException {
@@ -2961,6 +3698,10 @@ public class UserTest extends TestWithConnection {
 
     // ==================== FLEET SELECTION TESTS ====================
 
+    /**
+     * Verifies {@code getSelectedFleetId} returns the user's currently selected fleet id (the default -1 for this
+     * user).
+     */
     @Test
     @DisplayName("Should get selected fleet ID")
     public void getSelectedFleetId() {
@@ -2972,6 +3713,13 @@ public class UserTest extends TestWithConnection {
         assertEquals(-1, selectedFleetId.intValue()); // Default value is -1
     }
 
+    /**
+     * Verifies {@code setSelectedFleetId} updates the user's selected and active fleet (in memory and in the
+     * {@code user.fleet_selected} column) for a fleet the user can access. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if the fleet switch is rejected
+     */
     @Test
     @DisplayName("Should set selected fleet ID successfully")
     public void setSelectedFleetIdSuccessfully() throws SQLException, AccountException {
@@ -2999,6 +3747,12 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code setSelectedFleetId} throws {@link AccountException} when the target fleet does not exist (or the
+     * user cannot access it). Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @DisplayName("Should throw AccountException when setting selected fleet ID to non-existent fleet")
     public void setSelectedFleetIdWithNonExistentFleet() throws SQLException {
@@ -3014,6 +3768,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code leaveSelectedFleet} succeeds for a user who has access to more than one fleet, switching them off
+     * the left fleet. Seeds second-fleet access and runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if leaving the fleet is rejected
+     */
     @Test
     @DisplayName("Should leave selected fleet successfully when multiple fleets available")
     public void leaveSelectedFleetSuccessfully() throws SQLException, AccountException {
@@ -3060,6 +3821,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code leaveSelectedFleet} throws {@link SQLException} when the user is the fleet's last manager
+     * (leaving would orphan the fleet). Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if fleet access resolution fails
+     */
     @Test
     @DisplayName("Should throw SQLException when leaving fleet as last manager")
     public void leaveSelectedFleetAsLastManager() throws SQLException, AccountException {
@@ -3092,6 +3860,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code leaveSelectedFleet} throws {@link SQLException} when the user has no other fleet to switch to
+     * after leaving. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if fleet access resolution fails
+     */
     @Test
     @DisplayName("Should throw SQLException when no other fleets available to switch to")
     public void leaveSelectedFleetWithNoOtherFleets() throws SQLException, AccountException {
@@ -3116,6 +3891,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code leaveSelectedFleet} throws {@link SQLException} when the user's only other fleet access is
+     * DENIED/WAITING (not a usable fleet to switch to). Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if fleet access resolution fails
+     */
     @Test
     @DisplayName("Should throw SQLException when only denied/waiting fleets available")
     public void leaveSelectedFleetWithOnlyDeniedFleets() throws SQLException, AccountException {
@@ -3143,6 +3925,13 @@ public class UserTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code leaveSelectedFleet} rolls back its changes when the operation fails partway, leaving the user's
+     * fleet state unchanged. Runs in a rolled-back transaction.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws AccountException if fleet access resolution fails
+     */
     @Test
     @DisplayName("Should handle transaction rollback on failure")
     public void leaveSelectedFleetWithTransactionRollback() throws SQLException, AccountException {
