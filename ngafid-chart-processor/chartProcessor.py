@@ -12,6 +12,7 @@ The script downloads and processes tif files,and generates tiles for aviation ch
 
 @Author: Roman Kozulia
 """
+
 import argparse
 import datetime
 import json
@@ -37,14 +38,14 @@ def check_dependencies():
             sys.exit(1)
 
 
-"""Configure logging. Log files will be rotating if the size will reach 10 MB"""""
+"""Configure logging. Log files will be rotating if the size will reach 10 MB""" ""
 log_file = "ngafid-chart-processor/log"
 log_dir = os.path.dirname(log_file)
 
 os.makedirs(log_dir, exist_ok=True)
 
 if not os.path.isfile(log_file):
-    with open(log_file, 'w') as f:
+    with open(log_file, "w") as f:
         f.write("")  # Create an empty log file
 
 max_log_file_size = 10 * 1024 * 1024  # 10 MB
@@ -55,8 +56,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         RotatingFileHandler(log_file, maxBytes=max_log_file_size, backupCount=backup_count),
-        logging.StreamHandler()
-    ]
+        logging.StreamHandler(),
+    ],
 )
 
 
@@ -65,22 +66,26 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         RotatingFileHandler(log_file, maxBytes=max_log_file_size, backupCount=backup_count),
-        logging.StreamHandler()
-    ]
+        logging.StreamHandler(),
+    ],
 )
 
 # Global GDAL Configuration
 os.environ["GTIFF_SRS_SOURCE"] = "EPSG"
 
+
 class ChartType(Enum):
     """Types of charts available for download."""
+
     SECTIONAL = "sectional"
     TERMINAL_AREA = "terminal_area"
     IFR_ENROUTE_LOW = "ifr_enroute_low"
     IFR_ENROUTE_HIGH = "ifr_enroute_high"
     HELICOPTER = "helicopter"
 
+
 configuration_file = "ngafid-chart-processor/chart_service_config.default.json"
+
 
 def validate_date(date_str):
     """
@@ -95,6 +100,7 @@ def validate_date(date_str):
         raise argparse.ArgumentTypeError(f"Invalid date format: {date_str}. Expected MM-DD-YYYY.") from exc
     return date_str
 
+
 def parse_arguments():
     """
     Parse command-line arguments.
@@ -104,20 +110,19 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description="Process aviation charts.")
     parser.add_argument(
-        "--chart_date",
-        type=validate_date,
-        help="The date for which to process charts (format: MM-DD-YYYY)."
+        "--chart_date", type=validate_date, help="The date for which to process charts (format: MM-DD-YYYY)."
     )
     parser.add_argument(
         "--config",
         type=str,
         help="Config file path",
-        default="ngafid-chart-processor/chart_service_config.default.json"
+        default="ngafid-chart-processor/chart_service_config.default.json",
     )
     logging.info(f"{sys.argv}")
     parsed = parser.parse_args()
     logging.info(f"Parsed args: {parsed}")
     return parsed
+
 
 # Load configuration
 def load_config(config_path):
@@ -137,6 +142,7 @@ def load_config(config_path):
         except json.JSONDecodeError as e:
             logging.error(f"Error parsing JSON in {config_path}: {e}")
             raise ValueError(f"Error parsing JSON in {config_path}: {e}") from e
+
 
 # Load the configuration file
 CONFIG = load_config(parse_arguments().config)
@@ -186,11 +192,11 @@ def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
                 response = requests.get(zip_url)
                 response.raise_for_status()
 
-                with open(zip_path, 'wb') as f:
+                with open(zip_path, "wb") as f:
                     f.write(response.content)
 
                 logging.info(f"Extracting {zip_path}")
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                with zipfile.ZipFile(zip_path, "r") as zip_ref:
                     zip_ref.extractall(temp_dir)
 
                 logging.info(f"Downloaded and extracted files for {area}")
@@ -200,7 +206,7 @@ def download_and_extract_tifs(tifs_path, date, chart_type: ChartType):
                     if file_name.endswith(".tif"):
                         input_tif = os.path.join(temp_dir, file_name)
                         if chart_type in [ChartType.IFR_ENROUTE_LOW, ChartType.IFR_ENROUTE_HIGH]:
-                        # For IFR_ENROUTE_LOW or IFR_ENROUTE_HIGH, convert to lowercase
+                            # For IFR_ENROUTE_LOW or IFR_ENROUTE_HIGH, convert to lowercase
                             base_name, ext = os.path.splitext(file_name)
                             file_name = f"{base_name.lower()}{ext}"  # Lowercase name
 
@@ -239,11 +245,11 @@ def download_terminal_area_set(base_url, date, save_path):
             response = requests.get(terminal_zip_url)
             response.raise_for_status()
 
-            with open(zip_path, 'wb') as f:
+            with open(zip_path, "wb") as f:
                 f.write(response.content)
 
             logging.info(f"Extracting {zip_path}")
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(temp_dir)
 
             for file_name in os.listdir(temp_dir):
@@ -301,12 +307,13 @@ def crop_tifs(shape_file_paths, tifs_path, cropped_tifs_path):
 
         command = [
             "gdalwarp",
-            "-cutline", shp_file_path,
+            "-cutline",
+            shp_file_path,
             "-crop_to_cutline",
             "-dstalpha",
-       #     "-dstnodata", "0",
+            #     "-dstnodata", "0",
             tif_file_path,
-            cropped_tif_path
+            cropped_tif_path,
         ]
 
         try:
@@ -335,13 +342,18 @@ def convert_to_rgba(cropped_tifs_path, output_tifs_path):
             # Use gdal_translate with -expand rgba to convert palette to RGBA
             command = [
                 "gdal_translate",
-                "-of", "GTiff",         # Ensure output is in GeoTIFF format
-                "-expand", "rgba",      # Convert to RGBA
-                "-a_nodata", "255",     # Explicitly set NoData to white
-                "-co", "COMPRESS=LZW",  # Lossless compression
-                "-co", "TILED=YES",     # Enable tiling
+                "-of",
+                "GTiff",  # Ensure output is in GeoTIFF format
+                "-expand",
+                "rgba",  # Convert to RGBA
+                "-a_nodata",
+                "255",  # Explicitly set NoData to white
+                "-co",
+                "COMPRESS=LZW",  # Lossless compression
+                "-co",
+                "TILED=YES",  # Enable tiling
                 input_tif,
-                output_tif
+                output_tif,
             ]
 
             try:
@@ -365,12 +377,16 @@ def convert_to_rgb(cropped_tifs_path, output_tifs_path):
 
             command = [
                 "gdal_translate",
-                "-of", "GTiff",
-                "-expand", "rgb",
-                "-co", "COMPRESS=LZW",
-                "-co", "TILED=YES",
+                "-of",
+                "GTiff",
+                "-expand",
+                "rgb",
+                "-co",
+                "COMPRESS=LZW",
+                "-co",
+                "TILED=YES",
                 input_tif,
-                output_tif
+                output_tif,
             ]
 
             try:
@@ -378,7 +394,6 @@ def convert_to_rgb(cropped_tifs_path, output_tifs_path):
                 logging.info(f"Converted {input_tif} to RGB (no transparency)")
             except subprocess.CalledProcessError as e:
                 logging.error(f"Failed to convert {file_name} to RGB: {e}")
-
 
 
 def reproject_tifs(input_tifs_path, reprojected_tifs_path):
@@ -397,21 +412,24 @@ def reproject_tifs(input_tifs_path, reprojected_tifs_path):
             output_tif = os.path.join(reprojected_tifs_path, file_name)  # Keep the original file name
 
             command = [
-            "gdalwarp",
-            "-t_srs", "EPSG:3857",
-            "-dstalpha",
-            "-co", "TILED=YES",
-            "-co", "COMPRESS=LZW",
-            input_tif,
-            output_tif
+                "gdalwarp",
+                "-t_srs",
+                "EPSG:3857",
+                "-dstalpha",
+                "-co",
+                "TILED=YES",
+                "-co",
+                "COMPRESS=LZW",
+                input_tif,
+                output_tif,
             ]
-
 
             try:
                 subprocess.run(command, check=True)
                 logging.info(f"Successfully reprojected {input_tif} to {output_tif}")
             except subprocess.CalledProcessError as e:
                 logging.info(f"Failed to reproject {input_tif}: {e}")
+
 
 def create_virtual_raster(reprojected_tifs_path, virtual_raster_path):
     """
@@ -429,16 +447,14 @@ def create_virtual_raster(reprojected_tifs_path, virtual_raster_path):
         if file_name.endswith(".tif")
     ]
 
-    command = [
-        "gdalbuildvrt",
-        virtual_raster_path
-    ] + input_files
+    command = ["gdalbuildvrt", virtual_raster_path] + input_files
 
     try:
         subprocess.run(command, check=True)
         logging.info(f"Successfully created virtual raster at {virtual_raster_path}")
     except subprocess.CalledProcessError as e:
         logging.info(f"Failed to create virtual raster: {e}")
+
 
 def generate_tiles(virtual_raster_path, tiles_output_path):
     """
@@ -448,17 +464,13 @@ def generate_tiles(virtual_raster_path, tiles_output_path):
     :return: none
     """
     os.makedirs(tiles_output_path, exist_ok=True)
-    command = [
-        "gdal2tiles.py",
-        "--zoom=0-13",
-        virtual_raster_path,
-        tiles_output_path
-    ]
+    command = ["gdal2tiles.py", "--zoom=0-13", virtual_raster_path, tiles_output_path]
     try:
         subprocess.run(command, check=True)
         logging.info(f"Successfully generated tiles at {tiles_output_path}")
     except subprocess.CalledProcessError as e:
         logging.info(f"Failed to generate tiles: {e}")
+
 
 def clean_resources(paths):
     """
@@ -474,7 +486,7 @@ def clean_resources(paths):
                     try:
                         os.remove(file_path)
                     except OSError as e:
-                       logging.error(f"Failed to delete file {file_path}: {e}")
+                        logging.error(f"Failed to delete file {file_path}: {e}")
                 for dir in dirs:
                     dir_path = os.path.join(root, dir)
                     os.rmdir(dir_path)
@@ -482,6 +494,7 @@ def clean_resources(paths):
         elif os.path.isfile(path):
             os.remove(path)
             logging.info(f"Removed file: {path}")
+
 
 def get_chart_paths(chart_type):
     """
@@ -498,16 +511,19 @@ def get_chart_paths(chart_type):
         "virtual_raster_path": os.path.join(TEMP_FILES_DIR, "virtual_raster", "combined.vrt"),
     }
 
+
 def process_sectional(chart_date):
     """Processing steps for sectional charts."""
     paths = get_chart_paths("sectional")
     logging.info(paths)
-    clean_resources([
-        paths["cropped_tifs_path"],
-        paths["reprojected_tifs_path"],
-        os.path.dirname(paths["virtual_raster_path"]),
-        paths["rgb_tifs_path"],
-    ])
+    clean_resources(
+        [
+            paths["cropped_tifs_path"],
+            paths["reprojected_tifs_path"],
+            os.path.dirname(paths["virtual_raster_path"]),
+            paths["rgb_tifs_path"],
+        ]
+    )
     logging.info("\n*** Processing Sectional Charts ***\n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.SECTIONAL)
     crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
@@ -529,12 +545,14 @@ def process_terminal_area(chart_date):
     """
     paths = get_chart_paths("terminal_area")
     logging.info(paths)
-    clean_resources([
-        paths["cropped_tifs_path"],
-        paths["reprojected_tifs_path"],
-        os.path.dirname(paths["virtual_raster_path"]),
-        paths["rgb_tifs_path"],
-    ])
+    clean_resources(
+        [
+            paths["cropped_tifs_path"],
+            paths["reprojected_tifs_path"],
+            os.path.dirname(paths["virtual_raster_path"]),
+            paths["rgb_tifs_path"],
+        ]
+    )
     logging.info("\n\n *** Processing Terminal Area Charts *** \n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.TERMINAL_AREA)
     convert_to_rgba(paths["tifs_path"], paths["rgb_tifs_path"])
@@ -551,11 +569,13 @@ def process_enroute_low(chart_date):
     :return: none
     """
     paths = get_chart_paths("ifr_enroute_low")
-    clean_resources([
-        paths["cropped_tifs_path"],
-        paths["reprojected_tifs_path"],
-        os.path.dirname(paths["virtual_raster_path"]),
-    ])
+    clean_resources(
+        [
+            paths["cropped_tifs_path"],
+            paths["reprojected_tifs_path"],
+            os.path.dirname(paths["virtual_raster_path"]),
+        ]
+    )
     logging.info("\n\n*** Processing IFR Enroute Low Charts *** \n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.IFR_ENROUTE_LOW)
     crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
@@ -572,11 +592,13 @@ def process_enroute_high(chart_date):
     :return: none
     """
     paths = get_chart_paths("ifr_enroute_high")
-    clean_resources([
-        paths["cropped_tifs_path"],
-        paths["reprojected_tifs_path"],
-        os.path.dirname(paths["virtual_raster_path"]),
-    ])
+    clean_resources(
+        [
+            paths["cropped_tifs_path"],
+            paths["reprojected_tifs_path"],
+            os.path.dirname(paths["virtual_raster_path"]),
+        ]
+    )
     logging.info("\n\n*** Processing IFR Enroute High Charts ***\n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.IFR_ENROUTE_HIGH)
     crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
@@ -593,12 +615,14 @@ def process_helicopter(chart_date):
     :return: none
     """
     paths = get_chart_paths("helicopter")
-    clean_resources([
-        paths["cropped_tifs_path"],
-        paths["reprojected_tifs_path"],
-        os.path.dirname(paths["virtual_raster_path"]),
-        paths["rgb_tifs_path"],
-    ])
+    clean_resources(
+        [
+            paths["cropped_tifs_path"],
+            paths["reprojected_tifs_path"],
+            os.path.dirname(paths["virtual_raster_path"]),
+            paths["rgb_tifs_path"],
+        ]
+    )
     logging.info("\n\n*** Processing Helicopter Charts ***\n")
     download_and_extract_tifs(paths["tifs_path"], chart_date, ChartType.HELICOPTER)
     crop_tifs(paths["shapes_path"], paths["tifs_path"], paths["cropped_tifs_path"])
@@ -609,8 +633,8 @@ def process_helicopter(chart_date):
     generate_tiles(paths["virtual_raster_path"], paths["charts_output_path"])
     logging.info("IFR HELICOPTER processing completed.")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     logging.info("\n\n*** Start processing charts *** \n")
 
     check_dependencies()

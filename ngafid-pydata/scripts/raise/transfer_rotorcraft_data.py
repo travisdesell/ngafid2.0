@@ -50,7 +50,6 @@ try:
         password=sftp_password,
         log=f"./pysftp_{today}.log",
     ) as sftp:
-
         result = sftp.put(source_tail_filename)  # Upload the file
 
         print(f"result from writing source tail file: '{result}'")
@@ -87,12 +86,8 @@ try:
                     f"uploader_id: {uploader_id}, filename: '{filename}'"
                 )
 
-                source_file = (
-                    f"{archive_base}/{fleet_id}/{uploader_id}/{upload_id}__{filename}"
-                )
-                target_file = (
-                    f"/raise-prod-dto-ngafid/{fleet_id}__{upload_id}__{filename}"
-                )
+                source_file = f"{archive_base}/{fleet_id}/{uploader_id}/{upload_id}__{filename}"
+                target_file = f"/raise-prod-dto-ngafid/{fleet_id}__{upload_id}__{filename}"
 
                 if not os.path.isfile(source_file):
                     print(f"\tERROR: source file: '{source_file}' doest not exist!")

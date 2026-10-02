@@ -77,14 +77,10 @@ AVRO_NAMESPACE = "org.ngafid.foundry"
 # MySQL field-type codes grouped by the Avro primitive they map to. Any type
 # not listed here (dates, datetimes, strings, blobs, enums, ...) maps to an
 # Avro "string", matching how it is serialized into the CSV.
-_AVRO_INT_TYPES = frozenset(
-    {FieldType.TINY, FieldType.SHORT, FieldType.INT24, FieldType.LONG, FieldType.YEAR}
-)
+_AVRO_INT_TYPES = frozenset({FieldType.TINY, FieldType.SHORT, FieldType.INT24, FieldType.LONG, FieldType.YEAR})
 _AVRO_LONG_TYPES = frozenset({FieldType.LONGLONG, FieldType.BIT})
 _AVRO_FLOAT_TYPES = frozenset({FieldType.FLOAT})
-_AVRO_DOUBLE_TYPES = frozenset(
-    {FieldType.DOUBLE, FieldType.DECIMAL, FieldType.NEWDECIMAL}
-)
+_AVRO_DOUBLE_TYPES = frozenset({FieldType.DOUBLE, FieldType.DECIMAL, FieldType.NEWDECIMAL})
 
 # Logical foreign keys that are not declared as constraints in the database and
 # so do not appear in information_schema, keyed by table name then column name
@@ -115,9 +111,7 @@ def valid_date(value: str) -> date:
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(
-            f"invalid date '{value}', expected YYYY-MM-DD"
-        ) from exc
+        raise argparse.ArgumentTypeError(f"invalid date '{value}', expected YYYY-MM-DD") from exc
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -164,8 +158,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--password",
         default=None,
         help=(
-            "MySQL password. If omitted, you are prompted interactively so "
-            "the password is not stored in shell history."
+            "MySQL password. If omitted, you are prompted interactively so the password is not stored in shell history."
         ),
     )
 
@@ -185,10 +178,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         required=True,
-        help=(
-            "Directory to write the CSV files into. Created recursively if it "
-            "does not already exist."
-        ),
+        help=("Directory to write the CSV files into. Created recursively if it does not already exist."),
     )
 
     return parser.parse_args(argv)
@@ -414,8 +404,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.start_date > args.end_date:
         print(
-            f"error: start date {args.start_date} is after end date "
-            f"{args.end_date}",
+            f"error: start date {args.start_date} is after end date {args.end_date}",
             file=sys.stderr,
         )
         return 1
@@ -441,9 +430,7 @@ def main(argv: list[str] | None = None) -> int:
         (
             EVENTS_FILENAME,
             "events",
-            "SELECT * FROM events "
-            "WHERE start_time >= %s AND start_time <= %s "
-            "ORDER BY start_time",
+            "SELECT * FROM events WHERE start_time >= %s AND start_time <= %s ORDER BY start_time",
             (start_dt, end_dt),
         ),
         (
@@ -465,8 +452,7 @@ def main(argv: list[str] | None = None) -> int:
         (
             EVENT_DEFINITIONS_FILENAME,
             "event_definitions",
-            "SELECT id, fleet_id, airframe_id, airframe_type_id, name "
-            "FROM event_definitions ORDER BY id",
+            "SELECT id, fleet_id, airframe_id, airframe_type_id, name FROM event_definitions ORDER BY id",
             (),
         ),
         (
@@ -484,8 +470,7 @@ def main(argv: list[str] | None = None) -> int:
         (
             TAILS_FILENAME,
             "tails",
-            "SELECT system_id, fleet_id, tail, confirmed FROM tails "
-            "ORDER BY fleet_id, system_id",
+            "SELECT system_id, fleet_id, tail, confirmed FROM tails ORDER BY fleet_id, system_id",
             (),
         ),
     ]

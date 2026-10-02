@@ -8,7 +8,8 @@
 # mode to size the backlog.
 #
 # Usage:
-#   scripts/lint.sh [--report] [all|java|kotlin|python|js|format|checkstyle]
+#   scripts/lint.sh [--report] \
+#       [all|java|kotlin|python|js|bash|dockerfile|format|checkstyle]
 #
 #   --report   Never exit non-zero: run every check, print counts, and (in CI)
 #              append a summary to $GITHUB_STEP_SUMMARY. Used for inventory.
@@ -19,8 +20,10 @@
 #                kotlin     -> Spotless (format + ktlint)
 #                format     -> Spotless only (Java + Kotlin)
 #                checkstyle -> Checkstyle only (Java)
-#                python     -> ruff
+#                python     -> ruff (check + format)
 #                js         -> ESLint (ngafid-frontend)
+#                bash       -> shfmt + shellcheck (shell scripts)
+#                dockerfile -> hadolint (Dockerfiles)
 #
 # A check whose toolchain is missing is SKIPPED with a note (not failed), so the
 # script is useful on a machine that has only some of the toolchains installed.
@@ -28,17 +31,20 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+cd "$ROOT" || exit 1
 
 REPORT=0
 TARGET="all"
 for arg in "$@"; do
     case "$arg" in
         --report) REPORT=1 ;;
-        all | java | kotlin | python | js | format | checkstyle) TARGET="$arg" ;;
+        all | java | kotlin | python | js | css | web | html | bash | yaml | markdown | dockerfile | format | checkstyle)
+            TARGET="$arg"
+            ;;
         *)
             echo "Unknown argument: $arg" >&2
-            echo "Usage: scripts/lint.sh [--report] [all|java|kotlin|python|js|format|checkstyle]" >&2
+            echo "Usage: scripts/lint.sh [--report]" \
+                "[all|java|kotlin|python|js|css|web|html|bash|yaml|markdown|dockerfile|format|checkstyle]" >&2
             exit 2
             ;;
     esac
@@ -87,19 +93,30 @@ resolve_jdk25
 lint_python() {
     echo
     echo "=== Python (ruff) ==="
-    if ! command -v ruff >/dev/null 2>&1; then
+    local ruff=""
+    if command -v ruff >/dev/null 2>&1; then
+        ruff="ruff"
+    elif python3 -m ruff --version >/dev/null 2>&1; then
+        ruff="python3 -m ruff"
+    else
         record "Python (ruff)" "SKIP" "ruff not found (pip install ruff, or activate the project venv)"
         return
     fi
     local report="$REPORTS_DIR/python-ruff.txt"
-    ruff check . --output-format=concise | tee "$report"
-    local status=${PIPESTATUS[0]}
+    # Lint (ruff check) and formatting (ruff format --check) are both enforced.
+    $ruff check . --output-format=concise | tee "$report"
+    local check_status=${PIPESTATUS[0]}
     local count
     count=$(grep -cE ':[0-9]+:[0-9]+: ' "$report" || true)
-    if [[ "$status" -eq 0 ]]; then
-        record "Python (ruff)" "OK" "no violations"
+    echo "--- ruff format --check ---" | tee -a "$report"
+    $ruff format --check . | tee -a "$report"
+    local fmt_status=${PIPESTATUS[0]}
+    if [[ "$check_status" -eq 0 && "$fmt_status" -eq 0 ]]; then
+        record "Python (ruff)" "OK" "no violations, formatting clean"
+    elif [[ "$check_status" -ne 0 ]]; then
+        record "Python (ruff)" "PROBLEMS" "$count lint violation(s) -- fix with 'ruff check --fix .' / 'scripts/format.sh python'"
     else
-        record "Python (ruff)" "PROBLEMS" "$count violation(s) -- auto-fix many with 'ruff check --fix .'"
+        record "Python (ruff)" "PROBLEMS" "formatting differences -- fix with 'scripts/format.sh python'"
     fi
 }
 
@@ -203,12 +220,111 @@ lint_checkstyle() {
     fi
 }
 
+# Shell scripts that are part of this repo (kept in sync with format.sh).
+SHELL_FILES=(
+    scripts/lint.sh
+    scripts/format.sh
+    resources/services/link-dropin-configs.sh
+)
+
+lint_bash() {
+    echo
+    echo "=== Bash (shfmt + shellcheck) ==="
+    if ! command -v shellcheck >/dev/null 2>&1 && ! command -v shfmt >/dev/null 2>&1; then
+        record "Bash (shfmt + shellcheck)" "SKIP" "shellcheck/shfmt not found (brew install shellcheck shfmt)"
+        return
+    fi
+    local report="$REPORTS_DIR/bash.txt"
+    : >"$report"
+    local problems=0
+    if command -v shfmt >/dev/null 2>&1; then
+        if ! shfmt -i 4 -ci -d "${SHELL_FILES[@]}" >>"$report" 2>&1; then
+            problems=1
+        fi
+    fi
+    if command -v shellcheck >/dev/null 2>&1; then
+        if ! shellcheck "${SHELL_FILES[@]}" >>"$report" 2>&1; then
+            problems=1
+        fi
+    fi
+    if [[ "$problems" -eq 0 ]]; then
+        record "Bash (shfmt + shellcheck)" "OK" "no issues"
+    else
+        record "Bash (shfmt + shellcheck)" "PROBLEMS" "see $report -- auto-fix formatting with 'scripts/format.sh bash'"
+    fi
+}
+
+lint_dockerfile() {
+    echo
+    echo "=== Dockerfile (hadolint) ==="
+    if ! command -v hadolint >/dev/null 2>&1; then
+        record "Dockerfile (hadolint)" "SKIP" "hadolint not found (brew install hadolint)"
+        return
+    fi
+    local report="$REPORTS_DIR/dockerfile.txt"
+    : >"$report"
+    local files
+    files=$(git ls-files | grep -iE '(^|/)Dockerfile' || true)
+    if [[ -z "$files" ]]; then
+        record "Dockerfile (hadolint)" "SKIP" "no Dockerfiles found"
+        return
+    fi
+    local problems=0
+    # shellcheck disable=SC2086  # intentional word-splitting of the file list
+    if ! hadolint $files >>"$report" 2>&1; then
+        problems=1
+    fi
+    local count
+    count=$(grep -cE ':[0-9]+ DL[0-9]+' "$report" || true)
+    if [[ "$problems" -eq 0 ]]; then
+        record "Dockerfile (hadolint)" "OK" "no issues"
+    else
+        record "Dockerfile (hadolint)" "PROBLEMS" "$count finding(s) -- see $report"
+    fi
+}
+
+lint_yaml() {
+    echo
+    echo "=== YAML (yamllint) ==="
+    local yamllint=""
+    if command -v yamllint >/dev/null 2>&1; then
+        yamllint="yamllint"
+    elif python3 -m yamllint --version >/dev/null 2>&1; then
+        yamllint="python3 -m yamllint"
+    else
+        record "YAML (yamllint)" "SKIP" "yamllint not found (pip install yamllint)"
+        return
+    fi
+    local report="$REPORTS_DIR/yaml.txt"
+    local files
+    files=$(git ls-files | grep -iE '\.ya?ml$' || true)
+    if [[ -z "$files" ]]; then
+        record "YAML (yamllint)" "SKIP" "no YAML files found"
+        return
+    fi
+    # Config is .yamllint.yml at the repo root (auto-discovered); line-length is
+    # disabled there because Prettier owns YAML formatting.
+    # shellcheck disable=SC2086  # intentional word-splitting of the file list
+    $yamllint -f parsable $files >"$report" 2>&1
+    local status=$?
+    local count
+    count=$(grep -cE ':[0-9]+:[0-9]+: ' "$report" || true)
+    if [[ "$status" -eq 0 ]]; then
+        record "YAML (yamllint)" "OK" "no issues"
+    else
+        record "YAML (yamllint)" "PROBLEMS" "$count finding(s) -- see $report; format with 'scripts/format.sh yaml'"
+    fi
+}
+
 case "$TARGET" in
     all)
         lint_format
         lint_checkstyle
         lint_python
         lint_js
+        lint_bash
+        lint_dockerfile
+        lint_yaml
         ;;
     java)
         lint_format
@@ -218,6 +334,9 @@ case "$TARGET" in
     checkstyle) lint_checkstyle ;;
     python) lint_python ;;
     js) lint_js ;;
+    bash) lint_bash ;;
+    dockerfile) lint_dockerfile ;;
+    yaml) lint_yaml ;;
 esac
 
 echo

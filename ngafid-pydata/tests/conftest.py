@@ -346,9 +346,7 @@ def make_column() -> Callable[..., tuple[Any, ...]]:
         description tuple.
     """
 
-    def _column_factory(
-        name: str, type_code: int, nullable: bool = False
-    ) -> tuple[Any, ...]:
+    def _column_factory(name: str, type_code: int, nullable: bool = False) -> tuple[Any, ...]:
         """Build a single description tuple."""
         return _column(name, type_code, nullable=nullable)
 

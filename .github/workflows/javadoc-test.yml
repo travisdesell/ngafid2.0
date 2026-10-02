@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -B -ntp clean install -DskipTests
-              
+
           echo "Running JavaDoc generation with verbose output..."
           mvn -B -ntp -DskipTests javadoc:javadoc -X
 

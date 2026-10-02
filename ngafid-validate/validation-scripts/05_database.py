@@ -85,9 +85,7 @@ def _fetch_table_set(cursor, db_name, table_names):
     placeholders = ", ".join(["%s"] * len(expected_lower))
     query = (
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema = %s AND LOWER(table_name) IN ("
-        + placeholders
-        + ")"
+        "WHERE table_schema = %s AND LOWER(table_name) IN (" + placeholders + ")"
     )
     cursor.execute(query, [db_name] + expected_lower)
     return {row[0].lower() for row in cursor.fetchall()}
@@ -265,9 +263,7 @@ def _check_critical_columns(validator, category, cursor, db_name):
         placeholders = ", ".join(["%s"] * len(columns))
         query = (
             "SELECT LOWER(column_name) FROM information_schema.columns "
-            "WHERE table_schema = %s AND LOWER(table_name) = %s AND LOWER(column_name) IN ("
-            + placeholders
-            + ")"
+            "WHERE table_schema = %s AND LOWER(table_name) = %s AND LOWER(column_name) IN (" + placeholders + ")"
         )
         cursor.execute(query, [db_name, table_name.lower()] + [column.lower() for column in columns])
         found_columns = {row[0] for row in cursor.fetchall()}

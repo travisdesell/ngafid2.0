@@ -15,7 +15,7 @@ x-ngafid-service-common: &ngafid-service-common
       condition: service_completed_successfully
   volumes:
     # Mount the properties file and data directories
-    - /mnt/ngafid/temp:/mnt/ngafid/temp # Jetty temp directory:  upload chunks/files before final write to uploads/archive.
+    - /mnt/ngafid/temp:/mnt/ngafid/temp # Jetty temp directory: upload chunks/files before final write to uploads/archive.
 
     - ./ngafid.properties:/app/ngafid.properties:ro
 
@@ -44,13 +44,7 @@ services:
     build:
       context: .
       dockerfile: ngafid-core/Dockerfile.topics
-    command:
-      [
-        "java",
-        "-cp",
-        "/opt/ngafid-core/ngafid-core.jar:/app",
-        "org.ngafid.core.kafka.Topic",
-      ]
+    command: ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.Topic"]
     <<: *ngafid-service-common-base
     depends_on:
       kafka:
@@ -77,7 +71,7 @@ services:
       - ./email_info.txt:/etc/ngafid-email.conf:ro
 
       - ./ngafid-static:/mnt/static
-      
+
       - /mnt/ngafid/uploads:/mnt/ngafid/uploads
       - /mnt/ngafid/archive:/mnt/ngafid/archive
       - /mnt/ngafid/terrain:/mnt/ngafid/terrain
@@ -90,13 +84,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command:
-      [
-        "java",
-        "-cp",
-        "/opt/ngafid-core/ngafid-core.jar:/app",
-        "org.ngafid.core.kafka.EmailConsumer",
-      ]
+    command: ["java", "-cp", "/opt/ngafid-core/ngafid-core.jar:/app", "org.ngafid.core.kafka.EmailConsumer"]
     restart: unless-stopped
     <<: *ngafid-service-common
 
@@ -191,8 +179,8 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
-    # volumes:
-    #   - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
+      # volumes:
+      #   - $HOST_LOG_DIRS:$CONTAINER_LOG_DIRS
 
 volumes:
   mysql_data:

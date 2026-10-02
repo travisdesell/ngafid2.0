@@ -46,8 +46,6 @@ done
 SHELL_FILES=(
     scripts/lint.sh
     scripts/format.sh
-    ngafid-pydata/database_connect.sh
-    ngafid-pydata/database_tunnel.sh
     resources/services/link-dropin-configs.sh
 )
 
@@ -148,10 +146,16 @@ format_bash() {
 format_yaml() {
     echo
     echo "=== YAML (Prettier) ==="
-    if [[ -x "$PRETTIER" ]]; then
-        "$PRETTIER" --write ".github/**/*.{yml,yaml}"
-    else
+    if [[ ! -x "$PRETTIER" ]]; then
         note "prettier not found; skipping YAML"
+        return
+    fi
+    # All tracked YAML (workflows under .github plus the root docker-compose files).
+    local files
+    files=$(git ls-files | grep -iE '\.ya?ml$' || true)
+    if [[ -n "$files" ]]; then
+        # shellcheck disable=SC2086  # intentional word-splitting of the file list
+        "$PRETTIER" --write $files
     fi
 }
 

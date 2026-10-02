@@ -112,11 +112,7 @@ def _check_terrain_tiles(validator, terrain_dir: Path):
     # Also allow the optional "extra" folder used in some deployments.
     pattern = re.compile(r"^[A-Z]\d{1,2}$")
     allowed_non_tile_dirs = {"extra"}
-    invalid_names = [
-        p.name
-        for p in children
-        if p.name not in allowed_non_tile_dirs and not pattern.match(p.name)
-    ]
+    invalid_names = [p.name for p in children if p.name not in allowed_non_tile_dirs and not pattern.match(p.name)]
     if invalid_names:
         preview = ", ".join(invalid_names[:5])
         validator._fail(

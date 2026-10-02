@@ -18,6 +18,7 @@ python3 chartServer.py --test-date 12-26-2024
 
 @Author: Roman Kozulia
 """
+
 import argparse
 import json
 import logging
@@ -32,14 +33,14 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from logging.handlers import RotatingFileHandler
 from socketserver import ThreadingMixIn
 
-"""Configure logging. Log files will be rotating if the size will reach 10 MB"""""
+"""Configure logging. Log files will be rotating if the size will reach 10 MB""" ""
 log_file = "./chart_server.log"
 log_dir = os.path.dirname(log_file)
 
 os.makedirs(log_dir, exist_ok=True)
 
 if not os.path.isfile(log_file):
-    with open(log_file, 'w') as f:
+    with open(log_file, "w") as f:
         f.write("")
 
 max_log_file_size = 10 * 1024 * 1024  # 10 MB
@@ -50,31 +51,33 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         RotatingFileHandler(log_file, maxBytes=max_log_file_size, backupCount=backup_count),
-        logging.StreamHandler()
-    ]
+        logging.StreamHandler(),
+    ],
 )
 
 stop_event = threading.Event()
+
+
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Serve aviation chart tiles and check for updates.")
     parser.add_argument(
-        "--test-date",
-        type=str,
-        help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
+        "--test-date", type=str, help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
     )
     parser.add_argument(
         "--config",
         type=str,
         help="Config file path",
-        default="ngafid-chart-processor/chart_service_config.default.json"
+        default="ngafid-chart-processor/chart_service_config.default.json",
     )
     return parser.parse_args()
+
 
 def handle_exit_signal(signum, frame):
     logging.info("Received termination signal. Stopping update checker.")
     stop_event.set()
     sys.exit(0)
+
 
 # Load configuration
 def load_config(config_path):
@@ -92,6 +95,7 @@ def load_config(config_path):
             logging.error(f"Error parsing JSON in {config_path}: {e}")
             raise ValueError(f"Error parsing JSON in {config_path}: {e}") from e
 
+
 CONFIG = load_config(parse_arguments().config)
 PATHS = CONFIG.get("paths", {})
 
@@ -103,7 +107,6 @@ except KeyError as e:
     raise ValueError(f"Missing required path in configuration: {e}") from e
 
 
-
 def free_port(port):
     if platform.system() == "Windows":
         logging.info("Port freeing not implemented on Windows.")
@@ -111,12 +114,7 @@ def free_port(port):
     """Free up the port if it is currently in use."""
     try:
         # Find the PID using the port
-        result = subprocess.run(
-            ["lsof", "-i", f":{port}"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(["lsof", "-i", f":{port}"], capture_output=True, text=True, check=True)
         lines = result.stdout.splitlines()
         if len(lines) > 1:
             # Skip the header and extract PIDs
@@ -127,6 +125,7 @@ def free_port(port):
                 subprocess.run(["kill", "-9", str(pid)], check=True)
     except subprocess.CalledProcessError:
         logging.info(f"Port {port} is already free.")
+
 
 def load_schedule():
     """
@@ -148,9 +147,11 @@ def load_schedule():
         logging.error(f"Error loading schedule: {e}")
         return []
 
+
 def is_update_due(schedule, today):
     """Check if the current date matches an update date."""
     return today in schedule
+
 
 def run_chart_processor(date):
     """
@@ -159,13 +160,10 @@ def run_chart_processor(date):
     :return:
     """
 
-
     try:
         logging.info(f"Running chartProcessor.py with --chart_date={date}")
         result = subprocess.run(
-            ["python3", "ngafid-chart-processor/chartProcessor.py", "--chart_date", date],
-            text=True,
-            check=True
+            ["python3", "ngafid-chart-processor/chartProcessor.py", "--chart_date", date], text=True, check=True
         )
         logging.info(f"ChartProcessor output:\n{result.stdout}")
     except subprocess.CalledProcessError as e:
@@ -175,6 +173,7 @@ def run_chart_processor(date):
         logging.error(f"ChartProcessor script not found: {e}")
     except Exception as e:
         logging.error(f"Unexpected error running chartProcessor: {e}")
+
 
 def get_next_update_date(schedule, today_date):
     """
@@ -219,7 +218,7 @@ def start_update_checker():
                         run_chart_processor(today)
                     else:
                         logging.info(f"No update due today: {today}.")
-                        nextUpdate = get_next_update_date(schedule,today)
+                        nextUpdate = get_next_update_date(schedule, today)
                         logging.info(f"Next update is due: {nextUpdate}")
 
                 # Sleep for 1 hour until the next check
@@ -247,9 +246,12 @@ class TileRequestHandler(SimpleHTTPRequestHandler):
         logging.info(f"Serving file: {full_path}")
         return full_path
 
+
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread for concurrency."""
+
     pass
+
 
 def run_server():
     """Run the HTTP server to serve tiles."""
@@ -294,15 +296,13 @@ def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Serve aviation chart tiles and check for updates.")
     parser.add_argument(
-        "--test-date",
-        type=str,
-        help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
+        "--test-date", type=str, help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
     )
     parser.add_argument(
         "--config",
         type=str,
         help="Config file path",
-        default="ngafid-chart-processor/chart_service_config.default.json"
+        default="ngafid-chart-processor/chart_service_config.default.json",
     )
     return parser.parse_args()
 
@@ -313,7 +313,7 @@ def initial_download():
     or does not exist.
     """
     charts_dir = CHARTS_DIR
-    required_subdirs = ["sectional", "terminal-area", "ifr-enroute-low", "ifr-enroute-high","helicopter"]
+    required_subdirs = ["sectional", "terminal-area", "ifr-enroute-low", "ifr-enroute-high", "helicopter"]
 
     # Check if the charts directory exists
     if not os.path.exists(charts_dir):
@@ -321,11 +321,9 @@ def initial_download():
         os.makedirs(charts_dir, exist_ok=True)
         missing_subdirs = required_subdirs  # All subdirectories are missing if the main directory doesn't exist
     else:
-
         # Check for the presence of required subdirectories
         existing_subdirs = [
-            subdir for subdir in os.listdir(charts_dir)
-            if os.path.isdir(os.path.join(charts_dir, subdir))
+            subdir for subdir in os.listdir(charts_dir) if os.path.isdir(os.path.join(charts_dir, subdir))
         ]
         missing_subdirs = [subdir for subdir in required_subdirs if subdir not in existing_subdirs]
 
@@ -343,7 +341,7 @@ def initial_download():
     # Find the closest date
     target_date = None
     today_datetime = datetime.strptime(today_date, "%m-%d-%Y")
-    for  schedule_date in all_dates:
+    for schedule_date in all_dates:
         schedule_datetime = datetime.strptime(schedule_date, "%m-%d-%Y")
         if schedule_datetime <= today_datetime:
             target_date = schedule_date  # Keep updating until we pass today

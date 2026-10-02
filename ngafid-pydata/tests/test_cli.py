@@ -141,11 +141,7 @@ def test_main_binds_full_day_date_range(
 
     export_events.main([*BASE_ARGS, "--output-dir", str(tmp_path / "out")])
 
-    events_params = [
-        params
-        for query, params in fake_connection.executed
-        if query.startswith("SELECT * FROM events")
-    ]
+    events_params = [params for query, params in fake_connection.executed if query.startswith("SELECT * FROM events")]
     assert len(events_params) == 1
     start, end = events_params[0]
     assert start == datetime(2024, 1, 1, 0, 0, 0)

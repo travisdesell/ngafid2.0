@@ -62,8 +62,7 @@ def test_export_query_writes_null_as_empty_csv_field(
     export_events.export_query(
         fake_connection,
         "event_definitions",
-        "SELECT id, fleet_id, airframe_id, airframe_type_id, name "
-        "FROM event_definitions",
+        "SELECT id, fleet_id, airframe_id, airframe_type_id, name FROM event_definitions",
         (),
         output_path,
     )
@@ -119,8 +118,7 @@ def test_export_query_annotates_foreign_keys_in_schema(
     export_events.export_query(
         fake_connection,
         "event_definitions",
-        "SELECT id, fleet_id, airframe_id, airframe_type_id, name "
-        "FROM event_definitions",
+        "SELECT id, fleet_id, airframe_id, airframe_type_id, name FROM event_definitions",
         (),
         output_path,
     )

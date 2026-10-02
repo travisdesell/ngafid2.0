@@ -293,7 +293,9 @@ def _validate_email_config(validator, category):
         )
 
     email_pattern = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-    invalid_admin = [email for email in [e.strip() for e in admin_emails.split(";")] if email and not email_pattern.match(email)]
+    invalid_admin = [
+        email for email in [e.strip() for e in admin_emails.split(";")] if email and not email_pattern.match(email)
+    ]
     if invalid_admin:
         validator._fail(
             category,
