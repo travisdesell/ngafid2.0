@@ -1,10 +1,11 @@
 package terrain;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.ngafid.processor.terrain.TerrainCache.getAltitudeFt;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.ngafid.processor.terrain.TerrainCache;
 
 public class TerrainCacheTest {
@@ -15,7 +16,7 @@ public class TerrainCacheTest {
             assertEquals(expectedAltitude, actual, 30);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 
@@ -24,6 +25,7 @@ public class TerrainCacheTest {
      * zero-padded degrees for all four latitude/longitude quadrants.
      */
     @Test
+    @DisplayName("Should build the SRTM tile filename for all lat/lon quadrants")
     public void testGetFilenameFromLatLon() {
         // Northeast
         String actual = TerrainCache.getFilenameFromLatLon(90, 90);
@@ -46,6 +48,7 @@ public class TerrainCacheTest {
      * Verifies that {@code getAltitudeFt} returns Albany, NY's known ground elevation (~267 ft) within tolerance.
      */
     @Test
+    @DisplayName("Should return Albany's ground altitude within tolerance")
     public void testGetAlbanyAltitudeFt() {
         altitudeTest(42.74871, -73.80550, 267.0);
     }
@@ -55,6 +58,7 @@ public class TerrainCacheTest {
      * tolerance.
      */
     @Test
+    @DisplayName("Should return Grand Forks' ground altitude within tolerance")
     public void testGetGrandForksAltitudeFt() {
         // Grand Forks
         altitudeTest(47.94286, -97.17658, 838.0);
@@ -65,6 +69,7 @@ public class TerrainCacheTest {
      * within tolerance.
      */
     @Test
+    @DisplayName("Should return Denver's high-elevation ground altitude within tolerance")
     public void testGetDenverAltitudeFt() {
         altitudeTest(39.85610, -104.67374, 5373.0);
     }
@@ -74,6 +79,7 @@ public class TerrainCacheTest {
      * tolerance.
      */
     @Test
+    @DisplayName("Should return Rochester's ground altitude within tolerance")
     public void testGetRochesterAltitudeFt() {
         altitudeTest(43.12252, -77.66657, 542.0);
     }
@@ -83,6 +89,7 @@ public class TerrainCacheTest {
      * tolerance.
      */
     @Test
+    @DisplayName("Should return Phoenix's ground altitude within tolerance")
     public void testGetPhoenixAltitudeFt() {
         altitudeTest(33.43727, -112.00779, 1124.0);
     }

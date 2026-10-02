@@ -1089,7 +1089,7 @@ public class AirframesTest extends TestWithConnection {
      * Verifies {@code getAll(connection)} throws {@link NullPointerException} for a null connection.
      */
     @Test
-    @DisplayName("Should handle getAll with null connection")
+    @DisplayName("Should handle getAll with null connection (no fleet argument)")
     public void testGetAllWithNullConnectionNoFleet() {
         assertThrows(NullPointerException.class, () -> {
             Airframes.getAll(null);

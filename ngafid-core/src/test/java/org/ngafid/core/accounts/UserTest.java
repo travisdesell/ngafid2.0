@@ -446,7 +446,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException declared; the body asserts the throw occurs
      */
     @Test
-    @DisplayName("Should throw exception when creating user with duplicate email")
+    @DisplayName("Should throw exception when creating new-fleet user with duplicate email")
     public void createNewFleetUserWithDuplicateEmail() throws SQLException, AccountException {
         connection.setAutoCommit(false);
         String duplicateEmail = user1Fleet1.getEmail();
@@ -1130,7 +1130,7 @@ public class UserTest extends TestWithConnection {
      * @throws SQLException if a database operation fails
      */
     @Test
-    @DisplayName("Should throw exception when creating user with duplicate email")
+    @DisplayName("Should throw exception when creating existing-fleet user with duplicate email")
     public void createExistingFleetUserWithDuplicateEmail() throws SQLException {
         connection.setAutoCommit(false);
         String duplicateEmail = user1Fleet1.getEmail();
@@ -2849,6 +2849,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if creation fails
      */
     @Test
+    @DisplayName("Should create a fleet access entry")
     public void testFleetAccessCreate() throws SQLException, AccountException {
         // Create a new fleet access entry using a user/fleet combination that doesn't exist
         // User 1 has VIEW access to fleet 1, but we can create a MANAGER access (upgrade)
@@ -2878,6 +2879,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if the first creation unexpectedly fails
      */
     @Test
+    @DisplayName("Should throw exception when creating a duplicate fleet access entry")
     public void testFleetAccessCreateDuplicate() throws SQLException, AccountException {
         // First delete the existing VIEW access for user 1 and fleet 1
         try (PreparedStatement stmt =
@@ -2902,6 +2904,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if creating an access entry fails
      */
     @Test
+    @DisplayName("Should update a fleet access type")
     public void testFleetAccessUpdate() throws SQLException, AccountException {
         // Use existing fleet access entry and update it
         // First, get an existing entry to work with
@@ -2938,6 +2941,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if creating an access entry fails
      */
     @Test
+    @DisplayName("Should update fleet access through different types")
     public void testFleetAccessUpdateToDifferentTypes() throws SQLException, AccountException {
         // Use existing fleet access entry and update it through different types
         FleetAccess existingAccess = FleetAccess.get(connection, 2, 2);
@@ -2976,6 +2980,7 @@ public class UserTest extends TestWithConnection {
      * @throws SQLException if the update query fails
      */
     @Test
+    @DisplayName("Should handle updating a non-existent fleet access entry")
     public void testFleetAccessUpdateNonExistent() throws SQLException {
         // This should not throw an exception, just update 0 rows
         assertDoesNotThrow(() -> {
@@ -2990,6 +2995,7 @@ public class UserTest extends TestWithConnection {
      * @throws SQLException if the update query fails
      */
     @Test
+    @DisplayName("Should execute fleet access update directly")
     public void testFleetAccessUpdateDirect() throws SQLException {
         // Direct test of the update method - this will execute the method even if no rows are updated
         // This test specifically targets the update method coverage
@@ -3010,6 +3016,7 @@ public class UserTest extends TestWithConnection {
      * @throws SQLException if an update query fails
      */
     @Test
+    @DisplayName("Should update fleet access for multiple entries")
     public void testFleetAccessUpdateMethod() throws SQLException {
         // Simple test that directly calls the update method to ensure coverage
         FleetAccess.update(connection, 1, 1, FleetAccess.UPLOAD);
@@ -3024,6 +3031,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading an access entry fails
      */
     @Test
+    @DisplayName("Should get the user ID from a fleet access entry")
     public void testFleetAccessGetUserId() throws SQLException, AccountException {
         // Test the getUserId() method by creating a FleetAccess object and calling getUserId()
         // First, get an existing fleet access entry
@@ -3050,6 +3058,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if creating an access entry fails
      */
     @Test
+    @DisplayName("Should test fleet access equality")
     public void testFleetAccessEquals() throws SQLException, AccountException {
         try (PreparedStatement stmt =
                 connection.prepareStatement("DELETE FROM fleet_access WHERE user_id = 1 AND fleet_id = 1")) {
@@ -3084,6 +3093,7 @@ public class UserTest extends TestWithConnection {
      * WAITING, DENIED).
      */
     @Test
+    @DisplayName("Should have correct fleet access type constants")
     public void testFleetAccessConstants() {
         assertEquals("MANAGER", FleetAccess.MANAGER);
         assertEquals("UPLOAD", FleetAccess.UPLOAD);
@@ -3097,6 +3107,7 @@ public class UserTest extends TestWithConnection {
      * same-user equality check).
      */
     @Test
+    @DisplayName("Should return true when comparing a user to itself (second variant)")
     public void testUserEqualsWithSameUser() {
         User user1 = user1Fleet1;
         User user2 = user1Fleet1;
@@ -3110,6 +3121,7 @@ public class UserTest extends TestWithConnection {
      * Verifies {@code User.equals(null)} returns false (a second variant of the null-comparison check).
      */
     @Test
+    @DisplayName("Should return false when comparing a user with null (second variant)")
     public void testUserEqualsWithNullObject() {
         User user = user1Fleet1;
         Object nullObject = null;
@@ -3141,7 +3153,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different IDs")
+    @DisplayName("Should return false when comparing users with different IDs (rollback-safe)")
     public void testUserEqualsWithDifferentId() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3184,7 +3196,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different emails")
+    @DisplayName("Should return false when comparing users with different emails (rollback-safe)")
     public void testUserEqualsWithDifferentEmail() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3227,7 +3239,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different first names")
+    @DisplayName("Should return false when comparing users with different first names (rollback-safe)")
     public void testUserEqualsWithDifferentFirstName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3270,7 +3282,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different last names")
+    @DisplayName("Should return false when comparing users with different last names (rollback-safe)")
     public void testUserEqualsWithDifferentLastName() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3313,7 +3325,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different countries")
+    @DisplayName("Should return false when comparing users with different countries (rollback-safe)")
     public void testUserEqualsWithDifferentCountry() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3356,7 +3368,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different states")
+    @DisplayName("Should return false when comparing users with different states (rollback-safe)")
     public void testUserEqualsWithDifferentState() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3400,7 +3412,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different cities")
+    @DisplayName("Should return false when comparing users with different cities (rollback-safe)")
     public void testUserEqualsWithDifferentCity() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3443,7 +3455,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different addresses")
+    @DisplayName("Should return false when comparing users with different addresses (rollback-safe)")
     public void testUserEqualsWithDifferentAddress() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3486,7 +3498,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different phone numbers")
+    @DisplayName("Should return false when comparing users with different phone numbers (rollback-safe)")
     public void testUserEqualsWithDifferentPhoneNumber() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3529,7 +3541,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different zip codes")
+    @DisplayName("Should return false when comparing users with different zip codes (rollback-safe)")
     public void testUserEqualsWithDifferentZipCode() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3572,7 +3584,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different admin status")
+    @DisplayName("Should return false when comparing users with different admin status (rollback-safe)")
     public void testUserEqualsWithDifferentAdminStatus() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3616,7 +3628,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the comparison user fails
      */
     @Test
-    @DisplayName("Should return false when comparing users with different aggregate view")
+    @DisplayName("Should return false when comparing users with different aggregate view (rollback-safe)")
     public void testUserEqualsWithDifferentAggregateView() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 
@@ -3660,7 +3672,7 @@ public class UserTest extends TestWithConnection {
      * @throws AccountException if loading the user fails
      */
     @Test
-    @DisplayName("Should return true when comparing identical users")
+    @DisplayName("Should return true when comparing identical users (rollback-safe)")
     public void testUserEqualsWithIdenticalUsers() throws SQLException, AccountException {
         connection.setAutoCommit(false);
 

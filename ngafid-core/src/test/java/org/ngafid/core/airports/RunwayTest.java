@@ -6,11 +6,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class RunwayTest {
+    /**
+     * Seeds the shared {@link Airports} lookup maps with a single synthetic airport before any test runs, so runway
+     * construction and distance tests have a stable fixture.
+     */
     @BeforeAll
-    static void setup() {
+    public static void setup() {
         String csvData = "0,XYZ,999,test,0.0,0.0\n";
         Map<String, Airport> iata = new HashMap<>();
         Map<String, Airport> site = new HashMap<>();
@@ -30,8 +35,13 @@ class RunwayTest {
         Airports.injectTestData(iata, site, geo);
     }
 
+    /**
+     * Verifies the no-coordinate {@link Runway} constructor stores the site number and name, reports no coordinates,
+     * sets all lat/lon fields to NaN, and includes the name in {@code toString}.
+     */
     @Test
-    void testConstructorNoCoordinates() {
+    @DisplayName("Should construct a runway without coordinates")
+    public void testConstructorNoCoordinates() {
         Runway runway = new Runway("123", "RWY1");
         assertEquals("123", runway.getSiteNumber());
         assertEquals("RWY1", runway.getName());
@@ -43,8 +53,13 @@ class RunwayTest {
         assertTrue(runway.toString().contains("RWY1"));
     }
 
+    /**
+     * Verifies the coordinate-taking {@link Runway} constructor stores the endpoints, reports that it has coordinates,
+     * and includes the name in {@code toString}.
+     */
     @Test
-    void testConstructorWithCoordinates() {
+    @DisplayName("Should construct a runway with coordinates")
+    public void testConstructorWithCoordinates() {
         Runway runway = new Runway("456", "RWY2", 10.0, 20.0, 11.0, 21.0);
         assertEquals("456", runway.getSiteNumber());
         assertEquals("RWY2", runway.getName());
@@ -56,8 +71,12 @@ class RunwayTest {
         assertTrue(runway.toString().contains("RWY2"));
     }
 
+    /**
+     * Verifies {@link Runway#getDistanceFt} returns a positive distance from a point to a runway with coordinates.
+     */
     @Test
-    void testGetDistanceFt() {
+    @DisplayName("Should compute a positive distance from a point to the runway")
+    public void testGetDistanceFt() {
         Runway runway = new Runway("789", "RWY3", 0.0, 0.0, 0.0, 1.0);
         double dist = runway.getDistanceFt(1.0, 0.5);
         assertTrue(dist > 0);

@@ -1,10 +1,11 @@
 package proximity;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.SQLException;
-import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.ngafid.processor.events.proximity.FlightTimeLocation;
 
 public class ProximityTest {
@@ -18,6 +19,7 @@ public class ProximityTest {
      * comparison directions.
      */
     @Test
+    @DisplayName("Should report no overlap for disjoint regions without a buffer")
     public void shouldReturnFalseWhenNoOverlapWithoutBuffer() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12.1, 13, 12.1, 13);
@@ -31,6 +33,7 @@ public class ProximityTest {
      * directions.
      */
     @Test
+    @DisplayName("Should report overlap for overlapping regions without a buffer")
     public void shouldReturnTrueWhenOverlapWithoutBuffer() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(11, 13, 11, 13);
@@ -44,6 +47,7 @@ public class ProximityTest {
      * bridge the gap is applied.
      */
     @Test
+    @DisplayName("Should report overlap when a buffer bridges the gap")
     public void shouldReturnTrueWhenBufferTouchesEdges() throws SQLException {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12.5, 14, 12.5, 14);
@@ -57,6 +61,7 @@ public class ProximityTest {
      * Verifies that two boxes sharing an exact edge coordinate are treated as overlapping even with no buffer.
      */
     @Test
+    @DisplayName("Should report overlap when region edges touch exactly")
     public void shouldReturnTrueWhenEdgesTouchExactly() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12, 14, 12, 14);
@@ -70,6 +75,7 @@ public class ProximityTest {
      * boundary is exclusive.
      */
     @Test
+    @DisplayName("Should report no overlap when regions are just outside without a buffer")
     public void shouldReturnFalseWhenJustOutsideWithoutBuffer() {
         FlightTimeLocation a = createFlight(10, 12, 10, 12);
         FlightTimeLocation b = createFlight(12.01, 14, 12.01, 14);
@@ -82,6 +88,7 @@ public class ProximityTest {
      * Verifies that a box fully contained within another reports an overlap in both comparison directions.
      */
     @Test
+    @DisplayName("Should report overlap when one region is fully contained within another")
     public void shouldReturnTrueWhenRegionIsFullyContainedWithinAnother() {
         FlightTimeLocation outer = createFlight(10, 20, 10, 20);
         FlightTimeLocation inner = createFlight(12, 18, 12, 18);
@@ -94,6 +101,7 @@ public class ProximityTest {
      * Verifies that two identical bounding boxes report an overlap in both comparison directions.
      */
     @Test
+    @DisplayName("Should report overlap for identical regions")
     public void shouldReturnTrueWhenRegionsAreIdentical() {
         FlightTimeLocation a = createFlight(10, 20, 10, 20);
         FlightTimeLocation b = createFlight(10, 20, 10, 20);
@@ -106,6 +114,7 @@ public class ProximityTest {
      * Verifies that overlap detection works for boxes expressed in negative latitude/longitude coordinates.
      */
     @Test
+    @DisplayName("Should detect overlap in negative coordinates")
     public void testNegativeCoordinatesOverlap() {
         FlightTimeLocation a = createFlight(-5, -3, -5, -3);
         FlightTimeLocation b = createFlight(-4, -2, -4, -2);
@@ -117,6 +126,7 @@ public class ProximityTest {
      * Verifies that two widely separated boxes report no overlap when no buffer is applied.
      */
     @Test
+    @DisplayName("Should report no overlap for far-apart regions without a buffer")
     public void testNoOverlapEvenWithBuffer() {
         FlightTimeLocation a = createFlight(0, 1, 0, 1);
         FlightTimeLocation b = createFlight(5, 6, 5, 6);
@@ -128,6 +138,7 @@ public class ProximityTest {
      * Verifies that overlapping boxes in negative coordinates report an overlap in both comparison directions.
      */
     @Test
+    @DisplayName("Should report overlap for overlapping negative-coordinate regions")
     public void shouldReturnTrueWhenNegativeRegionsOverlap() {
         FlightTimeLocation a = createFlight(-5, -3, -5, -3);
         FlightTimeLocation b = createFlight(-4, -2, -4, -2);
@@ -141,6 +152,7 @@ public class ProximityTest {
      * is applied.
      */
     @Test
+    @DisplayName("Should report no overlap for far-apart regions even with a buffer")
     public void shouldReturnFalseWhenRegionsAreFarApartEvenWithBuffer() {
         FlightTimeLocation a = createFlight(0, 1, 0, 1);
         FlightTimeLocation b = createFlight(5, 6, 5, 6);

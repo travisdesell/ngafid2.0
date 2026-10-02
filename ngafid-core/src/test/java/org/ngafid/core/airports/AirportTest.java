@@ -7,11 +7,16 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class AirportTest {
+    /**
+     * Seeds the shared {@link Airports} lookup maps with one synthetic airport (with two runways) before any test runs,
+     * providing a stable fixture for the airport/runway tests.
+     */
     @BeforeAll
-    static void setup() {
+    public static void setup() {
         String csvData = "0,GHI,789,large,50.0,60.0\n";
         Map<String, Airport> iata = new HashMap<>();
         Map<String, Airport> site = new HashMap<>();
@@ -35,8 +40,13 @@ class AirportTest {
         Airports.injectTestData(iata, site, geo);
     }
 
+    /**
+     * Verifies the {@link Airport} constructor stores the IATA code, site number, type, and coordinates, and that
+     * {@code toString} includes the IATA code.
+     */
     @Test
-    void testConstructorAndToString() {
+    @DisplayName("Should construct an airport and expose its fields via toString")
+    public void testConstructorAndToString() {
         Airport airport = new Airport("ABC", "123", "small", 10.0, 20.0);
         assertEquals("ABC", airport.getIataCode());
         assertEquals("123", airport.getSiteNumber());
@@ -46,8 +56,13 @@ class AirportTest {
         assertTrue(airport.toString().contains("ABC"));
     }
 
+    /**
+     * Verifies adding a runway to an {@link Airport} updates the runway count and {@code hasRunways}, and that the
+     * runway is found by name and in the runway collection.
+     */
     @Test
-    void testRunwayManagement() {
+    @DisplayName("Should add and look up runways on an airport")
+    public void testRunwayManagement() {
         Airport airport = new Airport("DEF", "456", "medium", 30.0, 40.0);
         Runway runway = new Runway("456", "RWY1", 30.1, 40.1, 30.2, 40.2);
         airport.addRunway(runway);
@@ -57,8 +72,13 @@ class AirportTest {
         assertTrue(airport.getRunways().contains(runway));
     }
 
+    /**
+     * Verifies {@link Airport#getNearestRunwayWithin} returns the closest runway within the distance limit and writes
+     * its distance into the out-parameter.
+     */
     @Test
-    void testGetNearestRunwayWithin() {
+    @DisplayName("Should find the nearest runway within a distance limit")
+    public void testGetNearestRunwayWithin() {
         Airport airport = new Airport("GHI", "789", "large", 50.0, 60.0);
         Runway runway1 = new Runway("789", "RWY1", 50.1, 60.1, 50.2, 60.2);
         Runway runway2 = new Runway("789", "RWY2", 51.0, 61.0, 51.1, 61.1);
@@ -71,8 +91,13 @@ class AirportTest {
         assertTrue(dist.doubleValue() < 10000.0);
     }
 
+    /**
+     * Verifies an airport with no runways reports {@code hasRunways() == false}, a zero count, and null for an unknown
+     * runway name.
+     */
     @Test
-    void testNoRunways() {
+    @DisplayName("Should report no runways for an airport without any")
+    public void testNoRunways() {
         Airport airport = new Airport("JKL", "101", "none", 0.0, 0.0);
         assertFalse(airport.hasRunways());
         assertEquals(0, airport.getNumberRunways());

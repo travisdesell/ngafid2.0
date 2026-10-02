@@ -116,7 +116,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(4)
-    @DisplayName("Should handle null connection gracefully")
+    @DisplayName("Should handle null connection gracefully in getFlights")
     public void testNullConnection() {
         assertThrows(NullPointerException.class, () -> {
             Flight.getFlights(null, 1, 10);
@@ -3540,7 +3540,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(96)
-    @DisplayName("Should handle null connection gracefully")
+    @DisplayName("Should handle null connection gracefully in getUnassociatedTags")
     public void testGetUnassociatedTagsWithNullConnection() {
 
         assertThrows(
@@ -3851,7 +3851,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(303)
-    @DisplayName("Should return the same map instance")
+    @DisplayName("Should return the same doubleTimeSeries map instance")
     public void testGetDoubleTimeSeriesMapSameInstance() throws SQLException {
         createTestFlight(3004);
         Flight flight = Flight.getFlight(connection, 3004);
@@ -3888,7 +3888,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(305)
-    @DisplayName("Should return the same map instance")
+    @DisplayName("Should return the same stringTimeSeries map instance")
     public void testGetStringTimeSeriesMapSameInstance() throws SQLException {
         createTestFlight(3006);
         Flight flight = Flight.getFlight(connection, 3006);
@@ -4983,6 +4983,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(415)
+    @DisplayName("Should sort flights by occurrences-in-table with double parameters")
     public void testGetFlightsSortedByOccurrencesInTableWithDoubleParameters() throws SQLException {
         setupTestDataForSorting(connection, 1);
         Filter filter = createFilterWithDoubleParameter();
@@ -4998,6 +4999,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(416)
+    @DisplayName("Should sort flights by occurrences-in-table with integer parameters")
     public void testGetFlightsSortedByOccurrencesInTableWithIntegerParameters() throws SQLException {
         setupTestDataForSorting(connection, 1);
         Filter filter = createFilterWithIntegerParameter();
@@ -5013,6 +5015,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(417)
+    @DisplayName("Should sort flights by occurrences-in-table with mixed parameters")
     public void testGetFlightsSortedByOccurrencesInTableWithMixedParameters() throws SQLException {
         setupTestDataForSorting(connection, 1);
         Filter filter = createFilterWithMixedParameters();
@@ -5027,6 +5030,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(418)
+    @DisplayName("Should sort flights by occurrences-in-table with a simple filter")
     public void testGetFlightsSortedByOccurrencesInTableWithNoFilter() throws SQLException {
         setupTestDataForSorting(connection, 1);
         // Use a simple filter instead of null to avoid NullPointerException
@@ -5043,6 +5047,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(419)
+    @DisplayName("Should paginate flights sorted by occurrences-in-table")
     public void testGetFlightsSortedByOccurrencesInTableWithPagination() throws SQLException {
         setupTestDataForSorting(connection, 1);
         Filter filter = createFilterWithDoubleParameter();
@@ -5062,6 +5067,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(420)
+    @DisplayName("Should sort flights by occurrences-in-table in ascending and descending order")
     public void testGetFlightsSortedByOccurrencesInTableWithDifferentSortOrders() throws SQLException {
         setupTestDataForSorting(connection, 1);
         Filter filter = createFilterWithIntegerParameter();
@@ -5309,6 +5315,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(421)
+    @DisplayName("Should get number of flights with double parameters")
     public void testGetNumFlightsWithDoubleParameters() throws SQLException {
         Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithDoubleParameter();
@@ -5323,6 +5330,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(422)
+    @DisplayName("Should get number of flights with integer parameters")
     public void testGetNumFlightsWithIntegerParameters() throws SQLException {
         Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithIntegerParameter();
@@ -5338,6 +5346,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(423)
+    @DisplayName("Should get number of flights with mixed parameters")
     public void testGetNumFlightsWithMixedParameters() throws SQLException {
         Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithMixedParameters();
@@ -5352,6 +5361,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(424)
+    @DisplayName("Should get flights with a row limit")
     public void testGetFlightsWithLimit() throws SQLException {
         Connection connection = org.ngafid.core.Database.getConnection();
         Filter filter = createFilterWithDoubleParameter();
@@ -5368,6 +5378,7 @@ public class FlightTest extends TestWithConnection {
      */
     @Test
     @Order(425)
+    @DisplayName("Should sort flights by occurrences-in-table covering the integer-parameter path")
     public void testGetFlightsSortedByOccurrencesInTableIntegerParameterCoverage() throws SQLException {
         Connection connection = org.ngafid.core.Database.getConnection();
 
