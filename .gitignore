@@ -48,6 +48,8 @@ ngafid-db/src/liquibase.docker.properties
 
 # Environment variable files:
 ngafid.properties
+# ...but keep the committed test fallback config used by the ngafid-data-processor tests:
+!ngafid-data-processor/src/test/resources/ngafid.properties
 .env
 .env.host
 
@@ -72,6 +74,9 @@ ngafid-www/src/test/security-test/build/
 # Lint tooling (scripts/lint.sh): downloaded tool cache and generated reports:
 .lint-cache/
 lint-reports/
+
+# Test tooling (scripts/test.sh): generated per-suite reports:
+test-reports/
 
 
 # All files/folders containing 'IGNORE' in their name:

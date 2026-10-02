@@ -3,6 +3,7 @@ package org.ngafid.www
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
@@ -11,6 +12,9 @@ import org.openqa.selenium.edge.EdgeDriver
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 
+// e2e: needs a running NGAFID server + browser; excluded from the default unit run.
+// Run with `scripts/test.sh java --e2e` once a server is up (see CONTRIBUTING.md).
+@Tag("e2e")
 class UnauthorizedAccessTest {
     companion object {
         private lateinit var driver: WebDriver

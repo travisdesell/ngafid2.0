@@ -93,3 +93,67 @@ To see the current repo-wide backlog without installing every toolchain, run the
 artifact.
 
 These concerns should be properly addressed before requesting a review.
+
+## Testing
+
+All unit tests must pass before you open a PR; CI enforces this. A single helper
+script runs **every** module's tests -- the same tests CI runs -- and skips any
+suite whose toolchain is missing:
+
+- **`scripts/test.sh`** runs the Java/Kotlin tests (Maven: `ngafid-core`,
+  `ngafid-www`, `ngafid-data-processor`, ...) and the Python tests (pytest in
+  `ngafid-pydata`), and exits non-zero if anything fails.
+
+The usual check before opening a PR:
+
+```bash
+scripts/test.sh                # run all unit tests across the repo
+```
+
+It takes an optional target and a few flags:
+
+```bash
+scripts/test.sh java           # just the Maven (Java/Kotlin) suites
+scripts/test.sh python         # just the pytest suite
+scripts/test.sh --verbose      # stream each runner's full output
+scripts/test.sh --report       # run everything without failing, print counts
+```
+
+Valid targets: `all` (default), `java`, `kotlin` (alias for `java`), `python`,
+`js` (no unit tests yet -- reported as a skip).
+
+### Requirements
+
+- **Docker** -- the `ngafid-core` tests start a throwaway MySQL with
+  [Testcontainers](https://testcontainers.com/), so a running Docker engine is
+  needed for the `java` suite. On a standard Docker install (Linux/CI) this just
+  works; on Docker Desktop `test.sh` auto-applies the socket/API-version
+  workaround (see [`ngafid-core/README.md`](ngafid-core/README.md)).
+- **Python** -- the `python` suite needs `pytest` and the `ngafid-pydata` package
+  (`pip install -e 'ngafid-pydata[dev]'`, Python >= 3.10). If `pytest` is not on
+  `PATH` the suite is skipped with a note.
+
+### Opt-in test suites
+
+Some tests need infrastructure or data that is not present by default (and never
+in CI), so they are **tagged and excluded** from the normal run. Opt into them
+with a flag once you have the prerequisites in place:
+
+| Flag         | Runs                                           | Prerequisites                                                                                                                                                                                                |
+| ------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--e2e`      | `ngafid-www` Selenium tests (tag `e2e`)        | A running NGAFID server and a browser. Start the server first; override its URL with `NGAFID_BASE_URL` / `-Dngafid.baseUrl` if not localhost:8181.                                                           |
+| `--terrain`  | `TerrainCache` altitude tests (tag `terrain`)  | The SRTM terrain data (see the data download in the root [`README.md`](README.md)). `test.sh` points the tests at `ngafid.terrain.dir` from your repo-root `ngafid.properties`, or at `$NGAFID_TERRAIN_DIR`. |
+| `--security` | Gradle SQL-injection project (`security-test`) | A running target server configured via `ngafid-www/src/test/security-test/.env`.                                                                                                                             |
+
+```bash
+scripts/test.sh java --e2e           # unit + Selenium end-to-end tests
+scripts/test.sh java --terrain       # unit + TerrainCache altitude tests
+scripts/test.sh --security           # also run the Gradle security-test project
+```
+
+New tests that need the same infrastructure should carry the matching tag
+(`@Tag("e2e")` / `@Tag("terrain")`) so they stay out of the default/CI run.
+
+CI runs `scripts/test.sh` via the **Test** workflow
+([`.github/workflows/test.yaml`](.github/workflows/test.yaml)); the opt-in suites
+above are excluded there.

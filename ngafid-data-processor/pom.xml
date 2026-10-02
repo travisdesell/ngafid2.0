@@ -17,6 +17,21 @@
 
     <properties>
         <!-- Inherit jvm.target from parent -->
+        <!--
+            JUnit tag groups excluded from "mvn test" by default. The TerrainCache altitude
+            tests are tagged "terrain" and need the (large, out-of-repo) SRTM terrain data
+            plus a configured ngafid.terrain.dir, so they are skipped in the default (and CI)
+            unit run. Clear this property to run them, e.g.
+            "mvn test -Dngafid.dp.test.excludedGroups=" (the scripts/test.sh terrain flag does
+            exactly that, after you have downloaded the terrain data; see CONTRIBUTING.md).
+        -->
+        <ngafid.dp.test.excludedGroups>terrain</ngafid.dp.test.excludedGroups>
+        <!--
+            Terrain data directory handed to the TerrainCache tests. The default is a harmless
+            placeholder (the terrain tests are excluded by default); the scripts/test.sh terrain
+            flag overrides it with the real SRTM data directory via -Dngafid.test.terrain.dir.
+        -->
+        <ngafid.test.terrain.dir>target/test-data/terrain</ngafid.test.terrain.dir>
     </properties>
 
     <dependencies>
@@ -148,6 +163,25 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <!-- Skip terrain-tagged tests by default; see ngafid.dp.test.excludedGroups above. -->
+                    <excludedGroups>${ngafid.dp.test.excludedGroups}</excludedGroups>
+                    <!--
+                        org.ngafid.core.Config reads all its other keys from the test-classpath
+                        ngafid.properties (src/test/resources); terrain.dir is injected here so the
+                        opt-in terrain tests can point at a real SRTM data set without a full config.
+                        Default is a harmless placeholder (the terrain tests are excluded by default);
+                        the scripts/test.sh terrain flag overrides it with -Dngafid.test.terrain.dir.
+                    -->
+                    <systemPropertyVariables>
+                        <ngafid.terrain.dir>${ngafid.test.terrain.dir}</ngafid.terrain.dir>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

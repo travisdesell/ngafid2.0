@@ -9,6 +9,9 @@ import org.openqa.selenium.edge.*
 import org.openqa.selenium.support.ui.*
 import java.time.Duration
 
+// e2e: needs a running NGAFID server + browser; excluded from the default unit run.
+// Run with `scripts/test.sh java --e2e` once a server is up (see CONTRIBUTING.md).
+@Tag("e2e")
 class InvalidLoginTest {
 
     companion object {
