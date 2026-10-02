@@ -15,3 +15,7 @@ ngafid-frontend/src/cesium/Build/
 **/package-lock.json
 .lint-cache/
 lint-reports/
+
+# Minified assets (e.g. ngafid-static/css/font-awesome.min.css) are not source
+**/*.min.css
+**/*.min.js

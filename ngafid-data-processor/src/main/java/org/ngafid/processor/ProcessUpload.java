@@ -394,14 +394,14 @@ public final class ProcessUpload {
 
         // CHECKSTYLE:ON
         /**
-     * Constructs a summary of a processed flight.
-     *
-     * @param id the flight id
-     * @param length the number of rows in the flight
-     * @param filename the name of the file the flight came from
-     * @param exceptions the non-fatal exceptions encountered while processing the flight
-     */
-    public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
+         * Constructs a summary of a processed flight.
+         *
+         * @param id the flight id
+         * @param length the number of rows in the flight
+         * @param filename the name of the file the flight came from
+         * @param exceptions the non-fatal exceptions encountered while processing the flight
+         */
+        public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
             this.id = id;
             this.length = length;
             this.filename = filename;

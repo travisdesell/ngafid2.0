@@ -9,13 +9,14 @@
 # covers checks that have no auto-fix, e.g. Checkstyle Javadoc and shellcheck).
 #
 # Usage:
-#   scripts/format.sh [all|java|kotlin|python|js|css|web|html|bash|yaml|markdown]
+#   scripts/format.sh [--verbose] [all|java|kotlin|python|js|css|web|html|bash|yaml|markdown]
 #
+#   --verbose  (-v) List each file a formatter will touch, one per line.
 #   target   Which formatters to run (default: all):
 #              java | kotlin -> Spotless apply (Palantir Java Format + ktlint)
 #              python        -> ruff format + ruff check --fix   (ngafid-pydata)
 #              js            -> Prettier + ESLint --fix          (ngafid-frontend)
-#              css           -> Prettier (ngafid-frontend styles)
+#              css           -> Prettier (ngafid-frontend + ngafid-static styles)
 #              web           -> js + css together
 #              html          -> djLint --reformat                (ngafid-static templates)
 #              bash          -> shfmt -w                         (shell scripts)
@@ -30,29 +31,48 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
+VERBOSE=0
 TARGET="all"
 for arg in "$@"; do
     case "$arg" in
+        -v | --verbose) VERBOSE=1 ;;
         all | java | kotlin | python | js | css | web | html | bash | yaml | markdown) TARGET="$arg" ;;
         *)
             echo "Unknown argument: $arg" >&2
-            echo "Usage: scripts/format.sh [all|java|kotlin|python|js|css|web|html|bash|yaml|markdown]" >&2
+            echo "Usage: scripts/format.sh [--verbose] [all|java|kotlin|python|js|css|web|html|bash|yaml|markdown]" >&2
             exit 2
             ;;
     esac
 done
 
-# Shell scripts that are part of this repo (kept in sync with lint.sh).
-SHELL_FILES=(
-    scripts/lint.sh
-    scripts/format.sh
-    resources/services/link-dropin-configs.sh
-)
-
 # Prettier is installed as a dev dependency of ngafid-frontend; invoke that copy.
 PRETTIER="$ROOT/ngafid-frontend/node_modules/.bin/prettier"
 
 note() { echo "[skip] $1"; }
+
+# List the repository's tracked files to format (mirrors scripts/lint.sh's
+# repo_files). Discovered dynamically so new files are covered once added to git;
+# untracked files are intentionally left until then. git tracking also keeps
+# generated trees out. Falls back to a pruned find when not inside a git tree.
+repo_files() {
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        git ls-files
+    else
+        find . -type f \
+            -not -path '*/node_modules/*' -not -path '*/.git/*' \
+            -not -path '*/target/*' -not -path '*/build/*' -not -path '*/dist/*' \
+            -not -path '*/cesium/Build/*' | sed 's|^\./||'
+    fi
+}
+
+# With --verbose, print each file a formatter will touch (one per line, indented).
+# $1 is a newline-separated file list. A no-op unless --verbose was passed.
+vlist() {
+    [[ "$VERBOSE" -eq 1 ]] || return 0
+    while IFS= read -r _f; do
+        [[ -n "$_f" ]] && echo "    - $_f"
+    done <<<"$1"
+}
 
 # Resolve a JDK 25 home for Spotless (its Palantir formatter crashes on JDK 27).
 JDK25_HOME=""
@@ -69,6 +89,7 @@ format_spotless() {
         note "mvn not found; skipping Spotless"
         return
     fi
+    vlist "$(repo_files | grep -E '\.(java|kt|kts)$' || true)"
     local mvn_env=()
     if [[ -n "$JDK25_HOME" ]]; then
         mvn_env=(env "JAVA_HOME=$JDK25_HOME")
@@ -89,6 +110,7 @@ format_python() {
         note "ruff not found (pip install ruff); skipping Python"
         return
     fi
+    vlist "$(repo_files | grep -E '\.py$' || true)"
     $ruff format .
     $ruff check --fix .
 }
@@ -96,6 +118,7 @@ format_python() {
 format_js() {
     echo
     echo "=== JS/TS (Prettier + ESLint --fix) ==="
+    vlist "$(repo_files | grep -E '\.(js|jsx|mjs|ts|tsx)$' | grep -v cesium/Build || true)"
     if [[ -x "$PRETTIER" ]]; then
         "$PRETTIER" --write "ngafid-frontend/src/**/*.{js,jsx,mjs,ts,tsx}"
     else
@@ -111,8 +134,11 @@ format_js() {
 format_css() {
     echo
     echo "=== CSS (Prettier) ==="
+    # Covers both the frontend source and the static CSS; vendored/minified files
+    # (cesium/Build, *.min.css) are skipped via .prettierignore.
+    vlist "$(repo_files | grep -iE '\.css$' | grep -vE 'cesium/Build|\.min\.css$' || true)"
     if [[ -x "$PRETTIER" ]]; then
-        "$PRETTIER" --write "ngafid-frontend/src/**/*.css"
+        "$PRETTIER" --write "ngafid-frontend/src/**/*.css" "ngafid-static/css/**/*.css"
     else
         note "prettier not found; skipping CSS"
     fi
@@ -131,6 +157,7 @@ format_html() {
         return
     fi
     # Config is .djlintrc at the repo root (profile=handlebars).
+    vlist "$(repo_files | grep -iE 'ngafid-static/templates/.*\.html$' || true)"
     $djlint ngafid-static/templates --extension html --reformat || true
 }
 
@@ -141,7 +168,14 @@ format_bash() {
         note "shfmt not found (brew install shfmt); skipping Bash"
         return
     fi
-    shfmt -i 4 -ci -w "${SHELL_FILES[@]}"
+    # Every shell script in the repo (see repo_files), discovered dynamically.
+    local files
+    files=$(repo_files | grep -E '\.sh$' || true)
+    if [[ -n "$files" ]]; then
+        vlist "$files"
+        # shellcheck disable=SC2086  # intentional word-splitting of the file list
+        shfmt -i 4 -ci -w $files
+    fi
 }
 
 format_yaml() {
@@ -151,10 +185,11 @@ format_yaml() {
         note "prettier not found; skipping YAML"
         return
     fi
-    # All tracked YAML (workflows under .github plus the root docker-compose files).
+    # All YAML (workflows under .github plus the root docker-compose files); see repo_files.
     local files
-    files=$(git ls-files | grep -iE '\.ya?ml$' || true)
+    files=$(repo_files | grep -iE '\.ya?ml$' || true)
     if [[ -n "$files" ]]; then
+        vlist "$files"
         # shellcheck disable=SC2086  # intentional word-splitting of the file list
         "$PRETTIER" --write $files
     fi
@@ -167,10 +202,11 @@ format_markdown() {
         note "prettier not found; skipping Markdown"
         return
     fi
-    # Tracked Markdown only (git ls-files naturally excludes node_modules).
+    # All Markdown in the repo (see repo_files; node_modules is excluded).
     local files
-    files=$(git ls-files | grep -iE '\.md$' | grep -v node_modules || true)
+    files=$(repo_files | grep -iE '\.md$' || true)
     if [[ -n "$files" ]]; then
+        vlist "$files"
         # shellcheck disable=SC2086  # intentional word-splitting of the file list
         "$PRETTIER" --write $files
     fi

@@ -8,13 +8,14 @@
 # mode to size the backlog.
 #
 # Usage:
-#   scripts/lint.sh [--report] \
+#   scripts/lint.sh [--report] [--verbose] \
 #       [all|java|kotlin|python|js|bash|dockerfile|yaml|markdown|html|format|checkstyle]
 #
 #   --report   Never exit non-zero: run every check, print counts, and (in CI)
 #              append a summary to $GITHUB_STEP_SUMMARY. Used for inventory.
 #              Without it, the script exits non-zero if any check finds problems,
 #              which makes it a usable pre-PR gate.
+#   --verbose  (-v) Before each check, list the files it covers, one per line.
 #   target     Which checks to run (default: all):
 #                java       -> Spotless (format) + Checkstyle (style/Javadoc)
 #                kotlin     -> Spotless (format + ktlint)
@@ -37,16 +38,18 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
 REPORT=0
+VERBOSE=0
 TARGET="all"
 for arg in "$@"; do
     case "$arg" in
         --report) REPORT=1 ;;
+        -v | --verbose) VERBOSE=1 ;;
         all | java | kotlin | python | js | css | web | html | bash | yaml | markdown | dockerfile | format | checkstyle)
             TARGET="$arg"
             ;;
         *)
             echo "Unknown argument: $arg" >&2
-            echo "Usage: scripts/lint.sh [--report]" \
+            echo "Usage: scripts/lint.sh [--report] [--verbose]" \
                 "[all|java|kotlin|python|js|css|web|html|bash|yaml|markdown|dockerfile|format|checkstyle]" >&2
             exit 2
             ;;
@@ -77,6 +80,31 @@ record() {
     fi
 }
 
+# List the repository's tracked files for the language-discovery checks.
+# Discovered dynamically so new files are covered automatically once they are
+# added to git; untracked files are intentionally ignored until then. Tracking
+# via git also keeps generated trees (node_modules/, target/, build/, ...) out,
+# since those are git-ignored. Falls back to a pruned find when not in a git tree.
+repo_files() {
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        git ls-files
+    else
+        find . -type f \
+            -not -path '*/node_modules/*' -not -path '*/.git/*' \
+            -not -path '*/target/*' -not -path '*/build/*' -not -path '*/dist/*' \
+            -not -path '*/cesium/Build/*' | sed 's|^\./||'
+    fi
+}
+
+# With --verbose, print each file a check covers (one per line, indented). $1 is a
+# newline-separated file list. A no-op unless --verbose was passed.
+vlist() {
+    [[ "$VERBOSE" -eq 1 ]] || return 0
+    while IFS= read -r _f; do
+        [[ -n "$_f" ]] && echo "    - $_f"
+    done <<<"$1"
+}
+
 # Resolve a JDK 25 home for the Spotless step. The Palantir formatter Spotless
 # runs crashes on JDK 27 (an internal javac API changed), so prefer a JDK 25
 # launcher when one is available. Order: $JAVA25_HOME, then macOS java_home -v 25.
@@ -105,6 +133,7 @@ lint_python() {
         record "Python (ruff)" "SKIP" "ruff not found (pip install ruff, or activate the project venv)"
         return
     fi
+    vlist "$(repo_files | grep -E '\.py$' || true)"
     local report="$REPORTS_DIR/python-ruff.txt"
     # Lint (ruff check) and formatting (ruff format --check) are both enforced.
     $ruff check . --output-format=concise | tee "$report"
@@ -136,6 +165,7 @@ lint_js() {
     fi
     # ESLint owns code quality; Prettier owns formatting (see .prettierrc). Both
     # are enforced here. Prettier honors .prettierignore (vendored Cesium, etc.).
+    vlist "$(repo_files | grep -E '\.(js|jsx|mjs|ts|tsx|css)$' | grep -v 'cesium/Build' || true)"
     local report="$REPORTS_DIR/js-eslint.txt"
     (cd "$ROOT/ngafid-frontend" && npx --no-install eslint .) | tee "$report"
     local eslint_status=${PIPESTATUS[0]}
@@ -146,7 +176,8 @@ lint_js() {
         echo "--- prettier --check ---" | tee -a "$report"
         # Run from $ROOT so the repo-root .prettierignore (vendored Cesium, etc.)
         # applies -- Prettier only reads .prettierignore from its working directory.
-        "$prettier" --check "ngafid-frontend/src/**/*.{js,jsx,mjs,ts,tsx,css}" | tee "$fmt_report"
+        "$prettier" --check "ngafid-frontend/src/**/*.{js,jsx,mjs,ts,tsx,css}" \
+            "ngafid-static/css/**/*.css" | tee "$fmt_report"
         prettier_status=${PIPESTATUS[0]}
     fi
     if [[ "$eslint_status" -eq 0 && "$prettier_status" -eq 0 ]]; then
@@ -167,6 +198,7 @@ lint_format() {
         record "Formatting (Spotless)" "SKIP" "mvn not found (install Maven)"
         return
     fi
+    vlist "$(repo_files | grep -E '\.(java|kt|kts)$' || true)"
     local report="$REPORTS_DIR/spotless.txt"
     # Launch under JDK 25 when available (Spotless's Palantir formatter breaks on 27).
     local mvn_env=()
@@ -224,6 +256,7 @@ lint_checkstyle() {
         record "Java (Checkstyle)" "SKIP" "no Java source roots found"
         return
     fi
+    vlist "$(repo_files | grep -E '\.java$' || true)"
     # shellcheck disable=SC2086  # intentional word-splitting of the dir list
     java -Dorg.checkstyle.sun.suppressionfilter.config=.github/linters/checkstyle-suppressions.xml \
         -jar "$jar" -c .github/linters/checkstyle.xml $dirs >"$report" 2>&1
@@ -237,13 +270,6 @@ lint_checkstyle() {
     fi
 }
 
-# Shell scripts that are part of this repo (kept in sync with format.sh).
-SHELL_FILES=(
-    scripts/lint.sh
-    scripts/format.sh
-    resources/services/link-dropin-configs.sh
-)
-
 lint_bash() {
     echo
     echo "=== Bash (shfmt + shellcheck) ==="
@@ -251,16 +277,27 @@ lint_bash() {
         record "Bash (shfmt + shellcheck)" "SKIP" "shellcheck/shfmt not found (brew install shellcheck shfmt)"
         return
     fi
+    # Every shell script in the repo (see repo_files); discovered dynamically so
+    # new scripts are covered without editing this list.
+    local files
+    files=$(repo_files | grep -E '\.sh$' || true)
+    if [[ -z "$files" ]]; then
+        record "Bash (shfmt + shellcheck)" "SKIP" "no shell scripts found"
+        return
+    fi
+    vlist "$files"
     local report="$REPORTS_DIR/bash.txt"
     : >"$report"
     local problems=0
+    # shellcheck disable=SC2086  # intentional word-splitting of the file list
     if command -v shfmt >/dev/null 2>&1; then
-        if ! shfmt -i 4 -ci -d "${SHELL_FILES[@]}" >>"$report" 2>&1; then
+        if ! shfmt -i 4 -ci -d $files >>"$report" 2>&1; then
             problems=1
         fi
     fi
+    # shellcheck disable=SC2086  # intentional word-splitting of the file list
     if command -v shellcheck >/dev/null 2>&1; then
-        if ! shellcheck "${SHELL_FILES[@]}" >>"$report" 2>&1; then
+        if ! shellcheck $files >>"$report" 2>&1; then
             problems=1
         fi
     fi
@@ -281,11 +318,12 @@ lint_dockerfile() {
     local report="$REPORTS_DIR/dockerfile.txt"
     : >"$report"
     local files
-    files=$(git ls-files | grep -iE '(^|/)Dockerfile' || true)
+    files=$(repo_files | grep -iE '(^|/)Dockerfile' || true)
     if [[ -z "$files" ]]; then
         record "Dockerfile (hadolint)" "SKIP" "no Dockerfiles found"
         return
     fi
+    vlist "$files"
     local problems=0
     # shellcheck disable=SC2086  # intentional word-splitting of the file list
     if ! hadolint $files >>"$report" 2>&1; then
@@ -314,11 +352,12 @@ lint_yaml() {
     fi
     local report="$REPORTS_DIR/yaml.txt"
     local files
-    files=$(git ls-files | grep -iE '\.ya?ml$' || true)
+    files=$(repo_files | grep -iE '\.ya?ml$' || true)
     if [[ -z "$files" ]]; then
         record "YAML (yamllint)" "SKIP" "no YAML files found"
         return
     fi
+    vlist "$files"
     # Config is .yamllint.yml at the repo root (auto-discovered); line-length is
     # disabled there because Prettier owns YAML formatting.
     # shellcheck disable=SC2086  # intentional word-splitting of the file list
@@ -343,11 +382,12 @@ lint_markdown() {
     fi
     local report="$REPORTS_DIR/markdown.txt"
     local files
-    files=$(git ls-files | grep -iE '\.md$' | grep -v node_modules || true)
+    files=$(repo_files | grep -iE '\.md$' || true)
     if [[ -z "$files" ]]; then
         record "Markdown (markdownlint)" "SKIP" "no Markdown files found"
         return
     fi
+    vlist "$files"
     # Config is .markdownlint.yaml at the repo root (auto-discovered); Prettier
     # owns formatting, so only content rules are enforced here.
     # shellcheck disable=SC2086  # intentional word-splitting of the file list
@@ -379,6 +419,7 @@ lint_html() {
         record "HTML templates (djLint)" "SKIP" "no templates directory found"
         return
     fi
+    vlist "$(repo_files | grep -iE 'ngafid-static/templates/.*\.html$' || true)"
     local report="$REPORTS_DIR/html.txt"
     : >"$report"
     local problems=0
@@ -417,7 +458,7 @@ case "$TARGET" in
     kotlin | format) lint_format ;;
     checkstyle) lint_checkstyle ;;
     python) lint_python ;;
-    js) lint_js ;;
+    js | css | web) lint_js ;; # ESLint + Prettier cover JS/TS and CSS together
     bash) lint_bash ;;
     dockerfile) lint_dockerfile ;;
     yaml) lint_yaml ;;

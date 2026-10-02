@@ -27,29 +27,65 @@ The workflow is relatively simple:
 
 ## Linting and formatting
 
-All code must pass linting (and be formatted) before you open a PR; CI enforces
-this. The quickest way to verify everything at once is the helper script, which
-runs every language's checks -- the same ones CI runs -- and simply skips any
-whose toolchain you don't have installed:
+All code must pass linting and be formatted before you open a PR; CI enforces
+this. Two companion helper scripts cover **every** language in the repo. They run
+the same checks CI runs and simply skip any whose toolchain you don't have
+installed:
+
+- **`scripts/format.sh`** auto-fixes what can be fixed (formatting, import order,
+  safe lint fixes).
+- **`scripts/lint.sh`** checks everything and exits non-zero if any issue remains
+  (including checks that have no auto-fix, e.g. Checkstyle Javadoc or shellcheck).
+
+The usual loop before opening a PR:
 
 ```bash
-scripts/lint.sh            # check everything; exits non-zero if anything fails
-scripts/lint.sh python     # check one language: java | kotlin | python | js | format | checkstyle
-scripts/lint.sh --report   # run everything without failing, and print counts
+scripts/format.sh          # auto-format the whole repo
+scripts/lint.sh            # verify; exits non-zero if anything still fails
 ```
 
-The individual checks, and how to run / auto-fix each directly:
+Both scripts take an optional target to run a single language, and `lint.sh`
+takes a couple of flags:
 
-| Scope                                | Tool                                     | Check                                 | Auto-fix                                               |
-| ------------------------------------ | ---------------------------------------- | ------------------------------------- | ------------------------------------------------------ |
-| Java (style + Javadoc, max line 120) | Checkstyle                               | `scripts/lint.sh checkstyle`          | mostly `mvn spotless:apply`; Javadoc/naming are manual |
-| Java + Kotlin (formatting)           | Spotless (Palantir Java Format + ktlint) | `mvn spotless:check`                  | `mvn spotless:apply`                                   |
-| Python                               | ruff                                     | `ruff check .`                        | `ruff check --fix .`                                   |
-| JS / TS                              | ESLint                                   | `cd ngafid-frontend && npm run check` | `npm run check -- --fix`                               |
+```bash
+scripts/lint.sh python         # check just one language
+scripts/format.sh web          # auto-fix just JS + CSS
+scripts/lint.sh --report       # run everything without failing, print counts
+scripts/lint.sh --verbose js   # also list each file the check covers
+```
 
-Rule configs live where each tool expects them: `.github/linters/checkstyle.xml`
-(Java), `ruff.toml` plus `ngafid-pydata/pyproject.toml` (Python), `.editorconfig`
-(Kotlin/ktlint), and `ngafid-frontend/eslint.config.mjs` (JS/TS).
+Valid targets: `all` (default), `java`, `kotlin`, `python`, `js`, `css`, `web`
+(js + css), `html`, `bash`, `yaml`, `markdown`, `dockerfile`; `lint.sh` also
+accepts `format` (Spotless only) and `checkstyle` (Checkstyle only).
+
+The individual checks and how to auto-fix each:
+
+| Scope                                | Tool(s)                                  | Check                        | Auto-fix                                            |
+| ------------------------------------ | ---------------------------------------- | ---------------------------- | --------------------------------------------------- |
+| Java (style + Javadoc, max line 120) | Checkstyle                               | `scripts/lint.sh checkstyle` | `scripts/format.sh java`; Javadoc/naming are manual |
+| Java + Kotlin (formatting)           | Spotless (Palantir Java Format + ktlint) | `scripts/lint.sh format`     | `scripts/format.sh java` (or `kotlin`)              |
+| Python (lint + format)               | ruff                                     | `scripts/lint.sh python`     | `scripts/format.sh python`                          |
+| JS / TS (code quality)               | ESLint                                   | `scripts/lint.sh js`         | `scripts/format.sh js`                              |
+| JS / TS / CSS (formatting)           | Prettier                                 | `scripts/lint.sh js` / `css` | `scripts/format.sh web`                             |
+| HTML templates                       | djLint                                   | `scripts/lint.sh html`       | `scripts/format.sh html`                            |
+| Bash                                 | shfmt + shellcheck                       | `scripts/lint.sh bash`       | `scripts/format.sh bash` (shellcheck is manual)     |
+| YAML                                 | yamllint + Prettier                      | `scripts/lint.sh yaml`       | `scripts/format.sh yaml`                            |
+| Markdown                             | markdownlint + Prettier                  | `scripts/lint.sh markdown`   | `scripts/format.sh markdown`                        |
+| Dockerfile                           | hadolint                                 | `scripts/lint.sh dockerfile` | manual (no auto-fixer)                              |
+
+Rule configs (at the repo root unless noted):
+
+- **Java** — `.github/linters/checkstyle.xml` (+ `checkstyle-suppressions.xml`); Spotless is configured in `pom.xml`.
+- **Kotlin** — `.editorconfig` (ktlint).
+- **Python** — `ruff.toml` (and `ngafid-pydata/pyproject.toml` for that package).
+- **JS / TS** — `ngafid-frontend/eslint.config.mjs`.
+- **Prettier** (JS/TS/CSS/YAML/Markdown) — `.prettierrc` and `.prettierignore`.
+- **YAML** — `.yamllint.yml`.
+- **Markdown** — `.markdownlint.yaml`.
+- **HTML templates** — `.djlintrc`.
+
+The scripts discover files from git, so a **newly added file is only checked once
+it has been `git add`ed** (untracked files are skipped until then).
 
 To see the current repo-wide backlog without installing every toolchain, run the
 **Lint Inventory** workflow from the GitHub Actions tab: it runs the same
