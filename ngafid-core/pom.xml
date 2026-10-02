@@ -106,11 +106,11 @@
                 </executions>
             </plugin>
             
-            <!-- JaCoCo Code Coverage Plugin -->
+            <!-- JaCoCo Code Coverage Plugin (0.8.14+ required for Java 25 class files) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
+                <version>0.8.14</version>
                 <executions>
                     <execution>
                         <goals>
