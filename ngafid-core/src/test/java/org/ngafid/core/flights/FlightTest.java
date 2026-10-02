@@ -65,6 +65,11 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} returns a non-null list of flights for an existing fleet.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(1)
     @DisplayName("Should get flights for existing fleet")
@@ -75,6 +80,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getNumFlights} returns the number of flights for a fleet.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(2)
     @DisplayName("Should get number of flights")
@@ -84,6 +94,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(count >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} honors an extra SQL condition together with a row limit.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(3)
     @DisplayName("Should get flights with extra condition and limit")
@@ -96,6 +111,9 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() <= 100);
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} throws {@link NullPointerException} when given a null connection.
+     */
     @Test
     @Order(4)
     @DisplayName("Should handle null connection gracefully")
@@ -105,6 +123,10 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsWithinDateRangeFromAirport} throws {@link NullPointerException} for a null
+     * connection.
+     */
     @Test
     @Order(5)
     @DisplayName("Should handle null connection in getFlightsWithinDateRangeFromAirport")
@@ -114,6 +136,12 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsWithinDateRangeFromAirport} returns the flights that visited a given airport
+     * within a date range.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(6)
     @DisplayName("Should get flights within date range from airport")
@@ -125,6 +153,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsByRange} returns the flights in a page range.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(7)
     @DisplayName("Should get flights by range")
@@ -135,6 +168,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} applies a {@link org.ngafid.core.util.filters.Filter} to restrict the results.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(8)
     @DisplayName("Should get flights with filter")
@@ -152,6 +190,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getNumFlights} with a filter returns the matching count for a positive fleet id.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(9)
     @DisplayName("Should get number of flights with filter for fleetId > 0")
@@ -168,6 +211,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(count >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} orders results by tail number.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(10)
     @DisplayName("Should get flights sorted by tail_number")
@@ -185,6 +233,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} orders results by itinerary.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(11)
     @DisplayName("Should get flights sorted by itinerary")
@@ -202,6 +255,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} orders results by flight tags.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(12)
     @DisplayName("Should get flights sorted by flight_tags")
@@ -219,6 +277,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} orders results by event count.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(13)
     @DisplayName("Should get flights sorted by events")
@@ -236,6 +299,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} orders results by airports visited.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(14)
     @DisplayName("Should get flights sorted by airports_visited")
@@ -253,6 +321,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} falls back to its default ordering for an unrecognized sort column.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(15)
     @DisplayName("Should get flights sorted by default case")
@@ -270,6 +343,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} writes a flight's data to a CSV file.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(16)
     @DisplayName("Should write flight data to file")
@@ -305,6 +384,13 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} is a no-op for an empty flight list (the fleet's flights remain
+     * readable afterward).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(17)
     @DisplayName("Should handle batch update database with empty flight list")
@@ -318,6 +404,13 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flights);
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} handles an empty/absent flight list without error (the fleet's
+     * flights remain readable afterward).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(18)
     @DisplayName("Should handle batch update database with null flight list")
@@ -331,6 +424,12 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flights);
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight carrying a comprehensive set of data without error.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(19)
     @DisplayName("Should handle batch update database with comprehensive flight data")
@@ -342,6 +441,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(true, "Batch update should complete without throwing an exception");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} assigns database-generated keys to inserted flights.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(20)
     @DisplayName("Should handle batch update database with flight that has generated keys")
@@ -354,6 +459,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(true, "Batch update should complete without throwing an exception");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} inserts an actual flight and populates its generated key.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(21)
     @DisplayName("Should test batch update database with actual flight data to cover generated keys")
@@ -377,6 +488,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists flights with events and sets each event's generated id.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(22)
     @DisplayName("Should test batch update database with flights that have events to cover event ID setting")
@@ -400,6 +517,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} completes the successful generated-keys path for an inserted flight.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(23)
     @DisplayName("Should test batch update database with successful generated keys scenario")
@@ -449,6 +572,12 @@ public class FlightTest extends TestWithConnection {
         assertEquals(testFlight.getFilename(), retrievedFlight.getFilename(), "Filename should match");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} inserts multiple flights and assigns each a generated key.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(24)
     @DisplayName("Should test batch update database with multiple flights and generated keys")
@@ -509,6 +638,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} performs a successful insertion and retrieves the generated keys.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(25)
     @DisplayName("Should test batch update database with successful insertion and generated keys")
@@ -547,6 +682,12 @@ public class FlightTest extends TestWithConnection {
         assertEquals(testFlight.getFilename(), retrievedFlight.getFilename(), "Filename should match");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight that has no itinerary.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(26)
     @DisplayName("Should test batch update database with flight having no itinerary")
@@ -584,6 +725,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(retrievedItinerary.isEmpty(), "No itinerary should be retrieved for flight with null itinerary");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight whose itinerary is empty.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(27)
     @DisplayName("Should test batch update database with flight having empty itinerary")
@@ -621,6 +768,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(retrievedItinerary.isEmpty(), "No itinerary should be retrieved for flight with empty itinerary");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight with a single itinerary item.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(28)
     @DisplayName("Should test batch update database with flight having single itinerary item")
@@ -668,6 +821,12 @@ public class FlightTest extends TestWithConnection {
         assertEquals("09L", retrievedItem.getRunway(), "Runway should match");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight with multiple itinerary items.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(29)
     @DisplayName("Should test batch update database with flight having multiple itinerary items")
@@ -724,6 +883,13 @@ public class FlightTest extends TestWithConnection {
         assertEquals("31C", secondItem.getRunway(), "Second runway should match");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists multiple flights spanning different itinerary scenarios in
+     * one batch.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(30)
     @DisplayName("Should test batch update database with multiple flights having different itinerary scenarios")
@@ -785,6 +951,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight together with its events.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(31)
     @DisplayName("Should test batch update database with flight having events")
@@ -836,6 +1008,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight together with its string time series.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(32)
     @DisplayName("Should test batch update database with flight having string time series")
@@ -916,6 +1094,12 @@ public class FlightTest extends TestWithConnection {
                 "Second string time series should have 4 valid values (excluding empty string)");
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} persists a flight together with its warnings.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(33)
     @DisplayName("Should test batch update database with flight having exceptions/warnings")
@@ -981,6 +1165,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} sets the flight id on each of a flight's events during persistence.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(34)
     @DisplayName("Should test batch update database with flight having events to cover event.setFlightId line")
@@ -1047,6 +1237,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} handles a failure to retrieve generated keys.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(35)
     @DisplayName("Should test batch update database with failed generated keys retrieval")
@@ -1112,6 +1308,13 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} handles the generated-keys result set returning no rows
+     * ({@code rs.next()} is false).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(37)
     @DisplayName("Should test batch update database with failed generated keys retrieval - rs.next() returns false")
@@ -1162,6 +1365,13 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} surfaces a failure when given a null connection (triggering the
+     * generated-keys failure path).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(36)
     @DisplayName("Should test batch update database with null connection to trigger generated keys failure")
@@ -1202,6 +1412,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.batchUpdateDatabase} handles a flight whose date fields are in an invalid format.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(38)
     @DisplayName("Should test batch update database with flight having invalid date format "
@@ -1260,6 +1476,9 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Exercises the private {@code createPreparedStatement} method (via reflection) to cover statement construction.
+     */
     @Test
     @Order(39)
     @DisplayName("Should test createPreparedStatement method to cover the private method")
@@ -1279,6 +1498,12 @@ public class FlightTest extends TestWithConnection {
         stmt.close();
     }
 
+    /**
+     * Verifies {@code Flight.insertComputedEvents} inserts a flight's computed events into the database.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if flight serialization fails
+     */
     @Test
     @Order(40)
     @DisplayName("Should test insertComputedEvents method to cover the method")
@@ -1388,6 +1613,11 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsFromUpload} returns the flights belonging to an upload.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(41)
     @DisplayName("Should get flights from upload ID")
@@ -1401,6 +1631,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() >= 0, "Should have flights from test upload");
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsFromUpload} returns an empty list for a non-existent upload id.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(42)
     @DisplayName("Should get flights from upload ID with non-existent upload")
@@ -1411,6 +1646,9 @@ public class FlightTest extends TestWithConnection {
         assertEquals(0, flights.size(), "Should have no flights for non-existent upload");
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsFromUpload} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @Order(44)
     @DisplayName("Should handle null connection in getFlightsFromUpload")
@@ -1420,6 +1658,11 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.getFlight} loads a single flight by id.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(45)
     @DisplayName("Should test getFlight method")
@@ -1433,6 +1676,11 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flight.getEndDateTime());
     }
 
+    /**
+     * Verifies {@code Flight.getFilename} returns the flight's source filename.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(46)
     @DisplayName("Should test getFilename method")
@@ -1443,6 +1691,11 @@ public class FlightTest extends TestWithConnection {
         assertFalse(filename.isEmpty(), "Filename should not be empty");
     }
 
+    /**
+     * Verifies {@code Flight.hasTags} reports whether a flight has any associated tags.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(47)
     @DisplayName("Should test hasTags method")
@@ -1454,6 +1707,11 @@ public class FlightTest extends TestWithConnection {
         assertFalse(flight.hasTags(), "Flight should not have tags initially");
     }
 
+    /**
+     * Verifies {@code Flight.getTailNumber} returns the flight's tail number.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(48)
     @DisplayName("Should test getTailNumber method")
@@ -1465,6 +1723,11 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flight.getTailNumber(), "Tail number should not be null");
     }
 
+    /**
+     * Verifies {@code Flight.getAllTagNames} returns the tag names associated with a flight.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(49)
     @DisplayName("Should test getAllTagNames method")
@@ -1487,6 +1750,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(tagNames.contains(tag3Name), "Should contain TestTag3");
     }
 
+    /**
+     * Verifies {@code Flight.getAllFleetTagNames} returns all tag names defined for a fleet.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(50)
     @DisplayName("Should test getAllFleetTagNames method")
@@ -1505,6 +1773,11 @@ public class FlightTest extends TestWithConnection {
         assertFalse(fleetTagNames.contains("Fleet2Tag1"), "Should not contain Fleet2Tag1");
     }
 
+    /**
+     * Verifies {@code Flight.tagExists} reports whether a tag with a given name exists for a fleet.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(51)
     @DisplayName("Should test tagExists method")
@@ -1514,6 +1787,11 @@ public class FlightTest extends TestWithConnection {
         assertFalse(exists, "Non-existent tag should not exist");
     }
 
+    /**
+     * Verifies {@code Flight.getSimAircraft} returns the configured simulator-aircraft entries for a fleet.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(52)
     @DisplayName("Should test getSimAircraft method")
@@ -1534,6 +1812,11 @@ public class FlightTest extends TestWithConnection {
         assertFalse(simAircraft.contains("/path/to/aircraft3"), "Should not contain aircraft3 path (different fleet)");
     }
 
+    /**
+     * Verifies {@code Flight.insertCompleted} records a flight as completed.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(53)
     @DisplayName("Should test insertCompleted method")
@@ -1544,6 +1827,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flight.insertCompleted(), "Flight should be completed");
     }
 
+    /**
+     * Verifies {@code Flight.disassociateTags} removes a specific tag association from a flight.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(54)
     @DisplayName("Should test disassociateTags method")
@@ -1554,6 +1842,11 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.disassociateAllTags} removes all tag associations from a flight.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(55)
     @DisplayName("Should test disassociateAllTags method")
@@ -1564,6 +1857,11 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.deleteTag} deletes a tag definition (and its associations).
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(56)
     @DisplayName("Should test deleteTag method")
@@ -1574,6 +1872,11 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.addSimAircraft} adds a simulator-aircraft entry for a fleet.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(57)
     @DisplayName("Should test addSimAircraft method")
@@ -1584,6 +1887,11 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.removeSimAircraft} removes a simulator-aircraft entry for a fleet.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(60)
     @DisplayName("Should test removeSimAircraft method")
@@ -1594,6 +1902,12 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} writes a flight's CSV with comprehensive data coverage.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(59)
     @DisplayName("Should test writeToFile method with comprehensive coverage")
@@ -1615,6 +1929,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} writes the CSV for a different flight's data.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(60)
     @DisplayName("Should test writeToFile method with different flight data")
@@ -1636,6 +1956,13 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} behaves correctly (surfacing the expected failure) when given a null
+     * connection.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(59)
     @DisplayName("Should test writeToFile method with null connection")
@@ -1648,6 +1975,12 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} handles an invalid output filename.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(60)
     @DisplayName("Should test writeToFile method with invalid filename")
@@ -1660,6 +1993,12 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} handles an empty output filename.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(61)
     @DisplayName("Should test writeToFile method with empty filename")
@@ -1672,6 +2011,12 @@ public class FlightTest extends TestWithConnection {
         });
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} handles special characters in the output filename.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(62)
     @DisplayName("Should test writeToFile method with special characters in filename")
@@ -1691,6 +2036,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} handles a very long output filename.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(63)
     @DisplayName("Should test writeToFile method with long filename")
@@ -1710,6 +2061,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} overwrites an already-existing output file.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(64)
     @DisplayName("Should test writeToFile method with existing file")
@@ -1734,6 +2091,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} writes CSV output for multiple flights.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(65)
     @DisplayName("Should test writeToFile method with multiple flights")
@@ -1756,6 +2119,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} handles a variety of edge-case filenames.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(66)
     @DisplayName("Should test writeToFile method with edge case filenames")
@@ -1785,6 +2154,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} behaves correctly across different connection states.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(67)
     @DisplayName("Should test writeToFile method with different connection states")
@@ -1804,6 +2179,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} writes CSV output including real time-series data columns.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(68)
     @DisplayName("Should test writeToFile method with real time series data")
@@ -1838,6 +2219,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} skips time-series data that should be excluded from the CSV.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(69)
     @DisplayName("Should test writeToFile method with time series data that should be skipped")
@@ -1870,6 +2257,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.writeToFile} handles time-series columns whose min and max values are equal.
+     *
+     * @throws SQLException if loading the flight data fails
+     * @throws IOException if writing the file fails
+     */
     @Test
     @Order(70)
     @DisplayName("Should test writeToFile method with time series data having same min/max values")
@@ -2312,6 +2705,11 @@ public class FlightTest extends TestWithConnection {
 
     // ==================== FlightTag.editTag Tests ====================
 
+    /**
+     * Verifies {@code Flight.editTag} updates only the tag's name when only the name changed.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(71)
     @DisplayName("Should edit tag with name change only")
@@ -2336,6 +2734,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals(newName, dbTag.getName(), "Database should reflect name change");
     }
 
+    /**
+     * Verifies {@code Flight.editTag} updates only the tag's description when only the description changed.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(72)
     @DisplayName("Should edit tag with description change only")
@@ -2359,6 +2762,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals("NewDescription", dbTag.getDescription(), "Database should reflect description change");
     }
 
+    /**
+     * Verifies {@code Flight.editTag} updates only the tag's color when only the color changed.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(73)
     @DisplayName("Should edit tag with color change only")
@@ -2382,6 +2790,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals("purple", dbTag.getColor(), "Database should reflect color change");
     }
 
+    /**
+     * Verifies {@code Flight.editTag} applies name, description, and color changes together.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(74)
     @DisplayName("Should edit tag with multiple changes")
@@ -2408,6 +2821,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals("blue", dbTag.getColor(), "Database should reflect color change");
     }
 
+    /**
+     * Verifies {@code Flight.editTag} is a no-op (leaves the tag unchanged) when no fields differ.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(75)
     @DisplayName("Should handle edit tag with no changes")
@@ -2430,6 +2848,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals("green", dbTag.getColor(), "Database should remain unchanged");
     }
 
+    /**
+     * Verifies {@code Flight.editTag} applies a partial set of changes while leaving the other fields intact.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(76)
     @DisplayName("Should handle edit tag with partial changes")
@@ -2456,6 +2879,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals("blue", dbTag.getColor(), "Database should reflect color change");
     }
 
+    /**
+     * Verifies {@code Flight.editTag} applies simultaneous description and color changes.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(77)
     @DisplayName("Should handle edit tag with description and color changes")
@@ -2481,6 +2909,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals("purple", dbTag.getColor(), "Database should reflect color change");
     }
 
+    /**
+     * Verifies {@code Flight.editTag} accepts safe special characters in the updated fields.
+     *
+     * @throws SQLException if the operation fails
+     */
     @Test
     @Order(78)
     @DisplayName("Should handle edit tag with safe special characters")
@@ -2510,6 +2943,10 @@ public class FlightTest extends TestWithConnection {
 
     // ==================== Flight.calculateLOCI Tests ====================
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} returns a finite probability in [0, 100] for normal heading/roll/airspeed
+     * inputs.
+     */
     @Test
     @Order(79)
     @DisplayName("Should calculate LOCI with normal values")
@@ -2534,6 +2971,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} handles a NaN lagged-heading input without producing an invalid result.
+     */
     @Test
     @Order(80)
     @DisplayName("Should calculate LOCI with NaN laggedHdg")
@@ -2558,6 +2998,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} handles all-zero inputs.
+     */
     @Test
     @Order(81)
     @DisplayName("Should calculate LOCI with zero values")
@@ -2583,6 +3026,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} stays within bounds for extreme input values.
+     */
     @Test
     @Order(82)
     @DisplayName("Should calculate LOCI with extreme values")
@@ -2608,6 +3054,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} handles negative input values.
+     */
     @Test
     @Order(83)
     @DisplayName("Should calculate LOCI with negative values")
@@ -2633,6 +3082,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} computes correctly at different sample indices.
+     */
     @Test
     @Order(84)
     @DisplayName("Should calculate LOCI with different indices")
@@ -2659,6 +3111,9 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} correctly handles heading differences that wrap around 360 degrees.
+     */
     @Test
     @Order(85)
     @DisplayName("Should calculate LOCI with heading differences around 360 degrees")
@@ -2684,6 +3139,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} handles maximum roll values.
+     */
     @Test
     @Order(86)
     @DisplayName("Should calculate LOCI with maximum roll values")
@@ -2709,6 +3167,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} handles high true-airspeed (TAS) values.
+     */
     @Test
     @Order(87)
     @DisplayName("Should calculate LOCI with high TAS values")
@@ -2734,6 +3195,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(Double.isInfinite(result), "LOCI should not be infinite");
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} handles edge-case heading values.
+     */
     @Test
     @Order(88)
     @DisplayName("Should calculate LOCI with edge case heading values")
@@ -2763,6 +3227,9 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.calculateLOCI} returns a stable result for consistent (unchanging) inputs.
+     */
     @Test
     @Order(89)
     @DisplayName("Should calculate LOCI with consistent values")
@@ -2790,6 +3257,11 @@ public class FlightTest extends TestWithConnection {
 
     // ==================== Flight.getUnassociatedTags Tests ====================
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} returns all of a fleet's tags when the flight has none associated.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(90)
     @DisplayName("Should return all tags when flight has no associated tags")
@@ -2844,6 +3316,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(tagNames.contains(tagName3), "Should contain tag3");
     }
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} returns only the tags not yet associated with the flight when it has
+     * some associations.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(91)
     @DisplayName("Should return unassociated tags when flight has some associated tags")
@@ -2906,6 +3384,12 @@ public class FlightTest extends TestWithConnection {
         assertFalse(tagNames.contains(tag2.getName()), "Should not contain tag2");
     }
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} returns an empty list when every tag is already associated with the
+     * flight.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(92)
     @DisplayName("Should return empty list when all tags are associated")
@@ -2936,6 +3420,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(ourTags.isEmpty(), "Should return empty list when all our tags are associated");
     }
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} returns an empty list when the fleet has no tags at all.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(93)
     @DisplayName("Should return empty list when no tags exist")
@@ -2952,6 +3441,11 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(unassociatedTags, "Should return a list (even if empty)");
     }
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} scopes its results correctly to the given fleet id.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(94)
     @DisplayName("Should handle different fleet IDs correctly")
@@ -2990,6 +3484,12 @@ public class FlightTest extends TestWithConnection {
         assertFalse(fleet1TagNames.contains(tag4.getName()), "Should not contain fleet 2 tag4");
     }
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} returns exactly the unassociated subset when a flight has a mix of
+     * associated and unassociated tags.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(95)
     @DisplayName("Should handle mixed associated and unassociated tags correctly")
@@ -3035,6 +3535,9 @@ public class FlightTest extends TestWithConnection {
         assertFalse(tagNames.contains(tag5.getName()), "Should not contain tag5");
     }
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} throws {@link NullPointerException} for a null connection.
+     */
     @Test
     @Order(96)
     @DisplayName("Should handle null connection gracefully")
@@ -3048,6 +3551,12 @@ public class FlightTest extends TestWithConnection {
                 "Should throw NullPointerException for null connection");
     }
 
+    /**
+     * Verifies {@code Flight.getUnassociatedTags} returns the fleet's tags (none associated) for a non-existent flight
+     * id.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(97)
     @DisplayName("Should handle non-existent flight ID")
@@ -3076,6 +3585,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getExceptions method
+    /**
+     * Verifies {@code Flight.getExceptions} returns an empty list when the flight has no recorded exceptions.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(98)
     @DisplayName("Should return empty list when no exceptions")
@@ -3089,6 +3603,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(exceptions.isEmpty(), "Should return empty list when no exceptions");
     }
 
+    /**
+     * Verifies {@code Flight.getExceptions} returns the recorded exceptions for a flight that has them.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(99)
     @DisplayName("Should return exceptions when they exist")
@@ -3109,6 +3628,13 @@ public class FlightTest extends TestWithConnection {
         assertTrue(exceptions.isEmpty(), "Should return empty list by default");
     }
 
+    /**
+     * Verifies {@code Flight.checkCalculationParameters} throws {@link MalformedFlightFileException} when several
+     * required parameters are missing.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading flight data fails
+     */
     @Test
     @Order(100)
     @DisplayName("Should throw MalformedFlightFileException when multiple parameters are missing")
@@ -3133,6 +3659,9 @@ public class FlightTest extends TestWithConnection {
                 "Exception message should indicate first missing parameter");
     }
 
+    /**
+     * Verifies {@code Flight.checkCalculationParameters} handles an empty required-parameter list without error.
+     */
     @Test
     @Order(101)
     @DisplayName("Should handle empty parameter list")
@@ -3149,6 +3678,12 @@ public class FlightTest extends TestWithConnection {
                 "Should not throw exception when no parameters are provided");
     }
 
+    /**
+     * Verifies {@code Flight.checkCalculationParameters} handles a null calculation name without error.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading flight data fails
+     */
     @Test
     @Order(102)
     @DisplayName("Should handle null calculation name")
@@ -3171,6 +3706,13 @@ public class FlightTest extends TestWithConnection {
                 "Exception message should handle null calculation name");
     }
 
+    /**
+     * Verifies the array overload of {@code Flight.checkCalculationParameters} reports all requested parameters as
+     * missing when none exist.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading flight data fails
+     */
     @Test
     @Order(209)
     @DisplayName("Should return all parameters when none exist")
@@ -3190,6 +3732,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(missingParams.contains("NonExistent3"), "Should contain third missing parameter");
     }
 
+    /**
+     * Verifies the array overload of {@code Flight.checkCalculationParameters} handles an empty parameter array.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading flight data fails
+     */
     @Test
     @Order(210)
     @DisplayName("Should handle empty array")
@@ -3204,6 +3752,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(missingParams.isEmpty(), "Should return empty list when no parameters are checked");
     }
 
+    /**
+     * Verifies the array overload of {@code Flight.checkCalculationParameters} handles a null parameter array.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading flight data fails
+     */
     @Test
     @Order(211)
     @DisplayName("Should handle null array")
@@ -3221,6 +3775,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for addDoubleTimeSeries method
+    /**
+     * Verifies {@code Flight.addDoubleTimeSeries} inserts a series into the flight's in-memory double-series map.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(300)
     @DisplayName("Should add DoubleTimeSeries to the map")
@@ -3239,6 +3798,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals(testSeries, flight.getDoubleTimeSeriesMap().get("TestSeries"), "Added series should match");
     }
 
+    /**
+     * Verifies {@code Flight.addDoubleTimeSeries} replaces an existing series with the same name in the map.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(301)
     @DisplayName("Should replace existing DoubleTimeSeries in the map")
@@ -3262,6 +3826,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getDoubleTimeSeriesMap method
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeriesMap} returns the flight's double-series map.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(302)
     @DisplayName("Should return the doubleTimeSeries map")
@@ -3275,6 +3844,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(seriesMap.isEmpty(), "Map should be empty initially");
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeriesMap} returns the same cached map instance on repeated calls.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(303)
     @DisplayName("Should return the same map instance")
@@ -3289,6 +3863,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getStringTimeSeriesMap method
+    /**
+     * Verifies {@code Flight.getStringTimeSeriesMap} returns the flight's string-series map.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(304)
     @DisplayName("Should return the stringTimeSeries map")
@@ -3302,6 +3881,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(seriesMap.isEmpty(), "Map should be empty initially");
     }
 
+    /**
+     * Verifies {@code Flight.getStringTimeSeriesMap} returns the same cached map instance on repeated calls.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(305)
     @DisplayName("Should return the same map instance")
@@ -3316,6 +3900,13 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getDoubleTimeSeries(String) method
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} returns a series from the in-memory cache when present (no database
+     * read).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(306)
     @DisplayName("Should return series from cache when it exists")
@@ -3334,6 +3925,12 @@ public class FlightTest extends TestWithConnection {
         assertEquals(testSeries, result, "Should return the same series instance");
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} returns null when the series is neither cached nor in the database.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(307)
     @DisplayName("Should return null when series not in cache and not in database")
@@ -3348,6 +3945,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getStringTimeSeries(String) method
+    /**
+     * Verifies {@code Flight.getStringTimeSeries} returns a series from the in-memory cache when present.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(308)
     @DisplayName("Should return string series from cache")
@@ -3367,6 +3969,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals(testSeries, result, "Should return the same series instance");
     }
 
+    /**
+     * Verifies {@code Flight.getStringTimeSeries} returns null when the series is not cached.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(309)
     @DisplayName("Should return null when string series not in cache")
@@ -3381,6 +3988,12 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getDoubleTimeSeries with Connection parameter
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} loads a series from the database on a cache miss and caches it for
+     * subsequent calls.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(310)
     @DisplayName("Should get and cache double series from database")
@@ -3401,6 +4014,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getNumberRows method
+    /**
+     * Verifies {@code Flight.getNumberRows} returns the flight's sample/row count.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(312)
     @DisplayName("Should return the number of rows")
@@ -3414,6 +4032,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getAirframe method
+    /**
+     * Verifies {@code Flight.getAirframe} returns the flight's airframe.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(313)
     @DisplayName("Should return the airframe")
@@ -3428,6 +4051,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getAirframeNameId method
+    /**
+     * Verifies {@code Flight.getAirframeNameId} returns the flight's airframe name id.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(314)
     @DisplayName("Should return the airframe name ID")
@@ -3441,6 +4069,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getAirframeName method
+    /**
+     * Verifies {@code Flight.getAirframeName} returns the flight's airframe name.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(315)
     @DisplayName("Should return the airframe name")
@@ -3455,6 +4088,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getAirframeTypeId method
+    /**
+     * Verifies {@code Flight.getAirframeTypeId} returns the flight's airframe type id.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(316)
     @DisplayName("Should return the airframe type ID")
@@ -3468,6 +4106,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getAirframeType method
+    /**
+     * Verifies {@code Flight.getAirframeType} returns the flight's airframe type.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(317)
     @DisplayName("Should return the airframe type")
@@ -3482,6 +4125,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for isC172 method
+    /**
+     * Verifies {@code Flight.isC172} returns true for a Cessna 172S flight.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(318)
     @DisplayName("Should return true for Cessna 172S")
@@ -3494,6 +4142,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(isC172, "Should return true for Cessna 172S");
     }
 
+    /**
+     * Verifies {@code Flight.isC172} returns false for a non-Cessna-172S aircraft.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(319)
     @DisplayName("Should return false for non-Cessna 172S aircraft")
@@ -3558,6 +4211,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getUploadId method
+    /**
+     * Verifies {@code Flight.getUploadId} returns the id of the upload the flight came from.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(320)
     @DisplayName("Should return the upload ID")
@@ -3571,6 +4229,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getUploaderId method
+    /**
+     * Verifies {@code Flight.getUploaderId} returns the id of the user who uploaded the flight.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(321)
     @DisplayName("Should return the uploader ID")
@@ -3584,6 +4247,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getStatus method
+    /**
+     * Verifies {@code Flight.getStatus} returns the flight's processing status.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(322)
     @DisplayName("Should return the flight status")
@@ -3711,6 +4379,12 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getDoubleTimeSeries with Connection parameter
+    /**
+     * Verifies the connection-taking {@code Flight.getDoubleTimeSeries} retrieves a series from the database and caches
+     * it.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(326)
     @DisplayName("Should retrieve and cache double time series with connection")
@@ -3732,6 +4406,12 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Tests for getStringTimeSeries with Connection parameter
+    /**
+     * Verifies the connection-taking {@code Flight.getStringTimeSeries} retrieves a series from the database and caches
+     * it.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(327)
     @DisplayName("Should retrieve and cache string time series with connection")
@@ -3753,6 +4433,11 @@ public class FlightTest extends TestWithConnection {
     }
 
     // Test for getNumFlights with fleetId <= 0 and filter != null
+    /**
+     * Verifies {@code Flight.getNumFlights} with a filter counts across all fleets when the fleet id is &lt;= 0.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(330)
     @DisplayName("Should get number of flights with filter when fleetId <= 0")
@@ -3782,6 +4467,11 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies the {@code idLimStr} helper builds the correct SQL id-list/limit clause for multiple flight ids.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(400)
     @DisplayName("Should test idLimStr method with multiple flight IDs")
@@ -3832,6 +4522,12 @@ public class FlightTest extends TestWithConnection {
                 "Flight 6001 should have no tags after disassociation");
     }
 
+    /**
+     * Verifies the {@code idLimStr} helper builds the correct clause with {@code complement=true} (the
+     * negated/not-in form), exercised via {@code disassociateTags}.
+     *
+     * @throws SQLException if a database operation fails
+     */
     @Test
     @Order(401)
     @DisplayName("Should test idLimStr method with complement=true using disassociateTags")
@@ -3879,6 +4575,11 @@ public class FlightTest extends TestWithConnection {
                 "Flight 7002 should have no tags after disassociation");
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} applies an extra SQL condition parameter.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(402)
     @DisplayName("Should test getFlights with extraCondition parameter")
@@ -3902,6 +4603,11 @@ public class FlightTest extends TestWithConnection {
         assertFalse(returnedIds.contains(8002), "Should not contain flight 8002");
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} applies an extra SQL condition together with a row limit.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(403)
     @DisplayName("Should test getFlights with extraCondition and limit")
@@ -3921,6 +4627,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.get(0).getId() <= flights.get(1).getId(), "Flights should be ordered by ID");
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsByRange} applies a valid filter over a page range.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(404)
     @DisplayName("Should test getFlightsByRange with valid filter")
@@ -3945,6 +4656,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() <= 2, "Should return at most 2 flights due to range limit");
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsByRange} returns correct results across different page ranges.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(405)
     @DisplayName("Should test getFlightsByRange with different ranges")
@@ -3974,6 +4690,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights2.size() <= 2, "Second range should return at most 2 flights");
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsByRange} returns an empty list for an empty range.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(406)
     @DisplayName("Should test getFlightsByRange with empty range")
@@ -3996,6 +4717,11 @@ public class FlightTest extends TestWithConnection {
         assertEquals(0, flights.size(), "Should return empty list for empty range");
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} paginates results using the current-page and page-size parameters.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(407)
     @DisplayName("Should test getFlights with currentPage and pageSize parameters")
@@ -4043,6 +4769,11 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} pagination handles edge-case current-page and page-size values.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(408)
     @DisplayName("Should test getFlights with currentPage and pageSize - edge cases")
@@ -4071,6 +4802,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flightsFirstOnly.size() <= 1, "Should return at most 1 flight");
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} returns null for a series name that does not exist in the database.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(409)
     @DisplayName("Should return null when series does not exist in database")
@@ -4087,6 +4824,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flight.getDoubleTimeSeriesMap().isEmpty(), "Cache should remain empty");
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} handles an empty series name (returning null rather than throwing).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(410)
     @DisplayName("Should handle empty series name")
@@ -4100,6 +4843,12 @@ public class FlightTest extends TestWithConnection {
         assertNull(result, "Should return null for empty series name");
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} handles a null series name (returning null rather than throwing).
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(411)
     @DisplayName("Should handle null series name")
@@ -4113,6 +4862,12 @@ public class FlightTest extends TestWithConnection {
         assertNull(result, "Should return null for null series name");
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} handles a series name containing special characters.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(412)
     @DisplayName("Should handle series with special characters in name")
@@ -4131,6 +4886,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} handles a very long series name.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(413)
     @DisplayName("Should handle series with very long names")
@@ -4150,6 +4911,12 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.getDoubleTimeSeries} handles a series name containing whitespace.
+     *
+     * @throws SQLException if a database operation fails
+     * @throws IOException if reading series data fails
+     */
     @Test
     @Order(414)
     @DisplayName("Should handle series with whitespace in name")
@@ -4208,6 +4975,12 @@ public class FlightTest extends TestWithConnection {
                 connection, flightId, longName, "double", generateDataPoints(10, 0.0, 100.0), nameIds, typeIds);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} sorts by an occurrences-in-table column with a double-valued filter
+     * parameter.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(415)
     public void testGetFlightsSortedByOccurrencesInTableWithDoubleParameters() throws SQLException {
@@ -4217,6 +4990,12 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flights);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} sorts by an occurrences-in-table column with an integer-valued filter
+     * parameter.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(416)
     public void testGetFlightsSortedByOccurrencesInTableWithIntegerParameters() throws SQLException {
@@ -4226,6 +5005,12 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flights);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} sorts by an occurrences-in-table column with a filter mixing double and
+     * integer parameters.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(417)
     public void testGetFlightsSortedByOccurrencesInTableWithMixedParameters() throws SQLException {
@@ -4235,6 +5020,11 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flights);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} sorts by an occurrences-in-table column with a simple (non-null) filter.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(418)
     public void testGetFlightsSortedByOccurrencesInTableWithNoFilter() throws SQLException {
@@ -4245,6 +5035,12 @@ public class FlightTest extends TestWithConnection {
         assertNotNull(flights);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} paginates results correctly when sorting by an occurrences-in-table
+     * column (each page respects the page size).
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(419)
     public void testGetFlightsSortedByOccurrencesInTableWithPagination() throws SQLException {
@@ -4258,6 +5054,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flightsPage2.size() <= 2);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} supports both ascending and descending order when sorting by an
+     * occurrences-in-table column.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(420)
     public void testGetFlightsSortedByOccurrencesInTableWithDifferentSortOrders() throws SQLException {
@@ -4500,6 +5302,11 @@ public class FlightTest extends TestWithConnection {
         }
     }
 
+    /**
+     * Verifies {@code Flight.getNumFlights} returns a non-negative count with a double-valued filter parameter.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(421)
     public void testGetNumFlightsWithDoubleParameters() throws SQLException {
@@ -4509,6 +5316,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(count >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getNumFlights} returns a non-negative count with an integer-valued filter parameter.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(422)
     public void testGetNumFlightsWithIntegerParameters() throws SQLException {
@@ -4518,6 +5330,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(count >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getNumFlights} returns a non-negative count with a filter mixing double and integer
+     * parameters.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(423)
     public void testGetNumFlightsWithMixedParameters() throws SQLException {
@@ -4527,6 +5345,11 @@ public class FlightTest extends TestWithConnection {
         assertTrue(count >= 0);
     }
 
+    /**
+     * Verifies {@code Flight.getFlights} respects a row limit.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(424)
     public void testGetFlightsWithLimit() throws SQLException {
@@ -4537,6 +5360,12 @@ public class FlightTest extends TestWithConnection {
         assertTrue(flights.size() <= 100);
     }
 
+    /**
+     * Verifies {@code Flight.getFlightsSorted} sorting by an occurrences-in-table column with integer parameters,
+     * covering the integer-parameter binding path.
+     *
+     * @throws SQLException if the query fails
+     */
     @Test
     @Order(425)
     public void testGetFlightsSortedByOccurrencesInTableIntegerParameterCoverage() throws SQLException {
