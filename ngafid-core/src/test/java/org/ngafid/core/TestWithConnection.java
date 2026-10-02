@@ -9,13 +9,13 @@ public class TestWithConnection {
     protected Connection connection;
 
     /**
-     * Opens a fresh H2 test connection before each test and stores it in {@link #connection} for the subclass to use.
+     * Opens a fresh test connection before each test and stores it in {@link #connection} for the subclass to use.
      *
      * @throws SQLException if a connection cannot be obtained
      */
     @BeforeEach
     public void init() throws SQLException {
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
     }
 
     /**

@@ -2374,9 +2374,12 @@ public class FlightTest extends TestWithConnection {
             }
         }
 
-        // Get the airframe ID
+        // Get the airframe ID. Select "Cessna 172S" explicitly (rather than the first row by
+        // LIMIT 1, whose ordering is not guaranteed) so the flight's airframe is deterministic
+        // and matches what the airframe assertions below expect.
         int airframeId = 1; // Default to 1
-        try (PreparedStatement airframeStmt = connection.prepareStatement("SELECT id FROM airframes LIMIT 1")) {
+        try (PreparedStatement airframeStmt =
+                connection.prepareStatement("SELECT id FROM airframes WHERE airframe = 'Cessna 172S' LIMIT 1")) {
             try (ResultSet rs = airframeStmt.executeQuery()) {
                 if (rs.next()) {
                     airframeId = rs.getInt(1);

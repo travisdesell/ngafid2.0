@@ -15,7 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.ngafid.core.H2Database;
+import org.ngafid.core.TestDatabase;
 
 public class EmailTypeTest {
 
@@ -583,7 +583,7 @@ public class EmailTypeTest {
     @DisplayName("Should test removeOldEmailTypesFromDatabase logic simulation")
     public void testRemoveOldEmailTypesFromDatabaseLogicSimulation() throws Exception {
         // Get connection only for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing data first
         try (PreparedStatement stmt =
@@ -712,14 +712,14 @@ public class EmailTypeTest {
     }
 
     /**
-     * Seeds current and obsolete email-preference rows against H2 and confirms the current-types set is prepared
+     * Seeds current and obsolete email-preference rows against MySQL and confirms the current-types set is prepared
      * correctly, without invoking the real method (which would call {@code System.exit}).
      */
     @Test
     @DisplayName("Should test removeOldEmailTypesFromDatabase with real database connection")
     public void testRemoveOldEmailTypesFromDatabaseWithRealConnection() throws Exception {
         // Get connection only for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing data first
         try (PreparedStatement stmt =
@@ -822,14 +822,14 @@ public class EmailTypeTest {
     }
 
     /**
-     * With a live H2 connection, verifies the {@code removeOldEmailTypes} flag can be toggled on and read back, then
+     * With a live MySQL connection, verifies the {@code removeOldEmailTypes} flag can be toggled on and read back, then
      * restores its original value (without invoking the real method, which would exit the JVM).
      */
     @Test
     @DisplayName("Should test insertEmailTypesIntoDatabase with connection and removeOldEmailTypes enabled")
     public void testInsertEmailTypesIntoDatabaseWithConnectionAndRemoveOldEmailTypesEnabled() throws Exception {
         // Get connection for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Use reflection to set the removeOldEmailTypes flag to true
         java.lang.reflect.Field field = EmailType.class.getDeclaredField("removeOldEmailTypes");
@@ -884,7 +884,7 @@ public class EmailTypeTest {
     @DisplayName("Should test database operations for email preferences")
     public void testDatabaseOperationsForEmailPreferences() throws Exception {
         // Get connection only for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing data first
         try (PreparedStatement stmt =
@@ -941,7 +941,7 @@ public class EmailTypeTest {
     @DisplayName("Should test email preferences CRUD operations")
     public void testEmailPreferencesCrudOperations() throws Exception {
         // Get connection only for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing data first
         try (PreparedStatement stmt =
@@ -1020,7 +1020,7 @@ public class EmailTypeTest {
     @DisplayName("Should test email preferences with empty database")
     public void testEmailPreferencesWithEmptyDatabase() throws Exception {
         // Get connection only for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing data first
         try (PreparedStatement stmt =
@@ -1056,14 +1056,14 @@ public class EmailTypeTest {
     }
 
     /**
-     * Seeds a mix of current and obsolete email-preference rows in H2 and verifies the total count and the counts
+     * Seeds a mix of current and obsolete email-preference rows in MySQL and verifies the total count and the counts
      * returned when querying the current-only and obsolete-only type sets.
      */
     @Test
     @DisplayName("Should test email preferences with mixed types")
     public void testEmailPreferencesWithMixedTypes() throws Exception {
         // Get connection only for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing data first
         try (PreparedStatement stmt =
@@ -1145,7 +1145,7 @@ public class EmailTypeTest {
     @DisplayName("Should test email preferences with empty current types set")
     public void testEmailPreferencesWithEmptyCurrentTypesSet() throws Exception {
         // Get connection only for this test
-        connection = H2Database.getConnection();
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing data first
         try (PreparedStatement stmt =

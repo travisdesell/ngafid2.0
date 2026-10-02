@@ -72,6 +72,16 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Testcontainers spins up a real MySQL (matching production) for the test
+             database, so the production Liquibase changelog applies exactly as it
+             does in production. Requires a running Docker engine. See TestDatabase. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>1.20.4</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

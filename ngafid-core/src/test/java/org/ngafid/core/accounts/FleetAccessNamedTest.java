@@ -10,22 +10,22 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.ngafid.core.H2Database;
+import org.ngafid.core.TestDatabase;
 
 public class FleetAccessNamedTest {
 
     private Connection connection;
 
     /**
-     * Opens an H2 test connection, removes any leftover rows for the reserved test user ids, and seeds the fleet, user,
+     * Opens a test connection, removes any leftover rows for the reserved test user ids, and seeds the fleet, user,
      * and fleet-access fixtures each test relies on.
      *
      * @throws SQLException if the connection or fixture setup fails
      */
     @BeforeEach
     public void setUp() throws SQLException {
-        // Get connection from H2Database
-        connection = H2Database.getConnection();
+        // Get connection from the test database
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing test data
         try (PreparedStatement stmt =
