@@ -9,7 +9,7 @@
 #
 # Usage:
 #   scripts/lint.sh [--report] \
-#       [all|java|kotlin|python|js|bash|dockerfile|yaml|markdown|format|checkstyle]
+#       [all|java|kotlin|python|js|bash|dockerfile|yaml|markdown|html|format|checkstyle]
 #
 #   --report   Never exit non-zero: run every check, print counts, and (in CI)
 #              append a summary to $GITHUB_STEP_SUMMARY. Used for inventory.
@@ -26,6 +26,7 @@
 #                dockerfile -> hadolint (Dockerfiles)
 #                yaml       -> yamllint (workflows + compose files)
 #                markdown   -> markdownlint (*.md)
+#                html       -> djLint (ngafid-static templates)
 #
 # A check whose toolchain is missing is SKIPPED with a note (not failed), so the
 # script is useful on a machine that has only some of the toolchains installed.
@@ -361,6 +362,42 @@ lint_markdown() {
     fi
 }
 
+lint_html() {
+    echo
+    echo "=== HTML templates (djLint) ==="
+    local djlint=""
+    if command -v djlint >/dev/null 2>&1; then
+        djlint="djlint"
+    elif python3 -m djlint --version >/dev/null 2>&1; then
+        djlint="python3 -m djlint"
+    else
+        record "HTML templates (djLint)" "SKIP" "djlint not found (pip install djlint)"
+        return
+    fi
+    local dir="$ROOT/ngafid-static/templates"
+    if [[ ! -d "$dir" ]]; then
+        record "HTML templates (djLint)" "SKIP" "no templates directory found"
+        return
+    fi
+    local report="$REPORTS_DIR/html.txt"
+    : >"$report"
+    local problems=0
+    # Config is .djlintrc at the repo root (profile=handlebars; H021/H030/H031
+    # ignored). Enforce both the linter rules and formatting.
+    if ! $djlint "$dir" --extension html >>"$report" 2>&1; then
+        problems=1
+    fi
+    echo "--- djlint --check (formatting) ---" >>"$report"
+    if ! $djlint "$dir" --extension html --check >>"$report" 2>&1; then
+        problems=1
+    fi
+    if [[ "$problems" -eq 0 ]]; then
+        record "HTML templates (djLint)" "OK" "no issues, formatting clean"
+    else
+        record "HTML templates (djLint)" "PROBLEMS" "see $report -- auto-fix formatting with 'scripts/format.sh html'"
+    fi
+}
+
 case "$TARGET" in
     all)
         lint_format
@@ -371,6 +408,7 @@ case "$TARGET" in
         lint_dockerfile
         lint_yaml
         lint_markdown
+        lint_html
         ;;
     java)
         lint_format
@@ -384,6 +422,7 @@ case "$TARGET" in
     dockerfile) lint_dockerfile ;;
     yaml) lint_yaml ;;
     markdown) lint_markdown ;;
+    html) lint_html ;;
 esac
 
 echo

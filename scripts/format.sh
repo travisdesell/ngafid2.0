@@ -130,7 +130,8 @@ format_html() {
         note "djlint not found (pip install djlint); skipping HTML templates"
         return
     fi
-    $djlint ngafid-static/templates --reformat || true
+    # Config is .djlintrc at the repo root (profile=handlebars).
+    $djlint ngafid-static/templates --extension html --reformat || true
 }
 
 format_bash() {

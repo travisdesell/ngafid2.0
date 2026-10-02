@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-    <title>NGAFID-Cesium Display</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
-          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-    <link rel='stylesheet' href='/css/main.css'>
-    <link rel='stylesheet' href='/css/font-awesome.min.css'>
-    <link rel="stylesheet" href="/Widgets/widgets.css"/>
-    <script>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+        <title>NGAFID-Cesium Display</title>
+        <link rel="stylesheet"
+              href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+              integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+              crossorigin="anonymous">
+        <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="/css/font-awesome.min.css">
+        <link rel="stylesheet" href="/Widgets/widgets.css" />
+        <script>
         var plotMapHidden = true;
             {{{navbar_js}}}
             {{{events_js}}}
             {{{cesium_data_js}}}
             {{{azure_maps_key}}}
-    </script>
-
-    <style>
+        </script>
+        <style>
         html,
         body,
         #cesiumContainer {
@@ -134,25 +135,27 @@
             top: 10px;
             left: 800px;
         }
-    </style>
-
-    <!-- Cesium css file -->
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-</head>
-<body>
-    
-<!-- Error Modal -->
-<div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
-    <div class='modal-dialog modal-lg' role='document' style="position:fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
-        <div id='error-modal-content'>
+        </style>
+        <!-- Cesium css file -->
+        <script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
+        <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css"
+              rel="stylesheet">
+    </head>
+    <body>
+        <!-- Error Modal -->
+        <div id="error-modal" class="modal" tabIndex="-1" role="dialog">
+            <div class="modal-dialog modal-lg"
+                 role="document"
+                 style="position:fixed;
+                        top: 40%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        width: 100%">
+                <div id="error-modal-content"></div>
+            </div>
         </div>
-    </div>
-</div>
-
-
-<div id="cesium_page"></div>
-<button id="toggle-camera"></button>
-<script src="/js/ngafid_cesium-bundle.js"></script>
-</body>
+        <div id="cesium_page"></div>
+        <button id="toggle-camera"></button>
+        <script src="/js/ngafid_cesium-bundle.js"></script>
+    </body>
 </html>
