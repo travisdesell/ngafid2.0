@@ -36,6 +36,9 @@ where = ["src"]
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+# Exclude Markdown so ruff does not format Python code blocks inside it; Prettier
+# is the formatter of record for Markdown (see scripts/lint.sh).
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 # A small, sensible default rule set: pycodestyle (E/W), pyflakes (F),

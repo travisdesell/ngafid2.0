@@ -32,7 +32,7 @@ this. The quickest way to verify everything at once is the helper script, which
 runs every language's checks -- the same ones CI runs -- and simply skips any
 whose toolchain you don't have installed:
 
-```
+```bash
 scripts/lint.sh            # check everything; exits non-zero if anything fails
 scripts/lint.sh python     # check one language: java | kotlin | python | js | format | checkstyle
 scripts/lint.sh --report   # run everything without failing, and print counts
@@ -40,12 +40,12 @@ scripts/lint.sh --report   # run everything without failing, and print counts
 
 The individual checks, and how to run / auto-fix each directly:
 
-| Scope | Tool | Check | Auto-fix |
-| --- | --- | --- | --- |
-| Java (style + Javadoc, max line 120) | Checkstyle | `scripts/lint.sh checkstyle` | mostly `mvn spotless:apply`; Javadoc/naming are manual |
-| Java + Kotlin (formatting) | Spotless (Palantir Java Format + ktlint) | `mvn spotless:check` | `mvn spotless:apply` |
-| Python | ruff | `ruff check .` | `ruff check --fix .` |
-| JS / TS | ESLint | `cd ngafid-frontend && npm run check` | `npm run check -- --fix` |
+| Scope                                | Tool                                     | Check                                 | Auto-fix                                               |
+| ------------------------------------ | ---------------------------------------- | ------------------------------------- | ------------------------------------------------------ |
+| Java (style + Javadoc, max line 120) | Checkstyle                               | `scripts/lint.sh checkstyle`          | mostly `mvn spotless:apply`; Javadoc/naming are manual |
+| Java + Kotlin (formatting)           | Spotless (Palantir Java Format + ktlint) | `mvn spotless:check`                  | `mvn spotless:apply`                                   |
+| Python                               | ruff                                     | `ruff check .`                        | `ruff check --fix .`                                   |
+| JS / TS                              | ESLint                                   | `cd ngafid-frontend && npm run check` | `npm run check -- --fix`                               |
 
 Rule configs live where each tool expects them: `.github/linters/checkstyle.xml`
 (Java), `ruff.toml` plus `ngafid-pydata/pyproject.toml` (Python), `.editorconfig`

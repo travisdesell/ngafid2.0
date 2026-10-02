@@ -75,7 +75,7 @@ JDK launches Maven. This requires a matching entry in `~/.m2/toolchains.xml`; on
 
 **Avoid JDK 27 for formatting** — the Palantir Java formatter that Spotless uses
 does not yet support JDK 27 (it fails with a javac-internals error), and unlike the
-compiler, Spotless runs in the JVM that *launches* Maven, not the toolchain JDK. The
+compiler, Spotless runs in the JVM that _launches_ Maven, not the toolchain JDK. The
 `scripts/lint.sh` formatter step selects a JDK 25 launcher automatically when one is
 installed. If you run Spotless directly, point Maven at 25 yourself:
 
@@ -88,14 +88,14 @@ JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn spotless:apply
 
 ## 1. Clone the repository
 
-```
+```bash
 ~/ $ git clone git@github.com:travisdesell/ngafid2.0
 ```
 
 Afterward, we need to install a JAR file dependency to where Maven fetches your dependencies from.
 Running Maven will not be possible without running this script.
 
-```
+```bash
 run/setup_dat_importing
 ```
 
@@ -105,7 +105,7 @@ Install MySQL (instructions are system dependent).
 
 Next we'll create the database in mysql:
 
-```
+```bash
 ~/ $ sudo mysql
 ...
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
@@ -125,7 +125,7 @@ Bye
 We need to store these credentials in a file called `ngafid-db/src/liquibase.properties`, along with some other
 information:
 
-```
+```properties
 changeLogFile=changelog-root.xml
 outputChangeLogFile=changelog.mysql.sql
 url=jdbc:mysql://localhost/ngafid
@@ -135,7 +135,7 @@ password=password
 
 Make a second file `ngafid-db/src/liquibase.docker.properties` that mirrors this, but change the url as shown:
 
-```
+```properties
 changeLogFile=changelog-root.xml
 outputChangeLogFile=changelog.mysql.sql
 url=jdbc:mysql://host.docker.internal/ngafid
@@ -148,7 +148,7 @@ particular, if you are using a database other than mysql you will have to tweak 
 
 Once you have done this, you can create the database tables by running the following:
 
-```
+```bash
 ~/ngafid2.0 $ run/liquibase/update
 ```
 
@@ -163,7 +163,7 @@ Request permissions if you do not have them (if you use an RIT google account yo
 Make the data folder wherever you like -- you may consider using secondary storage disk for this. The terrain data is
 quite large -- you likely want it wherever your data folder is (though you can configure things however you like below).
 
-```
+```text
 $NGAFID_DATA_FOLDER
 ├── terrain        # You will have to decompress the terrain data.
 │   ├── H11
@@ -213,21 +213,20 @@ sender@example.com
 password
 ```
 
-
 The application automatically detects whether it's running in Docker (by checking for `/.dockerenv`) and uses the appropriate settings. Docker-specific configurations use the `ngafid.docker.*` prefix in the properties file.
 
 ## 5. Build Node Modules and Java Artifacts
 
 Initialize node. You'll need npm installed for this, then inside the `ngafid-frontend` directory run:
 
-```
+```bash
 ~/ngafid2.0/ngafid-frontend $ npm install
 ```
 
 This will download the javascript dependencies. Then, in order to compile the javascript and automatically recompile
 whenever you change one of the files:
 
-```
+```bash
 ~/ngafid2.0/ngafid-frontend $ npm run watch
 ```
 
@@ -246,14 +245,14 @@ using `ngafid2.0/resources/reconfig-server.properties`.
 Make sure to edit this file and change `log.dirs` to an appropriate path for your system before launching.
 Now, launch Kafka:
 
-```
+```bash
 # Launch kafka kraft
 ~/ngafid2.0 $ kafka-server-start resources/reconfig-server.properties
 ```
 
 Next, run the following script to create the appropriate kafka topics:
 
-```
+```bash
 ~/ngafid2.0 $ run/kafka/create_topics
 ```
 
@@ -324,7 +323,7 @@ Set your Azure key in `ngafid.properties` (the key can be found in the NGAFID Se
 
 `ngafid.azure.maps.key=AZURE_KEY_HERE`
 
-Create `liquibase.docker.properties` inside `ngafid2.0/ngafid-db/src`. 
+Create `liquibase.docker.properties` inside `ngafid2.0/ngafid-db/src`.
 
 Place these configuration parameters inside `liquibase.docker.properties`:
 
@@ -365,20 +364,23 @@ docker compose -f docker-compose.yml -f docker-compose.local-template.yml up -d
 Notes:
 
 We use local-template.yml to override docker-compose-yaml. For this reason docker commands become verbose. For example to restart the containers we use:
+
 ```shell
 docker compose -f docker-compose.yml -f docker-compose.local-template.yml down
 docker compose -f docker-compose.yml -f docker-compose.local-template.yml up -d
 ```
 
 To reduce verbosity, use alias:
+
 ```shell
 alias dcl='docker compose -f docker-compose.yml -f docker-compose.local-template.yml'
 ```
+
 Then the command to restart containers reduces to:
 
 ```shell
-dcl down 
-dcl up -d 
+dcl down
+dcl up -d
 ```
 
 - `docker-compose.local-template.yml` maps local host paths from `data-local` instead of host `/mnt`.
@@ -404,7 +406,7 @@ configuration is correct.
 If you modify the upload processing code in some way and want to re-add an upload to the processing queue, you may use
 the `UploadHelper` utility to add individual uploads, or all uploads from a fleet to the queue:
 
-```
+```bash
 ~/ngafid2.0 $ run/kafka/upload_helper --help
 ```
 
@@ -412,7 +414,7 @@ Similarly, if you modify a custom-event computation you can use the `EventHelper
 The event observer will pick up on this and enqueue them for re-computation. You may also delete events and opt for them
 not to be recomputed.
 
-```
+```bash
 ~/ngafid2.0 $ run/kafka/event_helper --help
 ```
 
@@ -421,7 +423,7 @@ not to be recomputed.
 Event statistics are to be computed and cached occasionally. If you import data and want to see it reflected on the
 website, you must update these cached tables:
 
-```
+```bash
 $ run/liquibase/daily-materialized-views
 $ run/liquibase/hourly-materialized-views
 ```
@@ -436,28 +438,32 @@ event statistics, frequency, severity, etc. will need to have this data updated 
 ## 12. Two-factor authentication
 
 A Time-based One-time Password (TOTP) library was used to implement 2F Authentication.
-https://github.com/wstrange/GoogleAuth
+<https://github.com/wstrange/GoogleAuth>
 
-When users login, they will receive a prompt with a recommendation to enable 2F Authentication. If they choose not to setup 2F Auth right after they login, 
+When users login, they will receive a prompt with a recommendation to enable 2F Authentication. If they choose not to setup 2F Auth right after they login,
 they can always do it later via Account menu where they also can disable 2F Authentication at any time.
 
 After 2F Auth is complete, users will receive a set of passcodes they can store as a backup method for identification (e.g. in case of lost internet connection).
 The backup passwords are stored in the database in the user's table, so System administrators can retrieve a password via SQL command if a user is locked out.
 
 To manually disable two-factor authentication for a user. System administrators can update 2F settings as below:
-```
+
+```sql
 UPDATE user SET two_factor_enabled = 0,     two_factor_setup_complete = 0,     two_factor_secret = NULL,     backup_codes = NULL WHERE id = "TARGET_ID";
 ```
+
 ## 13. AirSync Setup
-NGAFID integrates with AirSync to automatically import flight data. AirSync utilizes Partner API for accessing flight logs. See [Partner API Documentation](documentation/partner-api-documentation.pdf) for  API specifications.
 
+NGAFID integrates with AirSync to automatically import flight data. AirSync utilizes Partner API for accessing flight logs. See [Partner API Documentation](documentation/partner-api-documentation.pdf) for API specifications.
 
-### Architecture overview 
-NGAFID uses a pull-based approach: the AirSync daemon periodically(every 24 hs) polls the AirSync API for new flight logs, downloads them, packages them into ZIP files, and processes them through the standard upload pipeline. 
-We can trigger upload by pressing Sync upload button in the AirSync Uploads page. This will set the override flag in the airsync database to 1 and force an upload. 
-The Partner API documentation recommends a push-based approach using webhooks/Amazon SNS for real-time notifications. Our pull-based implementation can be revisited to comply with the Partern API recomenteation. 
+### Architecture overview
+
+NGAFID uses a pull-based approach: the AirSync daemon periodically(every 24 hs) polls the AirSync API for new flight logs, downloads them, packages them into ZIP files, and processes them through the standard upload pipeline.
+We can trigger upload by pressing Sync upload button in the AirSync Uploads page. This will set the override flag in the airsync database to 1 and force an upload.
+The Partner API documentation recommends a push-based approach using webhooks/Amazon SNS for real-time notifications. Our pull-based implementation can be revisited to comply with the Partern API recomenteation.
 
 ### Key components
+
 - AirSync Daemon (run/airsync_daemon): Polls the AirSync API, downloads flight logs, creates ZIP archives
 - Upload Consumer (run/kafka/upload_consumer): Processes ZIP files and extracts flight data
 - Database Tables: airsync_fleet_info (configuration), airsync_imports (log tracking), uploads (processed files)
@@ -466,32 +472,34 @@ The Partner API documentation recommends a push-based approach using webhooks/Am
 
 1. Ensure the fleet exists in the database.
 
-``` 
-SELECT id, fleet_name FROM fleet WHERE id = <fleet_id>;
-```
-2. Grant User Access to the Fleet.
-The User needs MANAGER or UPLOAD_ONLY access to trigger AirSync updates via the web UI (Sync button in Uploads page)
+   ```sql
+   SELECT id, fleet_name FROM fleet WHERE id = <fleet_id>;
+   ```
 
-``` 
-INSERT INTO fleet_access (user_id, fleet_id, type) 
-VALUES (<user_id>, <fleet_id>, 'MANAGER') 
-ON DUPLICATE KEY UPDATE type = 'MANAGER';
-``` 
+2. Grant User Access to the Fleet.
+   The User needs MANAGER or UPLOAD_ONLY access to trigger AirSync updates via the web UI (Sync button in Uploads page)
+
+   ```sql
+   INSERT INTO fleet_access (user_id, fleet_id, type)
+   VALUES (<user_id>, <fleet_id>, 'MANAGER')
+   ON DUPLICATE KEY UPDATE type = 'MANAGER';
+   ```
+
 3. Confugure AirSync Fleet Information
 
-``` 
-INSERT INTO airsync_fleet_info 
-    (fleet_id, airsync_fleet_name, api_key, api_secret, timeout, override) 
-VALUES 
-    (<fleet_id>, '<AirSync Account Name>', '<API_KEY>', '<API_SECRET>', 1440, 0)
-ON DUPLICATE KEY UPDATE 
-    airsync_fleet_name = '<AirSync Account Name>',
-    api_key = '<API_KEY>',
-    api_secret = '<API_SECRET>',
-    timeout = 1440,
-    override = 0;
-  
-  ``` 
+   ```sql
+   INSERT INTO airsync_fleet_info
+       (fleet_id, airsync_fleet_name, api_key, api_secret, timeout, override)
+   VALUES
+       (<fleet_id>, '<AirSync Account Name>', '<API_KEY>', '<API_SECRET>', 1440, 0)
+   ON DUPLICATE KEY UPDATE
+       airsync_fleet_name = '<AirSync Account Name>',
+       api_key = '<API_KEY>',
+       api_secret = '<API_SECRET>',
+       timeout = 1440,
+       override = 0;
+   ```
+
 Parameters:
 
 - fleet_id: The ID of the fleet from the fleet table
@@ -501,38 +509,41 @@ Parameters:
 - timeout: Time in minutes between automatic syncs (1440 = 24 hours)
 - override: Set to 1 to force immediate sync, 0 for normal operation
 
-
 ### Force imediate Synchronization
-``` 
-UPDATE airsync_fleet_info 
-SET override = 1 
+
+```sql
+UPDATE airsync_fleet_info
+SET override = 1
 WHERE fleet_id = <fleet_id>;
-``` 
+```
 
 The daemon will detect this within 30 seconds and start syncing. After processing, it will reset override to 0.
 
-
 ### Using Upload Helper to Re-enqueue Uploads
+
 The run/upload_helper script can manually add uploads to the Kafka processing queue. This is useful when uploads are stuck in UPLOADED status but not being processed.
 
-Re-enqueue specific uploads 
-``` 
+Re-enqueue specific uploads
+
+```bash
 run/upload_helper -u <upload_id_1> <upload_id_2>
-``` 
+```
 
-Re-enqueue  all uploads for a fleet
-``` 
+Re-enqueue all uploads for a fleet
+
+```bash
 run/upload_helper -f <fleet_id>
-``` 
+```
 
-Re-enqueue  uploads from a file
-``` 
+Re-enqueue uploads from a file
+
+```bash
 run/upload_helper -F <file_path>
-``` 
-
+```
 
 Specific container
-```
+
+```bash
 docker logs -f --since=10m ngafid20-ngafid-upload-consumer-1
 ```
 

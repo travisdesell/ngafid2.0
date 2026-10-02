@@ -9,7 +9,7 @@
 #
 # Usage:
 #   scripts/lint.sh [--report] \
-#       [all|java|kotlin|python|js|bash|dockerfile|format|checkstyle]
+#       [all|java|kotlin|python|js|bash|dockerfile|yaml|markdown|format|checkstyle]
 #
 #   --report   Never exit non-zero: run every check, print counts, and (in CI)
 #              append a summary to $GITHUB_STEP_SUMMARY. Used for inventory.
@@ -24,6 +24,8 @@
 #                js         -> ESLint (ngafid-frontend)
 #                bash       -> shfmt + shellcheck (shell scripts)
 #                dockerfile -> hadolint (Dockerfiles)
+#                yaml       -> yamllint (workflows + compose files)
+#                markdown   -> markdownlint (*.md)
 #
 # A check whose toolchain is missing is SKIPPED with a note (not failed), so the
 # script is useful on a machine that has only some of the toolchains installed.
@@ -316,6 +318,35 @@ lint_yaml() {
     fi
 }
 
+lint_markdown() {
+    echo
+    echo "=== Markdown (markdownlint) ==="
+    local mdl="$ROOT/ngafid-frontend/node_modules/.bin/markdownlint"
+    if [[ ! -x "$mdl" ]]; then
+        record "Markdown (markdownlint)" "SKIP" "markdownlint not found (cd ngafid-frontend && npm ci)"
+        return
+    fi
+    local report="$REPORTS_DIR/markdown.txt"
+    local files
+    files=$(git ls-files | grep -iE '\.md$' | grep -v node_modules || true)
+    if [[ -z "$files" ]]; then
+        record "Markdown (markdownlint)" "SKIP" "no Markdown files found"
+        return
+    fi
+    # Config is .markdownlint.yaml at the repo root (auto-discovered); Prettier
+    # owns formatting, so only content rules are enforced here.
+    # shellcheck disable=SC2086  # intentional word-splitting of the file list
+    "$mdl" $files >"$report" 2>&1
+    local status=$?
+    local count
+    count=$(grep -cE ' MD[0-9]+/' "$report" || true)
+    if [[ "$status" -eq 0 ]]; then
+        record "Markdown (markdownlint)" "OK" "no issues"
+    else
+        record "Markdown (markdownlint)" "PROBLEMS" "$count finding(s) -- see $report; format with 'scripts/format.sh markdown'"
+    fi
+}
+
 case "$TARGET" in
     all)
         lint_format
@@ -325,6 +356,7 @@ case "$TARGET" in
         lint_bash
         lint_dockerfile
         lint_yaml
+        lint_markdown
         ;;
     java)
         lint_format
@@ -337,6 +369,7 @@ case "$TARGET" in
     bash) lint_bash ;;
     dockerfile) lint_dockerfile ;;
     yaml) lint_yaml ;;
+    markdown) lint_markdown ;;
 esac
 
 echo

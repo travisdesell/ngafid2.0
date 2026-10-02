@@ -22,7 +22,6 @@ This is also a good opportunity to normalize all rouates and parameters. API rou
 
 In pursuing this `ngafid-www` will need to largely be rewritten, I suggest doing so in Kotlin as Javalin was developed with Kotlin in mind. It should save some significant number of lines of code.
 
-
 ## Extensive Unit Tests
 
 The NGAFID has a pitiful number of unit tests. Introducing unit tests with a high degree of branch coverage would alleviate the all-too-common regressions that happen, particularly on the backend.

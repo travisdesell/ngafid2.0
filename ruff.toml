@@ -14,7 +14,9 @@ line-length = 120
 target-version = "py310"
 
 # .claude/ holds Claude Code agent tooling (hooks), not shipped project source.
-extend-exclude = [".claude"]
+# *.md is excluded because ruff would otherwise format Python code blocks inside
+# Markdown; Prettier is the formatter of record for Markdown (see scripts/lint.sh).
+extend-exclude = [".claude", "*.md"]
 
 [lint]
 # pycodestyle (E/W), pyflakes (F), isort (I), pyupgrade (UP), flake8-bugbear (B).

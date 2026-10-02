@@ -15,8 +15,9 @@
 ### Occurs On
 
 Servers:
- - [ ] The Beta Server
- - [ ] The Live Server
+
+- [ ] The Beta Server
+- [ ] The Live Server
 
 Branches:
 

@@ -162,10 +162,16 @@ format_yaml() {
 format_markdown() {
     echo
     echo "=== Markdown (Prettier) ==="
-    if [[ -x "$PRETTIER" ]]; then
-        "$PRETTIER" --write "**/*.md" "!**/node_modules/**"
-    else
+    if [[ ! -x "$PRETTIER" ]]; then
         note "prettier not found; skipping Markdown"
+        return
+    fi
+    # Tracked Markdown only (git ls-files naturally excludes node_modules).
+    local files
+    files=$(git ls-files | grep -iE '\.md$' | grep -v node_modules || true)
+    if [[ -n "$files" ]]; then
+        # shellcheck disable=SC2086  # intentional word-splitting of the file list
+        "$PRETTIER" --write $files
     fi
 }
 

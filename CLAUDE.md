@@ -7,14 +7,14 @@ JavaScript), tests, `README.md`, `CLAUDE.md`, `pom.xml`, `pyproject.toml`,
 configuration, anything tracked or untracked -- must be shown to the user as a
 diff and approved by them **before** they are applied. This holds for every
 single edit, including edits that implement a plan the user has already
-approved: approving a plan approves the *direction*, not the individual diffs,
+approved: approving a plan approves the _direction_, not the individual diffs,
 and each diff still needs its own review.
 
 - Make every repo file change with the **Edit** or **Write** tool, whose approval
   prompt shows the user the diff. Break large rewrites into several Edits rather
   than going around the prompt.
 - **Never** make arbitrary (logic) file changes through Bash: no `sed -i`/`perl
-  -i`, no Python or heredoc scripts that rewrite files, no `>`/`>>` redirects or
+-i`, no Python or heredoc scripts that rewrite files, no `>`/`>>` redirects or
   `tee` into repo paths, no `cp`/`mv`/`rm` of repo files, and no file-changing
   `git` commands (`checkout`, `restore`, `apply`, `reset`, `stash`, ...) without
   asking first.
@@ -44,7 +44,9 @@ you touch a function, method, or class, bring it up to this standard even if
 the surrounding legacy code predates it.
 
 ### Type hints
+
 For python code:
+
 - Annotate **every** parameter and the **return type** of every function and
   method — including `-> None` when nothing is returned, and nested/inner
   functions and locally-defined classes.
@@ -57,8 +59,10 @@ For python code:
   `list[...]` / `dict[...]` (e.g. `dict[str, Any]`, never `dict(str, any)`).
 
 ### Docstrings
-Java code should use **Javadoc-style** docstrings (matching the existing codebase) 
+
+Java code should use **Javadoc-style** docstrings (matching the existing codebase)
 with all of the applicable sections:
+
 - A one-line summary sentence.
 - `param:` — one entry per parameter (omit `self`/`cls`), describing each.
 - `return:` — what is returned; state explicitly when the function returns
@@ -66,8 +70,9 @@ with all of the applicable sections:
 - Keep docstrings **accurate**: if a method sets `self.x` rather than returning
   a value, document that; don't leave stale or placeholder argument lines.
 
-Python code should use **Google-style** docstrings (matching the existing codebase) 
+Python code should use **Google-style** docstrings (matching the existing codebase)
 with all of the applicable sections:
+
 - A one-line summary sentence.
 - `Args:` — one entry per parameter (omit `self`/`cls`), describing each.
 - `Returns:` — what is returned; state explicitly when the function returns
@@ -76,17 +81,17 @@ with all of the applicable sections:
 - Keep docstrings **accurate**: if a method sets `self.x` rather than returning
   a value, document that; don't leave stale or placeholder argument lines.
 
-
 **Be behavior-focused, not signature-restating.** The summary and body should
-explain *what the method does and how* — the meaningful work, algorithm or
+explain _what the method does and how_ — the meaningful work, algorithm or
 approach, side effects (what state it mutates, what it writes to the DB, files,
 or caches), important edge cases, and any non-obvious behavior or assumptions —
 rather than paraphrasing the method name or parameter types. A reader who cannot
 see the body should understand the method's contract from the docstring.
+
 - Prefer "Splits the flight into phases by scanning AltAGL for touch-and-go
   transitions, returning one section per detected phase" over "Processes the
   flight." Avoid empty restatements like "Gets the name" for `getName`, or
-  "@param connection the connection" — say what the connection is used *for*.
+  "@param connection the connection" — say what the connection is used _for_.
 - Each `@param`/`Args` entry should add information beyond the parameter's name
   and type (its role, units, valid range, null handling), not echo it.
 - Genuinely trivial members — plain getters/setters, constructors that only
@@ -128,4 +133,3 @@ the docs describing the old behavior is incomplete.
   docs describing an interface the code no longer supports -- name the
   divergence, state what changed, and propose the concrete doc edits so the user
   can decide how to reconcile it.
-

@@ -39,7 +39,7 @@ files are written into it:
 - `flights.csv` — `id`, `fleet_id`, `system_id`, `airframe_id`, `start_time`,
   `end_time` for the flights referenced by those events. The flights are
   selected with a single semi-join (`WHERE id IN (SELECT flight_id FROM events
-  WHERE ...)`) so the flight-id set stays in the database — this scales to
+WHERE ...)`) so the flight-id set stays in the database — this scales to
   hundreds of thousands of flights without shipping ids back to the client.
 - `event_definitions.csv` — `id`, `fleet_id`, `airframe_id`,
   `airframe_type_id`, `name` from `event_definitions`.

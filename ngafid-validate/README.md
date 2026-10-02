@@ -48,8 +48,8 @@ Execution order is filename-sorted. Prefixes like `01_`, `02_`, etc. are recomme
 
 ```yaml
 depends_on:
-	ngafid-validate:
-		condition: service_completed_successfully
+  ngafid-validate:
+    condition: service_completed_successfully
 ```
 
 This keeps validation centralized and ensures startup fails early when preconditions are not met.
@@ -268,7 +268,7 @@ Required behavior:
 
 Recommended output format:
 
-```
+```text
 [PASS] CONFIG: ngafid.properties loaded
 [PASS] DB: mysql connection established
 [FAIL] FS: <resolved-terrain-path> missing required tile directories

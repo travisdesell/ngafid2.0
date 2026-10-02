@@ -1,0 +1,28 @@
+# markdownlint configuration for the NGAFID monorepo.
+#
+# Prettier is the formatter of record for Markdown (see scripts/format.sh), so it
+# handles whitespace, list, and fence-spacing rules. The rules disabled below
+# either conflict with Prettier's output or with conventions this repo
+# deliberately uses; every other default rule stays on and catches real issues
+# (missing code-fence languages, bare URLs, images without alt text, ...).
+default: true
+
+# Prettier does not wrap prose, so enforcing a line length only produces
+# violations it cannot fix (mirrors the YAML line-length decision).
+MD013: false
+
+# Docs use inline HTML (e.g. the centered images in the Cesium README).
+MD033: false
+
+# Some docs legitimately open with badges/HTML rather than a heading.
+MD041: false
+
+# Command examples intentionally show the "$" prompt without command output.
+MD014: false
+
+# Multi-section docs (README, CONTRIBUTING) use more than one top-level heading.
+MD025: false
+
+# Allow a trailing colon in headings (e.g. "Prerequisites:"); still flag . ! ?
+MD026:
+  punctuation: ".,;!?"

@@ -74,7 +74,7 @@ At its simplest, Kafka can be thought of as a message passing queue with some de
 perfectly resilient, however there is no question that it is robust enough to hadnle the standard load of transient bugs
 any webserver is sure to encounter.
 
-Kafka maintains named queues referred to as *topics*. Consumers read from these queues, and producers add to the queues.
+Kafka maintains named queues referred to as _topics_. Consumers read from these queues, and producers add to the queues.
 There are several topics with which the NGAFID sends messages:
 
 - UPLOAD
