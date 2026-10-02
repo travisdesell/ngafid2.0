@@ -31,9 +31,19 @@ ryuk.disabled=true
 - `ryuk.disabled=true` skips the Ryuk reaper container, whose socket bind-mount can fail under Docker Desktop's proxied
   socket; test containers are still stopped when the JVM exits.
 
-If the `client version ... is too old` error persists after that, also pin the Docker API version to your daemon's when
-running the tests:
+The most reliable way to apply these on a Docker Desktop machine is to export them in the shell you run the tests from,
+rather than relying on the properties file alone — on some setups the file's `ryuk.disabled` is not honored and Ryuk
+still tries (and fails) to start:
 
 ```bash
+export DOCKER_HOST=unix:///Users/<you>/.docker/run/docker.sock
+export TESTCONTAINERS_RYUK_DISABLED=true
 mvn -pl ngafid-core test -DargLine="-Dapi.version=$(docker version --format '{{.Server.APIVersion}}')"
 ```
+
+- The `-Dapi.version=...` argument pins the Docker API version to your daemon's, which resolves the
+  `client version ... is too old` error. It uses command substitution, so the `docker` CLI must be on your `PATH`;
+  Docker Desktop does not always add it to non-login shells. If `docker version` is not found, add Docker's bin
+  directory (for example `~/.docker/bin` or `/Applications/Docker.app/Contents/Resources/bin`) to your `PATH` first.
+- `TESTCONTAINERS_RYUK_DISABLED=true` is the environment-variable form of `ryuk.disabled`; prefer it when the
+  `~/.testcontainers.properties` entry is not taking effect.
