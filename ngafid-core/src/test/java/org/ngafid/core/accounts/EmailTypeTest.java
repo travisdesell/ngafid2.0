@@ -22,14 +22,20 @@ public class EmailTypeTest {
     private Connection connection;
 
     /**
-     * No-op per-test setup; the connection is opened lazily only by the tests that actually touch the database.
+     * Clears the shared {@code email_preferences} table before each test so every test sees only the rows it creates.
+     * The coverage tests that invoke the global {@code EmailType.insertEmailTypesIntoDatabase()} / {@code main} populate
+     * the table for every seeded user from the production {@code Database} pool; without this reset the row-count
+     * assertions in the other tests would depend on execution order. Touching {@link TestDatabase} here also forces the
+     * container and the production {@code Config}/{@code Database} singletons to initialize before any test runs.
      *
-     * @throws SQLException never thrown here (declared for symmetry with database-backed setup)
+     * @throws SQLException if clearing the table fails
      */
     @BeforeEach
     public void setUp() throws SQLException {
-        // Only get connection for tests that actually need it
-        // Most tests don't need database connection
+        try (Connection cleanup = TestDatabase.getConnection();
+                PreparedStatement stmt = cleanup.prepareStatement("DELETE FROM email_preferences")) {
+            stmt.executeUpdate();
+        }
     }
 
     /**
