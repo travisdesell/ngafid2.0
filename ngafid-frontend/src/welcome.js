@@ -1,8 +1,8 @@
-import { createRoot } from 'react-dom/client';
+import { createRoot } from "react-dom/client";
 import React from "react";
 
-import {SummaryPage} from "./summary_page.tsx";
+import { SummaryPage } from "./summary_page.tsx";
 
 const container = document.querySelector("#welcome-page");
 const root = createRoot(container);
-root.render(<SummaryPage aggregate={false}/>);
+root.render(<SummaryPage aggregate={false} />);

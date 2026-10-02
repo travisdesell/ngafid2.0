@@ -57,9 +57,7 @@ export function SeveritiesPage() {
     const list = airframes.filter((a) => a.name !== "Garmin Flight Display");
 
     //All Airframes not present, add it
-    return list.some((a) => a.name === "All Airframes" || a.id === -1)
-      ? list
-      : [allAirframes, ...list];
+    return list.some((a) => a.name === "All Airframes" || a.id === -1) ? list : [allAirframes, ...list];
   }, []);
 
   const initialEventFlags = useMemo(() => {
@@ -75,74 +73,61 @@ export function SeveritiesPage() {
 
   const date = new Date();
 
-    const [airframe, setAirframe] = useState<AirframeNameID>(allAirframes);
-    const [tagName, setTagName] = useState("All Tags");
-    const [startYear, setStartYear] = useState(date.getFullYear());
-    const [startMonth, setStartMonth] = useState(1);
-    const [endYear, setEndYear] = useState(date.getFullYear());
-    const [endMonth, setEndMonth] = useState(date.getMonth() + 1);
-    const [datesChanged, setDatesChanged] = useState(false);
-    const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
-    const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(initialEventFlags.checked);
-    const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(initialEventFlags.empty);
-    const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
-    const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
-    const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [hasQueried, setHasQueried] = useState(false);
-    const loadingCountRef = useRef(0);
+  const [airframe, setAirframe] = useState<AirframeNameID>(allAirframes);
+  const [tagName, setTagName] = useState("All Tags");
+  const [startYear, setStartYear] = useState(date.getFullYear());
+  const [startMonth, setStartMonth] = useState(1);
+  const [endYear, setEndYear] = useState(date.getFullYear());
+  const [endMonth, setEndMonth] = useState(date.getMonth() + 1);
+  const [datesChanged, setDatesChanged] = useState(false);
+  const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
+  const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(initialEventFlags.checked);
+  const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(initialEventFlags.empty);
+  const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
+  const [eventSeveritiesState, setEventSeveritiesState] = useState<EventSeverities>({});
+  const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasQueried, setHasQueried] = useState(false);
+  const loadingCountRef = useRef(0);
 
-    const setLoading = useCallback((loading: boolean) => {
-        if (loading) {
-            loadingCountRef.current += 1;
-            setIsLoading(true);
-            $('#loading').show();
-        } else {
-            loadingCountRef.current = Math.max(0, loadingCountRef.current - 1);
-            if (loadingCountRef.current === 0) {
-                setIsLoading(false);
-                $('#loading').hide();
-            }
-        }
-    }, []);
+  const setLoading = useCallback((loading: boolean) => {
+    if (loading) {
+      loadingCountRef.current += 1;
+      setIsLoading(true);
+      $("#loading").show();
+    } else {
+      loadingCountRef.current = Math.max(0, loadingCountRef.current - 1);
+      if (loadingCountRef.current === 0) {
+        setIsLoading(false);
+        $("#loading").hide();
+      }
+    }
+  }, []);
 
-    const hasAnyEventChecked = useMemo(
-        () => Object.values(eventChecked).some(Boolean),
-        [eventChecked]
-    );
+  const hasAnyEventChecked = useMemo(() => Object.values(eventChecked).some(Boolean), [eventChecked]);
 
-    const allEventsEmpty = useMemo(
-        () => eventNames
-            .filter((name) => name !== "ANY Event")
-            .every((name) => eventsEmpty[name]),
-        [eventsEmpty]
-    );
+  const allEventsEmpty = useMemo(
+    () => eventNames.filter((name) => name !== "ANY Event").every((name) => eventsEmpty[name]),
+    [eventsEmpty],
+  );
 
-    const hasVisiblePlotData = useMemo(() => {
-        const selectedAirframe = airframe.name;
-        for (const [eventName, countsMap] of Object.entries(eventSeveritiesState)) {
-            if (!eventChecked[eventName])
-                continue;
+  const hasVisiblePlotData = useMemo(() => {
+    const selectedAirframe = airframe.name;
+    for (const [eventName, countsMap] of Object.entries(eventSeveritiesState)) {
+      if (!eventChecked[eventName]) continue;
 
-            for (const [airframeName, counts] of Object.entries(countsMap)) {
-                if (airframeName === "Garmin Flight Display")
-                    continue;
+      for (const [airframeName, counts] of Object.entries(countsMap)) {
+        if (airframeName === "Garmin Flight Display") continue;
 
-                if (selectedAirframe !== airframeName && selectedAirframe !== "All Airframes")
-                    continue;
+        if (selectedAirframe !== airframeName && selectedAirframe !== "All Airframes") continue;
 
-                if (Array.isArray(counts) && counts.length > 0)
-                    return true;
-            }
-        }
-        return false;
-    }, [eventSeveritiesState, eventChecked, airframe.name]);
+        if (Array.isArray(counts) && counts.length > 0) return true;
+      }
+    }
+    return false;
+  }, [eventSeveritiesState, eventChecked, airframe.name]);
 
-    const showNoEventsMessage = hasQueried
-        && !isLoading
-        && !hasVisiblePlotData
-        && (allEventsEmpty || hasAnyEventChecked);
-
+  const showNoEventsMessage = hasQueried && !isLoading && !hasVisiblePlotData && (allEventsEmpty || hasAnyEventChecked);
 
   //Effect to update datesOrAirframeChanged when dependencies change
   useEffect(() => {
@@ -159,8 +144,7 @@ export function SeveritiesPage() {
 
     console.log(`selected airframe: '${selectedAirframe}'`);
     console.log(eventSeverities);
-    const fileHeaders =
-      "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity";
+    const fileHeaders = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity";
 
     const fileContent = [fileHeaders];
     const uniqueMetaDataNames: string[] = [];
@@ -174,11 +158,7 @@ export function SeveritiesPage() {
         if (airframeName === "Garmin Flight Display") continue;
 
         //Airframe is not selected, skip
-        if (
-          selectedAirframe.name !== airframeName &&
-          selectedAirframe.name !== "All Airframes"
-        )
-          continue;
+        if (selectedAirframe.name !== airframeName && selectedAirframe.name !== "All Airframes") continue;
 
         console.log("Counts severities:", counts);
 
@@ -189,38 +169,32 @@ export function SeveritiesPage() {
           const eventMetaDataText: (string | number)[] = [];
           if (metaData != null) {
             metaData.map((item: EventMetaDataItem) => {
-              if (!uniqueMetaDataNames.includes(item.name))
-                uniqueMetaDataNames.push(item.name);
+              if (!uniqueMetaDataNames.includes(item.name)) uniqueMetaDataNames.push(item.name);
 
               eventMetaDataText.push(
                 typeof item.value === "number"
                   ? `${item.name}: ${(Math.round(item.value * 100) / 100).toFixed(2)}`
-                  : `${item.name}: ${item.value}`
+                  : `${item.name}: ${item.value}`,
               );
             });
           }
           const count = counts[i];
           line = `${eventName},${airframeName},${count.flightId},${count.startTime},${count.endTime},${count.startLine},${count.endLine},${count.severity}`;
 
-          if (eventMetaDataText.length !== 0)
-            line += `,${eventMetaDataText.join(",")}`;
+          if (eventMetaDataText.length !== 0) line += `,${eventMetaDataText.join(",")}`;
 
           fileContent.push(line);
         }
       }
     }
 
-    if (uniqueMetaDataNames.length != 0)
-      fileContent[0] = `${fileHeaders},${uniqueMetaDataNames.join(",")}`;
+    if (uniqueMetaDataNames.length != 0) fileContent[0] = `${fileHeaders},${uniqueMetaDataNames.join(",")}`;
 
     const filename = "event_severities.csv";
     console.log("Exporting CSV!");
 
     const element = document.createElement("a");
-    element.setAttribute(
-      "href",
-      `data:text/plain;charset=utf-8,${encodeURIComponent(fileContent.join("\n"))}`
-    );
+    element.setAttribute("href", `data:text/plain;charset=utf-8,${encodeURIComponent(fileContent.join("\n"))}`);
     element.setAttribute("download", filename);
 
     element.style.display = "none";
@@ -256,8 +230,7 @@ export function SeveritiesPage() {
         if (typeof s === "number") return s;
 
         //Numeric string; detect seconds vs ms
-        if (/^\d+$/.test(s))
-          return s.length <= 10 ? Number(s) * 1_000 : Number(s);
+        if (/^\d+$/.test(s)) return s.length <= 10 ? Number(s) * 1_000 : Number(s);
 
         const t = Date.parse(s);
         return Number.isNaN(t) ? undefined : t;
@@ -272,15 +245,7 @@ export function SeveritiesPage() {
 
       const severityTraces: Plotly.Data[] = [];
       const airframeNames: Record<string, number> = {};
-      const markerSymbolList = [
-        "circle",
-        "diamond",
-        "square",
-        "x",
-        "pentagon",
-        "hexagon",
-        "octagon",
-      ];
+      const markerSymbolList = ["circle", "diamond", "square", "x", "pentagon", "hexagon", "octagon"];
 
       for (const [eventName, countsMap] of Object.entries(eventSeveritiesState)) {
         //Event is unchecked, skip
@@ -291,35 +256,32 @@ export function SeveritiesPage() {
           if (airframeName === "Garmin Flight Display") continue;
 
           //Airframe is unselected, skip
-          if (
-            selectedAirframe !== airframeName &&
-            selectedAirframe !== "All Airframes"
-          )
-            continue;
+          if (selectedAirframe !== airframeName && selectedAirframe !== "All Airframes") continue;
 
           //Airframe is undefined, assign it a unique index
           if (airframeNames[airframeName] === undefined)
             airframeNames[airframeName] = Object.keys(airframeNames).length;
 
-          const markerSymbol =
-            markerSymbolList[airframeNames[airframeName] % markerSymbolList.length];
+          const markerSymbol = markerSymbolList[airframeNames[airframeName] % markerSymbolList.length];
           const markerSymbolAny = `${markerSymbol}-open-dot`;
 
           const x: number[] = [];
           const y: number[] = [];
           const z: (string | number)[] = [];
-          const customdata: Array<[
-            string,          //0. flightId
-            string | null,   //1. otherFlightId (kept for click handler)
-            string,          //2. systemId
-            string,          //3. tail
-            number,          //4. eventDefinitionId
-            string,          //5. tagName
-            number,          //6. severity
-            string | number, //7. startTime (raw)
-            string | number, //8. endTime (raw)
-            string           //9. otherText (formatted, or "")
-          ]> = [];
+          const customdata: Array<
+            [
+              string, //0. flightId
+              string | null, //1. otherFlightId (kept for click handler)
+              string, //2. systemId
+              string, //3. tail
+              number, //4. eventDefinitionId
+              string, //5. tagName
+              number, //6. severity
+              string | number, //7. startTime (raw)
+              string | number, //8. endTime (raw)
+              string, //9. otherText (formatted, or "")
+            ]
+          > = [];
 
           for (const c of counts) {
             const ms = toEpochMs(c.startTime);
@@ -329,10 +291,7 @@ export function SeveritiesPage() {
 
             const primary = String(c.flightId);
             const isProximity = c.eventDefinitionId === -1;
-            const otherText =
-              isProximity && c.otherFlightId != null
-                ? ` (Other #: ${c.otherFlightId})`
-                : "";
+            const otherText = isProximity && c.otherFlightId != null ? ` (Other #: ${c.otherFlightId})` : "";
             const other = isProximity ? String(c.otherFlightId ?? "") : null;
 
             customdata.push([
@@ -384,8 +343,7 @@ export function SeveritiesPage() {
               "<extra></extra>",
           };
 
-          if (eventName === "ANY Event")
-            severityTraces.unshift(trace as Plotly.Data);
+          if (eventName === "ANY Event") severityTraces.unshift(trace as Plotly.Data);
           else severityTraces.push(trace as Plotly.Data);
         }
       }
@@ -411,9 +369,7 @@ export function SeveritiesPage() {
 
       Plotly.react("severities-plot", severityTraces, severityLayout, config);
 
-      const severitiesPlot = document.getElementById(
-        "severities-plot"
-      ) as Plotly.PlotlyHTMLElement | null;
+      const severitiesPlot = document.getElementById("severities-plot") as Plotly.PlotlyHTMLElement | null;
       if (!severitiesPlot) {
         console.error("Severities plot not found");
         return;
@@ -429,18 +385,7 @@ export function SeveritiesPage() {
         for (const point of event.points) {
           const customData = point.data.customdata?.[point.pointIndex] as
             | undefined
-            | [
-                string,
-                string | null,
-                string,
-                string,
-                number,
-                string,
-                number,
-                string | number,
-                string | number,
-                string
-              ];
+            | [string, string | null, string, string, number, string, number, string | number, string | number, string];
 
           if (!customData) continue;
 
@@ -465,21 +410,17 @@ export function SeveritiesPage() {
             ],
           };
 
-          const url = `/protected/flights?filter=${encodeURIComponent(
-            JSON.stringify(filter)
-          )}`;
+          const url = `/protected/flights?filter=${encodeURIComponent(JSON.stringify(filter))}`;
           window.open(url, "_blank", "noopener");
         }
       });
     },
-    [eventChecked, eventSeveritiesState]
+    [eventChecked, eventSeveritiesState],
   );
 
-    const fetchAllEventSeverities = useCallback(() => {
-
-        setLoading(true);
-        console.log("Showing loading spinner!");
-
+  const fetchAllEventSeverities = useCallback(() => {
+    setLoading(true);
+    console.log("Showing loading spinner!");
 
     const startDate = buildStartDate(startYear, startMonth);
     const endDate = buildEndDate(endYear, endMonth);
@@ -491,24 +432,22 @@ export function SeveritiesPage() {
       tagName: tagName,
     };
 
-        $.ajax({
-            type: 'GET',
-            url: '/api/event/severities',
-            data: submissionData,
-            success: (response: EventSeverities) => {
-                setLoading(false);
-                if (response.err_msg) {
-                    showErrorModal(response.err_title, response.err_msg);
-                    return;
-                }
+    $.ajax({
+      type: "GET",
+      url: "/api/event/severities",
+      data: submissionData,
+      success: (response: EventSeverities) => {
+        setLoading(false);
+        if (response.err_msg) {
+          showErrorModal(response.err_title, response.err_msg);
+          return;
+        }
 
         const next: EventSeverities = {};
         const newEventsEmpty: Record<string, boolean> = {};
 
         for (const [eventName, countsByAirframe] of Object.entries(response)) {
-          const hasAnyData = Object.values(countsByAirframe).some(
-            (arr) => Array.isArray(arr) && arr.length > 0
-          );
+          const hasAnyData = Object.values(countsByAirframe).some((arr) => Array.isArray(arr) && arr.length > 0);
           newEventsEmpty[eventName] = !hasAnyData;
           next[eventName] = hasAnyData ? countsByAirframe : {};
         }
@@ -525,24 +464,20 @@ export function SeveritiesPage() {
 
         if (Object.keys(anyEvent).length) next["ANY Event"] = anyEvent;
 
-                setEventsEmpty(newEventsEmpty);
-                setEventSeveritiesState(next);
-                setHasQueried(true);
+        setEventsEmpty(newEventsEmpty);
+        setEventSeveritiesState(next);
+        setHasQueried(true);
+      },
+      error: (jqXHR, textStatus, errorThrown) => {
+        setLoading(false);
+        showErrorModal("Error Loading Uploads", errorThrown);
+      },
+    });
+  }, [startMonth, startYear, endMonth, endYear, tagName, setLoading]);
 
-            },
-            error: (jqXHR, textStatus, errorThrown) => {
-                setLoading(false);
-                showErrorModal("Error Loading Uploads", errorThrown);
-            }
-
-        });
-
-    }, [startMonth, startYear, endMonth, endYear, tagName, setLoading]);
-
-    const fetchEventSeverities = (eventName:string) => {
-
-        setLoading(true);
-        console.log("Showing loading spinner!");
+  const fetchEventSeverities = (eventName: string) => {
+    setLoading(true);
+    console.log("Showing loading spinner!");
 
     const startDate = buildStartDate(startYear, startMonth);
     const endDate = buildEndDate(endYear, endMonth);
@@ -553,42 +488,38 @@ export function SeveritiesPage() {
       tagName: tagName,
     };
 
-        return new Promise(() => {
-
-            $.ajax({
-                type: 'GET',
-                url: `/api/event/severities/${encodeURIComponent(eventName)}`,
-                data: submissionData,
-                async: true,
-                success: (response: EventSeverityByAirframe) => {
-                    setLoading(false);
+    return new Promise(() => {
+      $.ajax({
+        type: "GET",
+        url: `/api/event/severities/${encodeURIComponent(eventName)}`,
+        data: submissionData,
+        async: true,
+        success: (response: EventSeverityByAirframe) => {
+          setLoading(false);
 
           if (response.err_msg) {
             showErrorModal(response.err_title, response.err_msg);
             return;
           }
 
-          const hasAnyData = Object.values(response).some(
-            (counts) => Array.isArray(counts) && counts.length > 0
-          );
+          const hasAnyData = Object.values(response).some((counts) => Array.isArray(counts) && counts.length > 0);
 
-                    setEventsEmpty((prev) => ({ ...prev, [eventName]: !hasAnyData }));
-                    
-                    eventSeverities[eventName] = hasAnyData ? response : {};
-                    setEventSeveritiesState((prev) => ({
-                        ...prev,
-                        [eventName]: hasAnyData ? response : {}
-                    }));
-                    setHasQueried(true);
-                },
-                error: (jqXHR, textStatus, errorThrown) => {
-                    setLoading(false);
-                    showErrorModal("Error Loading Uploads", errorThrown);
-                },
-            });
-        });
+          setEventsEmpty((prev) => ({ ...prev, [eventName]: !hasAnyData }));
 
-    };
+          eventSeverities[eventName] = hasAnyData ? response : {};
+          setEventSeveritiesState((prev) => ({
+            ...prev,
+            [eventName]: hasAnyData ? response : {},
+          }));
+          setHasQueried(true);
+        },
+        error: (jqXHR, textStatus, errorThrown) => {
+          setLoading(false);
+          showErrorModal("Error Loading Uploads", errorThrown);
+        },
+      });
+    });
+  };
 
   const checkEvent = (eventName: string) => {
     console.log("Checking event: '", eventName, "'");
@@ -636,11 +567,11 @@ export function SeveritiesPage() {
     setEventChecked(cleared);
     setDatesChanged(false);
 
-        // Check event availability with COUNT queries instead of fetching all events
-        setLoading(true);
-        
-        const startDate = buildStartDate(startYear, startMonth);
-        const endDate = buildEndDate(endYear, endMonth);
+    // Check event availability with COUNT queries instead of fetching all events
+    setLoading(true);
+
+    const startDate = buildStartDate(startYear, startMonth);
+    const endDate = buildEndDate(endYear, endMonth);
 
     const submissionData = {
       startDate: startDate,
@@ -649,34 +580,32 @@ export function SeveritiesPage() {
       tagName: tagName,
     };
 
-        $.ajax({
-            type: 'GET',
-            url: '/api/event/severities/available',
-            data: submissionData,
-            success: (response: Record<string, number>) => {
-                setLoading(false);
-                
-                // Update eventsEmpty based on counts
-                const newEventsEmpty: Record<string, boolean> = {};
-                for (const eventName of eventNames) {
-                    newEventsEmpty[eventName] = (response[eventName] || 0) === 0;
-                }
-                setEventsEmpty(newEventsEmpty);
-                setEventCounts(response);
-                
-                // Clear any previously loaded event data
-                setEventSeveritiesState({});
-                setHasQueried(true);
-                displayPlot(airframe.name);
-            },
-            error: (jqXHR, textStatus, errorThrown) => {
-                setLoading(false);
-                showErrorModal("Error Checking Event Availability", errorThrown);
-            }
-        });
+    $.ajax({
+      type: "GET",
+      url: "/api/event/severities/available",
+      data: submissionData,
+      success: (response: Record<string, number>) => {
+        setLoading(false);
 
-    }, [airframe.name, displayPlot, startYear, startMonth, endYear, endMonth, tagName, setLoading]);
+        // Update eventsEmpty based on counts
+        const newEventsEmpty: Record<string, boolean> = {};
+        for (const eventName of eventNames) {
+          newEventsEmpty[eventName] = (response[eventName] || 0) === 0;
+        }
+        setEventsEmpty(newEventsEmpty);
+        setEventCounts(response);
 
+        // Clear any previously loaded event data
+        setEventSeveritiesState({});
+        setHasQueried(true);
+        displayPlot(airframe.name);
+      },
+      error: (jqXHR, textStatus, errorThrown) => {
+        setLoading(false);
+        showErrorModal("Error Checking Event Availability", errorThrown);
+      },
+    });
+  }, [airframe.name, displayPlot, startYear, startMonth, endYear, endMonth, tagName, setLoading]);
 
   const airframeChangeFromName = (airframeName: string) => {
     //Find airframe data in list corresponding to the name
@@ -720,39 +649,38 @@ export function SeveritiesPage() {
           />
         </div>
 
-                <div className="container-fluid" style={{overflowY: "auto", flex: "1 1 auto"}}>
+        <div className="container-fluid" style={{ overflowY: "auto", flex: "1 1 auto" }}>
+          <div className="row">
+            <div className="col-lg-12" style={{ paddingBottom: "128px" }}>
+              <div className="card mb-2 m-2">
+                <TimeHeader
+                  name="Event Severities"
+                  airframes={airframesForUI.map((a) => a.name)}
+                  airframe={airframe.name}
+                  startYear={startYear}
+                  startMonth={startMonth}
+                  endYear={endYear}
+                  endMonth={endMonth}
+                  datesChanged={datesChanged}
+                  dateChange={dateChange}
+                  airframeChange={(airframe: string) => airframeChangeFromName(airframe)}
+                  updateStartYear={updateStartYear}
+                  updateStartMonth={updateStartMonth}
+                  updateEndYear={updateEndYear}
+                  updateEndMonth={updateEndMonth}
+                  exportCSV={exportCSV}
+                  tagNames={tagNames}
+                  tagName={tagName}
+                  tagNameChange={tagNameChange}
+                  datesOrAirframeChanged={datesOrAirframeChanged}
+                  requireManualInitialUpdate
+                />
 
-                    <div className="row">
-                        <div className="col-lg-12" style={{paddingBottom: "128px"}}>
-                            <div className="card mb-2 m-2">
-                                <TimeHeader
-                                    name="Event Severities"
-                                    airframes={airframesForUI.map(a => a.name)}
-                                    airframe={airframe.name}
-                                    startYear={startYear}
-                                    startMonth={startMonth}
-                                    endYear={endYear}
-                                    endMonth={endMonth}
-                                    datesChanged={datesChanged}
-                                    dateChange={dateChange}
-                                    airframeChange={(airframe: string) => airframeChangeFromName(airframe)} 
-                                    updateStartYear={updateStartYear}
-                                    updateStartMonth={updateStartMonth}
-                                    updateEndYear={updateEndYear}
-                                    updateEndMonth={updateEndMonth}
-                                    exportCSV={exportCSV}
-                                    tagNames={tagNames}
-                                    tagName={tagName}
-                                    tagNameChange={tagNameChange}
-                                    datesOrAirframeChanged={datesOrAirframeChanged}
-                                    requireManualInitialUpdate
-                                />
-
-                                {showNoEventsMessage && (
-                                    <div className="alert alert-info p-2 mx-3 mb-0 mt-2 text-center" role="status">
-                                        No events found for the given parameters. Please update your selection and try again.
-                                    </div>
-                                )}
+                {showNoEventsMessage && (
+                  <div className="alert alert-info p-2 mx-3 mb-0 mt-2 text-center" role="status">
+                    No events found for the given parameters. Please update your selection and try again.
+                  </div>
+                )}
 
                 <div className="card-body" style={{ padding: "0" }}>
                   <div className="row" style={{ margin: "0" }}>
@@ -771,9 +699,7 @@ export function SeveritiesPage() {
                                 onChange={() => checkEvent(eventName)}
                                 style={{ border: "1px solid red" }}
                               />
-                              <label className="form-check-label">
-                                {eventName}
-                              </label>
+                              <label className="form-check-label">{eventName}</label>
                             </div>
                           );
 
@@ -790,18 +716,12 @@ export function SeveritiesPage() {
                             ></input>
 
                             <OverlayTrigger
-                              overlay={(props) => (
-                                <Tooltip {...props}>
-                                  {GetDescription(eventName)}
-                                </Tooltip>
-                              )}
+                              overlay={(props) => <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>}
                               placement="bottom"
                             >
                               <label className="form-check-label">
                                 {eventName}
-                                {eventCounts[eventName]
-                                  ? ` (${eventCounts[eventName]})`
-                                  : ""}
+                                {eventCounts[eventName] ? ` (${eventCounts[eventName]})` : ""}
                               </label>
                             </OverlayTrigger>
                           </div>
@@ -809,10 +729,7 @@ export function SeveritiesPage() {
                       })}
                     </div>
 
-                    <div
-                      className="col-lg-10 p-0!"
-                      style={{ padding: "0 0 0 8", opacity: "0.80" }}
-                    >
+                    <div className="col-lg-10 p-0!" style={{ padding: "0 0 0 8", opacity: "0.80" }}>
                       <div id="severities-plot" className="h-full" />
                     </div>
                   </div>

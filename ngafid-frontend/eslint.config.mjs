@@ -55,6 +55,7 @@ export default defineConfig([
                 document: "readonly",
                 $: "readonly",
                 jQuery: "readonly",
+                JQuery: "readonly", // @types/jquery type namespace (used in type annotations)
                 Cesium: "readonly",
 
                 //Injected globals
@@ -65,6 +66,8 @@ export default defineConfig([
                 airports: 'readonly',
                 airSyncEnabled: 'readonly',
                 airsyncTimeout: 'readonly',
+                azureMapsKey: 'readonly',
+                chartTileBaseUrl: 'readonly',
                 currentPage: 'readonly',
                 doubleTimeSeriesNames: 'readonly',
                 eventDefinitions: 'readonly',
@@ -87,6 +90,7 @@ export default defineConfig([
                 unconfirmedTailsCount: 'readonly',
                 uploads: 'readonly',
                 user: 'readonly',
+                userFleetSelected: 'readonly',
                 userName: 'readonly',
                 userPreferences: 'readonly',
                 visitedAirports: 'readonly',
@@ -204,8 +208,10 @@ export default defineConfig([
             //https://eslint.org/docs/latest/rules/max-len
             "max-len": ["error", {
                 "code": 120,
-                "ignoreUrls": true,          /* URLs can't be sensibly wrapped */
-                "ignoreRegExpLiterals": true, /* regex literals can't be wrapped */
+                "ignoreUrls": true,            /* URLs can't be sensibly wrapped */
+                "ignoreRegExpLiterals": true,  /* regex literals can't be wrapped */
+                "ignoreStrings": true,         /* string literals can't be split (no-useless-concat forbids it) */
+                "ignoreTemplateLiterals": true, /* template literals can't be wrapped */
             }],
 
         },

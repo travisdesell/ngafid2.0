@@ -124,24 +124,38 @@ lint_python() {
 
 lint_js() {
     echo
-    echo "=== JS/TS (ESLint) ==="
+    echo "=== JS/TS/CSS (ESLint + Prettier) ==="
     if ! command -v npm >/dev/null 2>&1; then
-        record "JS/TS (ESLint)" "SKIP" "npm not found (install Node.js)"
+        record "JS/TS/CSS (ESLint + Prettier)" "SKIP" "npm not found (install Node.js)"
         return
     fi
     if [[ ! -d "$ROOT/ngafid-frontend/node_modules" ]]; then
-        record "JS/TS (ESLint)" "SKIP" "dependencies missing (run: cd ngafid-frontend && npm ci)"
+        record "JS/TS/CSS (ESLint + Prettier)" "SKIP" "dependencies missing (run: cd ngafid-frontend && npm ci)"
         return
     fi
+    # ESLint owns code quality; Prettier owns formatting (see .prettierrc). Both
+    # are enforced here. Prettier honors .prettierignore (vendored Cesium, etc.).
     local report="$REPORTS_DIR/js-eslint.txt"
     (cd "$ROOT/ngafid-frontend" && npx --no-install eslint .) | tee "$report"
-    local status=${PIPESTATUS[0]}
-    if [[ "$status" -eq 0 ]]; then
-        record "JS/TS (ESLint)" "OK" "no errors"
-    else
+    local eslint_status=${PIPESTATUS[0]}
+    local prettier="$ROOT/ngafid-frontend/node_modules/.bin/prettier"
+    local fmt_report="$REPORTS_DIR/js-prettier.txt"
+    local prettier_status=0
+    if [[ -x "$prettier" ]]; then
+        echo "--- prettier --check ---" | tee -a "$report"
+        # Run from $ROOT so the repo-root .prettierignore (vendored Cesium, etc.)
+        # applies -- Prettier only reads .prettierignore from its working directory.
+        "$prettier" --check "ngafid-frontend/src/**/*.{js,jsx,mjs,ts,tsx,css}" | tee "$fmt_report"
+        prettier_status=${PIPESTATUS[0]}
+    fi
+    if [[ "$eslint_status" -eq 0 && "$prettier_status" -eq 0 ]]; then
+        record "JS/TS/CSS (ESLint + Prettier)" "OK" "no errors, formatting clean"
+    elif [[ "$eslint_status" -ne 0 ]]; then
         local detail
         detail=$(grep -oE '[0-9]+ problems?.*' "$report" | tail -1 || true)
-        record "JS/TS (ESLint)" "PROBLEMS" "${detail:-see $report} -- auto-fix many with 'npm run check -- --fix'"
+        record "JS/TS/CSS (ESLint + Prettier)" "PROBLEMS" "${detail:-see $report} -- auto-fix with 'scripts/format.sh web'"
+    else
+        record "JS/TS/CSS (ESLint + Prettier)" "PROBLEMS" "formatting differences -- fix with 'scripts/format.sh web'"
     fi
 }
 

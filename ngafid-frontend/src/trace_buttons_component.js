@@ -1,136 +1,131 @@
-import 'bootstrap';
+import "bootstrap";
 import React from "react";
 
-import Plotly from 'plotly.js';
-import {showErrorModal} from "./error_modal.js";
+import Plotly from "plotly.js";
+import { showErrorModal } from "./error_modal.js";
 
 class TraceButtons extends React.Component {
-    constructor(props) {
-        super(props);
+  constructor(props) {
+    super(props);
 
-        this.state = {
-            parentFlight: this.props.parentFlight
-        };
+    this.state = {
+      parentFlight: this.props.parentFlight,
+    };
+  }
+
+  traceClicked(seriesName) {
+    this.props.showPlot();
+
+    const parentFlight = this.state.parentFlight;
+
+    //check to see if we've already loaded this time series
+    if (!(seriesName in parentFlight.state.traceIndex)) {
+      console.log(seriesName);
+      console.log(`seriesName: ${seriesName}, flightId: ${this.props.flightId}`);
+
+      $.ajax({
+        type: "GET",
+        url: `/api/flight/${this.props.flightId}/double-series/${seriesName}`,
+        async: true,
+        success: (response) => {
+          const trace = {
+            x: response.x,
+            y: response.y,
+            mode: "lines",
+            name: `${this.props.flightId} - ${seriesName}`,
+          };
+
+          //set the trace number for this series
+          parentFlight.state.traceIndex[seriesName] = $("#plot")[0].data.length;
+          parentFlight.state.traceVisibility[seriesName] = true;
+          parentFlight.setState(parentFlight.state);
+
+          Plotly.addTraces("plot", [trace]);
+        },
+        error: (jqXHR, textStatus, errorThrown) => {
+          showErrorModal(`Failed to load time series data for ${seriesName}`, errorThrown);
+        },
+      });
+    } else {
+      //toggle visibility for this series
+      const visibility = !parentFlight.state.traceVisibility[seriesName];
+      parentFlight.state.traceVisibility[seriesName] = visibility;
+      parentFlight.setState(parentFlight.state);
+
+      console.log("Toggled Visibility to: ", visibility);
+
+      Plotly.restyle("plot", { visible: visibility }, [parentFlight.state.traceIndex[seriesName]]);
     }
+  }
 
-    traceClicked(seriesName) {
-        this.props.showPlot();
+  render() {
+    const cellClasses = "d-flex flex-row pb-1";
+    const buttonClasses = "m-1 btn btn-outline-secondary";
+    const styleButton = {
+      flex: "0 0 10em",
+    };
 
-        const parentFlight = this.state.parentFlight;
+    const parentFlight = this.state.parentFlight;
 
-        //check to see if we've already loaded this time series
-        if (!(seriesName in parentFlight.state.traceIndex)) {
+    return (
+      <div className="w-100">
+        <b className={"p-1 d-flex flex-row justify-content-start align-items-center"} style={{ marginBottom: "0" }}>
+          <div
+            className="d-flex flex-column mr-3"
+            style={{ width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px" }}
+          >
+            <i className="fa fa-area-chart ml-2" style={{ fontSize: "12px", marginTop: "3px", opacity: "0.50" }} />
+          </div>
+          <div style={{ fontSize: "0.75em" }}>Parameters</div>
+        </b>
 
-            console.log(seriesName);
-            console.log(`seriesName: ${  seriesName  }, flightId: ${  this.props.flightId}`);
+        <div className="p-1 pb-2" style={{ overflowX: "auto", minWidth: 0 }}>
+          <div style={{ width: "max-content", minWidth: "100%" }}>
+            <div className={cellClasses}>
+              {parentFlight.state.commonTraceNames.map((traceName) => {
+                const ariaPressed = parentFlight.state.traceVisibility[traceName];
+                let active = "";
+                if (ariaPressed) active = " active";
 
-            $.ajax({
-                type: 'GET',
-                url: `/api/flight/${this.props.flightId}/double-series/${seriesName}`,
-                async: true,
-                success: (response) => {
-
-                    const trace = {
-                        x: response.x,
-                        y: response.y,
-                        mode: "lines",
-                        name: `${this.props.flightId  } - ${  seriesName}`
-                    };
-
-                    //set the trace number for this series
-                    parentFlight.state.traceIndex[seriesName] = $("#plot")[0].data.length;
-                    parentFlight.state.traceVisibility[seriesName] = true;
-                    parentFlight.setState(parentFlight.state);
-
-                    Plotly.addTraces('plot', [trace]);
-                },
-                error: (jqXHR, textStatus, errorThrown) => {
-                    showErrorModal(`Failed to load time series data for ${seriesName}`, errorThrown);
-                },
-            });
-
-        } else {
-
-            //toggle visibility for this series
-            const visibility = !parentFlight.state.traceVisibility[seriesName];
-            parentFlight.state.traceVisibility[seriesName] = visibility;
-            parentFlight.setState(parentFlight.state);
-
-            console.log("Toggled Visibility to: ", visibility);
-
-            Plotly.restyle('plot', {visible: visibility}, [parentFlight.state.traceIndex[seriesName]]);
-
-        }
-
-    }
-
-    render() {
-        const cellClasses = "d-flex flex-row pb-1";
-        const buttonClasses = "m-1 btn btn-outline-secondary";
-        const styleButton = {
-            flex: "0 0 10em"
-        };
-
-        const parentFlight = this.state.parentFlight;
-
-        return (
-
-            <div className="w-100">
-
-                <b className={"p-1 d-flex flex-row justify-content-start align-items-center"}
-                   style={{marginBottom: "0"}}>
-                    <div className="d-flex flex-column mr-3"
-                         style={{width: "16px", minWidth: "16px", maxWidth: "16px", height: "16px"}}>
-                        <i className='fa fa-area-chart ml-2'
-                           style={{fontSize: "12px", marginTop: "3px", opacity: "0.50"}}/>
-                    </div>
-                    <div style={{fontSize: "0.75em"}}>
-                        Parameters
-                    </div>
-                </b>
-
-                <div className="p-1 pb-2" style={{overflowX: "auto", minWidth: 0}}>
-                    <div style={{width: "max-content", minWidth: "100%"}}>
-                    <div className={cellClasses}>
-                        {
-                            parentFlight.state.commonTraceNames.map((traceName) => {
-                                const ariaPressed = parentFlight.state.traceVisibility[traceName];
-                                let active = "";
-                                if (ariaPressed) active = " active";
-
-                                return (
-                                    <button className={buttonClasses + active} key={traceName} style={styleButton}
-                                            data-bs-toggle="button" aria-pressed={ariaPressed}
-                                            onClick={() => this.traceClicked(traceName)}>
-                                        {traceName}
-                                    </button>
-                                );
-                            })
-                        }
-                    </div>
-                    <div className={cellClasses}>
-                        {
-                            parentFlight.state.uncommonTraceNames.map((traceName) => {
-                                const ariaPressed = parentFlight.state.traceVisibility[traceName];
-                                let active = "";
-                                if (ariaPressed) active = " active";
-
-                                return (
-                                    <button className={buttonClasses + active} key={traceName} style={styleButton}
-                                            data-bs-toggle="button" aria-pressed={ariaPressed}
-                                            onClick={() => this.traceClicked(traceName)}>
-                                        {traceName}
-                                    </button>
-                                );
-                            })
-                        }
-                    </div>
-                    </div>
-
-                </div>
+                return (
+                  <button
+                    className={buttonClasses + active}
+                    key={traceName}
+                    style={styleButton}
+                    data-bs-toggle="button"
+                    aria-pressed={ariaPressed}
+                    onClick={() => this.traceClicked(traceName)}
+                  >
+                    {traceName}
+                  </button>
+                );
+              })}
             </div>
-        );
-    }
+            <div className={cellClasses}>
+              {parentFlight.state.uncommonTraceNames.map((traceName) => {
+                const ariaPressed = parentFlight.state.traceVisibility[traceName];
+                let active = "";
+                if (ariaPressed) active = " active";
+
+                return (
+                  <button
+                    className={buttonClasses + active}
+                    key={traceName}
+                    style={styleButton}
+                    data-bs-toggle="button"
+                    aria-pressed={ariaPressed}
+                    onClick={() => this.traceClicked(traceName)}
+                  >
+                    {traceName}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
 
-export {TraceButtons};
+export { TraceButtons };

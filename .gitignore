@@ -76,3 +76,7 @@ lint-reports/
 
 # All files/folders containing 'IGNORE' in their name:
 **IGNORE**
+
+# ...but keep Prettier's ignore file, which the above pattern matches on
+# case-insensitive filesystems (.prettierignore -> "IGNORE").
+!.prettierignore

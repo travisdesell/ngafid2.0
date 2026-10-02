@@ -1,72 +1,55 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 
 export class DarkModeToggle extends Component {
+  constructor(props) {
+    super(props);
 
-    constructor(props) {
+    //Initialize state based on localStorage value
+    const darkMode = localStorage.getItem("darkMode") === "true";
+    this.state = {
+      useDarkMode: darkMode,
+    };
 
-        super(props);
+    this.updateDarkMode = this.updateDarkMode.bind(this);
+  }
 
-        //Initialize state based on localStorage value
-        const darkMode = localStorage.getItem('darkMode') === 'true';
-        this.state = {
-            useDarkMode: darkMode,
-        };
+  componentDidMount() {
+    const darkMode = localStorage.getItem("darkMode") === "true";
+    this.setState({ useDarkMode: darkMode }, () => {
+      this.applyTheme(this.state.useDarkMode);
+    });
+  }
 
-        this.updateDarkMode = this.updateDarkMode.bind(this);
+  applyTheme(useDarkMode) {
+    const root = document.documentElement;
+    if (useDarkMode) root.classList.add("dark-theme");
+    else root.classList.remove("dark-theme");
+  }
 
-    }
+  updateDarkMode() {
+    const newDarkMode = !this.state.useDarkMode;
 
-    componentDidMount() {
+    //Update the localStorage value
+    localStorage.setItem("darkMode", newDarkMode ? "true" : "false");
 
-        const darkMode = localStorage.getItem('darkMode') === 'true';
-        this.setState(
-            { useDarkMode: darkMode }, () => {this.applyTheme(this.state.useDarkMode);}
-        );
+    //Apply the theme
+    this.applyTheme(newDarkMode);
 
-    }
+    //Update the state
+    this.setState({ useDarkMode: newDarkMode });
 
+    if (this.props.onClickAlt) this.props.onClickAlt();
+  }
 
-    applyTheme(useDarkMode) {
-
-        const root = document.documentElement;
-        if (useDarkMode)
-            root.classList.add('dark-theme');
-        else
-            root.classList.remove('dark-theme');
-
-    }
-
-    updateDarkMode() {
-
-        const newDarkMode = !this.state.useDarkMode;
-
-        //Update the localStorage value
-        localStorage.setItem('darkMode', newDarkMode ? 'true' : 'false');
-
-        //Apply the theme
-        this.applyTheme(newDarkMode);
-
-        //Update the state
-        this.setState({ useDarkMode: newDarkMode });
-
-        if (this.props.onClickAlt)
-            this.props.onClickAlt();
-
-    }
-
-    render() {
-        return (
-            <a>
-                <div className="button-edge">
-                    <button className="button-behind" onClick={this.updateDarkMode}>
-                        {this.state.useDarkMode ? (
-                            <div className="button fa fa-sun-o" />
-                        ) : (
-                            <div className="button fa fa-moon-o" />
-                        )}
-                    </button>
-                </div>
-            </a>
-        );
-    }
+  render() {
+    return (
+      <a>
+        <div className="button-edge">
+          <button className="button-behind" onClick={this.updateDarkMode}>
+            {this.state.useDarkMode ? <div className="button fa fa-sun-o" /> : <div className="button fa fa-moon-o" />}
+          </button>
+        </div>
+      </a>
+    );
+  }
 }
