@@ -222,7 +222,7 @@ public class UserTest extends TestWithConnection {
                 false,
                 false,
                 1,
-                -1);
+                1);
 
         User actualUser = User.get(connection, userId, fleetId);
         assertEquals(expectedUser, actualUser);
@@ -255,7 +255,7 @@ public class UserTest extends TestWithConnection {
                 false,
                 false,
                 2,
-                -1);
+                2);
 
         User actualUser = User.get(connection, userId, fleetId);
         assertEquals(expectedUser, actualUser);
@@ -288,10 +288,25 @@ public class UserTest extends TestWithConnection {
                 true,
                 true,
                 1,
-                -1);
+                1);
 
         User actualUser = User.get(connection, userId, fleetId);
         assertEquals(expectedUser, actualUser);
+    }
+
+    /**
+     * Verifies {@code setSelectedFleetId} rejects the "no fleet selected" sentinel (-1). A web user must always have a
+     * valid selected fleet, so selecting fleet -1 (which matches no fleet) throws an {@link AccountException} rather
+     * than leaving the user in a fleet-less state.
+     *
+     * @throws SQLException if the initial user load fails
+     * @throws AccountException if the initial user load fails (not expected for a valid user/fleet pair)
+     */
+    @Test
+    @DisplayName("Should throw when selecting fleet id -1")
+    public void setSelectedFleetIdWithNegativeOneThrows() throws SQLException, AccountException {
+        User user = User.get(connection, 1, 1);
+        assertThrows(AccountException.class, () -> user.setSelectedFleetId(connection, -1));
     }
 
     // ==================== FLIGHT ACCESS TESTS ====================

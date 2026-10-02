@@ -132,9 +132,14 @@ public class FleetAccessNamedTest {
     @Test
     @DisplayName("Should test updateFleetName method with ")
     public void testUpdateFleetNameWithRealDatabaseOperations() throws SQLException, AccountException {
-        // Get a FleetAccessNamed object from the database using existing test data
+        // Get a FleetAccessNamed object from the database using existing test data. User 999 has access to
+        // multiple fleets and the query order is not guaranteed, so select the entry for fleet 999 explicitly
+        // (rather than assuming it is first) since that is the fleet this test updates.
         ArrayList<FleetAccess> allAccess = FleetAccessNamed.getAllFleetAccessEntries(connection, 999);
-        FleetAccessNamed fleetAccessNamed = (FleetAccessNamed) allAccess.get(0);
+        FleetAccessNamed fleetAccessNamed = (FleetAccessNamed) allAccess.stream()
+                .filter(access -> access.getFleetId() == 999)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No fleet-access entry for fleet 999"));
 
         // Store the original fleet name
         String originalFleetName = fleetAccessNamed.getFleetName();

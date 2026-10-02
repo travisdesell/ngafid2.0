@@ -480,10 +480,11 @@ public class FlightTest extends TestWithConnection {
 
             assertTrue(true, "Batch update completed successfully");
         } catch (SQLException e) {
+            String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
             assertTrue(
-                    e.getMessage().contains("Unique index")
-                            || e.getMessage().contains("duplicate")
-                            || e.getMessage().contains("constraint"),
+                    message.contains("unique index") // H2
+                            || message.contains("duplicate") // MySQL "Duplicate entry"
+                            || message.contains("constraint"),
                     "Expected constraint violation error: " + e.getMessage());
         }
     }
@@ -509,10 +510,11 @@ public class FlightTest extends TestWithConnection {
 
             assertTrue(true, "Batch update completed successfully");
         } catch (SQLException e) {
+            String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
             assertTrue(
-                    e.getMessage().contains("Unique index")
-                            || e.getMessage().contains("duplicate")
-                            || e.getMessage().contains("constraint"),
+                    message.contains("unique index") // H2
+                            || message.contains("duplicate") // MySQL "Duplicate entry"
+                            || message.contains("constraint"),
                     "Expected constraint violation error: " + e.getMessage());
         }
     }
@@ -2510,7 +2512,11 @@ public class FlightTest extends TestWithConnection {
                 try {
                     stmt.executeUpdate();
                 } catch (SQLException e) {
-                    // Ignore if already exists
+                    // Ignore duplicate-key errors (row already inserted by a prior test); surface anything else
+                    // so a real insert failure is not silently hidden.
+                    if (!(e instanceof java.sql.SQLIntegrityConstraintViolationException)) {
+                        throw e;
+                    }
                 }
             }
         }
@@ -2526,7 +2532,11 @@ public class FlightTest extends TestWithConnection {
                 try {
                     stmt.executeUpdate();
                 } catch (SQLException e) {
-                    // Ignore if already exists
+                    // Ignore duplicate-key errors (row already inserted by a prior test); surface anything else
+                    // so a real insert failure is not silently hidden.
+                    if (!(e instanceof java.sql.SQLIntegrityConstraintViolationException)) {
+                        throw e;
+                    }
                 }
             }
         }
@@ -2659,14 +2669,20 @@ public class FlightTest extends TestWithConnection {
                 try {
                     stmt.executeUpdate();
                 } catch (SQLException e) {
-                    // Ignore if already exists
+                    // Ignore duplicate-key errors (row already inserted by a prior test); surface anything else
+                    // so a real insert failure is not silently hidden.
+                    if (!(e instanceof java.sql.SQLIntegrityConstraintViolationException)) {
+                        throw e;
+                    }
                 }
             }
         }
     }
 
     private Map<String, Integer> getSeriesNameIds(Connection connection) throws SQLException {
-        Map<String, Integer> nameIds = new HashMap<>();
+        // Case-insensitive so lookups match the DB's case-insensitive collation (e.g. a "double" lookup
+        // finds a "DOUBLE" row inserted by production code), avoiding missed inserts.
+        Map<String, Integer> nameIds = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         try (PreparedStatement stmt = connection.prepareStatement("SELECT id, name FROM double_series_names");
                 ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
@@ -2677,7 +2693,9 @@ public class FlightTest extends TestWithConnection {
     }
 
     private Map<String, Integer> getDataTypeIds(Connection connection) throws SQLException {
-        Map<String, Integer> typeIds = new HashMap<>();
+        // Case-insensitive so a "double" lookup finds a "DOUBLE" row (production code inserts the uppercase
+        // form, and MySQL's unique key on name is case-insensitive).
+        Map<String, Integer> typeIds = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         try (PreparedStatement stmt = connection.prepareStatement("SELECT id, name FROM data_type_names");
                 ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
@@ -4285,7 +4303,9 @@ public class FlightTest extends TestWithConnection {
             }
         } catch (SQLException e) {
             // If it already exists, get the existing ID
-            if (e.getMessage().contains("Unique index or primary key violation")) {
+            if (e instanceof java.sql.SQLIntegrityConstraintViolationException
+                    || e.getMessage().contains("Unique index or primary key violation") // H2
+                    || e.getMessage().contains("Duplicate entry")) { // MySQL
                 try (PreparedStatement stmt =
                         connection.prepareStatement("SELECT id FROM string_series_names WHERE name = ?")) {
                     stmt.setString(1, "TestStringSeries_" + flightId);
@@ -4317,7 +4337,9 @@ public class FlightTest extends TestWithConnection {
             }
         } catch (SQLException e) {
             // If it already exists, get the existing ID
-            if (e.getMessage().contains("Unique index or primary key violation")) {
+            if (e instanceof java.sql.SQLIntegrityConstraintViolationException
+                    || e.getMessage().contains("Unique index or primary key violation") // H2
+                    || e.getMessage().contains("Duplicate entry")) { // MySQL
                 try (PreparedStatement stmt =
                         connection.prepareStatement("SELECT id FROM data_type_names WHERE name = ?")) {
                     stmt.setString(1, "String");
@@ -4457,16 +4479,21 @@ public class FlightTest extends TestWithConnection {
         Filter filter = new Filter("AND");
 
         // This should trigger the path: if (fleetId <= 0) { if (filter != null) { ... } }
-        // The query becomes: "SELECT count(id) FROM flights WHERE ()" which causes SQL error
+        // The query becomes: "SELECT count(id) FROM flights WHERE ()" which causes a SQL error.
         try {
             int count = Flight.getNumFlights(connection, -1, filter);
             assertTrue(count >= 0, "Should return a non-negative count");
         } catch (Exception e) {
-            // Expected: H2 database doesn't support empty conditions like "WHERE ()"
+            // Expected: an empty "WHERE ()" condition is a SQL error. The exact message is
+            // database-specific (H2 reports "Data conversion error"/"ROW to BOOLEAN"; MySQL
+            // reports a SQL syntax error), so accept any of those signatures.
+            String message = e.getMessage() == null ? "" : e.getMessage();
             assertTrue(
-                    e.getMessage().contains("Data conversion error")
-                            || e.getMessage().contains("ROW to BOOLEAN"),
-                    "Expected SQL syntax error from empty condition");
+                    message.contains("Data conversion error")
+                            || message.contains("ROW to BOOLEAN")
+                            || message.toLowerCase().contains("sql syntax")
+                            || e instanceof java.sql.SQLSyntaxErrorException,
+                    "Expected a SQL error from the empty filter condition, but was: " + message);
         }
     }
 
@@ -4626,8 +4653,8 @@ public class FlightTest extends TestWithConnection {
         // Should return at most 2 flights due to the limit parameter
         assertTrue(flights.size() <= 2, "Should return at most 2 flights due to limit parameter");
 
-        // Verify the returned flights are ordered by ID
-        assertTrue(flights.get(0).getId() <= flights.get(1).getId(), "Flights should be ordered by ID");
+        // Verify the returned flights are ordered by ID descending (the query uses ORDER BY id DESC).
+        assertTrue(flights.get(0).getId() >= flights.get(1).getId(), "Flights should be ordered by ID descending");
     }
 
     /**
