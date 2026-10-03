@@ -15,6 +15,10 @@ interface BugReportPageProps {
   user: NGAFIDUser;
 }
 
+/**
+ * Page component that presents a bug-report form and submits the user's report to
+ * the server on behalf of the signed-in NGAFID user.
+ */
 export default class BugReportPage extends React.Component<BugReportPageProps> {
   constructor(props: BugReportPageProps) {
     super(props);

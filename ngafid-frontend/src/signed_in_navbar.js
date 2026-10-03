@@ -172,6 +172,9 @@ class DropdownLink extends React.Component {
   }
 }
 
+/**
+ * Primary navigation bar shown to authenticated users, exposing the app sections, account menu and dark-mode toggle.
+ */
 export default class SignedInNavbar extends React.Component {
   constructor(props) {
     super(props);

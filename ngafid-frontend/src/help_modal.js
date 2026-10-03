@@ -78,6 +78,12 @@ const container = document.querySelector("#help-modal-content");
 const root = createRoot(container);
 root.render(<HelpModal ref={helpModalRef} />);
 
+/**
+ * Displays the shared help modal with the given heading and content, running an optional callback when it is closed.
+ * @param title heading text shown at the top of the help modal
+ * @param message help content presented to the user
+ * @param closeMethod callback invoked when the modal is dismissed
+ */
 export function showHelpModal(title, message, closeMethod) {
   console.log("Showing help modal with title: '", title, "' and message: ", message);
 

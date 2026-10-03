@@ -64,14 +64,38 @@ The individual checks and how to auto-fix each:
 | ------------------------------------ | ---------------------------------------- | ---------------------------- | --------------------------------------------------- |
 | Java (style + Javadoc, max line 120) | Checkstyle                               | `scripts/lint.sh checkstyle` | `scripts/format.sh java`; Javadoc/naming are manual |
 | Java + Kotlin (formatting)           | Spotless (Palantir Java Format + ktlint) | `scripts/lint.sh format`     | `scripts/format.sh java` (or `kotlin`)              |
-| Python (lint + format)               | ruff                                     | `scripts/lint.sh python`     | `scripts/format.sh python`                          |
-| JS / TS (code quality)               | ESLint                                   | `scripts/lint.sh js`         | `scripts/format.sh js`                              |
+| Python (lint + format + docstrings)  | ruff (incl. pydocstyle)                  | `scripts/lint.sh python`     | `scripts/format.sh python`                          |
+| JS / TS (code quality + JSDoc)       | ESLint (incl. eslint-plugin-jsdoc)       | `scripts/lint.sh js`         | `scripts/format.sh js`                              |
 | JS / TS / CSS (formatting)           | Prettier                                 | `scripts/lint.sh js` / `css` | `scripts/format.sh web`                             |
 | HTML templates                       | djLint                                   | `scripts/lint.sh html`       | `scripts/format.sh html`                            |
 | Bash                                 | shfmt + shellcheck                       | `scripts/lint.sh bash`       | `scripts/format.sh bash` (shellcheck is manual)     |
 | YAML                                 | yamllint + Prettier                      | `scripts/lint.sh yaml`       | `scripts/format.sh yaml`                            |
 | Markdown                             | markdownlint + Prettier                  | `scripts/lint.sh markdown`   | `scripts/format.sh markdown`                        |
 | Dockerfile                           | hadolint                                 | `scripts/lint.sh dockerfile` | manual (no auto-fixer)                              |
+
+### Docstrings (enforced)
+
+Every element of the public API must carry a docstring, and CI enforces this
+across all three languages (scoped to the public/exported surface to match each
+other):
+
+- **Java** — Javadoc on every public type and method
+  (Checkstyle `MissingJavadocType` / `MissingJavadocMethod`). Trivial property
+  getters/setters and `@Override` methods are exempt. A summary sentence is
+  required, and `@param`/`@return`/`@throws` must be present and accurate.
+- **Python** — Google-style docstrings on every public module, class, and
+  function (ruff `D` rules with `convention = "google"`). Private
+  (underscore-prefixed) members are not gated by the tool but should still be
+  documented.
+- **JS / TS** — JSDoc on every exported function and class, plus complete
+  `@param`/`@returns` on any function that has a JSDoc block
+  (`eslint-plugin-jsdoc`, `publicOnly`). Individual class methods are not required
+  to carry their own block. Type braces are omitted from tags — TypeScript already
+  carries the types.
+
+Docstrings must be **behavior-focused**: describe what the element does, its side
+effects, and any non-obvious behavior — not restate its name or signature. See
+the repository `CLAUDE.md` for the full style guidance.
 
 Rule configs (at the repo root unless noted):
 

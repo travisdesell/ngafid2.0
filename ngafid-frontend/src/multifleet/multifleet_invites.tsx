@@ -114,6 +114,15 @@ type MultifleetInviteProps = {
   invites: MultifleetInvite[];
   removeMultifleetInviteLocally: (fleetName: string) => void;
 };
+/**
+ * Renders badges for the user's pending multifleet invitations, or nothing when there
+ * are none, allowing each invite to be dismissed locally.
+ *
+ * @param props Component props.
+ * @param props.invites The pending multifleet invitations to display.
+ * @param props.removeMultifleetInviteLocally Callback to remove an invite from local state by fleet name.
+ * @returns The rendered invite badges, or null when there are no invites.
+ */
 export function MultifleetInvites({ invites, removeMultifleetInviteLocally }: MultifleetInviteProps) {
   console.log("Rendering Multifleet Invite Badges: ", invites);
 

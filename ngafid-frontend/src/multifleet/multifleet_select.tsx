@@ -112,6 +112,16 @@ type MultifleetSelectProps = {
   fleetSelected: number;
   updateSelectedFleet: (fleetId: number) => void;
 };
+/**
+ * Renders a selector of the fleets the user can access and a control for creating a
+ * new fleet, notifying the parent when the active fleet selection changes.
+ *
+ * @param props Component props.
+ * @param props.fleetsWithAccess The fleets the current user is permitted to view or manage.
+ * @param props.fleetSelected The id of the currently selected fleet.
+ * @param props.updateSelectedFleet Callback invoked with the newly chosen fleet id.
+ * @returns The rendered fleet selector element.
+ */
 export function MultifleetSelect({ fleetsWithAccess, fleetSelected, updateSelectedFleet }: MultifleetSelectProps) {
   console.log("Rendering MultifleetSelect with fleets:", fleetsWithAccess);
   const [newFleetName, setNewFleetName] = React.useState("");

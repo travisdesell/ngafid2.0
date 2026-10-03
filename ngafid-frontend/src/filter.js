@@ -106,6 +106,13 @@ function recursiveValid(filters, rules) {
   return true;
 }
 
+/**
+ * Validates a filter tree against the set of allowed rules.
+ *
+ * @param filters the filter tree (groups and leaf conditions) to validate
+ * @param rules the available rule definitions each leaf condition is checked against
+ * @returns true when every condition in the tree is complete and valid, false otherwise
+ */
 export function isValidFilter(filters, rules) {
   //Recursively validate filter
   const valid = recursiveValid(filters, rules);
@@ -437,6 +444,13 @@ class Rule extends React.Component {
   }
 }
 
+/**
+ * Renders a filter group: a nested set of filter rules and sub-groups with controls for adding,
+ * removing, saving and loading filters.
+ *
+ * @param props the component props, including the filter tree, available rules and stored filters
+ * @returns the rendered filter group element
+ */
 export function Group(props) {
   const [showSavePopover, setShowSavePopover] = React.useState(false);
   const [showLoadPopover, setShowLoadPopover] = React.useState(false);
@@ -1247,6 +1261,10 @@ export function Group(props) {
   return render();
 }
 
+/**
+ * Top-level filter component that wraps a root filter Group, providing the full query-builder UI
+ * for constructing and editing a flight filter.
+ */
 class Filter extends React.Component {
   constructor(props) {
     super(props);

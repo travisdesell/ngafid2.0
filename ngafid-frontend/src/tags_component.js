@@ -97,7 +97,7 @@ class Tags extends React.Component {
    * Used to compare two tags for equality
    * @param tagA the first tag to compare
    * @param tagB the second tag to compare
-   * @return a boolean representing whether or not the two tags are equal
+   * @returns a boolean representing whether or not the two tags are equal
    */
   tagEquals(tagA, tagB) {
     return (
@@ -256,7 +256,8 @@ class Tags extends React.Component {
   }
 
   /**
-   * Renders the Tags component
+   * Renders the Tags component.
+   * @returns the rendered tags panel, including the tag list, selection controls and add/edit form
    */
   render() {
     const cellClasses = "d-flex flex-row p-1";

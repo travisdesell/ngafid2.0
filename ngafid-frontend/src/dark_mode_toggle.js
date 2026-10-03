@@ -1,5 +1,8 @@
 import React, { Component } from "react";
 
+/**
+ * Toggle control that reflects and updates the user's dark-mode preference, persisting the choice to localStorage.
+ */
 export class DarkModeToggle extends Component {
   constructor(props) {
     super(props);

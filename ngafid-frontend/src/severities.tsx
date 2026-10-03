@@ -51,6 +51,12 @@ type EventSeverities = Record<string, EventSeverityByAirframe>;
 
 const eventSeverities: EventSeverities = {};
 
+/**
+ * Renders the event severities page, letting the user pick airframes and event
+ * types to chart the distribution and counts of event severities across flights.
+ *
+ * @returns The rendered severities page element.
+ */
 export function SeveritiesPage() {
   const airframesForUI = useMemo(() => {
     //Remove GFD

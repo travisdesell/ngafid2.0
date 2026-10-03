@@ -285,6 +285,10 @@ const rollPalette = paletteGenerator(
   [ROLL_THRESHOLDS.Min, ROLL_THRESHOLDS.Dangerous, ROLL_THRESHOLDS.MaxSoft],
 );
 
+/**
+ * Card visualizing a single turn-to-final approach, plotting the flight's roll against threshold bands to highlight
+ * dangerous bank angles on the approach.
+ */
 class TTFCard extends React.Component {
   constructor(props) {
     super(props);

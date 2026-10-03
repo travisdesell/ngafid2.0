@@ -424,6 +424,8 @@ function getUploadeIdentifier(filename, size) {
 
 /**
  * Server uploads can be left as PROCESSED_OK when every flight in the zip failed; use flight counts for display.
+ * @param uploadInfo upload record carrying the stored status and per-flight error/warning/valid counts
+ * @returns the status to display, downgrading a stale PROCESSED_OK to a failure or warning based on the counts
  */
 function resolveUploadDisplayStatus(uploadInfo) {
   const status = uploadInfo.status;
@@ -449,6 +451,10 @@ function pendingUploadsNotOnServer(pendingUploads, serverUploads) {
   return pendingUploads.filter((p) => !onServer.has(p.identifier));
 }
 
+/**
+ * Page component that lists a fleet's uploads, reconciling pending client-side uploads with those known to the server
+ * and driving the upload, re-upload and status-refresh workflow.
+ */
 export class UploadsPage extends React.Component {
   constructor(props) {
     super(props);

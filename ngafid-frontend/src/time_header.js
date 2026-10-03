@@ -2,6 +2,10 @@ import "bootstrap";
 
 import React, { Children } from "react";
 
+/**
+ * Header row that renders a labelled time/date range selector alongside any extra header and row components passed in,
+ * exposing an update button to apply the chosen range.
+ */
 export default class TimeHeader extends React.Component {
   constructor(props) {
     super(props);
@@ -279,6 +283,9 @@ export default class TimeHeader extends React.Component {
   }
 }
 
+/**
+ * Supplies the turn-to-final-specific header controls, including the airport and runway selection dropdowns.
+ */
 class TurnToFinalHeaderComponents extends React.Component {
   constructor(props) {
     super(props);

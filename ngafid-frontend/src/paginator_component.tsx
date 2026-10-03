@@ -31,6 +31,10 @@ type PaginatorState = {
   goto_value: number;
 };
 
+/**
+ * Pagination control that renders page navigation (previous/next, jump-to-page, and
+ * items-per-page) and reports page and page-size changes back to its parent.
+ */
 class Paginator extends React.Component<PaginatorProps, PaginatorState> {
   constructor(props: PaginatorProps) {
     super(props);
@@ -68,9 +72,10 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
   }
 
   /**
-   ** Jumps to a page in this collection of queried flights
-   ** @param pg the page to jump to
-   **/
+   * Jumps to a page in this collection of queried flights.
+   *
+   * @param page the zero-based page index to jump to
+   */
   jumpPage(page: number) {
     if (page < this.props.numberPages && page >= 0) this.props.updateCurrentPage(page);
   }
@@ -92,8 +97,10 @@ class Paginator extends React.Component<PaginatorProps, PaginatorState> {
   }
 
   /**
-   ** Repaginates the page configuration when the numPerPage field has been changed by the user
-   **/
+   * Repaginates the page configuration when the numPerPage field has been changed by the user.
+   *
+   * @param pageSize the new number of items to show per page
+   */
   repaginate(pageSize: number) {
     console.log("Re-Paginating");
     this.props.updateItemsPerPage(pageSize);

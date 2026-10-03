@@ -87,6 +87,10 @@ const STATUS_ENTRIES = STATUS_NAMES_LIST.map((name) => {
   } as StatusEntry;
 });
 
+/**
+ * Page component that fetches and displays the health status of NGAFID backend
+ * services, rendering each entry with its current state icon and message.
+ */
 export default class StatusPage extends React.Component {
   constructor(props: object) {
     super(props);

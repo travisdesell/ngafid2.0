@@ -136,7 +136,12 @@ const POPUP_CLOSER_CLASS =
   "absolute top-2 right-3 ol-popup-closer no-underline " +
   "scale-100 hover:scale-125 transition-transform duration-200 ease-in-out";
 
-/** Chart tile base URL (injected by backend via template, or fallback for local dev). */
+/**
+ * Resolves the chart tile base URL, preferring the value injected by the backend template
+ * and falling back to the local development server.
+ *
+ * @returns The base URL used to request chart map tiles.
+ */
 function getChartTileBase(): string {
   if (typeof window !== "undefined" && (window as unknown as { chartTileBaseUrl?: string }).chartTileBaseUrl != null)
     return (window as unknown as { chartTileBaseUrl: string }).chartTileBaseUrl;
@@ -412,7 +417,10 @@ if (gfdIndex !== -1) airframesList.splice(gfdIndex, 1);
 // =======================
 
 /**
- * Interpolates color from green to red based on intensity value
+ * Interpolates a color from green to red based on an intensity value.
+ *
+ * @param value Intensity in the range 0 (green) to 1 (red).
+ * @returns An rgba color string for the given intensity.
  */
 function interpolateColor(value: number): string {
   const r = Math.round(255 * value);
@@ -421,21 +429,39 @@ function interpolateColor(value: number): string {
 }
 
 /**
- * Converts degrees to radians
+ * Converts an angle from degrees to radians.
+ *
+ * @param degrees The angle in degrees.
+ * @returns The equivalent angle in radians.
  */
 function toRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
 }
 
 /**
- * Creates a coordinate key for grouping events by location
+ * Creates a string key for grouping events that share a location, rounding the
+ * coordinates to a fixed precision.
+ *
+ * @param lat Latitude in decimal degrees.
+ * @param lon Longitude in decimal degrees.
+ * @param precision Number of decimal places to round each coordinate to.
+ * @returns A "lat,lon" key suitable for grouping co-located events.
  */
 function createCoordinateKey(lat: number, lon: number, precision: number = 6): string {
   return `${lat.toFixed(precision)},${lon.toFixed(precision)}`;
 }
 
 /**
- * Calculates the lateral (surface) and euclidean (3D) distance between two points
+ * Calculates the lateral (great-circle surface) and euclidean (3D) distance between two
+ * points, using the Haversine formula and accounting for the altitude difference.
+ *
+ * @param lat1 Latitude of the first point in decimal degrees.
+ * @param lon1 Longitude of the first point in decimal degrees.
+ * @param alt1 Altitude of the first point in feet.
+ * @param lat2 Latitude of the second point in decimal degrees.
+ * @param lon2 Longitude of the second point in decimal degrees.
+ * @param alt2 Altitude of the second point in feet.
+ * @returns The lateral and euclidean distances between the points, in feet.
  */
 function calculateDistanceBetweenPoints(
   lat1: number,
@@ -468,7 +494,11 @@ function calculateDistanceBetweenPoints(
 }
 
 /**
- * Gets the event type name from event definition ID
+ * Resolves the human-readable event type name for a given event definition id,
+ * falling back to a generic "Event {id}" label when no mapping is found.
+ *
+ * @param eventDefinitionId The event definition id to look up.
+ * @returns The matching event type name, or a generic label when unmatched.
  */
 function getEventTypeName(eventDefinitionId: number): string {
   for (const [eventName, definitionIds] of Object.entries(eventNameToDefinitionIds)) {
@@ -753,7 +783,10 @@ const HeatMapPage: React.FC = () => {
   // =======================
 
   /**
-   * Handles minimum severity slider changes
+   * Handles minimum severity slider changes, mapping a display value of 0 to an
+   * all-inclusive backend floor and pushing up the max bound when it is exceeded.
+   *
+   * @param e The change event from the minimum severity slider input.
    */
   const handleMinSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const displayValue = Math.min(Number(e.target.value), displayMaxSeverity);
@@ -771,7 +804,10 @@ const HeatMapPage: React.FC = () => {
   };
 
   /**
-   * Handles maximum severity slider changes
+   * Handles maximum severity slider changes, clamping the value to not fall below the
+   * current minimum severity bound.
+   *
+   * @param e The change event from the maximum severity slider input.
    */
   const handleMaxSeverityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const displayValue = Math.max(Number(e.target.value), displayMinSeverity);
@@ -977,7 +1013,7 @@ const HeatMapPage: React.FC = () => {
    * - If shouldShowGrid is true, renders a grid-based density map overlay.
    * - Otherwise, renders the default heatmap layers.
    *
-   * @param events The proximity events to render
+   * @param allEventPoints The proximity event points to render
    * @param useShowGrid Optional override for the grid/heatmap toggle
    */
   const processProximityEventCoordinates = async (allEventPoints: ProximityEventPoints[], useShowGrid?: boolean) => {
@@ -2524,8 +2560,14 @@ const HeatMapPage: React.FC = () => {
   // SECTION: Event Columns Values Fetching
   // =======================
   /**
-   * Fetches the relevant column names and their values for a given event ID, flight ID, and timestamp.
-   * This will be used to show what data columns are relevant for this type of event and their values.
+   * Fetches the relevant column names and values for a given event, flight, and timestamp
+   * and, when a popup id is supplied, merges the non-excluded values into that popup's state.
+   *
+   * @param eventId The id of the event whose relevant columns are fetched.
+   * @param flightId The id of the flight the event belongs to.
+   * @param timestamp The timestamp of the event, used to select the relevant row of data.
+   * @param popupId Optional id of the popup to update with the fetched column values.
+   * @returns The fetched column data, or null on a failed request or error.
    */
   const fetchEventColumnsValues = async (eventId: number, flightId: number, timestamp: string, popupId?: string) => {
     try {
@@ -2579,8 +2621,14 @@ const HeatMapPage: React.FC = () => {
   };
 
   /**
-   * Fetches relevant column names and values for multiple events and combines them.
-   * This handles cases where multiple events are associated with the same point.
+   * Fetches and combines the relevant column names and values for multiple events sharing a
+   * point, deduplicating columns and updating the popup with the merged values.
+   *
+   * @param events The proximity events (at the same point) whose columns are fetched.
+   * @param flightId The id of the flight the events belong to.
+   * @param timestamp The timestamp used to select the relevant row of data for each event.
+   * @param popupId The id of the popup to update with the combined column values.
+   * @returns The combined columns, values, and per-event details, or null on error.
    */
   const fetchMultipleEventColumnsValues = async (
     events: ProximityEventPoints[],
@@ -2647,7 +2695,11 @@ const HeatMapPage: React.FC = () => {
   };
 
   /**
-   * Calculates event statistics from the current proximity event points
+   * Calculates aggregate event statistics from the current proximity event points,
+   * tallying the total count and a per-event-type breakdown.
+   *
+   * @param events The proximity event points to summarize.
+   * @returns The total event count and counts grouped by event type.
    */
   const calculateEventStatistics = (events: ProximityEventPoints[]): EventStatistics => {
     const eventsByType: { [eventType: string]: number } = {};

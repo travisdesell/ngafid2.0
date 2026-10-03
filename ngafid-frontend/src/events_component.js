@@ -35,6 +35,10 @@ const eventDefinitions = {
   content: null,
 };
 
+/**
+ * Displays the list of events detected for a flight, grouping them by event definition and
+ * rendering each event with its severity and the controls for viewing it on the flight plot.
+ */
 class Events extends React.Component {
   constructor(props) {
     super(props);

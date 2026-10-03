@@ -164,6 +164,8 @@ class UploadErrors extends React.Component {
 /**
  * Resolve statuses from persisted flight counters so imports created before the
  * processor status fix do not continue to appear as successfully processed.
+ * @param importInfo import record carrying the stored status and per-flight error/warning/valid counts
+ * @returns the status to display, downgrading a stale PROCESSED_OK to a failure or warning based on the counts
  */
 function resolveImportDisplayStatus(importInfo) {
   const status = importInfo.status;

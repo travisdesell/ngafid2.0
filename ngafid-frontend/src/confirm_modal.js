@@ -101,6 +101,12 @@ const container = document.querySelector("#confirm-modal-content");
 const root = createRoot(container);
 root.render(<ConfirmModal ref={confirmModalRef} />);
 
+/**
+ * Opens the shared confirmation modal, wiring up the callback invoked when the user confirms.
+ * @param title heading text shown at the top of the modal
+ * @param message body text describing the action awaiting confirmation
+ * @param submitMethod callback run when the user confirms; defaults to a no-op logging handler
+ */
 export function showConfirmModal(title, message, submitMethod = submitMethodDefault) {
   console.log(`Showing Confirm Modal with title: '${title}' and message: '${message}'`);
 

@@ -3,6 +3,10 @@ import React from "react";
 
 import { Flight } from "./flight_component.js";
 
+/**
+ * Renders the collection of flights returned by a query as a list of Flight cards, and
+ * propagates the current flight list up to the parent component.
+ */
 class FlightsCard extends React.Component {
   constructor(props) {
     super(props);
@@ -22,7 +26,9 @@ class FlightsCard extends React.Component {
   }
 
   /**
-   * Renders the flightsCard
+   * Renders the flights card.
+   *
+   * @returns the rendered list of Flight cards, or an empty placeholder when no flights are present
    */
   render() {
     console.log("rendering flights!");

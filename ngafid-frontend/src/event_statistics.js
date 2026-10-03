@@ -10,10 +10,24 @@ import { showAjaxErrorModal } from "./extract_ajax_error_message.js";
 window.jQuery = $;
 window.$ = $;
 
-/** Formats three numeric stats as "min / avg / max", each rounded to two decimals. */
+/**
+ * Formats three numeric stats as "min / avg / max", each rounded to two decimals.
+ *
+ * @param min the minimum value to display
+ * @param avg the average value to display
+ * @param max the maximum value to display
+ * @returns the formatted "min / avg / max" string
+ */
 const formatTriple = (min, avg, max) => `${min.toFixed(2)} / ${avg.toFixed(2)} / ${max.toFixed(2)}`;
 
-/** Formats a flight count as "count / total (percent%)". */
+/**
+ * Formats a flight count as "count / total (percent%)".
+ *
+ * @param count the number of matching flights
+ * @param total the total number of flights considered
+ * @param percent the percentage of the total that count represents
+ * @returns the formatted "count / total (percent%)" string
+ */
 const formatRatio = (count, total, percent) => `${count} / ${total} (${percent}%)`;
 
 const eventStats = [];

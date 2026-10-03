@@ -253,6 +253,12 @@ const container = document.querySelector("#select_aircraft-modal-content");
 const root = createRoot(container);
 root.render(<SelectAircraftModal backdrop="static" ref={selectAircraftModalRef} />);
 
+/**
+ * Opens the select-aircraft modal for the given context, delegating to the mounted modal's show method.
+ *
+ * @param type the selection context identifying which aircraft/airframe set the modal should present
+ * @param submitMethod callback invoked with the user's selection when the modal is submitted
+ */
 export function showSelectAircraftModal(type, submitMethod) {
   console.log("Showing select aircraft modal with type: '", type, "' and submitMethod: ", submitMethod);
   const selectAircraftModal = container.querySelector("select-aircraft-modal");

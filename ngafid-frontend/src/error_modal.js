@@ -72,6 +72,11 @@ const container = document.querySelector("#error-modal-content");
 const root = createRoot(container);
 root.render(<ErrorModal ref={errorModalRef} />);
 
+/**
+ * Displays the shared error modal with the given heading and details, logging a warning if the modal is not mounted.
+ * @param title heading text shown at the top of the error modal
+ * @param message description of the error presented to the user
+ */
 export function showErrorModal(title, message) {
   if (!errorModalRef.current) {
     console.error("Error Modal reference is not set. Cannot show error modal.");

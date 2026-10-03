@@ -37,6 +37,9 @@ class NavLink extends React.Component {
   }
 }
 
+/**
+ * Top navigation bar shown to signed-out visitors on the home page, offering the login prompt and public links.
+ */
 export default class HomeNavbar extends React.Component {
   attemptLogIn() {
     console.log("Showing login modal: ...");

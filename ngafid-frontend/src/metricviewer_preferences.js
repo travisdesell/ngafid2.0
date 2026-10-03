@@ -3,6 +3,10 @@ import React from "react";
 
 import { showErrorModal } from "./error_modal";
 
+/**
+ * Settings panel for the metric viewer, letting a user choose the displayed metrics and decimal precision and
+ * persisting each change to the server.
+ */
 class MetricViewerSettings extends React.Component {
   constructor(props) {
     super(props);

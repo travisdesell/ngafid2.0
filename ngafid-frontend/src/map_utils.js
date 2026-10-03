@@ -20,6 +20,12 @@ function interpolateColors(c0, w0, c1, w1) {
 // loc_percentage should be between 0 and 1.0
 // This will get the color for a given p(LOC)
 // This can probably be made cleaner / not use if statements and just use lists but im lazy
+/**
+ * Maps a probability to a heatmap color, ramping green->yellow below 0.8 and yellow->red from 0.8 to 1.0.
+ *
+ * @param loc_probability the probability in [0, 1.0] to convert to a color
+ * @returns an [r, g, b] color array for the given probability
+ */
 function paletteAt(loc_probability) {
   let c0, c1, weight, w0, w1;
 
@@ -52,6 +58,13 @@ function paletteAt(loc_probability) {
   }
 }
 
+/**
+ * Builds a palette function that interpolates a probability across an arbitrary set of color stops.
+ *
+ * @param colors the ordered list of [r, g, b] color stops
+ * @param pos the ordered list of stop positions in [0, 1] matching colors by index
+ * @returns a function taking a probability and returning the interpolated [r, g, b] color
+ */
 function paletteGenerator(colors, pos) {
   return function (p) {
     const length = colors.length;
@@ -145,7 +158,7 @@ function generateStallLayer(spData, points, trackingPoint, layers, flight) {
 /**
  * Generates the layer for LOC-I Index
  *
- * @param spData the DoubleTimeSeries with the LOC-I index data
+ * @param lociData the DoubleTimeSeries with the LOC-I index data
  * @param points the flight tracking points
  * @param trackingPoint the current tracking point of the flight
  * @param layers the collection of layers to add this new layer to

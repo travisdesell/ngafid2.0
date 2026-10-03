@@ -4,6 +4,10 @@ import React from "react";
 import { fromLonLat } from "ol/proj.js";
 import { map } from "./map.js";
 
+/**
+ * Renders a flight's itinerary as a list of stops, centering the map on the selected stop's
+ * lowest-altitude coordinate when a stop is clicked.
+ */
 class Itinerary extends React.Component {
   constructor(props) {
     super(props);

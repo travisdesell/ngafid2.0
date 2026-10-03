@@ -1,5 +1,9 @@
 import React from "react";
 
+/**
+ * Renders the "View" and "Clear" selected-replay buttons for the Cesium globe, enabled only when flights
+ * are selected, and wires them to open the multi-flight replay view or clear the current selection.
+ */
 class CesiumButtons extends React.Component {
   constructor(props) {
     super(props);
@@ -100,6 +104,9 @@ class CesiumButtons extends React.Component {
 
 export const cesiumFlightsSelected = [];
 
+/**
+ * Enables or disables the top and bottom Cesium view/clear buttons based on whether any flights are selected.
+ */
 export function updateCesiumButtonState() {
   const cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
 
@@ -116,6 +123,11 @@ export function updateCesiumButtonState() {
   }
 }
 
+/**
+ * Moves the Cesium viewer's clock to the start of the selected flight and zooms the timeline to its span.
+ *
+ * @param flightId index into the selected-flights list identifying the flight to jump to
+ */
 export function cesiumJumpToFlightStart(flightId) {
   /*
         Set the Cesium Viewer playhead position

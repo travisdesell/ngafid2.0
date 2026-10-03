@@ -584,10 +584,16 @@ const container = document.querySelector("#login-modal-content");
 const root = createRoot(container);
 root.render(<LoginModal ref={loginModalRef} />);
 
+/**
+ * Opens the shared login modal if it has been mounted.
+ */
 export function showLoginModal() {
   if (loginModalRef.current) loginModalRef.current.show();
 }
 
+/**
+ * Hides the shared login modal if it has been mounted.
+ */
 export function hideLoginModal() {
   if (loginModalRef.current) loginModalRef.current.hide();
 }

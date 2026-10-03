@@ -8,13 +8,21 @@ import XYZ from "ol/source/XYZ.js";
 
 console.log("doing first load after setting state!");
 
-/** Chart tile base URL (injected by backend or fallback for local dev). */
+/**
+ * Chart tile base URL (injected by backend or fallback for local dev).
+ *
+ * @returns the configured chart tile base URL, or the localhost fallback when none is injected
+ */
 const getChartBase = () => (typeof chartTileBaseUrl !== "undefined" ? chartTileBaseUrl : "http://localhost:8187");
 
 let map = null;
 let styles = [];
 let layers = [];
 
+/**
+ * Builds the shared OpenLayers map singleton with Azure base layers and FAA chart overlays, targeting the
+ * #map element. No-ops when a map already exists, the Azure key is missing, or the target element is absent.
+ */
 function initializeMap() {
   // Avoid creating a second map (e.g. DOMContentLoaded and FlightsPage componentDidMount both call this)
   if (map !== null) {
@@ -124,6 +132,12 @@ function initializeMap() {
   console.log("Initialized map instance: ", map);
 }
 
+/**
+ * Builds the Azure base map and FAA chart tile layers without mutating module state, naming each layer by style.
+ *
+ * @param azureKey the Azure Maps subscription key used to authenticate the Azure tile requests
+ * @returns an object with the style-name list and the matching array of TileLayer instances
+ */
 function createBaseMapLayers(azureKey) {
   const styles = [
     "Aerial",

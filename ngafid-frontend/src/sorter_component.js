@@ -3,6 +3,10 @@ import React from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
 
+/**
+ * Dropdown control for choosing the sort column and order of a paginated list, delegating the current selection and
+ * change handling to callbacks supplied via props.
+ */
 class PaginationSorter extends React.Component {
   constructor(props) {
     super(props);

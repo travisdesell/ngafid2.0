@@ -11,8 +11,7 @@
         <link rel="stylesheet" href="/css/main.css">
         <link rel="stylesheet" href="/css/font-awesome.min.css">
         <link rel="stylesheet"
-              href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css"
-              type="text/css">
+              href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css">
         <style>
         html, body {
             height: 100%;
@@ -130,49 +129,6 @@
                     </div>
                 </div>
             </div>
-            <div id="loading" style="display: none;">
-                <div id="loading-image" class="fa fa-spinner" alt="Loading..."></div>
-                <div id="loading-message"
-                     style="position: absolute;
-                            top: 55%;
-                            left: 0;
-                            right: 0;
-                            text-align: center;
-                            font-size: 1.2em">Loading...</div>
-                <div id="loading-estimate"
-                     style="position: absolute;
-                            top: 60%;
-                            left: 0;
-                            right: 0;
-                            text-align: center;
-                            font-size: 1em;
-                            color: var(--c_text);
-                            opacity: 0.8">Estimated loading time: 15 s</div>
-            </div>
-            <!-- Error Modal -->
-            <div id="error-modal" class="modal" tabIndex="-1" role="dialog">
-                <div class="modal-dialog modal-lg"
-                     role="document"
-                     style="position:fixed;
-                            top: 40%;
-                            left: 50%;
-                            transform: translate(-50%, -50%);
-                            width: 100%">
-                    <div id="error-modal-content"></div>
-                </div>
-            </div>
-            <!-- Confirm Modal -->
-            <div id="confirm-modal" class="modal" tabIndex="-1" role="dialog">
-                <div class="modal-dialog modal-lg"
-                     role="document"
-                     style="position:fixed;
-                            top: 40%;
-                            left: 50%;
-                            transform: translate(-50%, -50%);
-                            width: 100%">
-                    <div id="confirm-modal-content"></div>
-                </div>
-            </div>
             <div id="metric-settings-modal" class="modal" tabIndex="-1" role="dialog">
                 <div class="modal-dialog modal-lg" role="document">
                     <div id="metric-settings-modal-content"></div>
@@ -194,13 +150,12 @@
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Load our javascript. -->
-    <script>
+        <!-- Load our javascript. -->
+        <script>
         {{{navbar_js}}}
         {{{ttf_js}}}
         console.log(airports);
-    </script>
-    <script src="/js/ttf-bundle.js"></script>
-</body>
+        </script>
+        <script src="/js/ttf-bundle.js"></script>
+    </body>
 </html>

@@ -1,6 +1,9 @@
 import React from "react";
 import { showErrorModal } from "./error_modal.js";
 
+/**
+ * Prompt that collects and submits a user's two-factor authentication code to complete sign-in.
+ */
 class TwoFactorPrompt extends React.Component {
   constructor(props) {
     super(props);

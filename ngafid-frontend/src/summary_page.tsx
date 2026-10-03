@@ -85,6 +85,14 @@ let startMonth: number = 1;
 let endYear: number = date.getFullYear();
 let endMonth: number = date.getMonth() + 1;
 
+/**
+ * Builds an ISO-style start date string (YYYY-MM-01) for the first day of the given month,
+ * coercing the inputs to numbers and zero-padding the month.
+ *
+ * @param year Four-digit year.
+ * @param month Month number (1-12).
+ * @returns The formatted start date string anchored to the first of the month.
+ */
 export function buildStartDate(year: number, month: number): string {
   //Force year and month values to be numbers
   year = +year;
@@ -104,6 +112,14 @@ export function buildStartDate(year: number, month: number): string {
   return startDate;
 }
 
+/**
+ * Builds an ISO-style end date string for the last day of the given month,
+ * accounting for month length and leap years.
+ *
+ * @param year Four-digit year.
+ * @param month Month number (1-12).
+ * @returns The formatted end date string anchored to the last day of the month.
+ */
 export function buildEndDate(year: number, month: number): string {
   //Force year and month values to be numbers
   year = +year;
@@ -348,6 +364,10 @@ export type SummaryPageProps = {
   aggregate: boolean;
 };
 
+/**
+ * Page component that displays fleet or aggregate summary statistics for a selected
+ * airframe and date range, refetching and recomputing metrics as the selection changes.
+ */
 export default class SummaryPage extends React.Component<SummaryPageProps, SummaryPageState> {
   constructor(props: SummaryPageProps) {
     super(props);

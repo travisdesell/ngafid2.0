@@ -16,6 +16,10 @@ import $ from "jquery";
 window.jQuery = $;
 window.$ = $;
 
+/**
+ * Map overlay popover that displays point status/info and flight event details, and can be pinned open.
+ * Manages its own show/close/pin state and renders metric and event controls for the hovered map point.
+ */
 class MapPopup extends React.Component {
   constructor(props) {
     super(props);

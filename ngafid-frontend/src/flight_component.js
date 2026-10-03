@@ -54,6 +54,10 @@ const LABELING_SECTION_COLORS = [
   "#000075",
 ];
 
+/**
+ * Renders a single flight as an expandable card, managing its map layer, metric plots, events,
+ * tags and itinerary, and coordinating loading of the flight's time-series data on demand.
+ */
 class Flight extends React.Component {
   constructor(props) {
     super(props);
@@ -545,10 +549,12 @@ class Flight extends React.Component {
   }
 
   /**
-   * Gets the aircraft path from the submit aircraft modal
-   * @param type the xplane version
-   * @param path the selected path
-   * @param flightId the flightId
+   * Opens the X-Plane export endpoint for this flight using the options chosen in the submit
+   * aircraft modal.
+   *
+   * @param type the X-Plane version to export for
+   * @param path the selected aircraft (.acf) path
+   * @param useMSL whether altitudes should be exported relative to mean sea level
    **/
   submitXPlanePath(type, path, useMSL) {
     window.open(`/api/flight/${this.props.flightInfo.id}/xplane?version=${type}&actf_path=${path}&use_msl=${useMSL}`);
@@ -816,7 +822,12 @@ class Flight extends React.Component {
   }
 
   /**
-   * Recursively find a vacant (unpinned) popup or create a new one
+   * Recursively finds a vacant (unpinned) popup starting at the given stack index and reuses it,
+   * or allocates and mounts a new popup component when none is available.
+   *
+   * @param index the index in the popup stack to start searching from, working downward
+   * @param props the props to render into the MapPopup component
+   * @returns the React root of the reused or newly created popup
    */
   renderNewPopup(index, props) {
     // if we reach the bottom of the stack, we must allocate memory for a new popup component
@@ -1044,7 +1055,13 @@ class Flight extends React.Component {
     });
   }
 
-  /** Map API label sections to our click-section format. */
+  /**
+   * Maps label sections returned by the API into the internal click-section shape used for
+   * rendering and editing labels.
+   *
+   * @param sections the label sections from the API, or null/undefined for an empty list
+   * @returns the sections converted to the internal click-section format
+   */
   mapApiSectionsToClickSections(sections) {
     return (sections || []).map((s) => ({
       id: s.id,
@@ -1061,7 +1078,12 @@ class Flight extends React.Component {
     }));
   }
 
-  /** Apply label sections to state and update layers/popup. */
+  /**
+   * Stores the given label sections in state and refreshes the labeling layer, chart shapes and
+   * popup to reflect them.
+   *
+   * @param clickSections the click-section objects to apply as the current labeling sections
+   */
   applyLabelSections(clickSections) {
     this.setState({ labelingClickSections: clickSections }, () => {
       this.updateLabelingClickSectionsLayer();
@@ -1070,7 +1092,13 @@ class Flight extends React.Component {
     });
   }
 
-  /** POST a new section, then update state with saved id and display times. */
+  /**
+   * Persists a new label section to the server and, on success, updates the section in state with
+   * the saved id and server-formatted display times.
+   *
+   * @param sectionData the section payload to POST to the labels endpoint
+   * @param newIndex the index of the pending section in the labeling click-sections list to update
+   */
   saveNewLabelSection(sectionData, newIndex) {
     const flightId = this.props.flightInfo.id;
     $.ajax({
@@ -1234,7 +1262,11 @@ class Flight extends React.Component {
   }
 
   /**
-   * Return sections that include the given parameter (for display or DB export).
+   * Collects the click sections and value sections associated with a given parameter, for display
+   * or database export.
+   *
+   * @param paramName the parameter name whose labeling sections should be gathered
+   * @returns an object with the matching clickSections array and valueSections (min/max) array
    */
   getSectionsForParameter(paramName) {
     const entry = (this.state.labelingDataByParameter || {})[paramName];
@@ -1354,8 +1386,10 @@ class Flight extends React.Component {
   }
 
   /**
-   * Handle click on the Plotly chart when in labeling chart view: two-click section selection.
-   * With multiple params, click on any trace creates a section tagged with all selected parameters.
+   * Handles a click on the Plotly chart while in labeling chart view, using two successive clicks
+   * to define a section that is tagged with all currently selected parameters.
+   *
+   * @param event the Plotly click event, whose first point determines the clicked time and value
    */
   labelingPlotClick(event) {
     const selected = this.state.labelingSelectedParameters || [];
@@ -2249,14 +2283,18 @@ class Flight extends React.Component {
   }
 
   /**
-   * Changes all the flights on a given page by calling the parent function
+   * Changes all the flights on a given page by delegating to the parent component's state updater.
+   *
+   * @param flights the new list of flights to set on the parent component
    */
   updateFlights(flights) {
     this.props.updateParentState(flights);
   }
 
   /**
-   * Changes the tags associated with this flight
+   * Changes the tags associated with this flight by storing the new tag list in component state.
+   *
+   * @param tags the new list of tags to associate with this flight
    */
   invokeUpdate(tags) {
     this.setState({ tags: tags });

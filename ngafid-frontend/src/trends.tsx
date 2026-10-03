@@ -75,6 +75,14 @@ type TrendsPageProps = {
   aggregate_page: boolean;
 };
 
+/**
+ * Renders the trends dashboard, plotting event and flight counts over time with
+ * per-event selection, date-range filtering, and aggregate or fleet-scoped views.
+ *
+ * @param props Component props.
+ * @param props.aggregate_page Whether to render the aggregate (all-fleets) view rather than a single fleet.
+ * @returns The rendered trends page element.
+ */
 export function TrendsPage({ aggregate_page }: TrendsPageProps) {
   // Initialize eventChecked and eventsEmpty
   const initialEventChecked: { [key: string]: boolean } = {};

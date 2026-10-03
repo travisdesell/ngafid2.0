@@ -1126,7 +1126,12 @@ class FlightsPage extends React.Component {
   }
 
   /**
-   * Handles when the user presses the delete button, and prompts them with @module confirmModal
+   * Handles when the user presses the delete button, prompting them with a confirmation modal
+   * before permanently removing the tag from every flight it is associated with.
+   *
+   * @param flightId the id of the flight the delete was initiated from
+   * @param tagId the hash id of the tag to delete
+   * @returns a Promise resolving with the server response, or null when the tag is missing or unselected
    */
   deleteTag(flightId, tagId) {
     return new Promise((resolve) => {
@@ -1155,10 +1160,13 @@ class FlightsPage extends React.Component {
   }
 
   /**
-   * removes a tag from a flight, either permanent or just from one flight
-   * @param id the tagid of the tag being removed
-   * @param tag is the tag being removed
-   * @param isPermanent a bool representing whether or not the removal is permanent
+   * Removes a tag from a flight, either permanently (from every flight), from all tags on the
+   * given flight, or just the single tag on that flight, updating component state on success.
+   *
+   * @param flightId the id of the flight to remove the tag from
+   * @param tagId the hash id of the tag to remove, or TAG_ID_ALL to clear all tags on the flight
+   * @param isPermanent whether the removal deletes the tag from every flight it is associated with
+   * @returns a Promise resolving with the server response, or undefined when no tag is selected
    */
   removeTag(flightId, tagId, isPermanent) {
     console.log(`un-associating tag #${tagId} with flight #${flightId}`);
@@ -1237,8 +1245,11 @@ class FlightsPage extends React.Component {
   }
 
   /**
-   * Associates a tag with this flight
-   * @param id the tag id to associate
+   * Associates an existing tag with a flight, adding the returned tag to that flight's tag list in
+   * component state on success.
+   *
+   * @param tagId the hash id of the tag to associate
+   * @param flightId the id of the flight to associate the tag with
    */
   associateTag(tagId, flightId) {
     console.log(`Associating tag #${tagId} with flight #${flightId}`);
@@ -1270,7 +1281,10 @@ class FlightsPage extends React.Component {
   }
 
   /**
-   * Handles when the user presses the clear all tags button, and prompts them with @module confirmModal
+   * Handles when the user presses the clear all tags button, prompting them with a confirmation
+   * modal before removing all tags from the given flight.
+   *
+   * @param flightId the id of the flight to clear all tags from
    */
   clearTags(flightId) {
     showConfirmModal(

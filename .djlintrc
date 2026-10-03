@@ -1,5 +1,5 @@
 {
   "profile": "handlebars",
   "indent": 4,
-  "ignore": "H021,H030,H031"
+  "ignore": "H021,H030,H031,H049"
 }

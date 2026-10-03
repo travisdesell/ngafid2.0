@@ -1,5 +1,9 @@
 import { showErrorModal } from "./error_modal";
 
+/**
+ * Synchronously fetches every event definition description from the server, surfacing any error via the error modal.
+ * @returns the server response containing all event descriptions, or null if the request produced no result
+ */
 export default function GetAllDescriptions() {
   let descriptions = null;
 

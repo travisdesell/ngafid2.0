@@ -3,6 +3,10 @@ import React from "react";
 
 import { Filter, isValidFilter } from "./filter.js";
 
+/**
+ * Renders an editable card for a single event definition, letting the user build the exceedence
+ * filter condition and configure how the event is detected.
+ */
 class EventDefinitionCard extends React.Component {
   constructor(props) {
     super(props);

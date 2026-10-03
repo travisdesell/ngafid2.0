@@ -2,6 +2,11 @@ import { showErrorModal } from "./error_modal";
 
 const descriptions = {};
 
+/**
+ * Returns the description for a named event, serving it from an in-memory cache or fetching it synchronously otherwise.
+ * @param eventName name of the event definition whose description is requested
+ * @returns the event's description text, caching the result for subsequent lookups
+ */
 export default function GetDescription(eventName) {
   if (descriptions[eventName]) return descriptions[eventName];
 

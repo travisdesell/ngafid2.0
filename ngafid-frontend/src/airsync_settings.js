@@ -1,6 +1,10 @@
 import "bootstrap";
 import React from "react";
 
+/**
+ * Settings panel for AirSync-imported fleets, letting a user adjust the selected metrics, decimal precision and
+ * import timeout and persisting each change to the server via the AirSync API endpoints.
+ */
 class AirSyncSettings extends React.Component {
   constructor(props) {
     super(props);

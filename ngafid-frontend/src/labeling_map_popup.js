@@ -6,6 +6,9 @@ import { showErrorModal } from "./error_modal";
 /**
  * Format time for display: elapsed seconds -> "H:MM:SS", Unix timestamp (seconds) -> datetime string (local).
  * Backend sends label start/end as Unix seconds (~1.7e9 for 2025); chart x is seconds-from-start (< 1e5).
+ *
+ * @param time elapsed seconds from flight start, or a Unix timestamp in seconds (string or number)
+ * @returns the formatted time string, or "—" when the time cannot be parsed
  */
 export function formatLabelingTime(time) {
   const t = toLabelingTimeNumber(time);
@@ -29,6 +32,9 @@ export function formatLabelingTime(time) {
 /**
  * Coerce time to number. Backend may send x as string indices (e.g. "2569") or numbers.
  * Treat as elapsed seconds from flight start, or as Unix timestamp if very large.
+ *
+ * @param time the raw time value from the chart or label API (string or number)
+ * @returns the numeric time, or null when the value is missing or not a number
  */
 function toLabelingTimeNumber(time) {
   if (time == null) return null;
@@ -40,6 +46,10 @@ function toLabelingTimeNumber(time) {
 /**
  * Get a Date for a point: from elapsed seconds + flight start, or Unix timestamp (seconds).
  * Label API returns startTime/endTime as Unix seconds; chart x is seconds-from-start. Use 1e9 to split.
+ *
+ * @param time elapsed seconds from flight start, or a Unix timestamp in seconds (string or number)
+ * @param startDateTime the flight start datetime string, used to anchor elapsed-second values
+ * @returns a Date for the point, or null when the time or start cannot be resolved
  */
 function getLabelingDate(time, startDateTime) {
   const t = toLabelingTimeNumber(time);
@@ -51,7 +61,12 @@ function getLabelingDate(time, startDateTime) {
   return new Date(start.getTime() + t * 1000);
 }
 
-/** Format a Date in local time as YYYY-MM-DD HH:mm:ss to match the flight info card on the page. */
+/**
+ * Format a Date in local time as YYYY-MM-DD HH:mm:ss to match the flight info card on the page.
+ *
+ * @param date the Date to format
+ * @returns the local-time datetime string
+ */
 function formatDateLocal(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -64,6 +79,10 @@ function formatDateLocal(date) {
 
 /**
  * Human-readable date and time for a point (single string), in local time to match flight info.
+ *
+ * @param time elapsed seconds from flight start, or a Unix timestamp in seconds (string or number)
+ * @param startDateTime the flight start datetime string, used to anchor elapsed-second values
+ * @returns the local-time datetime string, falling back to the elapsed-time format when no date resolves
  */
 export function formatLabelingDateTime(time, startDateTime) {
   const d = getLabelingDate(time, startDateTime);
@@ -73,6 +92,10 @@ export function formatLabelingDateTime(time, startDateTime) {
 
 /**
  * Date only: YYYY-MM-DD (local).
+ *
+ * @param time elapsed seconds from flight start, or a Unix timestamp in seconds (string or number)
+ * @param startDateTime the flight start datetime string, used to anchor elapsed-second values
+ * @returns the local date string, or "—" when no date resolves
  */
 export function formatLabelingDate(time, startDateTime) {
   const d = getLabelingDate(time, startDateTime);
@@ -82,6 +105,10 @@ export function formatLabelingDate(time, startDateTime) {
 
 /**
  * Time only: HH:MM:SS (local), to match flight info card.
+ *
+ * @param time elapsed seconds from flight start, or a Unix timestamp in seconds (string or number)
+ * @param startDateTime the flight start datetime string, used to anchor elapsed-second values
+ * @returns the local time-of-day string, or "—" when no date resolves
  */
 export function formatLabelingTimeOnly(time, startDateTime) {
   const d = getLabelingDate(time, startDateTime);
@@ -94,6 +121,15 @@ const ADD_NEW_LABEL_VALUE = "__add_new__";
 /**
  * Dropdown for section label: options from fleet label definitions, plus "Add new label...".
  * Calls onRefreshLabels after adding so parent refetches and passes updated labelDefinitions.
+ *
+ * @param root0 the component props
+ * @param root0.sectionIndex index of the section this cell labels
+ * @param root0.value the currently selected label text
+ * @param root0.labelDefinitions fleet label definitions used to populate the dropdown options
+ * @param root0.onUpdateLabel callback invoked with (sectionIndex, labelText) when a label is chosen
+ * @param root0.onRefreshLabels callback invoked after a new label is created so the parent refetches definitions
+ * @param root0.onClick click handler forwarded to the select element
+ * @returns the rendered label-selection dropdown
  */
 function LabelCell({ sectionIndex, value, labelDefinitions, onUpdateLabel, onRefreshLabels, onClick }) {
   const [adding, setAdding] = React.useState(false);
@@ -226,7 +262,14 @@ function setStoredPopupSize(width, height) {
   }
 }
 
-/** Display section start/end time: use raw string if provided, else format from Unix seconds. */
+/**
+ * Display section start/end time: use raw string if provided, else format from Unix seconds.
+ *
+ * @param display a pre-formatted datetime string to use verbatim when present
+ * @param time elapsed seconds from flight start, or a Unix timestamp in seconds, used when display is empty
+ * @param startDateTime the flight start datetime string, used to anchor elapsed-second values
+ * @returns an object with datePart and timePart strings for the section
+ */
 function formatSectionDateTimeParts(display, time, startDateTime) {
   if (display != null && display !== "") {
     const raw = String(display).trim();
@@ -642,6 +685,14 @@ class LabelingMapPopup extends React.Component {
 
 /**
  * Brief hover tooltip: date/time, and value only when a single parameter is selected.
+ *
+ * @param root0 the component props
+ * @param root0.placement the [x, y] screen coordinates where the tooltip is anchored
+ * @param root0.time elapsed seconds from flight start, or a Unix timestamp in seconds, for the hovered point
+ * @param root0.value the parameter value to show, when a single parameter is selected
+ * @param root0.startDateTime the flight start datetime string, used to anchor elapsed-second values
+ * @param root0.navbarWidth vertical offset in pixels added to the tooltip top to clear the navbar
+ * @returns the rendered tooltip, or null when placement is unavailable
  */
 function LabelingHoverTooltip({ placement, time, value, startDateTime, navbarWidth = 40 }) {
   if (!placement || placement.length < 2) return null;

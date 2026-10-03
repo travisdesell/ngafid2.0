@@ -14,6 +14,8 @@ import tsParser from "@typescript-eslint/parser";
 import importPlugin from 'eslint-plugin-import';
 import js from '@eslint/js';
 
+import jsdoc from 'eslint-plugin-jsdoc';
+
 export default defineConfig([
 
     //eslint-plgin-compat
@@ -106,6 +108,7 @@ export default defineConfig([
             '@typescript-eslint': tsPlugin,
             react: reactPlugin,
             "react-hooks": reactHooksPlugin,
+            jsdoc,
         },
 
         settings: {
@@ -213,6 +216,37 @@ export default defineConfig([
                 "ignoreStrings": true,         /* string literals can't be split (no-useless-concat forbids it) */
                 "ignoreTemplateLiterals": true, /* template literals can't be wrapped */
             }],
+
+
+
+            /* JSDoc Rules (eslint-plugin-jsdoc) */
+            /* Enforce the CLAUDE.md docstring requirement for JS/TS: every exported
+               function, class, and class method must carry a JSDoc comment. Scope is
+               public/exported only (publicOnly) to match the Java (public-scope) and
+               Python (pydocstyle public) enforcement. See CONTRIBUTING.md. */
+            //https://github.com/gajus/eslint-plugin-jsdoc/blob/main/docs/rules/require-jsdoc.md
+            "jsdoc/require-jsdoc": ["error", {
+                "publicOnly": true,
+                "require": {
+                    "FunctionDeclaration": true,
+                    "ClassDeclaration": true,
+                    "MethodDefinition": false,
+                },
+                "exemptEmptyConstructors": true,  /* trivial empty constructors need no doc */
+            }],
+            /* When a JSDoc block is present, its params/returns must be documented and
+               match the signature. Types are NOT required in the comment: TypeScript
+               carries them, and we don't force type annotations into legacy-JS comments. */
+            "jsdoc/require-param": "error",
+            "jsdoc/require-param-name": "error",
+            "jsdoc/require-param-description": "error",
+            "jsdoc/check-param-names": "error",
+            "jsdoc/require-returns": "error",
+            "jsdoc/require-returns-description": "error",
+            "jsdoc/require-returns-check": "error",
+            "jsdoc/check-tag-names": ["error", { "typed": false }],
+            "jsdoc/check-alignment": "error",
+            "jsdoc/no-blank-blocks": "error",
 
         },
 

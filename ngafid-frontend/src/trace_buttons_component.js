@@ -4,6 +4,10 @@ import React from "react";
 import Plotly from "plotly.js";
 import { showErrorModal } from "./error_modal.js";
 
+/**
+ * Renders the per-flight controls for toggling double-time-series traces on the flight plot, lazily fetching
+ * each series on first use and showing/hiding its Plotly trace on subsequent clicks.
+ */
 class TraceButtons extends React.Component {
   constructor(props) {
     super(props);
