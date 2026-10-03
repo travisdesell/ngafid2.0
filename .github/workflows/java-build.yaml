@@ -1,4 +1,9 @@
-name: Compile and Test
+# Verifies the whole Maven build compiles and the deployable assembly jars
+# (the jar-with-dependencies artifacts each Dockerfile copies out of target/)
+# package successfully. Tests are intentionally skipped here -- the separate
+# "Test" workflow (scripts/test.sh) runs the unit tests -- so this only covers
+# the compile + package phases that `mvn test` never reaches.
+name: Build Jars
 
 on:
   pull_request:
@@ -32,6 +37,3 @@ jobs:
 
       - name: Package
         run: run/package
-
-      - name: Test
-        run: mvn test
