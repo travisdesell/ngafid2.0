@@ -46,7 +46,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python linters (ruff, yamllint, djlint)
-        run: pip install ruff yamllint djlint
+        # djlint is pinned: its formatter/rules change between minor versions
+        # (e.g. 1.46 added H053/H025 and reflowed tags), so an unpinned install
+        # would drift from what developers run locally. Keep in sync with the venv.
+        run: pip install ruff yamllint djlint==1.46.4
 
       - name: Install shell and Dockerfile linters (shellcheck, shfmt, hadolint)
         run: |
