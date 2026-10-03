@@ -69,9 +69,7 @@ object TwoFactorAuthService {
      * @see #generateSecret()
      * @throws IllegalArgumentException if the secret is null or empty
      */
-    fun verifyCode(secret: String, code: Int): Boolean {
-        return totp.authorize(secret, code)
-    }
+    fun verifyCode(secret: String, code: Int): Boolean = totp.authorize(secret, code)
 
     /**
      * Generate backup codes for emergency access.
@@ -95,9 +93,7 @@ object TwoFactorAuthService {
      * @see #hashBackupCode(String)
      * @see #verifyBackupCode(String, List)
      */
-    fun generateBackupCodes(): List<String> {
-        return (1..10).map { generateRandomCode() }
-    }
+    fun generateBackupCodes(): List<String> = (1..10).map { generateRandomCode() }
 
     /**
      * Generate QR code URL for authenticator app setup.
@@ -117,9 +113,8 @@ object TwoFactorAuthService {
      * @see #generateSecret()
      * @throws IllegalArgumentException if secret or email is null or empty
      */
-    fun generateQRCodeUrl(secret: String, email: String, issuer: String = "NGAFID"): String {
-        return "otpauth://totp/$issuer:$email?secret=$secret&issuer=$issuer"
-    }
+    fun generateQRCodeUrl(secret: String, email: String, issuer: String = "NGAFID"): String =
+        "otpauth://totp/$issuer:$email?secret=$secret&issuer=$issuer"
 
     /**
      * Generate a random 8-digit backup code.
@@ -134,9 +129,7 @@ object TwoFactorAuthService {
      * @return A formatted 8-digit string with leading zeros
      * @see #generateBackupCodes()
      */
-    private fun generateRandomCode(): String {
-        return String.format("%08d", random.nextInt(100000000))
-    }
+    private fun generateRandomCode(): String = String.format("%08d", random.nextInt(100000000))
 
     /**
      * Hash a backup code for secure database storage.
@@ -156,9 +149,7 @@ object TwoFactorAuthService {
      * @see #verifyBackupCode(String, List)
      * @throws IllegalArgumentException if code is null
      */
-    fun hashBackupCode(code: String): String {
-        return code.hashCode().toString()
-    }
+    fun hashBackupCode(code: String): String = code.hashCode().toString()
 
     /**
      * Verify a backup code against stored hashed codes.
@@ -177,7 +168,5 @@ object TwoFactorAuthService {
      * @see #generateBackupCodes()
      * @throws IllegalArgumentException if code is null or hashedCodes is null
      */
-    fun verifyBackupCode(code: String, hashedCodes: List<String>): Boolean {
-        return hashedCodes.contains(hashBackupCode(code))
-    }
+    fun verifyBackupCode(code: String, hashedCodes: List<String>): Boolean = hashedCodes.contains(hashBackupCode(code))
 }

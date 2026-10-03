@@ -21,8 +21,15 @@ public final class FlightMeta {
 
     private Airframes.Airframe airframe = null;
 
+    /** Constructs an empty flight-metadata holder; fields are populated via setters before building a flight. */
     public FlightMeta() {}
 
+    /**
+     * Copy constructor that duplicates all metadata fields from another instance. The airframe reference is shared (a
+     * shallow copy), not deep-copied.
+     *
+     * @param other the metadata to copy from
+     */
     public FlightMeta(FlightMeta other) {
         this.fleetId = other.fleetId;
         this.uploaderId = other.uploaderId;
@@ -104,14 +111,33 @@ public final class FlightMeta {
         return airframe;
     }
 
+    /**
+     * Sets the airframe from its name and type name, constructing the {@link Airframes.Airframe} and its
+     * {@link Airframes.Type} from the given strings.
+     *
+     * @param newAirframe the airframe name
+     * @param newAirframeType the airframe type name
+     */
     public void setAirframe(String newAirframe, String newAirframeType) {
         this.airframe = new Airframes.Airframe(newAirframe, new Airframes.Type(newAirframeType));
     }
 
+    /**
+     * Sets the airframe directly from an existing {@link Airframes.Airframe}.
+     *
+     * @param airframe the airframe to store
+     */
     public void setAirframe(Airframes.Airframe airframe) {
         this.airframe = airframe;
     }
 
+    /**
+     * Sets the airframe from an existing {@link Airframes.Airframe}. The {@code airframeType} argument is currently
+     * ignored (the type carried by {@code newAirframe} is used as-is).
+     *
+     * @param newAirframe the airframe to store
+     * @param airframeType ignored; retained for call-site compatibility
+     */
     public void setAirframe(Airframes.Airframe newAirframe, Airframes.Type airframeType) {
         this.airframe = newAirframe;
     }

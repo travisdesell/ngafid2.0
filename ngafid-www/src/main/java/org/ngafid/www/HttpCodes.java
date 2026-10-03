@@ -1,5 +1,11 @@
 package org.ngafid.www;
 
+/**
+ * Named integer constants for the standard HTTP status codes, grouped by class (1xx informational through 5xx
+ * server error).
+ *
+ * <p>Provides a single reference so route handlers can set response statuses by name rather than magic numbers.
+ */
 public class HttpCodes {
 
     private HttpCodes() {

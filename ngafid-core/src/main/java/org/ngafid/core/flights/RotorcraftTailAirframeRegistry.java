@@ -14,6 +14,13 @@ public final class RotorcraftTailAirframeRegistry {
 
     private RotorcraftTailAirframeRegistry() {}
 
+    /**
+     * A resolved registry row mapping a tail number to its rotorcraft airframe and airframe type.
+     *
+     * @param tail the operator tail number
+     * @param airframe the airframe name the tail is registered to
+     * @param airframeType the airframe type name (always {@code Rotorcraft} for returned entries)
+     */
     public record Entry(String tail, String airframe, String airframeType) {}
 
     /**

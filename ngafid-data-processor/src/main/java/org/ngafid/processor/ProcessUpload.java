@@ -49,6 +49,15 @@ public final class ProcessUpload {
 
     private static final Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
+    /**
+     * Processes the upload with the given id: locks it, ingests its flights, and records the result.
+     *
+     * @param uploadId the id of the upload to process
+     * @return true if the upload was processed successfully
+     * @throws SQLException if a database error occurs
+     * @throws UploadDoesNotExistException if no upload with the given id exists
+     * @throws UploadAlreadyLockedException if the upload is already locked by another process
+     */
     public static boolean processUpload(int uploadId)
             throws SQLException, UploadDoesNotExistException, UploadAlreadyLockedException {
         LOG.info("processing upload with id: " + uploadId);
@@ -181,6 +190,15 @@ public final class ProcessUpload {
         }
     }
 
+    /**
+     * Ingests the flights contained in an upload's archive, updating flight counts and status.
+     *
+     * @param connection the database connection to use
+     * @param upload the upload whose flights are ingested
+     * @param uploadProcessedEmail the email accumulator notified of per-upload processing results
+     * @return the resulting status of the upload
+     * @throws SQLException if a database error occurs
+     */
     public static Upload.Status ingestFlights(
             Connection connection, Upload upload, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
         Instant start = Instant.now();
@@ -362,6 +380,10 @@ public final class ProcessUpload {
         return Upload.Status.PROCESSED_OK;
     }
 
+    /**
+     * Lightweight summary of a processed flight, retaining only the identifier, length, filename and any
+     * malformed-file exceptions so that fully loaded flights need not be held in memory after processing.
+     */
     public static class FlightInfo {
         /**
          * This is a helper class so we don't keep all loaded flights in memory.
@@ -375,6 +397,14 @@ public final class ProcessUpload {
         List<MalformedFlightFileException> exceptions;
 
         // CHECKSTYLE:ON
+        /**
+         * Constructs a summary of a processed flight.
+         *
+         * @param id the flight id
+         * @param length the number of rows in the flight
+         * @param filename the name of the file the flight came from
+         * @param exceptions the non-fatal exceptions encountered while processing the flight
+         */
         public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
             this.id = id;
             this.length = length;

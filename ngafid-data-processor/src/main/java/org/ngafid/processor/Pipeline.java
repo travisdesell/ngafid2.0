@@ -109,6 +109,13 @@ public class Pipeline implements AutoCloseable {
     /** Flight files queued for parsing (used to detect silent ingest failures). */
     private final AtomicInteger filesQueued = new AtomicInteger(0);
 
+    /**
+     * Constructs a pipeline that processes the flights contained in an uploaded zip archive.
+     *
+     * @param connection the database connection to use
+     * @param upload the upload being processed
+     * @param zipFile the opened zip archive of the upload
+     */
     public Pipeline(Connection connection, Upload upload, ZipFile zipFile) {
         this.connection = connection;
         this.upload = upload;

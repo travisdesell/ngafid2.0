@@ -18,76 +18,57 @@ import { showErrorModal } from "./error_modal";
  * @returns {string} A user-friendly error message extracted from the AJAX response
  */
 export default function extractAjaxErrorMessage(jqXHR, errorThrown, fallbackMessage = "Request failed.") {
-    
-    const responseJson = jqXHR?.responseJSON;
+  const responseJson = jqXHR?.responseJSON;
 
-    // Got a JSON response with an error message
-    if (responseJson?.errorMessage)
-        return responseJson.errorMessage;
+  // Got a JSON response with an error message
+  if (responseJson?.errorMessage) return responseJson.errorMessage;
 
-    // Got a JSON response with a message (but no specific errorMessage field)
-    if (responseJson?.message)
-        return responseJson.message;
+  // Got a JSON response with a message (but no specific errorMessage field)
+  if (responseJson?.message) return responseJson.message;
 
-    const responseText = (typeof jqXHR?.responseText === "string")
-        ? jqXHR.responseText.trim()
-        : "";
+  const responseText = typeof jqXHR?.responseText === "string" ? jqXHR.responseText.trim() : "";
 
-    // Got a non-empty response text...
-    if (responseText) {
+  // Got a non-empty response text...
+  if (responseText) {
+    // Attempt to parse it as JSON in case it's a structured error message
+    try {
+      const parsed = JSON.parse(responseText);
 
-        // Attempt to parse it as JSON in case it's a structured error message
-        try {
+      // Parsed an error message from the response text
+      if (parsed?.errorMessage) return parsed.errorMessage;
 
-            const parsed = JSON.parse(responseText);
+      // Parsed a generic message from the response text
+      if (parsed?.message) return parsed.message;
 
-            // Parsed an error message from the response text
-            if (parsed?.errorMessage)
-                return parsed.errorMessage;
-
-            // Parsed a generic message from the response text
-            if (parsed?.message)
-                return parsed.message;
-
-        // Parsing failed, return the raw response text
-        } catch {
-            return responseText;
-        }
-
-        return responseText;
-
+      // Parsing failed, return the raw response text
+    } catch {
+      return responseText;
     }
 
-    // Attempt to use the errorThrown parameter
-    const thrown = (typeof errorThrown === "string")
-        ? errorThrown.trim()
-        : "";
+    return responseText;
+  }
 
-    if (thrown && thrown.toLowerCase() !== "error")
-        return thrown;
+  // Attempt to use the errorThrown parameter
+  const thrown = typeof errorThrown === "string" ? errorThrown.trim() : "";
 
-    // Attempt to use the jqXHR status text
-    const statusText = (typeof jqXHR?.statusText === "string")
-        ? jqXHR.statusText.trim()
-        : "";
+  if (thrown && thrown.toLowerCase() !== "error") return thrown;
 
-    if (statusText)
-        return statusText;
+  // Attempt to use the jqXHR status text
+  const statusText = typeof jqXHR?.statusText === "string" ? jqXHR.statusText.trim() : "";
 
-    return fallbackMessage;
+  if (statusText) return statusText;
 
+  return fallbackMessage;
 }
 
 /**
  * Shows a modal with a user-friendly error message extracted from a jQuery AJAX error response.
- * 
+ *
  * @param {object} jqXHR - The jQuery XHR object from the AJAX error callback
  * @param {string} errorThrown - The error thrown by jQuery (e.g., "timeout", "error", etc.)
  * @param {string} fallbackMessage - A default message to return if no specific error message is found
  */
 export function showAjaxErrorModal(jqXHR, errorThrown, fallbackMessage) {
-
-    const message = extractAjaxErrorMessage(jqXHR, errorThrown, fallbackMessage);
-    showErrorModal("Error", message);
-
+  const message = extractAjaxErrorMessage(jqXHR, errorThrown, fallbackMessage);
+  showErrorModal("Error", message);
 }

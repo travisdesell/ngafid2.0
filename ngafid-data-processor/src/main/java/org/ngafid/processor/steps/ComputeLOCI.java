@@ -26,6 +26,12 @@ public class ComputeLOCI extends ComputeStep {
 
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(LOCI_DEPENDENCIES);
 
+    /**
+     * Constructs the loss-of-control-inflight (LOCI) compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeLOCI(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }

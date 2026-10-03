@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ngafid-pydata"
+version = "0.1.0"
+description = "Python data-analysis scripts for the NGAFID database."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mysql-connector-python>=9.0",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+# Tooling for local development: the linter/formatter used to keep this
+# package clean (see the repo CLAUDE.md "Linting (required)" section).
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "avro>=1.11",
+]
+# Dependencies for the standalone RAISE data-transfer scripts in scripts/raise/.
+raise = [
+    "mysqlclient",
+    "pysftp",
+]
+
+[project.scripts]
+ngafid-export-events = "foundry_export.export_events:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+# Exclude Markdown so ruff does not format Python code blocks inside it; Prettier
+# is the formatter of record for Markdown (see scripts/lint.sh).
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+# A small, sensible default rule set: pycodestyle (E/W), pyflakes (F),
+# isort (I), pyupgrade (UP), flake8-bugbear (B), and pydocstyle (D). The D rules
+# enforce the CLAUDE.md docstring requirement -- every public module, class, and
+# function (tests included) must carry a Google-style docstring, kept clean in
+# CI. (pydocstyle only inspects public API -- private, underscore-prefixed
+# members are not gated.) See scripts/lint.sh and CONTRIBUTING.md.
+select = ["E", "F", "W", "I", "UP", "B", "D"]
+
+[tool.ruff.lint.pydocstyle]
+# Google-style docstrings (Args:/Returns:/Raises:), matching the existing
+# codebase and the CLAUDE.md "Docstrings" section.
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["foundry_export", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"

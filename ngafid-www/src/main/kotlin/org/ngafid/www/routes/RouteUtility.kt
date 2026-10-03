@@ -6,10 +6,7 @@ import io.javalin.http.Context
 import org.ngafid.www.routes.SessionUtility.withStatFetcher
 
 object RouteUtility {
-    inline fun getStat(
-        route: String,
-        crossinline block: (Context, StatisticsJavalinRoutes.StatFetcher) -> Unit
-    ) {
+    inline fun getStat(route: String, crossinline block: (Context, StatisticsJavalinRoutes.StatFetcher) -> Unit) {
         path(route) {
             get({ ctx -> withStatFetcher(ctx, false) { stats -> block(ctx, stats) } }, Role.LOGGED_IN)
             get("/aggregate", { ctx -> withStatFetcher(ctx, true) { stats -> block(ctx, stats) } }, Role.LOGGED_IN)

@@ -104,9 +104,18 @@
     <!-- See https://checkstyle.org/checks/javadoc/index.html -->
     <module name="InvalidJavadocPosition"/>
     <module name="JavadocMethod"/>
-<!--    <module name="JavadocType"/>-->
 <!--    <module name="JavadocStyle"/>-->
-<!--    <module name="MissingJavadocMethod"/>--> <!-- TODO: Maybe bring this back eventually? -->
+    <!-- Require a Javadoc summary sentence on every public type and method (the
+         CLAUDE.md docstring requirement). Scope is public only; trivial property
+         getters/setters and @Override methods (which inherit their contract) are
+         exempt. See scripts/lint.sh and CONTRIBUTING.md. -->
+    <module name="MissingJavadocType">
+      <property name="scope" value="public"/>
+    </module>
+    <module name="MissingJavadocMethod">
+      <property name="scope" value="public"/>
+      <property name="allowMissingPropertyJavadoc" value="true"/>
+    </module>
 
     <!-- Checks for Naming Conventions.                  -->
     <!-- See https://checkstyle.org/checks/naming/index.html -->

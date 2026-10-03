@@ -32,6 +32,15 @@ import org.xml.sax.SAXException;
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 
+    /**
+     * Constructs a GPX flight-file processor.
+     *
+     * @param connection the database connection to use
+     * @param stream the input stream of the file to process
+     * @param filename the name of the file being processed
+     * @param pipeline the processing pipeline this processor belongs to
+     * @throws IOException if reading the input stream fails
+     */
     public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
         super(connection, stream, filename, pipeline);
@@ -48,6 +57,17 @@ public class GPXFileProcessor extends FlightFileProcessor {
         }
     }
 
+    /**
+     * Parses the flights contained in a single GPX entry.
+     *
+     * @param entry the name of the archive entry being parsed
+     * @param stream the input stream of the GPX entry
+     * @return the flight builders parsed from the entry
+     * @throws SQLException if a database error occurs
+     * @throws MalformedFlightFileException if the GPX data is malformed
+     * @throws IOException if reading the stream fails
+     * @throws FatalFlightFileException if an unrecoverable error occurs parsing the entry
+     */
     public List<FlightBuilder> parseFlights(String entry, InputStream stream)
             throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException {
         List<FlightBuilder> flights = new ArrayList<>();

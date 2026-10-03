@@ -11,6 +11,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+/**
+ * Registry for mapping aircraft tail numbers to their internal system ids within each fleet.
+ *
+ * <p>This utility class maintains per-fleet, process-wide caches linking system id, tail number, and confirmation
+ * status, falling back to the {@code tails} table to resolve and persist mappings and to track whether a tail number
+ * has been confirmed for a fleet.
+ */
 public final class Tails {
     private static final Logger LOG = Logger.getLogger(Tails.class.getName());
 
@@ -123,6 +130,17 @@ public final class Tails {
 
     private static HashMap<Integer, FleetInstance> fleetMaps = new HashMap<>();
 
+    /**
+     * Records a suggested (unconfirmed) tail number for a system id, inserting a new {@code tails} row with
+     * {@code confirmed = false}. Uses {@code INSERT IGNORE}, so it is a no-op if a row for that fleet/system id already
+     * exists. A null suggestion is stored as an empty string.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet the tail belongs to
+     * @param systemId the aircraft's system id
+     * @param suggestedTail the suggested tail number, or null to store an empty placeholder
+     * @throws SQLException if the insert fails
+     */
     public static void setSuggestedTail(Connection connection, int fleetId, String systemId, String suggestedTail)
             throws SQLException {
         String queryString = """
@@ -139,6 +157,15 @@ public final class Tails {
         }
     }
 
+    /**
+     * Updates the tail number for an existing system id and marks it confirmed ({@code confirmed = 1}).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet the tail belongs to
+     * @param systemId the aircraft's system id
+     * @param tail the confirmed tail number to store
+     * @throws SQLException if the update fails
+     */
     public static void updateTail(Connection connection, int fleetId, String systemId, String tail)
             throws SQLException {
         String queryString = "UPDATE tails SET tail = ?, confirmed = 1 WHERE fleet_id = ? AND system_id = ?";
@@ -153,6 +180,16 @@ public final class Tails {
         }
     }
 
+    /**
+     * Resolves the system id for a tail number within a fleet, via the fleet's cache instance (falling back to a
+     * database lookup on a cache miss).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to look up within
+     * @param tail the tail number to resolve
+     * @return the system id for the tail, or {@code null} if no such tail exists for the fleet
+     * @throws SQLException if the lookup fails
+     */
     public static String getId(Connection connection, int fleetId, String tail) throws SQLException {
         FleetInstance fleet = fleetMaps.get(fleetId);
         if (fleet == null) {
@@ -162,6 +199,16 @@ public final class Tails {
         return fleet.getId(connection, tail);
     }
 
+    /**
+     * Resolves the tail number for a system id within a fleet, via the fleet's cache instance (falling back to a
+     * database lookup on a cache miss).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to look up within
+     * @param systemId the aircraft's system id
+     * @return the tail number for the system id, or {@code null} if no such system id exists for the fleet
+     * @throws SQLException if the lookup fails
+     */
     public static String getTail(Connection connection, int fleetId, String systemId) throws SQLException {
         FleetInstance fleet = fleetMaps.get(fleetId);
         if (fleet == null) {
@@ -171,6 +218,17 @@ public final class Tails {
         return fleet.getTail(connection, systemId);
     }
 
+    /**
+     * Reports whether the tail number for a system id has been confirmed, via the fleet's cache instance (falling back
+     * to a database lookup on a cache miss).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to look up within
+     * @param systemId the aircraft's system id
+     * @return {@code true}/{@code false} for the confirmed flag, or {@code null} if no such system id exists for the
+     *     fleet
+     * @throws SQLException if the lookup fails
+     */
     public static Boolean getConfirmed(Connection connection, int fleetId, String systemId) throws SQLException {
         FleetInstance fleet = fleetMaps.get(fleetId);
         if (fleet == null) {
@@ -317,6 +375,13 @@ public final class Tails {
         }
     }
 
+    /**
+     * Deletes tail rows that are no longer referenced by any flight, i.e. tails whose fleet/system-id pair has no
+     * matching row in {@code flights}. Applies across all fleets.
+     *
+     * @param connection the database connection
+     * @throws SQLException if the delete fails
+     */
     public static void removeUnused(Connection connection) throws SQLException {
         String queryString = "DELETE FROM tails WHERE NOT EXISTS "
                 + "(SELECT id FROM flights WHERE flights.system_id = tails.system_id "

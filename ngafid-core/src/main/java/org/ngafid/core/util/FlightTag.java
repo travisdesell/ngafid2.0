@@ -8,6 +8,13 @@ package org.ngafid.core.util;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * An immutable, user-defined label that can be attached to flights within a fleet.
+ *
+ * <p>Holds the tag's database id, owning fleet, name, description, and display color, and can be constructed directly
+ * or hydrated from a SQL {@link java.sql.ResultSet}. Its hash code is its database id and equality ignores the id,
+ * comparing fleet, name, description, and color instead.
+ */
 public class FlightTag {
     // the key in the database
     private final int hashId;

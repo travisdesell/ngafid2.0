@@ -56,6 +56,18 @@ public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
     private final Flight flight;
 
+    /**
+     * Constructs a custom event for a flight, delegating the time/line window, event-definition id, and severity to the
+     * base {@link Event} and retaining the flight and the full event definition for later persistence.
+     *
+     * @param startTime the event's start timestamp
+     * @param endTime the event's end timestamp
+     * @param startLine the index of the first sample in the event window
+     * @param endLine the index of the last sample in the event window
+     * @param severity the computed event severity
+     * @param flight the flight this event belongs to
+     * @param eventDefinition the definition describing this custom event; its id is passed to the base event
+     */
     public CustomEvent(
             String startTime,
             String endTime,
@@ -70,10 +82,29 @@ public class CustomEvent extends Event {
         this.customEventDefinition = eventDefinition;
     }
 
+    /**
+     * Constructs a custom event with no event definition attached (the definition may be set later via
+     * {@link #setDefinition}).
+     *
+     * @param startTime the event's start timestamp
+     * @param endTime the event's end timestamp
+     * @param startLine the index of the first sample in the event window
+     * @param endLine the index of the last sample in the event window
+     * @param severity the computed event severity
+     * @param flight the flight this event belongs to
+     */
     public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight) {
         this(startTime, endTime, startLine, endLine, severity, flight, null);
     }
 
+    /**
+     * Loads the "Low Ending Fuel" event definition for a given airframe, opening its own database connection.
+     *
+     * @param airframeID the airframe id to load the definition for
+     * @return the low-ending-fuel event definition for that airframe
+     * @throws IOException if loading the definition fails
+     * @throws SQLException if the query fails
+     */
     public static EventDefinition getLowEndFuelDefinition(int airframeID) throws IOException, SQLException {
         try (Connection connection = Database.getConnection()) {
             return EventDefinition.getEventDefinition(connection, "Low Ending Fuel", airframeID);
@@ -88,6 +119,14 @@ public class CustomEvent extends Event {
         this.customEventDefinition = eventDefinition;
     }
 
+    /**
+     * Persists this custom event, deriving the fleet id, flight id, and event-definition id from the attached flight
+     * and custom definition and delegating to the base {@link Event#updateDatabase} insert.
+     *
+     * @param connection the database connection
+     * @throws IOException if the base persistence step performs I/O that fails
+     * @throws SQLException if the insert fails
+     */
     public void updateDatabase(Connection connection) throws IOException, SQLException {
         super.updateDatabase(connection, flight.getFleetId(), flight.getId(), customEventDefinition.getId());
     }

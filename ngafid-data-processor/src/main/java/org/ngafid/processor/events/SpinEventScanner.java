@@ -23,6 +23,13 @@ public class SpinEventScanner extends AbstractEventScanner {
     private static final double ALT_CONSTRAINT = 4000.d;
     private static final double AC_NORMAL = 0.1d;
 
+    /**
+     * Constructs a spin-event scanner. Unlike the generic {@link EventScanner}, spins are detected from fixed
+     * aerodynamic thresholds (indicated airspeed, calculated vertical speed, normal and lateral acceleration, and
+     * altitude AGL) rather than from the definition's filter.
+     *
+     * @param eventDefinition the spin event definition this scanner detects
+     */
     public SpinEventScanner(EventDefinition eventDefinition) {
         super(eventDefinition);
     }

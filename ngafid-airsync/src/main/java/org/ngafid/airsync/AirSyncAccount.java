@@ -11,11 +11,23 @@ import java.net.URL;
 import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
 
+/**
+ * Represents a single AirSync account (its name and API token) belonging to a fleet.
+ *
+ * <p>Instances are deserialized from the AirSync partner API and provide the per-account token used to
+ * authenticate subsequent AirSync requests for that account's aircraft.
+ */
 public class AirSyncAccount {
 
     private final String name;
     private final String accountToken;
 
+    /**
+     * Constructs an AirSync account, as deserialized from the AirSync API JSON.
+     *
+     * @param name the account name
+     * @param accountToken the AirSync account token
+     */
     @JsonCreator
     public AirSyncAccount(@JsonProperty("name") String name, @JsonProperty("account_token") String accountToken) {
         this.name = name;
@@ -30,6 +42,13 @@ public class AirSyncAccount {
         return accountToken;
     }
 
+    /**
+     * Fetches all AirSync accounts associated with the given fleet from the AirSync API.
+     *
+     * @param fleet the fleet whose accounts to fetch, used for authentication
+     * @return the list of AirSync accounts for the fleet
+     * @throws IOException if the AirSync request fails
+     */
     public static List<AirSyncAccount> getAirSyncAccounts(AirSyncFleet fleet) throws IOException {
         byte[] respRaw = getBytes(fleet);
         return OBJECT_MAPPER.readValue(respRaw, new TypeReference<>() {});

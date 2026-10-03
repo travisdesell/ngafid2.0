@@ -26,6 +26,13 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.www.ErrorResponse;
 
+/**
+ * Serves the Cesium 3D flight-replay page and the endpoint that produces its path data.
+ *
+ * <p>From a flight's latitude, longitude, altitude, and time series it builds the Cesium flight path, dropping
+ * vertices closer together than {@link #MIN_CESIUM_PATH_SEGMENT_METERS} to suppress GPS dither, and renders the
+ * replay template with the resulting data.
+ */
 public class CesiumDataJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(CesiumDataJavalinRoutes.class.getName());
@@ -43,8 +50,7 @@ public class CesiumDataJavalinRoutes {
             StringTimeSeries date,
             StringTimeSeries time,
             StringTimeSeries utcDateTime) {
-        return CesiumFlightReadiness.hasRequiredCesiumSeries(
-                latitude, longitude, altAgl, date, time, utcDateTime);
+        return CesiumFlightReadiness.hasRequiredCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime);
     }
 
     private static CesiumResponse emptyCesiumResponse(String airframeType, String errorMessage) {
@@ -66,12 +72,12 @@ public class CesiumDataJavalinRoutes {
     /**
      * Lists stored series that Cesium requires but are absent for this flight.
      *
-     * @param latitude latitude series
-     * @param longitude longitude series
-     * @param altAgl altitude-above-ground-level series
-     * @param date local date series
-     * @param time local time series
-     * @param utcDateTime UTC date-time series
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
      * @return null if all required series are present
      */
     static String describeMissingCesiumSeries(
@@ -81,20 +87,19 @@ public class CesiumDataJavalinRoutes {
             StringTimeSeries date,
             StringTimeSeries time,
             StringTimeSeries utcDateTime) {
-        return CesiumFlightReadiness.describeMissingCesiumSeries(
-                latitude, longitude, altAgl, date, time, utcDateTime);
+        return CesiumFlightReadiness.describeMissingCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime);
     }
 
     /**
      * Explains why a flight with stored series still produced an empty Cesium path.
      *
-     * @param latitude latitude series
-     * @param longitude longitude series
-     * @param altAgl altitude-above-ground-level series
-     * @param date local date series
-     * @param time local time series
-     * @param utcDateTime UTC date-time series
-     * @param response generated Cesium response
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @param response the computed Cesium response to inspect for path data
      * @return null when {@code response} contains path data
      */
     static String describeEmptyCesiumPath(
@@ -108,8 +113,7 @@ public class CesiumDataJavalinRoutes {
         if (!response.getFlightGeoInfoAgl().isEmpty()) {
             return null;
         }
-        return CesiumFlightReadiness.describeNoPlayableSamples(
-                latitude, longitude, altAgl, date, time, utcDateTime);
+        return CesiumFlightReadiness.describeNoPlayableSamples(latitude, longitude, altAgl, date, time, utcDateTime);
     }
 
     private static CesiumResponse finalizeCesiumResponse(
@@ -143,8 +147,7 @@ public class CesiumDataJavalinRoutes {
                 flightAglTimes,
                 airframeType,
                 null);
-        String errorMessage =
-                describeEmptyCesiumPath(latitude, longitude, altAgl, date, time, utcDateTime, response);
+        String errorMessage = describeEmptyCesiumPath(latitude, longitude, altAgl, date, time, utcDateTime, response);
         if (errorMessage == null) {
             return response;
         }
@@ -183,34 +186,27 @@ public class CesiumDataJavalinRoutes {
         return CesiumFlightReadiness.cesiumSampleCount(latitude, altAgl);
     }
 
-    private static boolean hasValidCesiumPosition(
-            DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
+    private static boolean hasValidCesiumPosition(DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
         return CesiumFlightReadiness.hasValidCesiumPosition(latitude, longitude, index);
     }
 
     /**
-     * Valid 3D sample: position plus a defined AGL (0 ft on the ground is allowed).
+     * Reports whether the sample at {@code index} is a valid 3D sample: position plus a defined
+     * AGL (0 ft on the ground is allowed).
      *
-     * @param latitude latitude series
-     * @param longitude longitude series
-     * @param altAgl altitude-above-ground-level series
-     * @param index sample index
-     * @return whether the sample is valid for Cesium
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param index the sample index to check
+     * @return true if the sample has a valid position and a defined AGL value
      */
     private static boolean hasValidCesiumSample(
-            DoubleTimeSeries latitude,
-            DoubleTimeSeries longitude,
-            DoubleTimeSeries altAgl,
-            int index) {
+            DoubleTimeSeries latitude, DoubleTimeSeries longitude, DoubleTimeSeries altAgl, int index) {
         return CesiumFlightReadiness.hasValidCesiumSample(latitude, longitude, altAgl, index);
     }
 
     private static String formatCesiumRowTimestamp(
-            int index,
-            StringTimeSeries date,
-            StringTimeSeries time,
-            StringTimeSeries utcDateTime,
-            int dateSize) {
+            int index, StringTimeSeries date, StringTimeSeries time, StringTimeSeries utcDateTime, int dateSize) {
         return CesiumFlightReadiness.formatCesiumRowTimestamp(index, date, time, utcDateTime, dateSize);
     }
 
@@ -218,6 +214,11 @@ public class CesiumDataJavalinRoutes {
         throw new UnsupportedOperationException("Utility class");
     }
 
+    /**
+     * Registers this class's Cesium flight-data routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/ngafid_cesium", CesiumDataJavalinRoutes::handleGetNgafidCesium);
         app.post("/protected/cesium_data", CesiumDataJavalinRoutes::handlePostCesiumData);
@@ -286,8 +287,8 @@ public class CesiumDataJavalinRoutes {
                         StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
                 StringTimeSeries time =
                         StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
-                StringTimeSeries utcDateTime = StringTimeSeries.getStringTimeSeries(
-                        connection, flightIdNewInteger, Parameters.UTC_DATE_TIME);
+                StringTimeSeries utcDateTime =
+                        StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, Parameters.UTC_DATE_TIME);
 
                 if (!hasRequiredCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime)) {
                     String errorMessage =
@@ -485,8 +486,7 @@ public class CesiumDataJavalinRoutes {
             StringTimeSeries utcDateTime = flight.getStringTimeSeries(connection, Parameters.UTC_DATE_TIME);
 
             if (!hasRequiredCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime)) {
-                String errorMessage =
-                        describeMissingCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime);
+                String errorMessage = describeMissingCesiumSeries(latitude, longitude, altAgl, date, time, utcDateTime);
                 LOG.warning("Flight " + flightId + " is missing required Cesium coordinate or time series: "
                         + errorMessage);
                 flights.put(flightId, emptyCesiumResponse(airframeType, errorMessage));
@@ -638,8 +638,8 @@ public class CesiumDataJavalinRoutes {
             ArrayList<String> flightAglTimes) {
         int dateSize = date != null ? date.size() : 0;
         int sampleCount = cesiumSampleCount(latitude, altAgl);
-        int lastValidIndex = findLastValidCesiumIndex(
-                latitude, longitude, altAgl, date, time, utcDateTime, dateSize, sampleCount);
+        int lastValidIndex =
+                findLastValidCesiumIndex(latitude, longitude, altAgl, date, time, utcDateTime, dateSize, sampleCount);
         CesiumPathFilter pathFilter = new CesiumPathFilter();
 
         for (int i = 0; i < sampleCount; i++) {

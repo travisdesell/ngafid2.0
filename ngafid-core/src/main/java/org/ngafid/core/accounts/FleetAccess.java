@@ -8,6 +8,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+/**
+ * A single user-to-fleet access grant, recording the user's access level for a given fleet.
+ *
+ * <p>The access type is one of {@link #MANAGER}, {@link #UPLOAD}, {@link #VIEW}, {@link #WAITING}, or {@link #DENIED},
+ * and is persisted in the {@code fleet_access} table. Instances are hydrated from a {@link java.sql.ResultSet} or by
+ * explicit user/fleet/type values.
+ */
 public class FleetAccess implements Serializable {
     public static final String MANAGER = "MANAGER";
     public static final String UPLOAD = "UPLOAD";
@@ -94,6 +101,13 @@ public class FleetAccess implements Serializable {
      */
     private FleetAccess() {}
 
+    /**
+     * Constructs a fleet-access entry linking a user to a fleet with a given access level.
+     *
+     * @param fleetId the fleet id
+     * @param userId the user id
+     * @param accessType the access level (e.g. manager, upload, view, or a pending-access marker)
+     */
     protected FleetAccess(int fleetId, int userId, String accessType) {
         this.fleetId = fleetId;
         this.userId = userId;

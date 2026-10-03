@@ -8,11 +8,21 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 /**
  * Utility class for {@link EventObserver} and {@link EventConsumer}.
  */
-public enum Events {;
+public final class Events {
+
+    private Events() {
+        // Utility class; not instantiable.
+    }
 
     public static final long MAX_POLL_INTERVAL_MS = 10 * 60 * 1000;
     public static final long N_RECORDS = 50;
 
+    /**
+     * A unit of work carried on the Kafka event topic: a request to compute one event definition against one flight.
+     *
+     * @param flightId the id of the flight to evaluate
+     * @param eventId the id of the event definition to compute
+     */
     public record EventToCompute(int flightId, int eventId) {}
 
     private static Properties getProperties() {
@@ -29,10 +39,22 @@ public enum Events {;
         return props;
     }
 
+    /**
+     * Creates a Kafka producer configured for event records (string key/value serialization and the shared base
+     * configuration).
+     *
+     * @return a new Kafka producer for event messages
+     */
     public static KafkaProducer<String, String> createProducer() {
         return new KafkaProducer<>(getProperties());
     }
 
+    /**
+     * Creates a Kafka consumer for event records, already subscribed to the event and event-retry topics and configured
+     * with the event poll limits and JSON deserialization into {@link EventToCompute}.
+     *
+     * @return a new Kafka consumer subscribed to the event topics
+     */
     public static KafkaConsumer<String, String> createConsumer() {
         var consumer = new KafkaConsumer<String, String>(getProperties());
         consumer.subscribe(List.of(Topic.EVENT.toString(), Topic.EVENT_RETRY.toString()));

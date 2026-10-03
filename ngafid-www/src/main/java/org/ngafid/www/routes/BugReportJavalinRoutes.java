@@ -17,6 +17,13 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.util.SendEmail;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the bug-report feature: the bug-report submission page and the endpoint that emails a submitted report to
+ * the configured NGAFID administrators.
+ *
+ * <p>Submissions are validated (title and body required) and delivered to the semicolon-separated recipients from
+ * {@code ngafid.admin.emails}, optionally BCCing the reporter when they opt to share their address.
+ */
 @SuppressWarnings("LoggerStringConcat")
 public final class BugReportJavalinRoutes {
 
@@ -27,6 +34,13 @@ public final class BugReportJavalinRoutes {
     }
 
     /* Bug Report Submission (Email) */
+    /**
+     * Accepts a bug-report payload from the request body and emails it to the administrators. Rejects a null or
+     * malformed payload with an error response.
+     *
+     * @param ctx the Javalin request context whose body holds the bug-report payload
+     * @throws Exception if parsing the payload or sending the email fails
+     */
     public static void postBugReportEmail(Context ctx) throws Exception {
 
         LOG.info("Received bug report...");
@@ -187,6 +201,11 @@ public final class BugReportJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Registers this class's bug-report routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(io.javalin.Javalin app) {
 
         // Bug Report Submission

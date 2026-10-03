@@ -4,6 +4,12 @@ import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
+/**
+ * Utility for deriving a coarse geohash string from a latitude/longitude pair.
+ *
+ * <p>Coordinates are formatted to a fixed number of decimal places so that nearby points share a key, giving the
+ * airport index a cheap spatial-bucketing scheme for proximity lookups.
+ */
 public final class GeoHash {
     private static final int HASH_DECIMALS = 2;
     private static final DecimalFormat DECIMAL_FORMAT;
@@ -21,10 +27,27 @@ public final class GeoHash {
         DECIMAL_FORMAT.setPositivePrefix("+");
     }
 
+    /**
+     * Computes the geohash for a coordinate by formatting the latitude and longitude to a fixed number of decimal
+     * places (each sign-prefixed) and concatenating them, bucketing nearby points into the same string.
+     *
+     * @param latitude the latitude, in degrees
+     * @param longitude the longitude, in degrees
+     * @return the concatenated latitude/longitude geohash string
+     */
     public static String getGeoHash(double latitude, double longitude) {
         return DECIMAL_FORMAT.format(latitude) + DECIMAL_FORMAT.format(longitude);
     }
 
+    /**
+     * Computes the geohashes of the nine tiles forming the 3x3 neighborhood centered on a coordinate (the center tile
+     * plus its eight adjacent tiles), where one tile step is the geohash's decimal resolution. Used to search for
+     * points near a location that may fall into an adjacent bucket.
+     *
+     * @param latitude the latitude, in degrees
+     * @param longitude the longitude, in degrees
+     * @return a 9-element array of geohash strings for the surrounding tiles (NW, N, NE, W, center, E, SW, S, SE)
+     */
     public static String[] getNearbyGeoHashes(double latitude, double longitude) {
         String latHash = DECIMAL_FORMAT.format(latitude);
         String lonHash = DECIMAL_FORMAT.format(longitude);

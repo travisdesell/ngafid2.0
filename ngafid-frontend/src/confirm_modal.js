@@ -1,130 +1,115 @@
-import { Modal } from 'bootstrap';
+import { Modal } from "bootstrap";
 
-import React, {createRef} from "react";
-import { createRoot } from 'react-dom/client';
-
+import React, { createRef } from "react";
+import { createRoot } from "react-dom/client";
 
 const confirmModalRef = createRef();
 
-
 const submitMethodDefault = () => {
-    console.warn("No submit method defined for confirm modal!");
+  console.warn("No submit method defined for confirm modal!");
 };
 
 class ConfirmModal extends React.Component {
+  constructor(props) {
+    super(props);
 
-    constructor(props) {
+    this.state = {
+      title: "",
+      message: "",
+      submitMethod: submitMethodDefault,
+    };
+  }
 
-        super(props);
+  componentDidMount() {
+    //Initialize/retrieve the Bootstrap modal instance
+    const modalElement = document.getElementById("confirm-modal");
+    this.bsModal = Modal.getOrCreateInstance(modalElement);
+  }
 
-        this.state = {
-            title : "",
-            message : "",
-            submitMethod : submitMethodDefault
-        };
+  show(title, message, submitMethod = null) {
+    this.setState(
+      {
+        title: String(title),
+        message: String(message),
+        submitMethod: submitMethod,
+      },
+      () => this.bsModal.show(), //<-- Show the modal after state has updated
+    );
+  }
 
-    }
+  modalClicked() {
+    console.log("Confirm Modal submit clicked!");
 
-    componentDidMount() {
+    //Submit method exists, call it
+    this.state.submitMethod();
+  }
 
-        //Initialize/retrieve the Bootstrap modal instance
-        const modalElement = document.getElementById('confirm-modal');
-        this.bsModal = Modal.getOrCreateInstance(modalElement);
+  render() {
+    const { title, message, submitMethod } = this.state;
 
-    }
+    console.log(`Rendering Confirm Modal with confirm title: '${title}' and message: '${message}'`);
 
-    show(title, message, submitMethod=null) {
+    return (
+      <div className="modal-content">
+        {/* Confirm Modal Header */}
+        <div className="modal-header">
+          {/* Main Title */}
+          <h5 id="confirm-modal-title" className="modal-title">
+            Confirm Operation
+          </h5>
 
-        this.setState(
-            {
-                title: String(title),
-                message: String(message),
-                submitMethod: submitMethod
-            },
-            () => this.bsModal.show()      //<-- Show the modal after state has updated
-        );
+          {/* Top Close Button */}
+          <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
 
-    }
+        {/* Confirm Modal Body */}
+        <div id="confirm-modal-body" className="modal-body">
+          {/* Confirm Modal Title */}
+          <h4>{title}</h4>
 
-    modalClicked() {
+          {/* Confirm Modal Message */}
+          {message}
+        </div>
 
-        console.log("Confirm Modal submit clicked!");
-        
-        //Submit method exists, call it
-        this.state.submitMethod();
+        {/* Confirm Modal Footer */}
+        <div className="modal-footer">
+          {/* Footer Confirm Button (Only visible with a defined submission method) */}
+          {submitMethod && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              data-bs-dismiss="modal"
+              onClick={() => this.modalClicked()}
+            >
+              Confirm
+            </button>
+          )}
 
-    }
-
-    render() {
-
-        const { title, message, submitMethod } = this.state;
-
-        console.log(`Rendering Confirm Modal with confirm title: '${title}' and message: '${message}'`);
-
-        return (
-            <div className='modal-content'>
-
-                {/* Confirm Modal Header */}
-                <div className='modal-header'>
-
-                    {/* Main Title */}
-                    <h5 id='confirm-modal-title' className='modal-title'>
-                        Confirm Operation
-                    </h5>
-
-                    {/* Top Close Button */}
-                    <button type='button' className='close' data-bs-dismiss='modal' aria-label='Close'>
-                        <span aria-hidden='true'>&times;</span>
-                    </button>
-
-                </div>
-
-                {/* Confirm Modal Body */}
-                <div id='confirm-modal-body' className='modal-body'>
-
-                    {/* Confirm Modal Title */}
-                    <h4>
-                        {title}
-                    </h4>
-
-                    {/* Confirm Modal Message */}
-                    {message}
-
-                </div>
-
-                {/* Confirm Modal Footer */}
-                <div className='modal-footer'>
-
-                    {/* Footer Confirm Button (Only visible with a defined submission method) */}
-                    {
-                        submitMethod
-                        &&
-                        <button type='button' className='btn btn-primary' data-bs-dismiss='modal' onClick={() => this.modalClicked()}>
-                            Confirm
-                        </button>
-                    }
-
-                    {/* Footer Close Button */}
-                    <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
-                        Close
-                    </button>
-
-                </div>
-            </div>
-        );
-    }
+          {/* Footer Close Button */}
+          <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
 
 const container = document.querySelector("#confirm-modal-content");
 const root = createRoot(container);
-root.render(<ConfirmModal ref={confirmModalRef}/>);
+root.render(<ConfirmModal ref={confirmModalRef} />);
 
+/**
+ * Opens the shared confirmation modal, wiring up the callback invoked when the user confirms.
+ * @param title heading text shown at the top of the modal
+ * @param message body text describing the action awaiting confirmation
+ * @param submitMethod callback run when the user confirms; defaults to a no-op logging handler
+ */
+export function showConfirmModal(title, message, submitMethod = submitMethodDefault) {
+  console.log(`Showing Confirm Modal with title: '${title}' and message: '${message}'`);
 
-export function showConfirmModal(title, message, submitMethod=submitMethodDefault) {
-
-    console.log(`Showing Confirm Modal with title: '${title}' and message: '${message}'`);
-
-    //Show the modal with the given title, message, and optional submit method
-    confirmModalRef.current.show(title, message, submitMethod);
-    
+  //Show the modal with the given title, message, and optional submit method
+  confirmModalRef.current.show(title, message, submitMethod);
 }

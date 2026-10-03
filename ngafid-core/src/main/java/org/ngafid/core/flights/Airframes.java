@@ -11,6 +11,14 @@ import java.util.logging.Logger;
 import org.ngafid.core.util.NormalizedColumn;
 import org.ngafid.core.util.filters.Pair;
 
+/**
+ * Central registry of aircraft airframe names, types, and their database identifiers.
+ *
+ * <p>This utility class holds the canonical airframe-name constants and fixed-wing/rotorcraft classification sets,
+ * maps recorder-reported names to canonical codes (including Garmin rotorcraft aliases), and provides lookups between
+ * airframe names, ids, and types backed by the {@code airframes}/{@code airframe_types}/{@code fleet_airframes} tables
+ * with process-wide caching.
+ */
 public final class Airframes {
     private Airframes() {}
 
@@ -149,8 +157,8 @@ public final class Airframes {
     /**
      * Maps a Garmin recorder {@code airframe_name} to a rotorcraft airframe code, or empty when unknown.
      *
-     * @param recorderName Garmin recorder airframe name
-     * @return matching rotorcraft airframe code, if known
+     * @param recorderName the Garmin recorder {@code airframe_name} to resolve
+     * @return the matching rotorcraft airframe code, or {@link Optional#empty()} if none matches
      */
     public static Optional<String> resolveGarminRotorcraftAirframeCode(String recorderName) {
         if (recorderName == null || recorderName.isBlank()) {
@@ -175,8 +183,21 @@ public final class Airframes {
         return Optional.empty();
     }
 
+    /**
+     * Key for an airframe-name alias, scoping the alias to a specific fleet (or all fleets when {@code fleetId} is -1).
+     *
+     * @param name the recorder-reported airframe name to be aliased
+     * @param fleetId the fleet the alias applies to, or -1 for all fleets
+     */
     public record AliasKey(String name, int fleetId) {}
 
+    /**
+     * Creates an {@link AliasKey} that applies to all fleets (fleet id -1), used for airframe-name aliases that are
+     * not fleet-specific.
+     *
+     * @param name the airframe name to alias
+     * @return an all-fleets alias key for the name
+     */
     public static AliasKey defaultAlias(String name) {
         return new AliasKey(name, -1);
     }
@@ -193,25 +214,55 @@ public final class Airframes {
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
     // CHECKSTYLE:ON
+    /**
+     * A normalized airframe type (e.g. fixed wing, rotorcraft, UAS) backed by the {@code airframe_types} table.
+     *
+     * <p>Resolves between a type name and its database id through the shared {@link NormalizedColumn} cache.
+     */
     public static class Type extends NormalizedColumn<Type> {
         @Override
         protected String getTableName() {
             return "airframe_types";
         }
 
+        /**
+         * Creates an unresolved airframe type from its name (no database id assigned yet).
+         *
+         * @param name the airframe-type name
+         */
         public Type(String name) {
             super(name);
         }
 
+        /**
+         * Resolves an airframe type from its name, looking up (or assigning) its database id.
+         *
+         * @param connection the database connection
+         * @param name the airframe-type name
+         * @throws SQLException if the lookup or insert fails
+         */
         public Type(Connection connection, String name) throws SQLException {
             super(connection, name);
         }
 
+        /**
+         * Resolves an airframe type from its database id, looking up the corresponding name.
+         *
+         * @param connection the database connection
+         * @param id the airframe-type id
+         * @throws SQLException if the lookup fails
+         */
         public Type(Connection connection, int id) throws SQLException {
             super(connection, id);
         }
     }
 
+    /**
+     * A single airframe resolved to its database id, name, and {@link Type}.
+     *
+     * <p>Instances resolve by name or by id against the {@code airframes} table, caching name/id/type mappings in
+     * process-wide concurrent maps, and can lazily insert a new airframe row when a name is seen for the first time.
+     */
     public static class Airframe {
         private static final ConcurrentHashMap<String, Pair<Type, Integer>> NAME_TO_TYPE_AND_ID =
                 new ConcurrentHashMap<>();
@@ -222,16 +273,39 @@ public final class Airframes {
         private String name;
         private Type type;
 
+        /**
+         * Resolves an airframe by its name, looking up its id and type from the database.
+         *
+         * @param connection the database connection
+         * @param airframeName the airframe name to resolve
+         * @return the resolved airframe
+         * @throws SQLException if the lookup fails
+         */
         public static Airframe getAirframeByName(Connection connection, String airframeName) throws SQLException {
             return new Airframe(connection, airframeName, null);
         }
 
+        /**
+         * Creates an in-memory airframe (id -1, no database lookup) from a name and type.
+         *
+         * @param name the airframe name
+         * @param type the airframe type
+         */
         public Airframe(String name, Type type) {
             this.id = -1;
             this.name = name;
             this.type = type;
         }
 
+        /**
+         * Resolves an airframe from its name, filling in its id and type from the database (or a process-wide cache
+         * on repeat lookups of the same name).
+         *
+         * @param connection the database connection
+         * @param name the airframe name
+         * @param type the airframe type, or null to resolve it from the database
+         * @throws SQLException if the lookup fails
+         */
         public Airframe(Connection connection, String name, Type type) throws SQLException {
             this.name = name;
             this.id = -1;
@@ -247,6 +321,14 @@ public final class Airframes {
             }
         }
 
+        /**
+         * Resolves an airframe from its database id, filling in its name and type from the database (or a
+         * process-wide cache on repeat lookups of the same id).
+         *
+         * @param connection the database connection
+         * @param id the airframe id
+         * @throws SQLException if the lookup fails
+         */
         public Airframe(Connection connection, int id) throws SQLException {
             this.id = id;
             this.name = null;
@@ -320,6 +402,15 @@ public final class Airframes {
         }
     }
 
+    /**
+     * Associates an airframe with a fleet by inserting a {@code fleet_airframes} row, unless that association has
+     * already been recorded (tracked by an in-memory cache to avoid redundant inserts).
+     *
+     * @param connection the database connection
+     * @param airframeId the airframe id
+     * @param fleetId the fleet id to associate the airframe with
+     * @throws SQLException if the insert fails
+     */
     public static void setAirframeFleet(Connection connection, int airframeId, int fleetId) throws SQLException {
         String key = airframeId + "-" + fleetId;
 
@@ -341,6 +432,15 @@ public final class Airframes {
         }
     }
 
+    /**
+     * Returns the names of the airframes associated with a fleet (joined through {@code fleet_airframes}), ordered by
+     * name.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose airframes to list
+     * @return the fleet's airframe names
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<String> getAll(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> airframes = new ArrayList<>();
 
@@ -361,16 +461,38 @@ public final class Airframes {
         }
     }
 
+    /**
+     * A lightweight pairing of an airframe's name with its database id, used for list/dropdown style results.
+     *
+     * @param name the airframe name
+     * @param id the airframe's database id
+     */
     public record AirframeNameID(String name, int id) {
         /*...*/
     }
 
     public static final int FLEET_ID_ALL = -1;
 
+    /**
+     * Returns every airframe (across all fleets) as name/id pairs.
+     *
+     * @param connection the database connection
+     * @return the airframe name/id pairs for all fleets
+     * @throws SQLException if the query fails
+     */
     public static AirframeNameID[] getAllWithIds(Connection connection) throws SQLException {
         return getAllWithIds(connection, FLEET_ID_ALL);
     }
 
+    /**
+     * Returns the airframes as name/id pairs, scoped to a fleet (or all fleets when {@code fleetId} is the
+     * all-fleets sentinel).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to scope to, or the all-fleets sentinel for every airframe
+     * @return the matching airframe name/id pairs
+     * @throws SQLException if the query fails
+     */
     public static AirframeNameID[] getAllWithIds(Connection connection, int fleetId) throws SQLException {
 
         ArrayList<AirframeNameID> airframes = new ArrayList<>();
@@ -440,6 +562,13 @@ public final class Airframes {
         return airframes.toArray(AirframeNameID[]::new);
     }
 
+    /**
+     * Returns the names of all airframes in the database (across all fleets), ordered by name.
+     *
+     * @param connection the database connection
+     * @return every airframe name
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<String> getAll(Connection connection) throws SQLException {
 
         String queryString = "SELECT airframe FROM airframes ORDER BY airframe";

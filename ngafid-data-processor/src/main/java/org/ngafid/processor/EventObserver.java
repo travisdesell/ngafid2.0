@@ -84,6 +84,14 @@ public class EventObserver {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /**
+     * Entry point for the event-observer daemon. Starts the Docker service heartbeat and then continuously watches
+     * for flights that are ready for event computation, computing the configured event definitions for each and
+     * emitting the results onto the events Kafka topic.
+     *
+     * @param args command-line arguments (unused)
+     * @throws UnknownHostException if the local host name needed to configure the Kafka client cannot be resolved
+     */
     public static void main(String[] args) throws UnknownHostException {
 
         /* Start Docker Service Heartbeat Producer */

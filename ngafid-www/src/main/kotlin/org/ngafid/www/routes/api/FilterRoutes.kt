@@ -29,10 +29,9 @@ object FilterRoutes : RouteProvider() {
     /**
      * Fetches all fleet filters
      */
-    fun getStoredFilters(ctx: Context): Unit =
-        Database.getConnection().use { connection ->
-            ctx.json(StoredFilter.getStoredFilters(connection, SessionUtility.getUser(ctx).fleetId))
-        }
+    fun getStoredFilters(ctx: Context): Unit = Database.getConnection().use { connection ->
+        ctx.json(StoredFilter.getStoredFilters(connection, SessionUtility.getUser(ctx).fleetId))
+    }
 
     /**
      * Creates a new filter with the given name
@@ -74,10 +73,9 @@ object FilterRoutes : RouteProvider() {
     /**
      * Deletes filter by name
      */
-    fun deleteFilter(ctx: Context): Unit =
-        Database.getConnection().use { connection ->
-            val user = SessionUtility.getUser(ctx)
-            StoredFilter.removeFilter(connection, user.fleetId, ctx.pathParam("fid"))
-            ctx.json(StoredFilter.getStoredFilters(connection, user.fleetId))
-        }
+    fun deleteFilter(ctx: Context): Unit = Database.getConnection().use { connection ->
+        val user = SessionUtility.getUser(ctx)
+        StoredFilter.removeFilter(connection, user.fleetId, ctx.pathParam("fid"))
+        ctx.json(StoredFilter.getStoredFilters(connection, user.fleetId))
+    }
 }

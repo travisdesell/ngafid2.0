@@ -18,6 +18,14 @@
     <properties>
         <javalin.version>6.6.0</javalin.version>
         <javalin.openapi.version>6.5.0</javalin.openapi.version>
+        <!--
+            JUnit tag groups excluded from "mvn test" by default. The Selenium end-to-end
+            tests are tagged "e2e" and need a running NGAFID server plus a browser, so they
+            are skipped in the default (and CI) unit run. Clear this property to run them,
+            e.g. "mvn test -Dngafid.www.test.excludedGroups=" (the scripts/test.sh e2e flag
+            does exactly that).
+        -->
+        <ngafid.www.test.excludedGroups>e2e</ngafid.www.test.excludedGroups>
     </properties>
 
     <dependencies>
@@ -174,13 +182,15 @@
                 </executions>
             </plugin>
 
-            <!-- Surefire configured for JUnit 5 and Selenium runs on JDK 24+ -->
+            <!-- Surefire configured for JUnit 5 and Selenium runs on JDK 25+ -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
                     <useModulePath>false</useModulePath>
+                    <!-- Skip e2e-tagged tests by default; see the ngafid.www.test.excludedGroups property above. -->
+                    <excludedGroups>${ngafid.www.test.excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
         </plugins>

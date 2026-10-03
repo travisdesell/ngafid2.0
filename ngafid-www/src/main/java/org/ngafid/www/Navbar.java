@@ -9,12 +9,28 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
 
+/**
+ * Builds the client-side state that drives the shared navigation bar for each rendered page.
+ *
+ * <p>Its sole method inspects the session user and the database to emit a JavaScript snippet of feature flags
+ * (fleet-manager status, pending-user and unconfirmed-tail counts, AirSync, upload and tail-modify access, admin
+ * and view permissions) that the front-end navbar reads when rendering.
+ */
 public class Navbar {
 
     private Navbar() {
         // Utility class
     }
 
+    /**
+     * Builds the JavaScript snippet that initializes the navigation bar for the current page. It inspects the
+     * session user and queries the database to set the client-side flags the navbar needs -- whether the user is a
+     * fleet manager, the count of users awaiting approval, whether AirSync is enabled for the fleet, tail-modify and
+     * upload access, and the count of unconfirmed tails.
+     *
+     * @param ctx the Javalin request context supplying the session user
+     * @return a JavaScript source string defining the navbar state variables
+     */
     public static String getJavascript(Context ctx) {
 
         User user = ctx.sessionAttribute("user");

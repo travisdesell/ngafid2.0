@@ -1,18 +1,22 @@
 package org.ngafid.www
 
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.openqa.selenium.*
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.edge.*
 import org.openqa.selenium.support.ui.*
 import java.time.Duration
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.chrome.ChromeOptions
 
+// e2e: needs a running NGAFID server + browser; excluded from the default unit run.
+// Run with `scripts/test.sh java --e2e` once a server is up (see CONTRIBUTING.md).
+@Tag("e2e")
 class InvalidLoginTest {
 
     companion object {
         private lateinit var driver: WebDriver
+
         @BeforeAll
         @JvmStatic
         fun setup() {
@@ -39,6 +43,7 @@ class InvalidLoginTest {
 
         return "http://localhost:$port/"
     }
+
     @Test
     fun invalidPasswordShowsError() {
         val baseurl = baseUrlFromProperties()
@@ -53,6 +58,8 @@ class InvalidLoginTest {
         modal.findElement(By.cssSelector("button[type='submit']")).click()
         val currentUrl = driver.currentUrl.orEmpty()
         assertTrue(
-            wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Invalid")) || currentUrl.contains("/#!"))
+            wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Invalid")) ||
+                currentUrl.contains("/#!"),
+        )
     }
 }

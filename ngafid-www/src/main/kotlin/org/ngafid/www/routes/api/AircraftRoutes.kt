@@ -17,7 +17,7 @@ import java.util.logging.Logger
 object AircraftRoutes : RouteProvider() {
 
     val LOG: Logger = Logger.getLogger(
-        AircraftRoutes::class.java.name
+        AircraftRoutes::class.java.name,
     )
 
     override fun bind(app: JavalinConfig) {
@@ -63,7 +63,6 @@ object AircraftRoutes : RouteProvider() {
             val paths = Flight.getSimAircraft(connection, fleetId)
             ctx.json(paths)
         }
-
     }
 
     fun postSimAircraft(ctx: Context) {

@@ -1,40 +1,30 @@
-import 'bootstrap';
+import "bootstrap";
 
 import React from "react";
-import { createRoot } from 'react-dom/client';
-
+import { createRoot } from "react-dom/client";
 
 import SignedInNavbar from "./signed_in_navbar.js";
 
-const navbarContainer = document.querySelector('#navbar');
+const navbarContainer = document.querySelector("#navbar");
 const navbarRoot = createRoot(navbarContainer);
-navbarRoot.render(
-    <SignedInNavbar activePage="flight_display" />
-);
-
-
+navbarRoot.render(<SignedInNavbar activePage="flight_display" />);
 
 class FlightDisplayCard extends React.Component {
-    constructor(props) {
-        super(props);
+  constructor(props) {
+    super(props);
 
-        this.state = {
-        };
-    }
+    this.state = {};
+  }
 
-    render() {
-        return (
-            <div className="card">
-                <h4>HELLO WORLD!</h4>
-            </div>
-        );
-    }
+  render() {
+    return (
+      <div className="card">
+        <h4>HELLO WORLD!</h4>
+      </div>
+    );
+  }
 }
-
-
 
 const container = document.querySelector("#flight-display-page");
 const root = createRoot(container);
-root.render(
-    <FlightDisplayCard />
-);
+root.render(<FlightDisplayCard />);

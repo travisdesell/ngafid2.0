@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "ask": [
+      "Edit(/**)",
+      "Write(/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/scripts/bash_repo_write_gate.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "autoMode": {
+    "hard_deny": [
+      "$defaults",
+      "Modifying, creating, moving or deleting any file inside this repository by any means other than the Edit/Write tools -- e.g. sed -i, perl -i, python/heredoc scripts, shell redirects, tee, cp/mv/rm, or file-changing git commands. Every repo change must go through Edit/Write so the user reviews and approves the diff, even when it is part of an approved plan."
+    ]
+  }
+}

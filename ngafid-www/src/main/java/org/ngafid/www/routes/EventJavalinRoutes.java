@@ -18,6 +18,13 @@ import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
+/**
+ * Serves the event-definition pages: displaying a fleet's event names, and the admin-only creation, management,
+ * and update pages for event definitions.
+ *
+ * <p>Each route renders a Mustache template seeded with the airframes, double-time-series names, and event
+ * definitions needed to build the client-side forms, enforcing admin access where required.
+ */
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.GSON;
@@ -26,6 +33,11 @@ public class EventJavalinRoutes {
         // Utility class
     }
 
+    /**
+     * Renders the event-definitions display page ({@code event_definitions_display.html}) for the logged-in user.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getEventDefinition(Context ctx) {
         final String templateFile = "event_definitions_display.html";
 
@@ -54,6 +66,11 @@ public class EventJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the event-creation page ({@code create_event.html}) where a user defines a new event.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getEventCreator(Context ctx) {
         final String templateFile = "create_event.html";
 
@@ -95,6 +112,11 @@ public class EventJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the event-management page ({@code manage_events.html}) for reviewing and editing existing events.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getEventManager(Context ctx) {
         final String templateFile = "manage_events.html";
 
@@ -136,6 +158,11 @@ public class EventJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the event-update page ({@code update_event.html}) for editing a single existing event definition.
+     *
+     * @param ctx the Javalin request context, whose response is rendered
+     */
     public static void getUpdateEvent(Context ctx) {
         final String templateFile = "update_event.html";
 
@@ -170,6 +197,12 @@ public class EventJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's event routes (the event-definition display, creator, manager, and update pages) on the
+     * given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         // app.get("/protected/manage_event_definitions", EventJavalinRoutes::getAllEventDefinitions);
 

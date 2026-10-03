@@ -56,6 +56,18 @@ public final class CesiumFlightReadiness {
         return new Result(flightId, true, null);
     }
 
+    /**
+     * Reports whether the series required to build a Cesium replay are all present: latitude, longitude, and AltAGL,
+     * plus a time source — either both local date and time, or a UTC date-time series.
+     *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @return true if position, altitude, and a usable time source are all available
+     */
     public static boolean hasRequiredCesiumSeries(
             DoubleTimeSeries latitude,
             DoubleTimeSeries longitude,
@@ -70,15 +82,15 @@ public final class CesiumFlightReadiness {
     }
 
     /**
-     * Checks that the series needed to render Cesium flight data are available.
+     * Describes which flight data series required for a Cesium replay are missing.
      *
-     * @param latitude latitude series
-     * @param longitude longitude series
-     * @param altAgl altitude-above-ground-level series
-     * @param date local date series
-     * @param time local time series
-     * @param utcDateTime UTC date-time series
-     * @return null if all required series are present
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @return a human-readable description of the missing series, or null if all required series are present
      */
     public static String describeMissingCesiumSeries(
             DoubleTimeSeries latitude,
@@ -117,15 +129,15 @@ public final class CesiumFlightReadiness {
     }
 
     /**
-     * Identifies why no Cesium sample can be rendered.
+     * Describes why a flight has no Cesium-playable samples, when that is the case.
      *
-     * @param latitude latitude series
-     * @param longitude longitude series
-     * @param altAgl altitude-above-ground-level series
-     * @param date local date series
-     * @param time local time series
-     * @param utcDateTime UTC date-time series
-     * @return null when at least one playable sample exists
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @return a human-readable description of why no playable sample exists, or null when at least one exists
      */
     public static String describeNoPlayableSamples(
             DoubleTimeSeries latitude,
@@ -172,6 +184,18 @@ public final class CesiumFlightReadiness {
         return "Cannot build Cesium flight path: " + String.join("; ", issues) + ".";
     }
 
+    /**
+     * Reports whether at least one sample index yields a complete, playable Cesium frame: a parseable timestamp (from
+     * local date/time or the UTC series) together with a valid position and altitude at that index.
+     *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param date the local date series
+     * @param time the local time series
+     * @param utcDateTime the UTC date-time series
+     * @return true if any index has a usable timestamp, position, and altitude together
+     */
     public static boolean hasPlayableCesiumSample(
             DoubleTimeSeries latitude,
             DoubleTimeSeries longitude,
@@ -190,12 +214,28 @@ public final class CesiumFlightReadiness {
         return false;
     }
 
+    /**
+     * Returns the number of sample indices safe to iterate over for Cesium: the shorter of the latitude and AltAGL
+     * series lengths, so neither is indexed out of bounds.
+     *
+     * @param latitude the latitude series
+     * @param altAgl the altitude-above-ground series
+     * @return the smaller of the two series' sizes
+     */
     public static int cesiumSampleCount(DoubleTimeSeries latitude, DoubleTimeSeries altAgl) {
         return Math.min(latitude.size(), altAgl.size());
     }
 
-    public static boolean hasValidCesiumPosition(
-            DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
+    /**
+     * Reports whether the latitude/longitude pair at an index is a valid Cesium position: both in range, neither NaN,
+     * and neither exactly zero (a zero coordinate is treated as missing GPS rather than a real point).
+     *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param index the sample index to test
+     * @return true if the index holds a usable, non-zero, non-NaN coordinate pair
+     */
+    public static boolean hasValidCesiumPosition(DoubleTimeSeries latitude, DoubleTimeSeries longitude, int index) {
         if (index >= latitude.size() || index >= longitude.size()) {
             return false;
         }
@@ -204,23 +244,39 @@ public final class CesiumFlightReadiness {
         return !Double.isNaN(lat) && !Double.isNaN(lon) && lat != 0.0 && lon != 0.0;
     }
 
+    /**
+     * Reports whether the index holds a fully valid Cesium sample: a valid position (see
+     * {@link #hasValidCesiumPosition}) and a non-NaN AltAGL value in range.
+     *
+     * @param latitude the latitude series
+     * @param longitude the longitude series
+     * @param altAgl the altitude-above-ground series
+     * @param index the sample index to test
+     * @return true if position and altitude are both valid at the index
+     */
     public static boolean hasValidCesiumSample(
-            DoubleTimeSeries latitude,
-            DoubleTimeSeries longitude,
-            DoubleTimeSeries altAgl,
-            int index) {
+            DoubleTimeSeries latitude, DoubleTimeSeries longitude, DoubleTimeSeries altAgl, int index) {
         if (!hasValidCesiumPosition(latitude, longitude, index) || index >= altAgl.size()) {
             return false;
         }
         return !Double.isNaN(altAgl.get(index));
     }
 
+    /**
+     * Builds an ISO-8601 UTC timestamp string ({@code yyyy-MM-ddTHH:mm:ssZ}) for a sample index. Prefers the local
+     * date/time series (parsed with a detected formatter); if that is unavailable or unparseable, falls back to the UTC
+     * date-time series. Returns null when no source yields a parseable timestamp (unparseable rows are logged at fine
+     * level and skipped).
+     *
+     * @param index the sample index to format
+     * @param date the local date series (may be null)
+     * @param time the local time series (may be null)
+     * @param utcDateTime the UTC date-time series used as a fallback (may be null)
+     * @param dateSize the usable length of the local date/time series (bounds the local lookup)
+     * @return the ISO-8601 UTC timestamp, or null if no parseable timestamp exists at the index
+     */
     public static String formatCesiumRowTimestamp(
-            int index,
-            StringTimeSeries date,
-            StringTimeSeries time,
-            StringTimeSeries utcDateTime,
-            int dateSize) {
+            int index, StringTimeSeries date, StringTimeSeries time, StringTimeSeries utcDateTime, int dateSize) {
         String fromLocal = formatCesiumIsoTimestamp(
                 date != null && index < dateSize ? date.get(index) : null,
                 time != null && index < dateSize ? time.get(index) : null);

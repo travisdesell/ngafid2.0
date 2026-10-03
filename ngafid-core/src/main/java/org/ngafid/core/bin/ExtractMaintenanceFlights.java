@@ -8,6 +8,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.agl_converter.MSLtoAGLConverter;
@@ -29,6 +30,8 @@ import org.ngafid.core.flights.maintenance.MaintenanceRecord;
  * - --validate-verify: verify validation output against DB
  */
 public final class ExtractMaintenanceFlights {
+    private static final Logger LOG = Logger.getLogger(ExtractMaintenanceFlights.class.getName());
+
     /** Maintenance records are UTC; DB is GMT. All timeline logic uses GMT. */
     private static final DateTimeFormatter MYSQL_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -253,7 +256,7 @@ public final class ExtractMaintenanceFlights {
                     if (rs.next()) tailRows = rs.getInt(1);
                 }
             }
-            System.err.println("[DEBUG TAIL] tail=" + tailNumber + " -> " + tailRows + " row(s) in tails");
+            LOG.fine("maintenance tail=" + tailNumber + " -> " + tailRows + " row(s) in tails");
         }
 
         PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM flights f "
@@ -271,8 +274,8 @@ public final class ExtractMaintenanceFlights {
         stmt.close();
 
         if (debug) {
-            System.err.println("[DEBUG TIME] window=" + windowStartGmt + " to " + windowEndGmt + " (open=" + openDate
-                    + " close=" + closeDate + ") -> " + count + " flight(s)");
+            LOG.fine("maintenance window=" + windowStartGmt + " to " + windowEndGmt + " (open=" + openDate + " close="
+                    + closeDate + ") -> " + count + " flight(s)");
         }
         return count;
     }
@@ -334,7 +337,7 @@ public final class ExtractMaintenanceFlights {
                     MaintenanceRecord record = new MaintenanceRecord(line);
                     boolean tailExists = tailExistsInDb(connection, record.getTailNumber());
                     if (total <= 5) {
-                        System.err.println("[DEBUG] tail=" + record.getTailNumber()
+                        LOG.fine("maintenance record tail=" + record.getTailNumber()
                                 + " open=" + record.getOpenDate() + " close=" + record.getCloseDate()
                                 + " tail_in_db=" + tailExists);
                     }
@@ -432,8 +435,8 @@ public final class ExtractMaintenanceFlights {
                             logOrder(workorder, registration, "registration not in DB");
                             isValid = false;
                         } else {
-                            int flightCount = countFlightsInMaintenancePeriod(
-                                        connection, registration, openDate, closeDate);
+                            int flightCount =
+                                    countFlightsInMaintenancePeriod(connection, registration, openDate, closeDate);
                             if (flightCount == 0) {
                                 logOrder(workorder, registration, "no flights in 10-day window");
                                 isValid = false;
@@ -463,8 +466,8 @@ public final class ExtractMaintenanceFlights {
                 }
             }
 
-            System.out.println("Validation complete: total=" + rowNum
-                    + " valid=" + validRows + " invalid=" + invalidRows);
+            System.out.println(
+                    "Validation complete: total=" + rowNum + " valid=" + validRows + " invalid=" + invalidRows);
             System.out.println("  valid: " + validCsvPath);
             System.out.println("  invalid: " + invalidCsvPath);
             System.out.flush();
@@ -520,10 +523,12 @@ public final class ExtractMaintenanceFlights {
             if (h.contains("wko") || h.equals("workorder")) {
                 wo = i;
             } else if ((h.contains("date") && h.contains("open"))
-                    || h.contains("date_opened") || h.contains("dateopened")) {
+                    || h.contains("date_opened")
+                    || h.contains("dateopened")) {
                 open = i;
             } else if ((h.contains("date") && h.contains("close"))
-                    || h.contains("date_closed") || h.contains("dateclosed")) {
+                    || h.contains("date_closed")
+                    || h.contains("dateclosed")) {
                 close = i;
             } else if (h.contains("registration") || h.equals("reg")) {
                 reg = i;
@@ -557,8 +562,8 @@ public final class ExtractMaintenanceFlights {
                 if (!line.trim().isEmpty() && !line.toLowerCase().startsWith("workorder")) {
                     try {
                         MaintenanceRecord r = new MaintenanceRecord(line);
-                        validKeys.add(r.getWorkorderNumber() + "|" + r.getTailNumber() + "|"
-                                + r.getOpenDate() + "|" + r.getCloseDate());
+                        validKeys.add(r.getWorkorderNumber() + "|" + r.getTailNumber() + "|" + r.getOpenDate() + "|"
+                                + r.getCloseDate());
                     } catch (Exception ignored) {
                         // skip invalid records in output CSV
                     }
@@ -588,8 +593,8 @@ public final class ExtractMaintenanceFlights {
                     if (inValid && !tailExists) {
                         mismatches.add("WO " + record.getWorkorderNumber() + " in valid CSV but tail not in DB");
                     } else if (!inValid && tailExists) {
-                        mismatches.add("WO " + record.getWorkorderNumber()
-                                + " excluded from valid CSV but tail exists in DB");
+                        mismatches.add(
+                                "WO " + record.getWorkorderNumber() + " excluded from valid CSV but tail exists in DB");
                     }
                     checked++;
                 } catch (Exception e) {
@@ -636,10 +641,10 @@ public final class ExtractMaintenanceFlights {
             String systemId = tailSet.getString(1);
             int fleetId = tailSet.getInt(2);
 
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, start_time, end_time, airframe_id FROM flights "
-                    + "WHERE fleet_id = ? AND system_id = ? AND start_time <= ? "
-                    + "AND end_time >= ? ORDER BY start_time");
+            PreparedStatement stmt =
+                    connection.prepareStatement("SELECT id, start_time, end_time, airframe_id FROM flights "
+                            + "WHERE fleet_id = ? AND system_id = ? AND start_time <= ? "
+                            + "AND end_time >= ? ORDER BY start_time");
             stmt.setInt(1, fleetId);
             stmt.setString(2, systemId);
             stmt.setString(3, windowEndGmt);
@@ -702,32 +707,37 @@ public final class ExtractMaintenanceFlights {
             altMSL = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_MSL);
             altB = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, Parameters.ALT_B);
         } catch (SQLException e) {
-            return new AltAGLResult(null,
-                    "AltAGL not in DB; fallback failed: error fetching series - " + e.getMessage());
+            return new AltAGLResult(
+                    null, "AltAGL not in DB; fallback failed: error fetching series - " + e.getMessage());
         }
         DoubleTimeSeries altSource = altMSL != null ? altMSL : altB;
         if (altSource == null) {
-            return new AltAGLResult(null,
-                    "AltAGL not in DB; cannot compute from AltB+terrain: AltMSL and AltB both missing");
+            return new AltAGLResult(
+                    null, "AltAGL not in DB; cannot compute from AltB+terrain: AltMSL and AltB both missing");
         }
         if (lat == null) {
-            return new AltAGLResult(null,
+            return new AltAGLResult(
+                    null,
                     "AltAGL not in DB; cannot compute from AltB+terrain: Latitude missing (needed for terrain lookup)");
         }
         if (lon == null) {
-            return new AltAGLResult(null,
+            return new AltAGLResult(
+                    null,
                     "AltAGL not in DB; cannot compute from AltB+terrain: "
-                    + "Longitude missing (needed for terrain lookup)");
+                            + "Longitude missing (needed for terrain lookup)");
         }
-        if (Config.NGAFID_TERRAIN_DIR == null || Config.NGAFID_TERRAIN_DIR.trim().isEmpty()) {
-            return new AltAGLResult(null,
+        if (Config.NGAFID_TERRAIN_DIR == null
+                || Config.NGAFID_TERRAIN_DIR.trim().isEmpty()) {
+            return new AltAGLResult(
+                    null,
                     "AltAGL not in DB; cannot compute from AltB+terrain: terrain not configured "
-                    + "(ngafid.terrain.dir empty)");
+                            + "(ngafid.terrain.dir empty)");
         }
         int n = Math.min(altSource.size(), Math.min(lat.size(), lon.size()));
         n = Math.min(n, maxRows);
         if (n == 0) {
-            return new AltAGLResult(null,
+            return new AltAGLResult(
+                    null,
                     "AltAGL not in DB; cannot compute from AltB+terrain: no data rows in altitude/position series");
         }
         double[] agl = new double[n];
@@ -745,9 +755,10 @@ public final class ExtractMaintenanceFlights {
             }
         }
         if (terrainFailCount == n) {
-            return new AltAGLResult(null,
-                    "AltAGL not in DB; cannot compute from AltB+terrain: terrain lookup returned NaN for all "
-                    + n + " points (tile missing or coordinates out of range)");
+            return new AltAGLResult(
+                    null,
+                    "AltAGL not in DB; cannot compute from AltB+terrain: terrain lookup returned NaN for all " + n
+                            + " points (tile missing or coordinates out of range)");
         }
         System.err.println("Flight " + flightId + ": AltAGL computed from " + altSource.getName() + " + terrain");
         return new AltAGLResult(agl, null);
@@ -786,13 +797,12 @@ public final class ExtractMaintenanceFlights {
      * @param timeline the list of aircraft timelines
      * @param record   the maintenance record
      */
-    private static void assignFlightsToPhases(List<AircraftTimeline> timeline,
-                                              MaintenanceRecord record) {
+    private static void assignFlightsToPhases(List<AircraftTimeline> timeline, MaintenanceRecord record) {
         LocalDateTime openGmt = record.getOpenDateTime();
         LocalDateTime closeGmt = record.getCloseDateTime();
         timeLog("[TIME] WO " + record.getWorkorderNumber());
-        timeLog("[TIME]   Raw from CSV:              open  = \""
-                + record.getRawOpenDate() + "\"   close = \"" + record.getRawCloseDate() + "\"");
+        timeLog("[TIME]   Raw from CSV:              open  = \"" + record.getRawOpenDate() + "\"   close = \""
+                + record.getRawCloseDate() + "\"");
         timeLog("[TIME]   Maintenance record (GMT):  open  = " + openGmt + "   close = " + closeGmt);
         timeLog("[TIME]   Raw flights in window (from DB): " + timeline.size());
         timeLog("[TIME]   Extracted flights (after filtering: AGL, cruise, phases):");
@@ -928,8 +938,7 @@ public final class ExtractMaintenanceFlights {
             int endRowExclusive) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(debugFilePath))) {
             writer.println(headerFirstLine);
-            writer.println(
-                    "# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\t"
+            writer.println("# Row_Index\tTimestamp\tAltAGL_ft\tGround_Speed_kts\tRPM\t"
                     + "Airport_Distance_ft\tNearest_Airport\tFlight_Phase");
             writer.println("# ----------------------------------------");
             DoubleTimeSeries altAgl = flight.getDoubleTimeSeries(connection, Parameters.ALT_AGL);
@@ -985,16 +994,20 @@ public final class ExtractMaintenanceFlights {
      * @param flight          the flight
      * @param when            the when string
      * @param fileSplitIndices indices where to split CSV into multiple files (prolonged taxi), empty = single file
-     * @param phaseData       the phase data
-     * @param debugPhases     whether to emit phase debugging output
+     * @param phaseData        the computed flight phase data used to annotate the output
+     * @param debugPhases      whether to emit per-phase debug output
      * @throws IOException  if there is an error writing the file
      * @throws SQLException if there is an error with the SQL query
      */
-    private static void writeFiles(Connection connection, String outputDirectory,
-                                   MaintenanceRecord event, Flight flight, String when,
-                                   List<Integer> fileSplitIndices,
-                                   FlightPhaseProcessor.FlightPhaseData phaseData,
-                                   boolean debugPhases)
+    private static void writeFiles(
+            Connection connection,
+            String outputDirectory,
+            MaintenanceRecord event,
+            Flight flight,
+            String when,
+            List<Integer> fileSplitIndices,
+            FlightPhaseProcessor.FlightPhaseData phaseData,
+            boolean debugPhases)
             throws IOException, SQLException {
         assert flight != null;
 
@@ -1022,8 +1035,8 @@ public final class ExtractMaintenanceFlights {
         }
 
         // Generate JSON record file (once per workorder_tail combination)
-        File jsonFile = new File(outputDirectory + "/" + clusterDir + "/" + workorderTailDir + "/" +
-                                 workorderTailDir + "_record.json");
+        File jsonFile = new File(
+                outputDirectory + "/" + clusterDir + "/" + workorderTailDir + "/" + workorderTailDir + "_record.json");
         try (FileWriter jsonWriter = new FileWriter(jsonFile)) {
             jsonWriter.write(event.toJSON());
         }
@@ -1035,8 +1048,8 @@ public final class ExtractMaintenanceFlights {
 
         // First, write the original CSV
         try {
-            CachedCSVWriter csvWriter = new CachedCSVWriter(
-                    zipRoot, flight, Optional.of(new File(outfile + ".tmp")), false);
+            CachedCSVWriter csvWriter =
+                    new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile + ".tmp")), false);
             csvWriter.writeToFile();
         } catch (java.sql.SQLException e) {
             System.err.println("Warning: SQL error while writing CSV for flight " + flight.getId()
@@ -1102,7 +1115,8 @@ public final class ExtractMaintenanceFlights {
                         }
 
                         for (int rowIndex = startRow;
-                                rowIndex < splitIndex && rowIndex < dataLines.size(); rowIndex++) {
+                                rowIndex < splitIndex && rowIndex < dataLines.size();
+                                rowIndex++) {
                             String phaseString = "UNKNOWN";
                             if (phaseData != null) {
                                 phaseString = phaseData.getPhaseStringAt(rowIndex);
@@ -1161,7 +1175,7 @@ public final class ExtractMaintenanceFlights {
         } else {
             // No prolonged taxi split, write single file
             try (BufferedReader reader = new BufferedReader(new FileReader(outfile + ".tmp"));
-                 PrintWriter writer = new PrintWriter(new FileWriter(outfile))) {
+                    PrintWriter writer = new PrintWriter(new FileWriter(outfile))) {
 
                 // Read and write all header lines (metadata # line as-is;
                 // data types # line + ", enum"; column names + ",FlightPhase")
@@ -1212,8 +1226,13 @@ public final class ExtractMaintenanceFlights {
      * @throws SQLException if there is a database error
      * @throws IOException  if there is an IO error
      */
-    private static int exportFiles(Connection connection, List<AircraftTimeline> timeline, String targetLabelId,
-                                    String outputDirectory, boolean debugPhases) throws SQLException, IOException {
+    private static int exportFiles(
+            Connection connection,
+            List<AircraftTimeline> timeline,
+            String targetLabelId,
+            String outputDirectory,
+            boolean debugPhases)
+            throws SQLException, IOException {
         int extractedCount = 0;
         int logCountBefore = 0;
         int logCountDuring = 0;
@@ -1225,8 +1244,8 @@ public final class ExtractMaintenanceFlights {
             // During: open <= flight < day after close. Before/after: closest N by selectClosestBeforeAfterFlights.
             boolean isDuringMaintenance = ac.getDaysSincePrevious() >= 0 && ac.getDaysToNext() >= 0;
             boolean isBeforeMaintenance = ac.getFlightsToNext() >= 0 && ac.getFlightsToNext() < MAX_BEFORE_FLIGHTS;
-            boolean isAfterMaintenance = ac.getFlightsSincePrevious() >= 0
-                    && ac.getFlightsSincePrevious() < MAX_AFTER_FLIGHTS;
+            boolean isAfterMaintenance =
+                    ac.getFlightsSincePrevious() >= 0 && ac.getFlightsSincePrevious() < MAX_AFTER_FLIGHTS;
 
             if (isDuringMaintenance || isBeforeMaintenance || isAfterMaintenance) {
 
@@ -1235,8 +1254,8 @@ public final class ExtractMaintenanceFlights {
                 // 1. Obtain AltAGL (DB or fallback: AltMSL/AltB + terrain)
                 AltAGLResult altAGLResult = getAltAGLForExtraction(connection, flight.getId(), Integer.MAX_VALUE);
                 if (altAGLResult.values == null || altAGLResult.values.length == 0) {
-                    System.err.println("Skipping flight " + flight.getId()
-                            + ": could not obtain AltAGL (" + altAGLResult.failureReason + ")");
+                    System.err.println("Skipping flight " + flight.getId() + ": could not obtain AltAGL ("
+                            + altAGLResult.failureReason + ")");
                     continue;
                 }
                 double[] altAGLValues = altAGLResult.values;
@@ -1267,8 +1286,8 @@ public final class ExtractMaintenanceFlights {
                     phaseData = FlightPhaseProcessor.computeCompleteFlightPhasesFromAltAGLArray(
                             connection, flight.getId(), altAGLValues, validation);
                 } catch (Exception e) {
-                    System.err.println("Skipping flight " + flight.getId()
-                            + ": could not compute flight phases (" + e.getMessage() + ")");
+                    System.err.println("Skipping flight " + flight.getId() + ": could not compute flight phases ("
+                            + e.getMessage() + ")");
                     continue;
                 }
 
@@ -1348,8 +1367,8 @@ public final class ExtractMaintenanceFlights {
                 }
 
                 // Time log: only flights that pass all filters (AGL, cruise, phases)
-                String phaseForLog = when.startsWith("_before_") ? "before"
-                        : ("_during".equals(when) ? "during" : "after");
+                String phaseForLog =
+                        when.startsWith("_before_") ? "before" : ("_during".equals(when) ? "during" : "after");
                 if (phaseForLog.equals("before")) logCountBefore++;
                 else if (phaseForLog.equals("during")) logCountDuring++;
                 else logCountAfter++;
@@ -1369,8 +1388,8 @@ public final class ExtractMaintenanceFlights {
             }
         }
         timeLog("");
-        timeLog("[TIME]   Counts:  before=" + logCountBefore
-                + "  during=" + logCountDuring + "  after=" + logCountAfter);
+        timeLog("[TIME]   Counts:  before=" + logCountBefore + "  during=" + logCountDuring + "  after="
+                + logCountAfter);
         return extractedCount;
     }
 
@@ -1381,7 +1400,7 @@ public final class ExtractMaintenanceFlights {
     /**
      * Writes one manifest file per cluster for extracted outputs.
      *
-     * @param outputDirectory directory containing extracted outputs
+     * @param outputDirectory the directory the manifest files are written to
      */
     private static void generateManifest(String outputDirectory) {
         try {
@@ -1431,11 +1450,12 @@ public final class ExtractMaintenanceFlights {
      * Writes manifest_<clusterId>.json for one cluster. Returns false if the cluster
      * has no extracted flights (no file written).
      *
-     * @param outputDirectory directory containing extracted outputs
-     * @param manifestDir directory where the manifest is written
-     * @param clusterId cluster identifier
-     * @param clusterNames names indexed by cluster ID
-     * @return whether a manifest was written
+     * @param outputDirectory the root directory holding the extracted cluster outputs
+     * @param manifestDir the directory the manifest file is written to
+     * @param clusterId the identifier of the cluster to write a manifest for
+     * @param clusterNames a map from cluster id to human-readable cluster name
+     * @return true if a manifest file was written, false if the cluster had no extracted flights
+     * @throws IOException if there is an error writing the manifest file
      */
     private static boolean writeClusterManifest(
             String outputDirectory, File manifestDir, String clusterId, HashMap<String, String> clusterNames)
@@ -1491,13 +1511,34 @@ public final class ExtractMaintenanceFlights {
             firstWorkorder = false;
 
             workordersJson.append("    {\n");
-            workordersJson.append("      \"workorder\": ").append(record.getWorkorderNumber()).append(",\n");
-            workordersJson.append("      \"label_id\": \"").append(record.getLabelId()).append("\",\n");
-            workordersJson.append("      \"label\": \"").append(escapeJson(record.getLabel())).append("\",\n");
-            workordersJson.append("      \"tail_number\": \"").append(record.getTailNumber()).append("\",\n");
-            workordersJson.append("      \"airframe\": \"").append(record.getAirframe()).append("\",\n");
-            workordersJson.append("      \"open_date\": \"").append(record.getOpenDate().toString()).append("\",\n");
-            workordersJson.append("      \"close_date\": \"").append(record.getCloseDate().toString()).append("\",\n");
+            workordersJson
+                    .append("      \"workorder\": ")
+                    .append(record.getWorkorderNumber())
+                    .append(",\n");
+            workordersJson
+                    .append("      \"label_id\": \"")
+                    .append(record.getLabelId())
+                    .append("\",\n");
+            workordersJson
+                    .append("      \"label\": \"")
+                    .append(escapeJson(record.getLabel()))
+                    .append("\",\n");
+            workordersJson
+                    .append("      \"tail_number\": \"")
+                    .append(record.getTailNumber())
+                    .append("\",\n");
+            workordersJson
+                    .append("      \"airframe\": \"")
+                    .append(record.getAirframe())
+                    .append("\",\n");
+            workordersJson
+                    .append("      \"open_date\": \"")
+                    .append(record.getOpenDate().toString())
+                    .append("\",\n");
+            workordersJson
+                    .append("      \"close_date\": \"")
+                    .append(record.getCloseDate().toString())
+                    .append("\",\n");
             workordersJson
                     .append("      \"open_date_time\": \"")
                     .append(record.getOpenDateTime().toString())
@@ -1511,12 +1552,24 @@ public final class ExtractMaintenanceFlights {
                     .append(escapeJson(record.getOriginalAction()))
                     .append("\",\n");
             workordersJson.append("      \"flights\": {\n");
-            workordersJson.append("        \"before\": ").append(pathListToJson(beforePaths)).append(",\n");
-            workordersJson.append("        \"during\": ").append(pathListToJson(duringPaths)).append(",\n");
-            workordersJson.append("        \"after\": ").append(pathListToJson(afterPaths)).append("\n");
+            workordersJson
+                    .append("        \"before\": ")
+                    .append(pathListToJson(beforePaths))
+                    .append(",\n");
+            workordersJson
+                    .append("        \"during\": ")
+                    .append(pathListToJson(duringPaths))
+                    .append(",\n");
+            workordersJson
+                    .append("        \"after\": ")
+                    .append(pathListToJson(afterPaths))
+                    .append("\n");
             workordersJson.append("      },\n");
             String recordJsonPath = labelId + "/" + workorderTail + "/" + workorderTail + "_record.json";
-            workordersJson.append("      \"record_json\": \"").append(recordJsonPath).append("\"\n");
+            workordersJson
+                    .append("      \"record_json\": \"")
+                    .append(recordJsonPath)
+                    .append("\"\n");
             workordersJson.append("    }");
         }
 
@@ -1526,7 +1579,9 @@ public final class ExtractMaintenanceFlights {
 
         StringBuilder json = new StringBuilder();
         json.append("{\n");
-        json.append("  \"generated_at\": \"").append(LocalDateTime.now().toString()).append("\",\n");
+        json.append("  \"generated_at\": \"")
+                .append(LocalDateTime.now().toString())
+                .append("\",\n");
         json.append("  \"cluster_id\": \"").append(clusterId).append("\",\n");
         json.append("  \"cluster_name\": \"").append(escapeJson(clusterName)).append("\",\n");
         json.append("  \"statistics\": {\n");
@@ -1553,16 +1608,16 @@ public final class ExtractMaintenanceFlights {
             writer.write(json.toString());
         }
 
-        System.out.println("Manifest: " + manifestFile.getName() + " ("
-                + workorderCount + " workorders, " + totalFlights + " flights)");
+        System.out.println("Manifest: " + manifestFile.getName() + " (" + workorderCount + " workorders, "
+                + totalFlights + " flights)");
         return true;
     }
 
     /**
      * Escapes special characters in JSON strings.
      *
-     * @param str string to escape
-     * @return JSON-safe string
+     * @param str the raw string to escape, may be null
+     * @return the escaped string, or an empty string if {@code str} is null
      */
     private static String escapeJson(String str) {
         if (str == null) return "";
@@ -1576,11 +1631,11 @@ public final class ExtractMaintenanceFlights {
     /**
      * Collects sorted CSV paths for one phase into the given list (used for manifest).
      *
-     * @param labelId label identifier
-     * @param workorderTail workorder tail identifier
-     * @param workorderDir workorder directory
-     * @param phase phase name
-     * @param outPaths list receiving the paths
+     * @param labelId the cluster label id the paths belong to
+     * @param workorderTail the tail number of the work order being collected
+     * @param workorderDir the work-order directory containing the per-phase subdirectories
+     * @param phase the phase subdirectory to collect (e.g. before/during/after)
+     * @param outPaths the list that collected CSV paths are appended to
      */
     private static void collectPhasePaths(
             String labelId, String workorderTail, File workorderDir, String phase, java.util.List<String> outPaths) {
@@ -1635,10 +1690,10 @@ public final class ExtractMaintenanceFlights {
     }
 
     /**
-     * Returns JSON array of quoted path strings, e.g. ["a/b/c.csv"].
+     * Returns a JSON array of quoted path strings, e.g. {@code ["a/b/c.csv"]}.
      *
-     * @param paths paths to encode
-     * @return JSON array of quoted paths
+     * @param paths the list of paths to serialize
+     * @return a JSON array literal containing the quoted, escaped paths
      */
     private static String pathListToJson(java.util.List<String> paths) {
         StringBuilder sb = new StringBuilder("[");
@@ -1751,8 +1806,8 @@ public final class ExtractMaintenanceFlights {
                     timeLogWriter.println("All dates in GMT (maintenance record and flight dates).");
                     timeLogWriter.println();
                 } catch (IOException e) {
-                    System.err.println("Could not create time log file: "
-                            + logFile.getAbsolutePath() + " - " + e.getMessage());
+                    System.err.println(
+                            "Could not create time log file: " + logFile.getAbsolutePath() + " - " + e.getMessage());
                     timeLogWriter = null;
                 }
 

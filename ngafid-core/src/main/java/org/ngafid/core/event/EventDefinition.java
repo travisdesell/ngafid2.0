@@ -18,6 +18,13 @@ import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.util.filters.Filter;
 
+/**
+ * Defines the criteria for an event that can be detected in flight data, backed by the {@code event_definitions} table.
+ *
+ * <p>A definition pairs a trigger condition (a serialized {@link org.ngafid.core.util.filters.Filter}) with the
+ * columns it reads, start/stop buffers, the airframe it applies to, and how severity is computed. Definition
+ * id-to-name mappings are cached at class load since definitions change rarely.
+ */
 public class EventDefinition {
     // TODO: Replace with Jackson
     public static final Gson GSON =
@@ -26,7 +33,7 @@ public class EventDefinition {
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
     private static final String SQL_FIELDS =
             "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, airframe_type_id, "
-            + "condition_json, column_names, severity_column_names, severity_type";
+                    + "condition_json, column_names, severity_column_names, severity_type";
 
     /*
      * Caches event definitions by name. Events are rarely added anyways...
@@ -48,12 +55,24 @@ public class EventDefinition {
         }
     }
 
+    /**
+     * Describes how an event's severity is aggregated from its per-sample values: by minimum, maximum, or the
+     * minimum/maximum of absolute values.
+     */
     public enum SeverityType {
         MIN,
         MAX,
         MIN_ABS,
         MAX_ABS;
 
+        /**
+         * Combines a running severity accumulator with a new value according to this severity type (minimum,
+         * maximum, or their absolute-value variants).
+         *
+         * @param current the running severity value
+         * @param value the new value to fold in
+         * @return the updated severity according to this type
+         */
         public double apply(double current, double value) {
             return switch (this) {
                 case MIN -> Math.min(current, value);
@@ -63,6 +82,12 @@ public class EventDefinition {
             };
         }
 
+        /**
+         * Returns the initial accumulator value for this severity type (the identity for its reduction):
+         * {@link Double#MAX_VALUE} for the minimizing types and {@link Double#MIN_VALUE} for the maximizing types.
+         *
+         * @return the starting severity value for this type
+         */
         public double defaultValue() {
             return switch (this) {
                 case MIN, MIN_ABS -> Double.MAX_VALUE;
@@ -108,6 +133,20 @@ public class EventDefinition {
         this(fleetId, name, startBuffer, stopBuffer, airframeNameId, null, filter, severityColumnNames, severityType);
     }
 
+    /**
+     * Constructs an event definition from its fields, deriving the required input column names from the filter and
+     * initializing the severity-tracking state.
+     *
+     * @param fleetId the fleet this definition belongs to (0 for a global definition)
+     * @param name the event name
+     * @param startBuffer the number of consecutive samples that must satisfy the condition before an event starts
+     * @param stopBuffer the number of consecutive samples that must fail the condition before an event ends
+     * @param airframeNameId the airframe-name id this definition applies to
+     * @param airframeTypeId the airframe-type id this definition applies to, or null for any type
+     * @param filter the condition filter that defines the event
+     * @param severityColumnNames the columns used to compute the event's severity
+     * @param severityType how severity is reduced across samples (min/max/abs)
+     */
     public EventDefinition(
             int fleetId,
             String name,
@@ -164,8 +203,8 @@ public class EventDefinition {
             }
         }
 
-        this.columnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() { }.getType());
-        java.lang.reflect.Type treeSetType = new TypeToken<TreeSet<String>>() { }.getType();
+        this.columnNames = GSON.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {}.getType());
+        java.lang.reflect.Type treeSetType = new TypeToken<TreeSet<String>>() {}.getType();
         this.severityColumnNames = GSON.fromJson(resultSet.getString(10), treeSetType);
 
         String severityTypeStr = resultSet.getString(11);
@@ -209,6 +248,14 @@ public class EventDefinition {
         return getEventDefinitionFromDB(connection, query);
     }
 
+    /**
+     * Loads a single event definition by its database id.
+     *
+     * @param connection the database connection
+     * @param eventID the event definition id
+     * @return the matching event definition, or {@code null} if none exists
+     * @throws SQLException if the query fails
+     */
     public static EventDefinition getEventDefinition(Connection connection, int eventID) throws SQLException {
         String eventIDStr = "id = '" + eventID + "'";
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventIDStr;
@@ -216,6 +263,13 @@ public class EventDefinition {
         return getEventDefinitionFromDB(connection, query);
     }
 
+    /**
+     * Returns the (process-wide cached) map from event-definition id to event name.
+     *
+     * @param connection the database connection (used to populate the cache if needed)
+     * @return a map from event-definition id to name
+     * @throws SQLException if populating the cache fails
+     */
     public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
         return EVENT_DEFINITION_ID_TO_NAME;
     }
@@ -421,6 +475,21 @@ public class EventDefinition {
         }
     }
 
+    /**
+     * Inserts a new event definition from its JSON-encoded parts, for an airframe identified by name and with no
+     * specific airframe type (delegates to the fuller {@code insert} with a null airframe type).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet the definition belongs to
+     * @param name the event name
+     * @param startBuffer the start debounce buffer
+     * @param stopBuffer the stop debounce buffer
+     * @param airframe the airframe name the definition applies to
+     * @param filterJson the event filter as JSON
+     * @param severityColumnNamesJson the severity column names as JSON
+     * @param severityType the severity reduction type
+     * @throws SQLException if the insert fails
+     */
     public static void insert(
             Connection connection,
             int fleetId,
@@ -433,10 +502,30 @@ public class EventDefinition {
             String severityType)
             throws SQLException {
         insert(
-                connection, fleetId, name, startBuffer, stopBuffer, airframe, null,
-                filterJson, severityColumnNamesJson, severityType);
+                connection,
+                fleetId,
+                name,
+                startBuffer,
+                stopBuffer,
+                airframe,
+                null,
+                filterJson,
+                severityColumnNamesJson,
+                severityType);
     }
 
+    /**
+     * Inserts a special (negative-id) event definition for a single airframe id, with no severity configuration.
+     * Used for the built-in special events that are not fleet-authored.
+     *
+     * @param connection the database connection
+     * @param id the (negative) id of the special event definition
+     * @param name the event name
+     * @param startBuffer the start debounce buffer
+     * @param stopBuffer the stop debounce buffer
+     * @param airframeId the airframe id the definition applies to
+     * @throws SQLException if the insert fails
+     */
     public static void insert(
             Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId)
             throws SQLException {
@@ -457,8 +546,13 @@ public class EventDefinition {
      * @throws SQLException if there is an error with the SQL query
      */
     public static void insert(
-            Connection connection, int id, String name, int startBuffer, int stopBuffer,
-            int airframeId, Integer airframeTypeId)
+            Connection connection,
+            int id,
+            String name,
+            int startBuffer,
+            int stopBuffer,
+            int airframeId,
+            Integer airframeTypeId)
             throws SQLException {
         if (id > 0) {
             LOG.info("Passed a positive ID to special event insertion.");
@@ -740,6 +834,15 @@ public class EventDefinition {
         return getSeverity(columns, severityType.defaultValue(), time);
     }
 
+    /**
+     * Reduces the severity over this definition's severity columns at a single sample index, folding each column's
+     * value into the running severity with {@link SeverityType#apply} and skipping NaN values.
+     *
+     * @param columns the flight's double series, keyed by column name
+     * @param severity the running severity value to fold into
+     * @param time the sample index to evaluate
+     * @return the updated severity after considering all severity columns at {@code time}
+     */
     public double getSeverity(Map<String, DoubleTimeSeries> columns, double severity, int time) {
         for (String columnName : severityColumnNames) {
             double value = columns.get(columnName).get(time);

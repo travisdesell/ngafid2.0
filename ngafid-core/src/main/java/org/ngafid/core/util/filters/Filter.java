@@ -9,6 +9,14 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+/**
+ * A tree representation of a user-defined flight filter, built from the query-builder UI and rendered into SQL.
+ *
+ * <p>Each node is either a RULE (a single criterion such as airframe, tail number, date range, parameter bound, or
+ * event count/severity) or a GROUP that combines child filters with an {@code AND}/{@code OR} condition. The tree can
+ * be converted into a parameterized MySQL {@code WHERE} clause via {@link #toQueryString}, into human-readable text,
+ * and into the set of referenced column names; operator and aggregate inputs are validated to guard against injection.
+ */
 public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
 
@@ -144,8 +152,7 @@ public class Filter {
     public static String getOffsetDateTime(String datetime, String longOffset) {
         String offset = longOffset.substring(4, 10);
         OffsetDateTime odt = LocalDateTime.parse(
-                normalizeDateTimeInput(datetime),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        normalizeDateTimeInput(datetime), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 .atOffset(ZoneOffset.of(offset));
         String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00"))
                 .format(DateTimeFormatter.ofPattern("yyyy" + "-MM-dd HH:mm:ss"));
@@ -190,10 +197,7 @@ public class Filter {
      * @return the event definition ID subquery
      */
     private String getEventDefinitionIdSubquery(
-            int fleetId,
-            ArrayList<Object> parameters,
-            String eventName,
-            String airframeName) {
+            int fleetId, ArrayList<Object> parameters, String eventName, String airframeName) {
         parameters.add(eventName);
         parameters.add(airframeName);
         parameters.add(fleetId);
@@ -511,7 +515,6 @@ public class Filter {
                 }
 
                 return string.toString();
-
             }
             case "GROUP" -> {
                 StringBuilder string = new StringBuilder();
@@ -521,7 +524,6 @@ public class Filter {
                 }
 
                 return "(" + string + ")";
-
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");
@@ -548,7 +550,6 @@ public class Filter {
                 }
 
                 return "(" + string + ")";
-
             }
             case "GROUP" -> {
                 String string = "";
@@ -558,7 +559,6 @@ public class Filter {
                 }
 
                 return "(" + string + ")";
-
             }
             default -> {
                 LOG.severe(() -> "Attempted to convert a filter to a String with an unknown type: '" + type + "'");

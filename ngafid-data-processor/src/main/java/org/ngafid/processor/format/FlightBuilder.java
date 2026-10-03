@@ -171,6 +171,14 @@ public class FlightBuilder {
         return this;
     }
 
+    /**
+     * Registers a double-valued column on the flight, keyed by the series' own name, so later compute steps and
+     * persistence can look it up; an existing series with the same name is replaced. Returns this builder so
+     * additions can be chained.
+     *
+     * @param timeSeries the double time series to add (its name is used as the key)
+     * @return this flight builder, for chaining
+     */
     public FlightBuilder addTimeSeries(DoubleTimeSeries timeSeries) {
         return addTimeSeries(timeSeries.getName(), timeSeries);
     }
@@ -239,6 +247,14 @@ public class FlightBuilder {
         return this;
     }
 
+    /**
+     * Registers a string-valued column on the flight, keyed by the series' own name, so later compute steps and
+     * persistence can look it up; an existing series with the same name is replaced. Returns this builder so
+     * additions can be chained.
+     *
+     * @param timeSeries the string time series to add (its name is used as the key)
+     * @return this flight builder, for chaining
+     */
     public final FlightBuilder addTimeSeries(StringTimeSeries timeSeries) {
         return addTimeSeries(timeSeries.getName(), timeSeries);
     }
@@ -313,10 +329,22 @@ public class FlightBuilder {
         return this;
     }
 
+    /**
+     * Accumulates a single computed event on the builder so it can be persisted once processing finishes.
+     * Synchronized so compute steps running on different threads can emit events concurrently.
+     *
+     * @param eventParam the event to record
+     */
     public synchronized void emitEvent(Event eventParam) {
         this.events.add(eventParam);
     }
 
+    /**
+     * Accumulates a collection of computed events on the builder so they can be persisted once processing
+     * finishes. Synchronized so compute steps running on different threads can emit events concurrently.
+     *
+     * @param eventsParam the events to record
+     */
     public synchronized void emitEvents(List<Event> eventsParam) {
         this.events.addAll(eventsParam);
     }
@@ -325,6 +353,12 @@ public class FlightBuilder {
         return events;
     }
 
+    /**
+     * Accumulates the computed turn-to-final analyses on the builder so they can be persisted once processing
+     * finishes. Synchronized so compute steps running on different threads can emit results concurrently.
+     *
+     * @param turnToFinalsParam the turn-to-final results to record
+     */
     public synchronized void emitTurnToFinals(List<TurnToFinal> turnToFinalsParam) {
         this.turnToFinals.addAll(turnToFinalsParam);
     }
@@ -333,6 +367,12 @@ public class FlightBuilder {
         return turnToFinals;
     }
 
+    /**
+     * Records that the given event definition has been computed for this flight, so it is persisted as "already
+     * processed" and not recomputed on a later pass. Synchronized for concurrent compute steps.
+     *
+     * @param eventDefinition the event definition that was computed
+     */
     public synchronized void addComputedEvent(EventDefinition eventDefinition) {
         this.computedEvents.add(eventDefinition);
     }

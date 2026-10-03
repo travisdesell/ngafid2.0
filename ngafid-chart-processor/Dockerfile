@@ -1,5 +1,8 @@
 FROM python:3.10-slim
-# Install system dependencies for GDAL
+# Install system dependencies for GDAL. Versions are intentionally unpinned: the
+# GDAL/build-essential packages track the python:slim base's Debian release, and
+# pinning them breaks whenever that base is updated.
+# hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gdal-bin \

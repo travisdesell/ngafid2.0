@@ -6,6 +6,12 @@
  */
 package org.ngafid.core.flights.export;
 
+/**
+ * Constant definitions for the X-Plane FDR flight-data-recorder export format.
+ *
+ * <p>Groups the file extension, line-ending markers, and the field names/tokens used when writing FDR files so flight
+ * data can be replayed as X-Plane animations.
+ */
 public interface XPlaneParameters {
     // the file extension
     String FDR_FILE_EXTENSION = ".fdr";

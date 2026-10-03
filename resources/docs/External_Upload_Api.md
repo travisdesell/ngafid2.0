@@ -6,14 +6,14 @@ Bearer-token REST API for uploading flight data without a session. Same processi
 
 ## Files created/updated
 
-| Path | Purpose |
-|---|---|
-| `ngafid-db/src/changelogs/00-accounts/09-api-tokens.sql` | `api_token` table |
-| `ngafid-core/src/main/java/org/ngafid/core/accounts/ApiToken.java` | Token model: generation, hashing, lookup, revocation |
-| `ngafid-www/src/main/java/org/ngafid/www/routes/ApiTokenAuth.java` | Bearer-token `before` filter for `/api/external/*` |
-| `ngafid-www/src/main/java/org/ngafid/www/routes/ApiExternalUploadRoutes.java` | POST/GET upload endpoints + filter registration |
-| `ngafid-www/src/main/java/org/ngafid/www/routes/ApiTokenManagementRoutes.java` | Session-authed CRUD for tokens |
-| `ngafid-www/src/main/java/org/ngafid/www/JavalinWebServer.java` | +2 `bindRoutes` calls, +2 imports |
+| Path                                                                           | Purpose                                              |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `ngafid-db/src/changelogs/00-accounts/09-api-tokens.sql`                       | `api_token` table                                    |
+| `ngafid-core/src/main/java/org/ngafid/core/accounts/ApiToken.java`             | Token model: generation, hashing, lookup, revocation |
+| `ngafid-www/src/main/java/org/ngafid/www/routes/ApiTokenAuth.java`             | Bearer-token `before` filter for `/api/external/*`   |
+| `ngafid-www/src/main/java/org/ngafid/www/routes/ApiExternalUploadRoutes.java`  | POST/GET upload endpoints + filter registration      |
+| `ngafid-www/src/main/java/org/ngafid/www/routes/ApiTokenManagementRoutes.java` | Session-authed CRUD for tokens                       |
+| `ngafid-www/src/main/java/org/ngafid/www/JavalinWebServer.java`                | +2 `bindRoutes` calls, +2 imports                    |
 
 ---
 
@@ -42,33 +42,33 @@ Index on `(user_id)` for the management list query. `token_hash` UNIQUE is the a
 
 `Authorization: Bearer ngafid_<base64url>` required on every request.
 
-| Method | Path | Body / Params | Returns |
-|---|---|---|---|
-| POST | `/api/external/uploads` | multipart: `file` (required), `fleetName` (optional) | `201` new upload, or `200` existing retryable upload |
-| GET | `/api/external/uploads` | `?page=0&pageSize=25` | `200` `{items[], page, pageSize, total}` |
-| GET | `/api/external/uploads/{uploadId}` | — | `200` upload detail, or `404` if not in caller's fleet |
+| Method | Path                               | Body / Params                                        | Returns                                                |
+| ------ | ---------------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
+| POST   | `/api/external/uploads`            | multipart: `file` (required), `fleetName` (optional) | `201` new upload, or `200` existing retryable upload   |
+| GET    | `/api/external/uploads`            | `?page=0&pageSize=25`                                | `200` `{items[], page, pageSize, total}`               |
+| GET    | `/api/external/uploads/{uploadId}` | —                                                    | `200` upload detail, or `404` if not in caller's fleet |
 
 Response codes for POST:
 
-| Code | Meaning |
-|---|---|
-| `201` | New upload accepted; body is `UploadResponse` |
+| Code  | Meaning                                                                                                                                                 |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `201` | New upload accepted; body is `UploadResponse`                                                                                                           |
 | `200` | Existing upload with same MD5 is in a retryable state (`UPLOADING_FAILED`, `FAILED_*`, `ENQUEUED`, `PROCESSING`); body is the existing `UploadResponse` |
-| `400` | Missing/empty `file`, or unsafe filename after sanitization |
-| `403` | User lacks `MANAGER`/`UPLOAD` access on the resolved fleet |
-| `404` | Supplied `fleetName` does not exist |
-| `409` | Existing upload with same MD5 is already finalized (`UPLOADED`, `PROCESSED_OK`, `PROCESSED_WARNING`) |
-| `500` | Internal error (always `{"error":"..."}` shape) |
+| `400` | Missing/empty `file`, or unsafe filename after sanitization                                                                                             |
+| `403` | User lacks `MANAGER`/`UPLOAD` access on the resolved fleet                                                                                              |
+| `404` | Supplied `fleetName` does not exist                                                                                                                     |
+| `409` | Existing upload with same MD5 is already finalized (`UPLOADED`, `PROCESSED_OK`, `PROCESSED_WARNING`)                                                    |
+| `500` | Internal error (always `{"error":"..."}` shape)                                                                                                         |
 
 All error bodies share the same shape: `{"error": "..."}`. Internal exceptions are logged server-side but not exposed.
 
 ### `/protected/api_tokens` — session-cookie auth
 
-| Method | Path | Body | Returns |
-|---|---|---|---|
-| POST | `/protected/api_tokens` | `{"name":"...","expiresInDays":N}` | `201` includes plaintext token (once) |
-| GET | `/protected/api_tokens` | — | `200` array of `{id, name, createdAt, expiresAt, revokedAt, lastUsedAt, active}` |
-| DELETE | `/protected/api_tokens/{tokenId}` | — | `204`, or `404` if not owned by caller |
+| Method | Path                              | Body                               | Returns                                                                          |
+| ------ | --------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
+| POST   | `/protected/api_tokens`           | `{"name":"...","expiresInDays":N}` | `201` includes plaintext token (once)                                            |
+| GET    | `/protected/api_tokens`           | —                                  | `200` array of `{id, name, createdAt, expiresAt, revokedAt, lastUsedAt, active}` |
+| DELETE | `/protected/api_tokens/{tokenId}` | —                                  | `204`, or `404` if not owned by caller                                           |
 
 ---
 
@@ -93,12 +93,12 @@ Before any file IO or DB write:
 
 Examples:
 
-| Raw | Sanitized |
-|---|---|
-| `C172.zip` | `C172.zip` |
-| `C172 (1).zip` | `C172_1.zip` |
-| `flight log [2024].zip` | `flight_log_2024.zip` |
-| `🛫.zip` | `.zip` → rejected (no name remaining besides extension prefix) |
+| Raw                     | Sanitized                                                      |
+| ----------------------- | -------------------------------------------------------------- |
+| `C172.zip`              | `C172.zip`                                                     |
+| `C172 (1).zip`          | `C172_1.zip`                                                   |
+| `flight log [2024].zip` | `flight_log_2024.zip`                                          |
+| `🛫.zip`                | `.zip` → rejected (no name remaining besides extension prefix) |
 
 The sanitized name is what's stored in `uploads.filename` and used for the archive path.
 

@@ -62,7 +62,9 @@ object FleetRoutes : RouteProvider() {
                     ctx.status(400).json(mapOf("error" to "Label already exists for this fleet"))
                     return@use
                 }
-            ctx.json(mapOf("id" to created.id, "labelText" to created.labelText, "displayOrder" to created.displayOrder))
+            ctx.json(
+                mapOf("id" to created.id, "labelText" to created.labelText, "displayOrder" to created.displayOrder),
+            )
         }
     }
 
@@ -97,7 +99,9 @@ object FleetRoutes : RouteProvider() {
         if (ts == null) return ""
         val epochMs = if (flightStartMs != null && ts.toLocalDateTime().year < 1980) {
             flightStartMs + ts.time
-        } else ts.time
+        } else {
+            ts.time
+        }
         return Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC).format(csvDateTimeFormat)
     }
 
@@ -108,11 +112,15 @@ object FleetRoutes : RouteProvider() {
             val flightStartMsByFlightId = sections.map { it.flightId }.distinct().associateWith { fid ->
                 Flight.getFlight(connection, fid)?.let { java.sql.Timestamp.valueOf(it.getStartDateTime()).time } ?: 0L
             }
-            val header = "flight_id,tail_number,airframe,start_time,end_time,start_index,end_index,start_value,end_value,label_text,parameter_names"
+            val header =
+                "flight_id,tail_number,airframe,start_time,end_time,start_index," +
+                    "end_index,start_value,end_value,label_text,parameter_names"
             val rows = sections.map { s ->
                 val flightStartMs = flightStartMsByFlightId[s.flightId] ?: 0L
-                val startStr = s.startTimeRaw?.trim()?.takeIf { it.isNotEmpty() } ?: formatTimestampForCsv(s.startTime, flightStartMs)
-                val endStr = s.endTimeRaw?.trim()?.takeIf { it.isNotEmpty() } ?: formatTimestampForCsv(s.endTime, flightStartMs)
+                val startStr = s.startTimeRaw?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: formatTimestampForCsv(s.startTime, flightStartMs)
+                val endStr = s.endTimeRaw?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: formatTimestampForCsv(s.endTime, flightStartMs)
                 listOf(
                     s.flightId.toString(),
                     escapeCsv(s.tailNumber),
@@ -124,7 +132,7 @@ object FleetRoutes : RouteProvider() {
                     s.startValue?.toString() ?: "",
                     s.endValue?.toString() ?: "",
                     escapeCsv(s.labelText),
-                    escapeCsv(s.parameterNames.joinToString("|"))
+                    escapeCsv(s.parameterNames.joinToString("|")),
                 ).joinToString(",")
             }
             val csv = (listOf(header) + rows).joinToString("\n")

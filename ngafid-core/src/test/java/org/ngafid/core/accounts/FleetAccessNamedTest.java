@@ -10,16 +10,28 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.ngafid.core.H2Database;
+import org.ngafid.core.TestDatabase;
 
+/**
+ * Tests for named {@link FleetAccess} levels, run against the Testcontainers MySQL database.
+ *
+ * <p>Seeds fleet, user, and fleet-access fixtures before each test and verifies the access-level semantics over the
+ * seeded rows.
+ */
 public class FleetAccessNamedTest {
 
     private Connection connection;
 
+    /**
+     * Opens a test connection, removes any leftover rows for the reserved test user ids, and seeds the fleet, user,
+     * and fleet-access fixtures each test relies on.
+     *
+     * @throws SQLException if the connection or fixture setup fails
+     */
     @BeforeEach
     public void setUp() throws SQLException {
-        // Get connection from H2Database
-        connection = H2Database.getConnection();
+        // Get connection from the test database
+        connection = TestDatabase.getConnection();
 
         // Clean up any existing test data
         try (PreparedStatement stmt =
@@ -71,6 +83,12 @@ public class FleetAccessNamedTest {
         }
     }
 
+    /**
+     * Removes the seeded fleet-access, user, and fleet rows for the reserved test ids and closes the connection so the
+     * pool is not exhausted between tests.
+     *
+     * @throws SQLException if any cleanup statement fails
+     */
     @AfterEach
     public void tearDown() throws SQLException {
         // Clean up test data
@@ -92,6 +110,12 @@ public class FleetAccessNamedTest {
         }
     }
 
+    /**
+     * Verifies {@code getFleetName} on a loaded access entry returns the fleet's name resolved from the database.
+     *
+     * @throws SQLException if the query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test getFleetName method")
     public void testGetFleetName() throws SQLException, AccountException {
@@ -104,12 +128,24 @@ public class FleetAccessNamedTest {
         assertTrue(fleetAccessNamed.getFleetName().contains("Test Fleet"));
     }
 
+    /**
+     * Verifies {@code updateFleetName} re-reads the fleet's name from the database, picking up a name changed after the
+     * entry was loaded (the original name is restored afterward).
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test updateFleetName method with ")
     public void testUpdateFleetNameWithRealDatabaseOperations() throws SQLException, AccountException {
-        // Get a FleetAccessNamed object from the database using existing test data
+        // Get a FleetAccessNamed object from the database using existing test data. User 999 has access to
+        // multiple fleets and the query order is not guaranteed, so select the entry for fleet 999 explicitly
+        // (rather than assuming it is first) since that is the fleet this test updates.
         ArrayList<FleetAccess> allAccess = FleetAccessNamed.getAllFleetAccessEntries(connection, 999);
-        FleetAccessNamed fleetAccessNamed = (FleetAccessNamed) allAccess.get(0);
+        FleetAccessNamed fleetAccessNamed = (FleetAccessNamed) allAccess.stream()
+                .filter(access -> access.getFleetId() == 999)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No fleet-access entry for fleet 999"));
 
         // Store the original fleet name
         String originalFleetName = fleetAccessNamed.getFleetName();
@@ -137,6 +173,13 @@ public class FleetAccessNamedTest {
         }
     }
 
+    /**
+     * Verifies {@code updateFleetName} leaves the name correct (unchanged) when the database fleet name has not changed
+     * since the entry was loaded.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test updateFleetName ")
     public void testUpdateFleetNameWithRealDatabase() throws SQLException, AccountException {
@@ -156,6 +199,13 @@ public class FleetAccessNamedTest {
         assertTrue(fleetAccessNamed.getFleetName().contains("Test Fleet"));
     }
 
+    /**
+     * Verifies that for a user with multiple fleet-access entries (of differing access types), every entry is a
+     * {@link FleetAccessNamed} whose name stays correct across an {@code updateFleetName} call.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test updateFleetName method with different fleet access types")
     public void testUpdateFleetNameWithDifferentAccessTypes() throws SQLException, AccountException {
@@ -183,6 +233,13 @@ public class FleetAccessNamedTest {
         }
     }
 
+    /**
+     * Verifies {@code getAllFleetAccessEntries} returns all of a user's access entries as {@link FleetAccessNamed}
+     * instances with their fleet names populated.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test getAllFleetAccessEntries with real database")
     public void testGetAllFleetAccessEntriesWithRealDatabase() throws SQLException, AccountException {
@@ -203,6 +260,12 @@ public class FleetAccessNamedTest {
         }
     }
 
+    /**
+     * Verifies {@code getAllFleetAccessEntries} returns an empty (non-null) list for a user with no fleet access.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test getAllFleetAccessEntries with user having no access")
     public void testGetAllFleetAccessEntriesWithNoAccess() throws SQLException, AccountException {
@@ -214,6 +277,13 @@ public class FleetAccessNamedTest {
         assertEquals(0, allAccess.size());
     }
 
+    /**
+     * Verifies {@code getAllFleetAccessEntries} returns exactly one populated entry for a user with a single fleet
+     * access.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test getAllFleetAccessEntries with user having single access")
     public void testGetAllFleetAccessEntriesWithSingleAccess() throws SQLException, AccountException {
@@ -232,6 +302,13 @@ public class FleetAccessNamedTest {
         assertTrue(namedAccess.getFleetName().contains("Test Fleet"));
     }
 
+    /**
+     * Verifies {@code getAllFleetAccessEntries} returns the correct entry count for users with multiple, single, and no
+     * access, with every returned entry populated with its fleet name.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test getAllFleetAccessEntries with different user scenarios")
     public void testGetAllFleetAccessEntriesWithDifferentUserScenarios() throws SQLException, AccountException {
@@ -263,6 +340,13 @@ public class FleetAccessNamedTest {
         }
     }
 
+    /**
+     * Exercises a multi-fleet user end to end: checks each entry's fleet name, positive fleet id, and user id, and that
+     * the name remains correct after {@code updateFleetName}.
+     *
+     * @throws SQLException if a query fails
+     * @throws AccountException if a fleet access entry cannot be constructed
+     */
     @Test
     @DisplayName("Should test fleet access edge cases")
     public void testFleetAccessWithRealDatabaseOperationsAndEdgeCases() throws SQLException, AccountException {

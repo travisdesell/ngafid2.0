@@ -10,6 +10,13 @@ import java.util.Map;
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
 public class XPlane10Export extends XPlaneExport {
+    /**
+     * Constructs an X-Plane 10 exporter for a flight, delegating to the base {@link XPlaneExport}.
+     *
+     * @param flightId the id of the flight to export
+     * @param aircraftPath the X-Plane aircraft path to reference in the export
+     * @param useMSL whether to export altitude as MSL (rather than AGL)
+     */
     public XPlane10Export(int flightId, String aircraftPath, boolean useMSL) {
         super(flightId, aircraftPath, useMSL);
     }

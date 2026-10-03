@@ -7,6 +7,13 @@ import java.util.List;
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.FlightWarning;
 
+/**
+ * Summarizes a single AirSync import for presentation, joining an {@code airsync_imports} row with its flight's
+ * status and warnings.
+ *
+ * <p>Carries the import and upload identifiers, the tail number, the processing status and receipt time, and the
+ * list of {@link FlightWarning}s loaded for the associated flight.
+ */
 public class AirSyncImportResponse {
     private final int id;
     private final int uploadId;
@@ -20,6 +27,15 @@ public class AirSyncImportResponse {
     // String sql = "SELECT a.id, a.time_received, a.upload_id, f.status,
     // a.flight_id, a.tail FROM airsync_imports AS a INNER JOIN flights AS f ON f.id
     // = a.flight_id WHERE a.fleet_id = ?";
+    /**
+     * Constructs an import response from a joined {@code airsync_imports}/{@code flights} result row, loading
+     * the associated flight warnings.
+     *
+     * @param fleetId the fleet id the import belongs to
+     * @param resultSet the result set positioned on the row to read (columns: id, time_received, upload_id,
+     *     status, flight_id, tail)
+     * @throws SQLException if reading the row or loading the flight warnings fails
+     */
     public AirSyncImportResponse(int fleetId, ResultSet resultSet) throws SQLException {
         this.id = resultSet.getInt(1);
         this.fleetId = fleetId;

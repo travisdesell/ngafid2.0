@@ -1,3 +1,6 @@
+# ngafid-base is a locally-built image (see the root Dockerfile), not a registry
+# image, so there is no published version tag to pin.
+# hadolint ignore=DL3006
 FROM ngafid-base
 RUN mkdir /opt/ngafid-airsync
 COPY ngafid-airsync/target/ngafid-airsync-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/ngafid-airsync/ngafid-airsync.jar

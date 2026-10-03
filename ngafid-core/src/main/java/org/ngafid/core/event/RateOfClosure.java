@@ -6,6 +6,12 @@ import java.util.logging.Logger;
 import javax.sql.rowset.serial.SerialBlob;
 import org.ngafid.core.util.Compression;
 
+/**
+ * Holds the per-sample rate-of-closure series for a proximity event and persists it to the database.
+ *
+ * <p>The array captures how quickly two aircraft are approaching each other over the event; it is stored compressed
+ * as a BLOB and read back for display and analysis.
+ */
 public class RateOfClosure {
 
     private static final Logger LOG = Logger.getLogger(RateOfClosure.class.getName());
@@ -24,11 +30,24 @@ public class RateOfClosure {
         return rateOfClosureArray;
     }
 
+    /**
+     * Constructs a rate-of-closure series from an in-memory array, recording its length as the series size.
+     *
+     * @param rateOfClosureArray the per-sample rate-of-closure values
+     */
     public RateOfClosure(double[] rateOfClosureArray) {
         this.rateOfClosureArray = rateOfClosureArray;
         this.size = this.rateOfClosureArray.length;
     }
 
+    /**
+     * Reconstructs a rate-of-closure series from a result row, decompressing the stored blob (column 1) into an array
+     * of the stored length (column 2).
+     *
+     * @param resultSet the result set positioned on a row with the data blob and size columns
+     * @throws SQLException if reading the row fails
+     * @throws IOException if decompressing the stored array fails
+     */
     public RateOfClosure(ResultSet resultSet) throws SQLException, IOException {
         Blob values = resultSet.getBlob(1);
         int sizeResult = resultSet.getInt(2);
@@ -38,6 +57,15 @@ public class RateOfClosure {
         this.size = this.rateOfClosureArray.length;
     }
 
+    /**
+     * Persists this rate-of-closure series for an event by compressing the array into a blob and inserting a row into
+     * {@code rate_of_closure} with the event id, size, and data.
+     *
+     * @param connection the database connection
+     * @param eventId the event this series belongs to
+     * @throws IOException if compressing the array fails
+     * @throws SQLException if the insert fails
+     */
     public void updateDatabase(Connection connection, int eventId) throws IOException, SQLException {
         byte[] blobBytes = Compression.compressDoubleArray(this.rateOfClosureArray);
         Blob rateOfClosureBlob = new SerialBlob(blobBytes);
@@ -53,6 +81,15 @@ public class RateOfClosure {
         }
     }
 
+    /**
+     * Loads the rate-of-closure series stored for an event, decompressing its blob.
+     *
+     * @param connection the database connection
+     * @param eventId the event whose series to load
+     * @return the event's rate-of-closure series, or null if none is stored
+     * @throws IOException if decompressing the stored array fails
+     * @throws SQLException if the query fails
+     */
     public static RateOfClosure getRateOfClosureOfEvent(Connection connection, int eventId)
             throws IOException, SQLException {
         try (PreparedStatement query =

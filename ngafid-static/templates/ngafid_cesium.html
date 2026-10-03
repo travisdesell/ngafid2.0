@@ -1,33 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-
-
-    <link rel="stylesheet" href="/css/theme-preload.css">
-    <script src="/js/theme_preload-bundle.js"></script>
-    
-
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-    <title>NGAFID-Cesium Display</title>
-
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
-        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-    <link rel='stylesheet' href='/css/main.css'>
-    <link rel='stylesheet' href='/css/font-awesome.min.css'>
-
-    <script>
+    <head>
+        <link rel="stylesheet" href="/css/theme-preload.css">
+        <script src="/js/theme_preload-bundle.js"></script>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+        <title>NGAFID-Cesium Display</title>
+        <link rel="stylesheet"
+              href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+              integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+              crossorigin="anonymous">
+        <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="/css/font-awesome.min.css">
+        <script>
         var plotMapHidden = true;
         {{{navbar_js}}}
         {{{events_js}}}
         {{{cesium_data_js}}}
         {{{azure_maps_key}}}
-    </script>
-
-    <style>
+        </script>
+        <style>
         html,
         body,
         #cesiumContainer {
@@ -135,57 +129,54 @@
             top: 10px;
             left: 800px;
         }
-    </style>
-
-    <!-- Cesium css file -->
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-</head>
-
-<body>
-    <!-- Cesium container load here -->
-    <div id="cesiumContainer"></div>
-
-    <!-- Controling the flight phase in cesium page -->
-    <div id="toolbar">
-        <select class="cesium-button" id="dropdown">
-            <option value="0">Flight Phase</option>
-            <option value="1">Taxiing</option>
-            <option value="2">Takeoff</option>
-            <option value="3">Climb</option>
-            <option value="4">Cruise to Final</option>
-            <option value="5">Full Flight</option>
-        </select>
-    </div>
-
-    <!-- <div id="events-dropdown" class="cesium-button"> -->
-    <!--     <div id = "events-dropdown-content"> -->
-    <!--         Events -->
-    <!--     </div> -->
-    <!-- </div> -->
-    
-    <div id="toggle-path-color">
-        <select class="cesium-button" id="color-options">
-            <option value="0">Select Current Flight Path Color</option>
-            <option value="1">Red</option>
-            <option value="2">Orange</option>
-            <option value="3">Yellow</option>
-            <option value="4">Green</option>
-            <option value="5">Blue</option>
-            <option value="6">Indigo</option>
-            <option value="7">Violet</option>
-            <option value="8">Black</option>
-            <option value="9">White</option>
-        </select>
-         <button class="cesium-button" onClick="toggleAirframeLockCamera()">Toggle Camera</button>
-                <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
-    </div>
-
-<!--        <script src = "src/main/javascript/cesium_page.js">-->
-
-<!--    SCRIPT HAS TO BE EMBEDDED IN HTML FILE -->
-    <script>
-
+        </style>
+        <!-- Cesium css file -->
+        <script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
+        <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css"
+              rel="stylesheet">
+    </head>
+    <body>
+        <!-- Cesium container load here -->
+        <div id="cesiumContainer"></div>
+        <!-- Controling the flight phase in cesium page -->
+        <div id="toolbar">
+            <select class="cesium-button" id="dropdown">
+                <option value="0">Flight Phase</option>
+                <option value="1">Taxiing</option>
+                <option value="2">Takeoff</option>
+                <option value="3">Climb</option>
+                <option value="4">Cruise to Final</option>
+                <option value="5">Full Flight</option>
+            </select>
+        </div>
+        <!-- <div id="events-dropdown" class="cesium-button"> -->
+        <!--     <div id = "events-dropdown-content"> -->
+        <!--         Events -->
+        <!--     </div> -->
+        <!-- </div> -->
+        <div id="toggle-path-color">
+            <select class="cesium-button" id="color-options">
+                <option value="0">Select Current Flight Path Color</option>
+                <option value="1">Red</option>
+                <option value="2">Orange</option>
+                <option value="3">Yellow</option>
+                <option value="4">Green</option>
+                <option value="5">Blue</option>
+                <option value="6">Indigo</option>
+                <option value="7">Violet</option>
+                <option value="8">Black</option>
+                <option value="9">White</option>
+            </select>
+            <button type="button"
+                    class="cesium-button"
+                    onClick="toggleAirframeLockCamera()">Toggle Camera</button>
+            <button type="button"
+                    class="cesium-button"
+                    onClick="window.location.reload();">Refresh Cesium</button>
+        </div>
+        <!--        <script src = "src/main/javascript/cesium_page.js">-->
+        <!--    SCRIPT HAS TO BE EMBEDDED IN HTML FILE -->
+        <script>
         // Access Cesium Ion Token here
         // Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA'
@@ -828,9 +819,7 @@
 
 
 
-    </script>
-
-<!--    <script src="/js/ngafid_cesium-bundle.js"></script>-->
-
-</body>
+        </script>
+        <!--    <script src="/js/ngafid_cesium-bundle.js"></script>-->
+    </body>
 </html>

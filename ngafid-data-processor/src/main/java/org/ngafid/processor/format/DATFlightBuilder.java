@@ -5,8 +5,21 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.FlightMeta;
 import org.ngafid.core.flights.StringTimeSeries;
 
+/**
+ * {@link FlightBuilder} for flights parsed from DJI {@code .DAT} log files.
+ *
+ * <p>Constructs a flight from already-parsed double and string time series, inheriting the default set of compute
+ * steps from {@link FlightBuilder}.
+ */
 public class DATFlightBuilder extends FlightBuilder {
 
+    /**
+     * Constructs a DAT (DJI) flight builder from already-parsed series.
+     *
+     * @param meta the flight metadata
+     * @param doubleTimeSeries the double time series keyed by name
+     * @param stringTimeSeries the string time series keyed by name
+     */
     public DATFlightBuilder(
             FlightMeta meta,
             Map<String, DoubleTimeSeries> doubleTimeSeries,

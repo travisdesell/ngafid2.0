@@ -7,6 +7,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
+/**
+ * A fleet account: the organization grouping that owns flights, tails, and the users who may access its data.
+ *
+ * <p>Holds the fleet's database id and name and lazily loads the list of users who have (or are requesting) access.
+ * Provides static lookup/creation helpers backed by the {@code fleet} table.
+ */
 public class Fleet implements Serializable {
     private static final Logger LOG = Logger.getLogger(Fleet.class.getName());
     private final String name;
@@ -17,6 +23,12 @@ public class Fleet implements Serializable {
 
     private int id = -1;
 
+    /**
+     * Constructs a fleet with its id and name; the user list is loaded lazily on first access.
+     *
+     * @param id the fleet id
+     * @param name the fleet name
+     */
     public Fleet(int id, String name) {
         this.id = id;
         this.name = name;
@@ -250,10 +262,24 @@ public class Fleet implements Serializable {
         }
     }
 
+    /**
+     * Returns a short human-readable summary of the fleet (its id and name).
+     *
+     * @return a debug string describing this fleet
+     */
+    @Override
     public String toString() {
         return "Fleet id: " + this.getId() + " name: " + this.getName() + ";";
     }
 
+    /**
+     * Returns the users with access to (or requesting access to) this fleet, lazily loading them from the database on
+     * first access and caching them on the instance. The returned list is an unmodifiable view.
+     *
+     * @param connection the database connection used to load the users if not already cached
+     * @return an unmodifiable list of the fleet's users
+     * @throws SQLException if loading the users fails
+     */
     public List<User> getUsers(Connection connection) throws SQLException {
         if (users == null) {
             populateUsers(connection);

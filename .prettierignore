@@ -1,0 +1,21 @@
+# Files Prettier should never reformat.
+#
+# node_modules is ignored by default, but the vendored Cesium build and other
+# generated/lock artifacts are tracked in git, so they must be listed explicitly.
+
+# Dependencies and build output
+**/node_modules/
+ngafid-frontend/build/
+ngafid-frontend/dist/
+
+# Vendored CesiumJS distribution (do not touch upstream files)
+ngafid-frontend/src/cesium/Build/
+
+# Generated / lock files
+**/package-lock.json
+.lint-cache/
+lint-reports/
+
+# Minified assets (e.g. ngafid-static/css/font-awesome.min.css) are not source
+**/*.min.css
+**/*.min.js

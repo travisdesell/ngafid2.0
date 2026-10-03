@@ -25,22 +25,202 @@ The workflow is relatively simple:
    recompilation of the java
    source and react modules, or creation of new tables via liquibase.
 
-## Linting
+## Linting and formatting
 
-A tool called spotbug works with maven to automatically identify and enumerate code that contains problems of various
-kinds. You can run it with:
+All code must pass linting and be formatted before you open a PR; CI enforces
+this. Two companion helper scripts cover **every** language in the repo. They run
+the same checks CI runs and simply skip any whose toolchain you don't have
+installed:
 
+- **`scripts/format.sh`** auto-fixes what can be fixed (formatting, import order,
+  safe lint fixes).
+- **`scripts/lint.sh`** checks everything and exits non-zero if any issue remains
+  (including checks that have no auto-fix, e.g. Checkstyle Javadoc or shellcheck).
+
+The usual loop before opening a PR:
+
+```bash
+scripts/format.sh          # auto-format the whole repo
+scripts/lint.sh            # verify; exits non-zero if anything still fails
 ```
-mvn spotbugs:check
+
+Both scripts take an optional target to run a single language, and `lint.sh`
+takes a couple of flags:
+
+```bash
+scripts/lint.sh python         # check just one language
+scripts/format.sh web          # auto-fix just JS + CSS
+scripts/lint.sh --report       # run everything without failing, print counts
+scripts/lint.sh --verbose js   # also list each file the check covers
 ```
 
-These concerns should be properly addressed before requesting a review
+Valid targets: `all` (default), `java`, `kotlin`, `python`, `js`, `css`, `web`
+(js + css), `html`, `bash`, `yaml`, `markdown`, `dockerfile`; `lint.sh` also
+accepts `format` (Spotless only) and `checkstyle` (Checkstyle only).
 
-## Formatting
+The individual checks and how to auto-fix each:
 
-Our codebase will (eventually) be automatically formatted using a tool called `spotless`.
+| Scope                                | Tool(s)                                  | Check                        | Auto-fix                                            |
+| ------------------------------------ | ---------------------------------------- | ---------------------------- | --------------------------------------------------- |
+| Java (style + Javadoc, max line 120) | Checkstyle                               | `scripts/lint.sh checkstyle` | `scripts/format.sh java`; Javadoc/naming are manual |
+| Java + Kotlin (formatting)           | Spotless (Palantir Java Format + ktlint) | `scripts/lint.sh format`     | `scripts/format.sh java` (or `kotlin`)              |
+| Python (lint + format + docstrings)  | ruff (incl. pydocstyle)                  | `scripts/lint.sh python`     | `scripts/format.sh python`                          |
+| JS / TS (code quality + JSDoc)       | ESLint (incl. eslint-plugin-jsdoc)       | `scripts/lint.sh js`         | `scripts/format.sh js`                              |
+| JS / TS / CSS (formatting)           | Prettier                                 | `scripts/lint.sh js` / `css` | `scripts/format.sh web`                             |
+| HTML templates                       | djLint                                   | `scripts/lint.sh html`       | `scripts/format.sh html`                            |
+| Bash                                 | shfmt + shellcheck                       | `scripts/lint.sh bash`       | `scripts/format.sh bash` (shellcheck is manual)     |
+| YAML                                 | yamllint + Prettier                      | `scripts/lint.sh yaml`       | `scripts/format.sh yaml`                            |
+| Markdown                             | markdownlint + Prettier                  | `scripts/lint.sh markdown`   | `scripts/format.sh markdown`                        |
+| Dockerfile                           | hadolint                                 | `scripts/lint.sh dockerfile` | manual (no auto-fixer)                              |
 
-```angular2html
-mvn spotless:check # To search for formatting issues
-mvn spotless:apply # To automatically search for and fix formatting issues.
+### Docstrings (enforced)
+
+Every element of the public API must carry a docstring, and CI enforces this
+across all three languages (scoped to the public/exported surface to match each
+other):
+
+- **Java** — Javadoc on every public type and method
+  (Checkstyle `MissingJavadocType` / `MissingJavadocMethod`). Trivial property
+  getters/setters and `@Override` methods are exempt. A summary sentence is
+  required, and `@param`/`@return`/`@throws` must be present and accurate.
+- **Python** — Google-style docstrings on every public module, class, and
+  function (ruff `D` rules with `convention = "google"`). Private
+  (underscore-prefixed) members are not gated by the tool but should still be
+  documented.
+- **JS / TS** — JSDoc on every exported function and class, plus complete
+  `@param`/`@returns` on any function that has a JSDoc block
+  (`eslint-plugin-jsdoc`, `publicOnly`). Individual class methods are not required
+  to carry their own block. Type braces are omitted from tags — TypeScript already
+  carries the types.
+
+Docstrings must be **behavior-focused**: describe what the element does, its side
+effects, and any non-obvious behavior — not restate its name or signature. See
+the repository `CLAUDE.md` for the full style guidance.
+
+Rule configs (at the repo root unless noted):
+
+- **Java** — `.github/linters/checkstyle.xml` (+ `checkstyle-suppressions.xml`); Spotless is configured in `pom.xml`.
+- **Kotlin** — `.editorconfig` (ktlint).
+- **Python** — `ruff.toml` (and `ngafid-pydata/pyproject.toml` for that package).
+- **JS / TS** — `ngafid-frontend/eslint.config.mjs`.
+- **Prettier** (JS/TS/CSS/YAML/Markdown) — `.prettierrc` and `.prettierignore`.
+- **YAML** — `.yamllint.yml`.
+- **Markdown** — `.markdownlint.yaml`.
+- **HTML templates** — `.djlintrc`.
+
+The scripts discover files from git, so a **newly added file is only checked once
+it has been `git add`ed** (untracked files are skipped until then).
+
+To see the current repo-wide backlog without installing every toolchain, run the
+**Lint Inventory** workflow from the GitHub Actions tab: it runs the same
+`scripts/lint.sh --report` and uploads the full per-language reports as an
+artifact.
+
+These concerns should be properly addressed before requesting a review.
+
+## Testing
+
+All unit tests must pass before you open a PR; CI enforces this. **Code you add or
+change should come with tests that verify it** — JUnit for Java/Kotlin, pytest for
+Python, and Vitest for JS/TS (see the repository `CLAUDE.md`). A single helper
+script runs **every** module's tests -- the same tests CI runs -- and skips any
+suite whose toolchain is missing:
+
+- **`scripts/test.sh`** runs the Java/Kotlin tests (Maven: `ngafid-core`,
+  `ngafid-www`, `ngafid-data-processor`, ...), the Python tests (pytest in
+  `ngafid-pydata`), and the frontend tests (Vitest in `ngafid-frontend`), and
+  exits non-zero if anything fails.
+
+The usual check before opening a PR:
+
+```bash
+scripts/test.sh                # run all unit tests across the repo
 ```
+
+It takes an optional target and a few flags:
+
+```bash
+scripts/test.sh java           # just the Maven (Java/Kotlin) suites
+scripts/test.sh python         # just the pytest suite
+scripts/test.sh js             # just the Vitest (frontend) suite
+scripts/test.sh --verbose      # stream each runner's full output
+scripts/test.sh --report       # run everything without failing, print counts
+scripts/test.sh java --log-level=DEBUG   # Java tests with debug (LOG.fine) logging
+```
+
+Valid targets: `all` (default), `java`, `kotlin` (alias for `java`), `python`,
+`js` (Vitest in `ngafid-frontend`).
+
+### Test logging level
+
+Java logs at **WARN** by default, and the Java/Kotlin tests use the same default,
+so a normal run prints only warnings and errors. Pass `--log-level=LEVEL` to see
+more (or less). It sets both logging systems in the test JVMs:
+`java.util.logging`, which NGAFID's own code uses, and slf4j-simple, which the
+third-party libraries (Testcontainers, Liquibase, Kafka, HikariCP, ...) use.
+`LEVEL` is case-insensitive: `OFF`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, or
+the JUL names `SEVERE`, `WARNING`, `CONFIG`, `FINE`, `FINER`, `FINEST`, `ALL`.
+For example, `--log-level=DEBUG` shows `LOG.fine(...)` output.
+
+Under the hood, the root `pom.xml` points surefire at
+[`resources/log.properties`](resources/log.properties) and sets slf4j to `warn`
+through the `ngafid.test.log.config` / `ngafid.test.slf4j.level` properties. The
+flag overrides those properties. If you run Maven directly, you can override them
+the same way, e.g. `mvn test -Dngafid.test.slf4j.level=info`.
+
+### Requirements
+
+- **Docker** -- the `ngafid-core` tests start a throwaway MySQL with
+  [Testcontainers](https://testcontainers.com/), so a running Docker engine is
+  needed for the `java` suite. On a standard Docker install (Linux/CI) this just
+  works; on Docker Desktop `test.sh` auto-applies the socket/API-version
+  workaround (see [`ngafid-core/README.md`](ngafid-core/README.md)).
+- **Python** -- the `python` suite needs `pytest` and the `ngafid-pydata` package
+  (`pip install -e 'ngafid-pydata[dev]'`, Python >= 3.10). If `pytest` is not on
+  `PATH` the suite is skipped with a note.
+- **Node** -- the `js` suite runs [Vitest](https://vitest.dev/) in
+  `ngafid-frontend`; it needs Node.js **24 or newer** (the frontend's
+  `engines`; Vitest and jsdom will not start on Node 20) and the frontend dependencies
+  (`cd ngafid-frontend && npm ci`). If `npm` or `node_modules` is missing the
+  suite is skipped with a note.
+
+### Frontend (JS/TS) tests
+
+Tests live next to the code as `*.test.ts` / `*.test.tsx` under
+`ngafid-frontend/src`, run by **Vitest** with **React Testing Library** for
+components (jsdom environment; `@testing-library/jest-dom` matchers are registered
+in `ngafid-frontend/vitest.setup.ts`). Two worked examples to copy from:
+[`src/map_utils.test.ts`](ngafid-frontend/src/map_utils.test.ts) (a pure utility)
+and [`src/info_hint.test.tsx`](ngafid-frontend/src/info_hint.test.tsx) (a
+component).
+
+```bash
+cd ngafid-frontend
+npm test            # run once (what scripts/test.sh and CI run)
+npm run test:watch  # re-run on change while developing
+```
+
+### Opt-in test suites
+
+Some tests need infrastructure or data that is not present by default (and never
+in CI), so they are **tagged and excluded** from the normal run. Opt into them
+with a flag once you have the prerequisites in place:
+
+| Flag         | Runs                                           | Prerequisites                                                                                                                                                                                                |
+| ------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--e2e`      | `ngafid-www` Selenium tests (tag `e2e`)        | A running NGAFID server and a browser. Start the server first; override its URL with `NGAFID_BASE_URL` / `-Dngafid.baseUrl` if not localhost:8181.                                                           |
+| `--terrain`  | `TerrainCache` altitude tests (tag `terrain`)  | The SRTM terrain data (see the data download in the root [`README.md`](README.md)). `test.sh` points the tests at `ngafid.terrain.dir` from your repo-root `ngafid.properties`, or at `$NGAFID_TERRAIN_DIR`. |
+| `--security` | Gradle SQL-injection project (`security-test`) | A running target server configured via `ngafid-www/src/test/security-test/.env`.                                                                                                                             |
+
+```bash
+scripts/test.sh java --e2e           # unit + Selenium end-to-end tests
+scripts/test.sh java --terrain       # unit + TerrainCache altitude tests
+scripts/test.sh --security           # also run the Gradle security-test project
+```
+
+New tests that need the same infrastructure should carry the matching tag
+(`@Tag("e2e")` / `@Tag("terrain")`) so they stay out of the default/CI run.
+
+CI runs `scripts/test.sh` via the **Test** workflow
+([`.github/workflows/test.yaml`](.github/workflows/test.yaml)); the opt-in suites
+above are excluded there.

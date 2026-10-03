@@ -1,12 +1,39 @@
-# flake8: noqa: E501
+"""Startup check for the data directories and reference data files on disk.
+
+Runs as the ``FS`` category of the NGAFID startup validator: resolves the
+upload/archive/terrain directories and the airports/runways reference files from
+the effective configuration, verifies their existence, readability and (where
+written to) writability, checks free disk space on the upload and archive
+volumes, and confirms the reference CSVs are present and parseable.
+"""
+
+from __future__ import annotations
+
 import csv
 import os
 import re
 import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from validator import Validator
 
 
-def run_check(validator):
+def run_check(validator: Validator) -> None:
+    """Validate the data directories and reference files the app needs on disk.
+
+    Resolves each path from the effective configuration and records a fail when a
+    path cannot be resolved. For the upload and archive directories, verifies
+    read/write access and then checks free space; for the terrain directory,
+    verifies read access; and validates the airports and runways reference files.
+    All outcomes are recorded through the validator's pass/fail helpers.
+
+    Args:
+        validator: The running startup validator; supplies the effective-property
+            resolver, the directory/file check helpers, and the pass/fail
+            recording helpers.
+    """
     category = "FS"
     upload_dir = validator._effective_property("ngafid.upload.dir")
     archive_dir = validator._effective_property("ngafid.archive.dir")
@@ -112,11 +139,7 @@ def _check_terrain_tiles(validator, terrain_dir: Path):
     # Also allow the optional "extra" folder used in some deployments.
     pattern = re.compile(r"^[A-Z]\d{1,2}$")
     allowed_non_tile_dirs = {"extra"}
-    invalid_names = [
-        p.name
-        for p in children
-        if p.name not in allowed_non_tile_dirs and not pattern.match(p.name)
-    ]
+    invalid_names = [p.name for p in children if p.name not in allowed_non_tile_dirs and not pattern.match(p.name)]
     if invalid_names:
         preview = ", ".join(invalid_names[:5])
         validator._fail(
@@ -161,7 +184,7 @@ def _check_free_space(validator, category, path: Path, label: str):
         validator._pass(
             category,
             f"{label} free space",
-            f"{_format_bytes(usage.free)} free ({usage.free} bytes) out of {_format_bytes(usage.total)} total{wsl_note}",
+            f"{_format_bytes(usage.free)} free ({usage.free} bytes) out of {_format_bytes(usage.total)} total{wsl_note}",  # noqa: E501
         )
 
 

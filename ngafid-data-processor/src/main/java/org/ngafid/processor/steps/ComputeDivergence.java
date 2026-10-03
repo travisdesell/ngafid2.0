@@ -57,6 +57,12 @@ public class ComputeDivergence extends ComputeStep {
             entry(AIRFRAME_DIAMOND_DA_40, DIAMOND_CONFIG),
             entry(AIRFRAME_DIAMOND_DA40, DIAMOND_CONFIG));
 
+    /**
+     * Constructs the divergence compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeDivergence(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
@@ -111,6 +117,12 @@ public class ComputeDivergence extends ComputeStep {
         return outputColumns;
     }
 
+    /**
+     * Reports whether this step applies to the given airframe name.
+     *
+     * @param airframe the airframe name to check
+     * @return true if the step applies to the airframe
+     */
     public boolean airframeIsValid(String airframe) {
         for (String blacklisted : AIRFRAME_BLACKLIST) if (airframe.contains(blacklisted)) return false;
 

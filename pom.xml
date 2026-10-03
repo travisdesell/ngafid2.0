@@ -21,9 +21,17 @@
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <kotlin.compiler.jdkHome>${env.JAVA_HOME}</kotlin.compiler.jdkHome>
-        <jvm.target>24</jvm.target>
-        <maven.compiler.release>24</maven.compiler.release>
+        <!-- Project JDK baseline. Temurin 25 is the supported toolchain: the Palantir
+             formatter Spotless uses does not yet run on JDK 27, and CI builds on 25. -->
+        <jdk.version>25</jdk.version>
+        <jvm.target>25</jvm.target>
+        <maven.compiler.release>25</maven.compiler.release>
         <jacoco.skip>false</jacoco.skip>
+        <!-- Logging for the forked unit-test JVMs (see the surefire entry in pluginManagement).
+             Tests use the production java.util.logging config (WARN default) and slf4j-simple at
+             warn; the scripts/test.sh log-level flag overrides both with -D on the mvn command line. -->
+        <ngafid.test.log.config>${project.basedir}/../resources/log.properties</ngafid.test.log.config>
+        <ngafid.test.slf4j.level>warn</ngafid.test.slf4j.level>
 
         <spark.version>2.7.2</spark.version>
         <gson.version>2.13.1</gson.version>
@@ -49,13 +57,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.1</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -170,6 +171,24 @@
     <build>
         <pluginManagement>
             <plugins>
+                <!--
+                    Unit-test logging for every module: point the forked test JVM's
+                    java.util.logging at ngafid.test.log.config and set slf4j-simple's default
+                    level. These are set as surefire system properties (not argLine) so they do
+                    not clobber the JaCoCo agent that prepare-agent injects through argLine.
+                    Modules' own surefire systemPropertyVariables merge with these.
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <java.util.logging.config.file>${ngafid.test.log.config}</java.util.logging.config.file>
+                            <org.slf4j.simpleLogger.defaultLogLevel>${ngafid.test.slf4j.level}</org.slf4j.simpleLogger.defaultLogLevel>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+
                 <!-- Kotlin compiler configuration for all modules -->
                 <plugin>
                     <groupId>org.jetbrains.kotlin</groupId>
@@ -232,7 +251,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.6.3</version>
                     <configuration>
-                        <source>24</source>
+                        <source>${maven.compiler.release}</source>
                         <doclint>none</doclint>
                         <failOnError>false</failOnError>
 
@@ -281,7 +300,37 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Code Coverage Plugin (0.8.14+ for Java 24 class files) -->
+            <!--
+                Pin the build to a JDK 25 toolchain so the compiler, tests, and Javadoc
+                run on Temurin 25 regardless of the JDK that launches Maven. Requires a
+                matching entry in ~/.m2/toolchains.xml (CI's actions/setup-java registers
+                one automatically; see README "JDK version note"). NOTE: Spotless's Palantir
+                formatter runs in the launcher JVM, not the toolchain, so local formatting
+                must still be launched under JDK 25 (scripts/lint.sh handles this).
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-toolchains-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>toolchain</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <toolchains>
+                        <jdk>
+                            <!-- Match on version only; vendor strings differ between CI's
+                                 actions/setup-java registration and local installs. -->
+                            <version>${jdk.version}</version>
+                        </jdk>
+                    </toolchains>
+                </configuration>
+            </plugin>
+
+            <!-- JaCoCo Code Coverage Plugin (0.8.14+ for Java 25 class files) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -308,7 +357,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.10.3</version>
                 <configuration>
                     <java>
                         <includes>
@@ -323,7 +372,10 @@
                         </indent>
                         <removeUnusedImports/>
                         <importOrder/>
-                        <palantirJavaFormat/>
+                        <!-- Pinned to a version that supports modern JDKs (incl. 25+/27). -->
+                        <palantirJavaFormat>
+                            <version>2.100.0</version>
+                        </palantirJavaFormat>
                     </java>
                     <kotlin>
                         <includes>
@@ -336,6 +388,8 @@
                             <spaces>true</spaces>
                             <spacesPerTab>4</spacesPerTab>
                         </indent>
+                        <!-- Lint + format Kotlin via ktlint; rules come from .editorconfig. -->
+                        <ktlint/>
                     </kotlin>
                 </configuration>
             </plugin>

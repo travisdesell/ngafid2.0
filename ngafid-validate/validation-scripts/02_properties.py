@@ -1,10 +1,36 @@
-# flake8: noqa: E501
-import re
+"""Startup check that ``ngafid.properties`` is present and fully populated.
+
+Runs as the ``CONFIG`` category of the NGAFID startup validator: parses
+``/app/ngafid.properties``, confirms every required key is present and non-empty,
+and flags leftover placeholder values (such as the Azure Maps key) that must be
+replaced before the deployment is considered healthy.
+"""
+
+from __future__ import annotations
+
 import os
+import re
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from validator import Validator
 
 
-def run_check(validator):
+def run_check(validator: Validator) -> None:
+    """Parse ngafid.properties and validate its required keys and placeholders.
+
+    Loads ``/app/ngafid.properties`` into ``validator.properties`` and fails fast
+    (recording a fail and returning) when the file is empty or unreadable.
+    Otherwise records a pass/fail per entry in ``validator.required_prop_keys``
+    (fail when missing or blank) and flags any key still holding a known
+    placeholder value that must be replaced with a real one.
+
+    Args:
+        validator: The running startup validator; supplies the properties parser,
+            the required-key list, and the pass/fail recording helpers, and
+            receives the parsed properties on ``validator.properties``.
+    """
     category = "CONFIG"
     props = validator._parse_properties(Path("/app/ngafid.properties"))
     validator.properties = props
@@ -293,7 +319,9 @@ def _validate_email_config(validator, category):
         )
 
     email_pattern = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-    invalid_admin = [email for email in [e.strip() for e in admin_emails.split(";")] if email and not email_pattern.match(email)]
+    invalid_admin = [
+        email for email in [e.strip() for e in admin_emails.split(";")] if email and not email_pattern.match(email)
+    ]
     if invalid_admin:
         validator._fail(
             category,

@@ -1,8 +1,34 @@
-# flake8: noqa: E501
+"""Startup check that static web assets and Mustache templates are present.
+
+Runs as part of the ``FS`` category of the NGAFID startup validator: resolves the
+static-asset and Mustache-template directories from the effective configuration,
+verifies they exist and are readable, and confirms each contains the expected
+asset/template files.
+"""
+
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from validator import Validator
 
 
-def run_check(validator):
+def run_check(validator: Validator) -> None:
+    """Validate the static-asset and Mustache-template directories on disk.
+
+    Resolves each directory from the effective configuration and records a fail
+    when a path cannot be resolved. For each resolved directory, verifies read
+    access and then checks that the expected static assets (js/css/html) or
+    template files are present. All outcomes are recorded through the validator's
+    pass/fail helpers.
+
+    Args:
+        validator: The running startup validator; supplies the effective-property
+            resolver, the directory check helper, and the pass/fail recording
+            helpers.
+    """
     category = "FS"
     static_dir = validator._effective_property("ngafid.static.dir")
     templates_dir = validator._effective_property("ngafid.mustache.template.dir")

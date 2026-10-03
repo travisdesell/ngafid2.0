@@ -13,6 +13,13 @@ import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.Runway;
 
+/**
+ * One stop (takeoff, landing, touch-and-go, or go-around) detected along a flight's path near an airport and runway.
+ *
+ * <p>Built up while scanning a flight's position and altitude series, each itinerary entry tracks the nearest airport
+ * and runway, their minimum distances, the lowest-altitude point, and the approach/takeoff index boundaries, and
+ * classifies the stop type; entries are persisted to and reconstructed from the {@code itinerary} table.
+ */
 public class Itinerary {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final String GO_AROUND = "go_around";
@@ -35,6 +42,13 @@ public class Itinerary {
     private int takeoffCounter = 0;
     private String type = GO_AROUND; // go_around is the default -> will be updated or set if otherwise
 
+    /**
+     * Reconstructs an itinerary entry from an {@code itinerary} result row (its order, min-altitude point, airport
+     * and runway, distances, approach/takeoff boundaries, and type).
+     *
+     * @param resultSet the result set positioned on the row to read
+     * @throws SQLException if reading the row fails
+     */
     public Itinerary(ResultSet resultSet) throws SQLException {
         order = resultSet.getInt(1);
         minAltitudeIndex = resultSet.getInt(2);
@@ -50,6 +64,19 @@ public class Itinerary {
         type = resultSet.getString(12);
     }
 
+    /**
+     * Starts a new itinerary entry at an airport and seeds it with the first sample (via {@link #update}), including
+     * engine RPM.
+     *
+     * @param airport the airport code this entry is for
+     * @param runway the nearest runway at the first sample
+     * @param index the sample index
+     * @param altitudeAGL the altitude above ground level at the sample
+     * @param airportDistance the distance to the airport at the sample
+     * @param runwayDistance the distance to the runway at the sample
+     * @param groundSpeed the ground speed at the sample
+     * @param rpm the engine RPM at the sample
+     */
     public Itinerary(
             String airport,
             String runway,
@@ -63,6 +90,18 @@ public class Itinerary {
         update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed, rpm);
     }
 
+    /**
+     * Starts a new itinerary entry at an airport and seeds it with the first sample (via {@link #update}), for
+     * airframes without an RPM series.
+     *
+     * @param airport the airport code this entry is for
+     * @param runway the nearest runway at the first sample
+     * @param index the sample index
+     * @param altitudeAGL the altitude above ground level at the sample
+     * @param airportDistance the distance to the airport at the sample
+     * @param runwayDistance the distance to the runway at the sample
+     * @param groundSpeed the ground speed at the sample
+     */
     public Itinerary(
             String airport,
             String runway,
@@ -75,6 +114,17 @@ public class Itinerary {
         update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed);
     }
 
+    /**
+     * Constructs an itinerary entry directly from explicit takeoff and approach index boundaries at a given
+     * airport/runway.
+     *
+     * @param startTakeoff the start index of the takeoff phase
+     * @param endTakeoff the end index of the takeoff phase
+     * @param startApproach the start index of the approach phase
+     * @param endApproach the end index of the approach phase
+     * @param airport the airport code
+     * @param runway the runway identifier
+     */
     public Itinerary(
             int startTakeoff, int endTakeoff, int startApproach, int endApproach, String airport, String runway) {
         this.startOfTakeoff = startTakeoff;
@@ -85,6 +135,14 @@ public class Itinerary {
         this.runway = runway;
     }
 
+    /**
+     * Loads a flight's itinerary entries from the database, ordered by their sequence ({@code order}).
+     *
+     * @param connection the database connection
+     * @param flightId the flight whose itinerary to load
+     * @return the flight's itinerary entries in order (empty if none)
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<Itinerary> getItinerary(Connection connection, int flightId) throws SQLException {
         String queryString = "SELECT `order`, min_altitude_index, min_altitude, airport, runway, "
                 + "min_airport_distance, min_runway_distance, start_of_approach, end_of_approach, "
@@ -103,6 +161,15 @@ public class Itinerary {
         }
     }
 
+    /**
+     * Returns the distinct airport codes a fleet has visited (from {@code visited_airports}, ordered by code),
+     * skipping any empty code left in the database.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose visited airports to list
+     * @return the fleet's visited airport codes
+     * @throws SQLException if the query fails
+     */
     public static List<String> getAllAirports(Connection connection, int fleetId) throws SQLException {
         List<String> airports = new ArrayList<>();
 
@@ -126,6 +193,14 @@ public class Itinerary {
         }
     }
 
+    /**
+     * Returns the distinct runway identifiers a fleet has visited (from {@code visited_runways}, ordered by runway).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose visited runways to list
+     * @return the fleet's visited runway identifiers
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<String> getAllAirportRunways(Connection connection, int fleetId) throws SQLException {
         String queryString = "SELECT runway FROM visited_runways WHERE fleet_id = ? ORDER BY runway";
         try (PreparedStatement query = connection.prepareStatement(queryString)) {
@@ -178,14 +253,38 @@ public class Itinerary {
         return runways;
     }
 
+    /**
+     * Creates a prepared statement that records a fleet's visited airport ({@code INSERT IGNORE} into
+     * {@code visited_airports}, so duplicates are silently skipped).
+     *
+     * @param connection the database connection
+     * @return a prepared statement for the visited-airport insert
+     * @throws SQLException if the statement cannot be prepared
+     */
     public static PreparedStatement createAirportPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement("INSERT IGNORE INTO visited_airports SET fleet_id = ?, airport = ?");
     }
 
+    /**
+     * Creates a prepared statement that records a fleet's visited runway ({@code INSERT IGNORE} into
+     * {@code visited_runways}, so duplicates are silently skipped).
+     *
+     * @param connection the database connection
+     * @return a prepared statement for the visited-runway insert
+     * @throws SQLException if the statement cannot be prepared
+     */
     public static PreparedStatement createRunwayPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement("INSERT IGNORE INTO visited_runways SET fleet_id = ?, runway = ?");
     }
 
+    /**
+     * Creates a prepared statement for inserting an itinerary row (flight id, order, min-altitude point, distances,
+     * airport/runway, and approach/takeoff boundaries) into the {@code itinerary} table.
+     *
+     * @param connection the database connection
+     * @return a prepared statement for the itinerary insert
+     * @throws SQLException if the statement cannot be prepared
+     */
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, "
                 + "min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, "
@@ -201,6 +300,20 @@ public class Itinerary {
         return runway;
     }
 
+    /**
+     * Folds one flight sample into this itinerary entry: it advances the final index; detects the takeoff phase
+     * (engine RPM &gt;= 2100 with ground speed between 14.5 and 80, sustained for 15 samples); tracks the
+     * minimum-altitude point and the minimum airport and runway distances; marks the start and end of the approach
+     * phase from the altitude AGL; and records a vote for the observed nearest runway.
+     *
+     * @param rWay the nearest runway at this sample (ignored if null or empty)
+     * @param index the sample index
+     * @param altitudeAGL the altitude above ground level at the sample
+     * @param airportDistance the distance to the airport at the sample
+     * @param runwayDistance the distance to the runway at the sample
+     * @param groundSpeed the ground speed at the sample
+     * @param rpm the engine RPM at the sample (used for takeoff detection)
+     */
     public void update(
             String rWay,
             int index,
@@ -265,6 +378,18 @@ public class Itinerary {
         runwayCounts.merge(rWay, 1, Integer::sum);
     }
 
+    /**
+     * Folds one flight sample into this itinerary entry for airframes without an engine-RPM series: behaves like
+     * {@link #update(String, int, double, double, double, double, double)} but detects takeoff from ground speed
+     * alone (sustained between 14.5 and 80 for 15 samples) rather than RPM.
+     *
+     * @param runwayUpdated the nearest runway at this sample (ignored if null or empty)
+     * @param index the sample index
+     * @param altitudeAGL the altitude above ground level at the sample
+     * @param airportDistance the distance to the airport at the sample
+     * @param runwayDistance the distance to the runway at the sample
+     * @param groundSpeed the ground speed at the sample
+     */
     public void update(
             String runwayUpdated,
             int index,
@@ -334,6 +459,10 @@ public class Itinerary {
         }
     }
 
+    /**
+     * Finalizes the runway for this entry by choosing the one that received the most votes across all samples (the
+     * most-frequently-observed nearest runway), or leaving it null if none were recorded.
+     */
     public void selectBestRunway() {
         runway = null;
         int maxCount = 0;
@@ -348,6 +477,14 @@ public class Itinerary {
         }
     }
 
+    /**
+     * Heuristically decides whether this itinerary entry represents an approach. If the aircraft came within runway
+     * range it counts as an approach; if the airport has runway information but the aircraft never got close, it does
+     * not; and for airports lacking runway information it is treated as an approach when the aircraft came within
+     * 1000 ft of the airport and below 200 ft AGL.
+     *
+     * @return true if this entry is considered an approach
+     */
     public boolean wasApproach() {
         if (minRunwayDistance != Double.MAX_VALUE) {
             return true;
@@ -364,6 +501,18 @@ public class Itinerary {
         }
     }
 
+    /**
+     * Sets this entry's order and adds its inserts to the given batches: the itinerary row itself plus the fleet's
+     * visited-airport and visited-runway records.
+     *
+     * @param itineraryStatement the batched {@code itinerary} insert statement
+     * @param airportStatement the batched {@code visited_airports} insert statement
+     * @param runwayStatement the batched {@code visited_runways} insert statement
+     * @param fleetId the fleet the flight belongs to
+     * @param flightId the flight this itinerary entry belongs to
+     * @param orderToSet the sequence order to assign this entry
+     * @throws SQLException if setting a parameter or adding a batch fails
+     */
     public void addBatch(
             PreparedStatement itineraryStatement,
             PreparedStatement airportStatement,
@@ -398,6 +547,16 @@ public class Itinerary {
         itineraryStatement.addBatch();
     }
 
+    /**
+     * Persists this itinerary entry and its associated visited-airport and visited-runway records to the database in
+     * one batch.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet the flight belongs to
+     * @param flightId the flight this itinerary entry belongs to
+     * @param orderToAdd the sequence order to assign this entry
+     * @throws SQLException if any of the inserts fail
+     */
     public void updateDatabase(Connection connection, int fleetId, int flightId, int orderToAdd) throws SQLException {
         // insert new visited airports and runways -- will ignore if it already exists
         try (PreparedStatement statement = createPreparedStatement(connection);
@@ -412,6 +571,12 @@ public class Itinerary {
         }
     }
 
+    /**
+     * Returns a debug string with this entry's airport, runway, and minimum altitude/airport/runway distances.
+     *
+     * @return a human-readable summary of this itinerary entry
+     */
+    @Override
     public String toString() {
         return airport + "(" + runway + ") -- altitude: " + minAltitude + ", airport distance: " + minAirportDistance
                 + ", runway distance: " + minRunwayDistance;
@@ -432,6 +597,12 @@ public class Itinerary {
     }
 
     // method to determine if itinerary stop is a touch and go or go around
+    /**
+     * Classifies this itinerary entry's {@code type} from its recorded takeoff and approach timing: a takeoff when a
+     * takeoff is present with no (or a very short) approach; a landing when an approach ended without a subsequent
+     * takeoff; a touch-and-go when the time on the runway between approach and takeoff is at least 5 samples; and
+     * otherwise a go-around (extending the approach to the final index).
+     */
     public void determineType() {
         int approachTime = endOfApproach - startOfApproach;
         int runwayTime = startOfTakeoff - endOfApproach;

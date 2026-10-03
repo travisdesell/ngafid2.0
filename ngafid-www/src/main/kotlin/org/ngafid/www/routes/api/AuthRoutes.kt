@@ -57,14 +57,16 @@ object AuthRoutes : RouteProvider() {
         val totpCodeParam: String? = ctx.formParam("totpCode")
         val backupCodeParam: String? = ctx.formParam("backupCode")
 
-        //Resolve which code to use
+        // Resolve which code to use
         val incomingCode: String? = when {
             !totpCodeParam.isNullOrBlank() -> totpCodeParam
             !backupCodeParam.isNullOrBlank() -> backupCodeParam
             else -> null
         }
 
-        LOG.info("Login attempt for email: $email, TOTP provided: ${!totpCodeParam.isNullOrBlank()}, backup provided: ${!backupCodeParam.isNullOrBlank()}")
+        LOG.info(
+            "Login attempt for email: $email, TOTP provided: ${!totpCodeParam.isNullOrBlank()}, backup provided: ${!backupCodeParam.isNullOrBlank()}",
+        )
 
         try {
             Database.getConnection().use { connection ->
@@ -76,7 +78,9 @@ object AuthRoutes : RouteProvider() {
                     return
                 }
 
-                LOG.info("User found: ${user.email}, 2FA Enabled: ${user.isTwoFactorEnabled}, Setup Complete: ${user.isTwoFactorSetupComplete}")
+                LOG.info(
+                    "User found: ${user.email}, 2FA Enabled: ${user.isTwoFactorEnabled}, Setup Complete: ${user.isTwoFactorSetupComplete}",
+                )
 
                 // Check if 2FA is enabled but not set up
                 if (user.isTwoFactorEnabled && !user.isTwoFactorSetupComplete) {
@@ -88,7 +92,9 @@ object AuthRoutes : RouteProvider() {
                 }
 
                 // Check if 2FA is enabled and requires code
-                LOG.info("2FA Debug - Enabled: ${user.isTwoFactorEnabled}, Setup Complete: ${user.isTwoFactorSetupComplete}, Incoming Code: ${!incomingCode.isNullOrBlank()}")
+                LOG.info(
+                    "2FA Debug - Enabled: ${user.isTwoFactorEnabled}, Setup Complete: ${user.isTwoFactorSetupComplete}, Incoming Code: ${!incomingCode.isNullOrBlank()}",
+                )
                 if (user.isTwoFactorEnabled && user.isTwoFactorSetupComplete && incomingCode.isNullOrBlank()) {
                     LOG.info("User has 2FA enabled, code required.")
                     ctx.json(LoginResponse(false, false, false, false, "2FA_CODE_REQUIRED", user))
@@ -97,13 +103,10 @@ object AuthRoutes : RouteProvider() {
 
                 // Verify 2FA code if provided
                 if (user.isTwoFactorEnabled && user.isTwoFactorSetupComplete && !incomingCode.isNullOrBlank()) {
-
-                    val codeFormatted = incomingCode.replace(Regex("[^0-9]"), "")    //<-- Remove non-numeric characters
+                    val codeFormatted = incomingCode.replace(Regex("[^0-9]"), "") // <-- Remove non-numeric characters
 
                     try {
-
                         when {
-
                             /* Code of length 6, assume TOTP */
                             (codeFormatted.length == 6) -> {
                                 val secret = user.getTwoFactorSecret()
@@ -127,7 +130,9 @@ object AuthRoutes : RouteProvider() {
                                 val backupCodes = user.getBackupCodes()
                                 if (backupCodes == null) {
                                     LOG.info("No backup codes available for user.")
-                                    ctx.json(LoginResponse(true, false, false, false, "No backup codes available.", null))
+                                    ctx.json(
+                                        LoginResponse(true, false, false, false, "No backup codes available.", null),
+                                    )
                                     return
                                 }
                                 val hashedInputCode = TwoFactorAuthService.hashBackupCode(codeFormatted)
@@ -139,7 +144,7 @@ object AuthRoutes : RouteProvider() {
                                 }
                                 LOG.info("2FA code verification successful (Backup Code)")
 
-                                //Remove the used backup code
+                                // Remove the used backup code
                                 val updatedCodes = backupCodes.split(",").filter { it != hashedInputCode }
                                 user.setBackupCodes(updatedCodes.joinToString(","))
                                 updateUserBackupCodes(connection, user.id, updatedCodes.joinToString(","))
@@ -152,7 +157,6 @@ object AuthRoutes : RouteProvider() {
                                 ctx.json(LoginResponse(true, false, false, false, "Invalid 2FA code format.", null))
                                 return
                             }
-
                         }
                     } catch (e: NumberFormatException) {
                         LOG.info("Invalid 2FA code format provided: $incomingCode")
@@ -215,8 +219,8 @@ object AuthRoutes : RouteProvider() {
                 ctx.json(
                     ForgotPasswordResponse(
                         "A password reset link has been sent to your registered email address. Please click on it to reset your password.",
-                        true
-                    )
+                        true,
+                    ),
                 )
             } else {
                 AccountJavalinRoutes.LOG.info("User with email : $email doesn't exist.")
@@ -243,8 +247,8 @@ object AuthRoutes : RouteProvider() {
                 ctx.json(
                     ErrorResponse(
                         "Gaard Account Creation Disabled",
-                        "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."
-                    )
+                        "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0.",
+                    ),
                 )
             } else if (accountType == "newFleet") {
                 val fleetName = ctx.formParam("fleetName")
@@ -260,7 +264,7 @@ object AuthRoutes : RouteProvider() {
                     address,
                     phoneNumber,
                     zipCode,
-                    fleetName
+                    fleetName,
                 )
                 ctx.sessionAttribute("user", user)
 
@@ -279,7 +283,7 @@ object AuthRoutes : RouteProvider() {
                     address,
                     phoneNumber,
                     zipCode,
-                    fleetName
+                    fleetName,
                 )
                 ctx.sessionAttribute("user", user)
 
@@ -288,8 +292,8 @@ object AuthRoutes : RouteProvider() {
                 ctx.json(
                     ErrorResponse(
                         "Invalid Account Type",
-                        "A request was made to create an account with an unknown account type '$accountType'."
-                    )
+                        "A request was made to create an account with an unknown account type '$accountType'.",
+                    ),
                 )
             }
         }
@@ -308,8 +312,8 @@ object AuthRoutes : RouteProvider() {
                     ctx.json(
                         ErrorResponse(
                             "Could not reset password.",
-                            "The server received different new and confirmation passwords."
-                        )
+                            "The server received different new and confirmation passwords.",
+                        ),
                     )
                     return
                 }
@@ -348,8 +352,8 @@ object AuthRoutes : RouteProvider() {
                 ctx.json(
                     ErrorResponse(
                         "Could not update password.",
-                        "The server received different new and confirmation passwords."
-                    )
+                        "The server received different new and confirmation passwords.",
+                    ),
                 )
             }
 
@@ -358,8 +362,8 @@ object AuthRoutes : RouteProvider() {
                 ctx.json(
                     ErrorResponse(
                         "Could not update password.",
-                        "The current password was the same as the new password."
-                    )
+                        "The current password was the same as the new password.",
+                    ),
                 )
             }
 
@@ -379,18 +383,20 @@ object AuthRoutes : RouteProvider() {
             // Update user with 2FA secret but DON'T enable 2FA yet
             // Only set twoFactorEnabled = true after setup is complete
             user.setTwoFactorSecret(secret)
-            user.setTwoFactorEnabled(false)  // Keep disabled until setup is complete
+            user.setTwoFactorEnabled(false) // Keep disabled until setup is complete
             user.setTwoFactorSetupComplete(false)
 
             // Save to database - note: twoFactorEnabled = false
             updateUser2FA(connection, user.id, secret, false, false)
 
-            ctx.json(mapOf(
-                "success" to true,
-                "secret" to secret,
-                "qrCodeUrl" to qrCodeUrl,
-                "message" to "2FA setup initiated. Scan the QR code with your authenticator app."
-            ))
+            ctx.json(
+                mapOf(
+                    "success" to true,
+                    "secret" to secret,
+                    "qrCodeUrl" to qrCodeUrl,
+                    "message" to "2FA setup initiated. Scan the QR code with your authenticator app.",
+                ),
+            )
         }
     }
 
@@ -401,10 +407,12 @@ object AuthRoutes : RouteProvider() {
 
         Database.getConnection().use { connection ->
             if (!TwoFactorAuthService.verifyCode(user.getTwoFactorSecret(), code.toInt())) {
-                ctx.json(mapOf(
-                    "success" to false,
-                    "message" to "Invalid verification code. Please try again."
-                ))
+                ctx.json(
+                    mapOf(
+                        "success" to false,
+                        "message" to "Invalid verification code. Please try again.",
+                    ),
+                )
                 return
             }
 
@@ -413,18 +421,20 @@ object AuthRoutes : RouteProvider() {
             val hashedCodes = backupCodes.map { TwoFactorAuthService.hashBackupCode(it) }
 
             // Update user - NOW enable 2FA since setup is complete
-            user.setTwoFactorEnabled(true)  // Enable 2FA only after setup is complete
+            user.setTwoFactorEnabled(true) // Enable 2FA only after setup is complete
             user.setTwoFactorSetupComplete(true)
             user.setBackupCodes(hashedCodes.joinToString(","))
 
             // Save to database - now twoFactorEnabled = true
             updateUser2FA(connection, user.id, user.getTwoFactorSecret(), true, true, hashedCodes.joinToString(","))
 
-            ctx.json(mapOf(
-                "success" to true,
-                "backupCodes" to backupCodes,
-                "message" to "2FA setup completed successfully. Please save your backup codes."
-            ))
+            ctx.json(
+                mapOf(
+                    "success" to true,
+                    "backupCodes" to backupCodes,
+                    "message" to "2FA setup completed successfully. Please save your backup codes.",
+                ),
+            )
         }
     }
 
@@ -436,10 +446,12 @@ object AuthRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             // Verify current password
             if (!user.validate(connection, password)) {
-                ctx.json(mapOf(
-                    "success" to false,
-                    "message" to "Invalid password."
-                ))
+                ctx.json(
+                    mapOf(
+                        "success" to false,
+                        "message" to "Invalid password.",
+                    ),
+                )
                 return
             }
 
@@ -451,10 +463,12 @@ object AuthRoutes : RouteProvider() {
             user.setTwoFactorSetupComplete(false)
             user.setBackupCodes(null)
 
-            ctx.json(mapOf(
-                "success" to true,
-                "message" to "2FA has been disabled."
-            ))
+            ctx.json(
+                mapOf(
+                    "success" to true,
+                    "message" to "2FA has been disabled.",
+                ),
+            )
         }
     }
 
@@ -466,10 +480,12 @@ object AuthRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             // Verify current password
             if (!user.validate(connection, password)) {
-                ctx.json(mapOf(
-                    "success" to false,
-                    "message" to "Invalid password."
-                ))
+                ctx.json(
+                    mapOf(
+                        "success" to false,
+                        "message" to "Invalid password.",
+                    ),
+                )
                 return
             }
 
@@ -481,19 +497,28 @@ object AuthRoutes : RouteProvider() {
             user.setBackupCodes(hashedCodes.joinToString(","))
             updateUserBackupCodes(connection, user.id, hashedCodes.joinToString(","))
 
-            ctx.json(mapOf(
-                "success" to true,
-                "backupCodes" to backupCodes,
-                "message" to "New backup codes generated successfully."
-            ))
+            ctx.json(
+                mapOf(
+                    "success" to true,
+                    "backupCodes" to backupCodes,
+                    "message" to "New backup codes generated successfully.",
+                ),
+            )
         }
     }
 
     // Helper method to update 2FA settings in database
-    private fun updateUser2FA(connection: java.sql.Connection, userId: Int, secret: String?, enabled: Boolean, setupComplete: Boolean, backupCodes: String? = null) {
+    private fun updateUser2FA(
+        connection: java.sql.Connection,
+        userId: Int,
+        secret: String?,
+        enabled: Boolean,
+        setupComplete: Boolean,
+        backupCodes: String? = null,
+    ) {
         val sql = "UPDATE user SET two_factor_enabled = ?, two_factor_secret = ?, two_factor_setup_complete = ?" +
-                (if (backupCodes != null) ", backup_codes = ?" else "") +
-                " WHERE id = ?"
+            (if (backupCodes != null) ", backup_codes = ?" else "") +
+            " WHERE id = ?"
 
         connection.prepareStatement(sql).use { stmt ->
             stmt.setBoolean(1, enabled)
@@ -528,10 +553,12 @@ object AuthRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             // Verify current password
             if (!user.validate(connection, password)) {
-                ctx.json(mapOf(
-                    "success" to false,
-                    "message" to "Invalid password."
-                ))
+                ctx.json(
+                    mapOf(
+                        "success" to false,
+                        "message" to "Invalid password.",
+                    ),
+                )
                 return
             }
 
@@ -543,10 +570,12 @@ object AuthRoutes : RouteProvider() {
             user.setTwoFactorSetupComplete(false)
             user.setBackupCodes(null)
 
-            ctx.json(mapOf(
-                "success" to true,
-                "message" to "2FA setup has been reset. You can now set it up again."
-            ))
+            ctx.json(
+                mapOf(
+                    "success" to true,
+                    "message" to "2FA setup has been reset. You can now set it up again.",
+                ),
+            )
         }
     }
 
@@ -557,10 +586,12 @@ object AuthRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             // Only allow cancellation if 2FA is not enabled (setup is incomplete)
             if (user.isTwoFactorEnabled) {
-                ctx.json(mapOf(
-                    "success" to false,
-                    "message" to "Cannot cancel 2FA setup when 2FA is already enabled."
-                ))
+                ctx.json(
+                    mapOf(
+                        "success" to false,
+                        "message" to "Cannot cancel 2FA setup when 2FA is already enabled.",
+                    ),
+                )
                 return
             }
 
@@ -570,10 +601,12 @@ object AuthRoutes : RouteProvider() {
             user.setTwoFactorSecret(null)
             user.setTwoFactorSetupComplete(false)
 
-            ctx.json(mapOf(
-                "success" to true,
-                "message" to "2FA setup has been cancelled."
-            ))
+            ctx.json(
+                mapOf(
+                    "success" to true,
+                    "message" to "2FA setup has been cancelled.",
+                ),
+            )
         }
     }
 }

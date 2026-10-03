@@ -20,6 +20,15 @@ import org.ngafid.processor.format.FlightBuilder;
  */
 public class ComputeSpinEvents extends ComputeEvent {
 
+    /**
+     * Constructs the spin-events compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param fb the flight builder this step reads from and writes to
+     * @param def the event definition this step evaluates
+     * @param scanner the event scanner to use; must be a {@link SpinEventScanner}
+     * @throws IllegalArgumentException if {@code scanner} is not a {@link SpinEventScanner}
+     */
     public ComputeSpinEvents(
             Connection connection, FlightBuilder fb, EventDefinition def, AbstractEventScanner scanner) {
         super(connection, fb, def, scanner);

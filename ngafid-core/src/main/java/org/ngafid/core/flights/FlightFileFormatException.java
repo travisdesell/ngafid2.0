@@ -8,6 +8,12 @@ public class FlightFileFormatException extends Exception {
 
     private final String filename;
 
+    /**
+     * Constructs the exception for a file whose format is unrecognized or unsupported, retaining its name for the
+     * message.
+     *
+     * @param filename the name of the offending file
+     */
     public FlightFileFormatException(String filename) {
         this.filename = filename;
     }

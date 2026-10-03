@@ -19,6 +19,12 @@ import org.ngafid.core.util.filters.Filter;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the flight-browsing pages: the flights listing, a single-flight view, and the flight-display page.
+ *
+ * <p>Routes render Mustache templates seeded with the matching flights, event definitions, filters, and the
+ * chart-tile base URL needed by the client-side map and plot views.
+ */
 public class FlightsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
 
@@ -216,6 +222,13 @@ public class FlightsJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the flights matching the filter supplied in the {@code filterQuery} query parameter (parsed
+     * from JSON into a {@link Filter}), scoped to the logged-in user's fleet. Responds 401 if the user lacks view
+     * access to the fleet.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code filterQuery} parameter
+     */
     public static void postFlights(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
@@ -273,6 +286,11 @@ public class FlightsJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's flights routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/flight", FlightsJavalinRoutes::getFlight);
         app.get("/protected/flights", FlightsJavalinRoutes::getFlights);

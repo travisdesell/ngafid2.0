@@ -19,7 +19,18 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
 
-public enum SendEmail {;
+/**
+ * Utility for composing and dispatching NGAFID notification emails.
+ *
+ * <p>Emails are published onto a Kafka topic (via {@link #enqueueEmail}) for the email consumer to deliver, and the
+ * class also handles per-recipient opt-out filtering by {@link EmailType} and the generation of unsubscribe links and
+ * tokens. All members are static; the class is not instantiable.
+ */
+public final class SendEmail {
+
+    private SendEmail() {
+        // Utility class; not instantiable.
+    }
 
     private static final ArrayList<String> ADMIN_EMAILS;
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
@@ -98,6 +109,14 @@ public enum SendEmail {;
         return ADMIN_EMAILS;
     }
 
+    /**
+     * Deletes email-unsubscribe tokens whose expiration date has passed, but throttled: it skips the work (and the
+     * delete) unless at least {@code EXPIRATION_POLL_THRESHOLD_MS} has elapsed since the last successful run, updating
+     * the last-run timestamp when it does proceed.
+     *
+     * @param connection the database connection
+     * @throws SQLException if the delete fails
+     */
     public static void freeExpiredUnsubscribeTokens(Connection connection) throws SQLException {
         Calendar calendar = Calendar.getInstance();
         java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
@@ -179,6 +198,18 @@ public enum SendEmail {;
         }
     }
 
+    /**
+     * Queues an email for asynchronous delivery by wrapping the recipients and content in an {@link Email} and
+     * enqueuing it on the email Kafka topic; the message is sent later by the email consumer
+     * rather than synchronously here.
+     *
+     * @param toRecipients the primary (To) recipient addresses
+     * @param bccRecipients the blind-carbon-copy recipient addresses
+     * @param subject the email subject
+     * @param body the email body (HTML)
+     * @param emailType the email type, used for per-recipient opt-out handling
+     * @throws SQLException if enqueuing requires and fails a database operation
+     */
     public static void sendEmail(
             List<String> toRecipients, List<String> bccRecipients, String subject, String body, EmailType emailType)
             throws SQLException {
@@ -187,12 +218,28 @@ public enum SendEmail {;
         enqueueEmail(new Email(toRecipients, bccRecipients, subject, body, emailType));
     }
 
+    /**
+     * An immutable, JSON-serializable email message carried as the value of a Kafka email record.
+     *
+     * @param recipients the primary (To) recipient addresses
+     * @param bccRecipients the blind-carbon-copy recipient addresses
+     * @param subject the email subject line
+     * @param body the email body (HTML)
+     * @param emailType the email type, used for per-recipient opt-out handling
+     */
     public record Email(
             List<String> recipients, List<String> bccRecipients, String subject, String body, EmailType emailType) {}
 
     private static KafkaProducer<String, String> producer = null;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /**
+     * Publishes an email onto the email Kafka topic for the email consumer to deliver, lazily creating the shared Kafka
+     * producer on first use. The email is serialized to JSON as the record value.
+     *
+     * @param email the email to enqueue
+     * @throws RuntimeException if the email cannot be serialized to JSON
+     */
     public static void enqueueEmail(Email email) {
         if (producer == null) {
             producer = EmailConsumer.getProducer();
@@ -205,6 +252,17 @@ public enum SendEmail {;
         }
     }
 
+    /**
+     * Actually delivers a batch of emails over SMTP (Office 365, STARTTLS on port 587). When email is disabled in the
+     * configuration it logs the bodies and returns without sending. For each email it builds a MIME message, suppresses
+     * delivery to opted-out recipients, and sends to the To and BCC recipients; per-message {@link MessagingException}s
+     * are logged rather than propagated so one failure does not abort the batch. This is the consumer-side counterpart
+     * to the {@link #enqueueEmail} path.
+     *
+     * @param emails the emails to send
+     * @param connection the database connection (used for unsubscribe/opt-out handling)
+     * @throws SQLException if a required database lookup fails
+     */
     public static void sendBatchEmail(List<Email> emails, Connection connection) throws SQLException {
         SMTPAuthenticator auth = new SMTPAuthenticator(username, password);
 
@@ -344,6 +402,11 @@ public enum SendEmail {;
         }
     }
 
+    /**
+     * Command-line entry point that enqueues a single hard-coded test email, used to exercise the email pipeline.
+     *
+     * @param args ignored
+     */
     @SuppressWarnings("LoggerStringConcat")
     public static void main(String[] args) {
 

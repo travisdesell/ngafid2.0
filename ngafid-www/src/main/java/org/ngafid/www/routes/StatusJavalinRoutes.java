@@ -15,6 +15,13 @@ import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
+/**
+ * Serves the service-status page and the per-service status API used to monitor NGAFID's backend services.
+ *
+ * <p>Status is resolved either from Docker heartbeats (when running under Docker, via the shared
+ * {@link DockerServiceHeartbeatMonitor}) or by probing systemd units with {@code systemctl is-active}, with
+ * results cached briefly to avoid spawning a subprocess on every request.
+ */
 public class StatusJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StatusJavalinRoutes.class.getName());
 
@@ -22,6 +29,9 @@ public class StatusJavalinRoutes {
         // Utility class
     }
 
+    /**
+     * Health classification reported for a monitored service: healthy, degraded, failed, or not yet checked.
+     */
     public enum ServiceStatus {
         OK,
         WARNING,
@@ -266,6 +276,11 @@ public class StatusJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Registers this class's service-status routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(io.javalin.Javalin app) {
         // These are non-privileged routes.
         app.get("/api/status/{service-name}", StatusJavalinRoutes::getServiceStatus);

@@ -15,7 +15,22 @@ import java.io.StringWriter;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Renders Mustache templates for the web server, serving as Javalin's {@link FileRenderer} implementation.
+ *
+ * <p>Templates are compiled from the configured Mustache template directory and executed against a scope map,
+ * so controllers can produce HTML pages from template files plus their data model.
+ */
 public class MustacheHandler implements FileRenderer {
+    /**
+     * Compiles the named Mustache template from the template directory and renders it with the given scope values,
+     * returning the rendered output as a string.
+     *
+     * @param templateFilename the template file name (relative to the Mustache template directory)
+     * @param scopes the values made available to the template during rendering
+     * @return the rendered template output
+     * @throws IOException if the template cannot be read or rendered
+     */
     public static String handle(String templateFilename, Map<String, ?> scopes) throws IOException {
         MustacheFactory mf = new DefaultMustacheFactory(new File(MUSTACHE_TEMPLATE_DIR));
         String templateFile = MUSTACHE_TEMPLATE_DIR + "/" + templateFilename;

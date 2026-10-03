@@ -59,10 +59,7 @@ public final class CesiumUploadAuditor {
         options.addOption(enqueue);
 
         Option checkAll = new Option(
-                "a",
-                "check-all-flights",
-                false,
-                "Check every flight in each upload (default: first flight only)");
+                "a", "check-all-flights", false, "Check every flight in each upload (default: first flight only)");
         options.addOption(checkAll);
 
         Option output = new Option("o", "output", true, "Write failing upload IDs to this file (one per line)");
@@ -82,6 +79,18 @@ public final class CesiumUploadAuditor {
         return options;
     }
 
+    /**
+     * Command-line entry point that audits uploads for Cesium readiness by sampling their flights against the
+     * {@link CesiumFlightReadiness} rules and, when enabled, re-enqueues failing uploads through the normal Kafka
+     * upload pipeline. Supports selecting uploads by fleet ({@code -f}) and capping the scan ({@code -l/--limit}), and
+     * can write
+     * a full audit/reprocess report to a file ({@code --report}). Prints usage and exits on argument errors.
+     *
+     * @param arguments the command-line arguments selecting what to scan and whether to reprocess
+     * @throws SQLException if a database operation fails
+     * @throws UploadDoesNotExistException if an upload selected for reprocessing no longer exists
+     * @throws IOException if reading inputs or writing the report fails
+     */
     public static void main(String[] arguments) throws SQLException, UploadDoesNotExistException, IOException {
         Options options = buildCLIOptions();
         CommandLineParser parser = new DefaultParser();
@@ -139,8 +148,8 @@ public final class CesiumUploadAuditor {
         }
 
         System.out.println();
-        String summary = "Scanned " + uploadIds.size() + " upload(s); " + failedUploadIds.size()
-                + " failed Cesium check.";
+        String summary =
+                "Scanned " + uploadIds.size() + " upload(s); " + failedUploadIds.size() + " failed Cesium check.";
         System.out.println(summary);
 
         if (cmd.hasOption("output") && !failedUploadIds.isEmpty()) {
@@ -186,11 +195,7 @@ public final class CesiumUploadAuditor {
     }
 
     private static void writeReport(
-            File file,
-            String summary,
-            List<String> reportLines,
-            List<Integer> enqueuedUploadIds,
-            boolean enqueued)
+            File file, String summary, List<String> reportLines, List<Integer> enqueuedUploadIds, boolean enqueued)
             throws IOException {
         File parent = file.getParentFile();
         if (parent != null) {
@@ -266,8 +271,7 @@ public final class CesiumUploadAuditor {
         } else if (cmd.hasOption("q")) {
             String where = cmd.getOptionValue("q");
             try (Connection connection = Database.getConnection();
-                    PreparedStatement statement =
-                            connection.prepareStatement("SELECT id FROM uploads WHERE " + where);
+                    PreparedStatement statement = connection.prepareStatement("SELECT id FROM uploads WHERE " + where);
                     ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     ids.add(resultSet.getInt(1));

@@ -10,6 +10,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.ngafid.core.flights.Tails;
 import org.ngafid.core.util.SendEmail;
 
+/**
+ * A registered NGAFID user and the operations on their account.
+ *
+ * <p>Mirrors a row of the {@code user} table -- identity and contact details, admin and aggregate-view flags, password
+ * and reset tokens, and two-factor-authentication state -- and carries the user's fleet access, preferences, and email
+ * preferences. Provides the account lifecycle operations (registration, authentication, password reset, 2FA setup,
+ * and access management) backed by the database.
+ */
 public final class User implements Serializable {
 
     private static final Logger LOG = Logger.getLogger(User.class.getName());
@@ -57,6 +65,29 @@ public final class User implements Serializable {
 
     private User() {}
 
+    /**
+     * Constructs a fully-populated user from explicit profile fields and resolves the user's fleet and fleet-access
+     * level for the selected fleet (via {@link #setSelectedFleetId}), which populates {@code fleet} and
+     * {@code fleetAccess}. The password token is initialized empty.
+     *
+     * @param connection the database connection used to resolve the selected fleet and access
+     * @param id the user's id
+     * @param email the user's email address
+     * @param firstName the user's first name
+     * @param lastName the user's last name
+     * @param address the user's street address
+     * @param city the user's city
+     * @param country the user's country
+     * @param state the user's state
+     * @param zipCode the user's postal code
+     * @param phoneNumber the user's phone number
+     * @param admin whether the user is a site administrator
+     * @param aggregateView whether the user may see aggregate (cross-fleet) data
+     * @param fleetId the user's fleet id
+     * @param fleetSelected the id of the fleet to make active for this user
+     * @throws SQLException if resolving the selected fleet or access fails
+     * @throws AccountException if the user has no valid access to the selected fleet
+     */
     public User(
             Connection connection,
             int id,
@@ -744,6 +775,15 @@ public final class User implements Serializable {
         return user;
     }
 
+    /**
+     * Loads a user by email address, populating only the base profile fields from the user row (fleet and fleet-access
+     * are not resolved by this overload).
+     *
+     * @param connection the database connection
+     * @param email the email address to look up
+     * @return the matching user, or null if no user has that email
+     * @throws SQLException if the query fails
+     */
     public static User get(Connection connection, String email) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(USER_ROW_QUERY + " WHERE email = ?")) {
             query.setString(1, email);
@@ -1062,6 +1102,15 @@ public final class User implements Serializable {
         }
     }
 
+    /**
+     * Stores a password-reset phrase (token) for the user identified by email, used to validate a subsequent
+     * password reset.
+     *
+     * @param connection the database connection
+     * @param email the email address of the user to update
+     * @param resetPhrase the reset phrase to store
+     * @throws SQLException if the update fails
+     */
     public static void updateResetPhrase(Connection connection, String email, String resetPhrase) throws SQLException {
         try (PreparedStatement query =
                 connection.prepareStatement("UPDATE user SET reset_phrase = ? WHERE email = ?")) {
@@ -1328,6 +1377,14 @@ public final class User implements Serializable {
         return user;
     }
 
+    /**
+     * Initiates a password reset for the user with the given email: generates a random 10-character alphanumeric reset
+     * phrase, stores it via {@link #updateResetPhrase}, builds the reset link, and sends the reset email to the user.
+     *
+     * @param connection the database connection
+     * @param email the email address of the user requesting a reset
+     * @throws SQLException if storing the reset phrase fails
+     */
     public static void sendPasswordResetEmail(Connection connection, String email) throws SQLException {
         int resetPhraseLength = 10;
         boolean useLetters = true;
@@ -1356,6 +1413,12 @@ public final class User implements Serializable {
                 EmailType.PASSWORD_RESET);
     }
 
+    /**
+     * Records the current time as this user's last login time in the database.
+     *
+     * @param connection the database connection
+     * @throws SQLException if the update fails
+     */
     public void updateLastLoginTimeStamp(Connection connection) throws SQLException {
         String updateQueryStr = "UPDATE user SET last_login_time = ? WHERE id = ?";
         try (PreparedStatement query = connection.prepareStatement(updateQueryStr)) {

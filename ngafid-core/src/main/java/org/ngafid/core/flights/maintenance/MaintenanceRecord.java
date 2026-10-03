@@ -7,6 +7,13 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+/**
+ * A single maintenance work-order event for an aircraft, parsed from an imported maintenance CSV.
+ *
+ * <p>Captures the work order's open/close and action dates, the affected tail and airframe, the reported problem and
+ * action (raw and cleaned) together with their ATA codes and labels, retaining the raw date strings for debugging.
+ * Instances are naturally ordered chronologically for building an aircraft's maintenance timeline.
+ */
 public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private static final Logger LOG = Logger.getLogger(MaintenanceRecord.class.getName());
 
@@ -136,9 +143,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                     return LocalDate.parse(s, FORMAT_DATE).atStartOfDay();
                 } catch (DateTimeParseException e3) {
                     throw new IllegalArgumentException(
-                            "Cannot parse datetime '" + s
-                                    + "'; expected yyyy-MM-dd HH:mm or yyyy-MM-dd",
-                            e3);
+                            "Cannot parse datetime '" + s + "'; expected yyyy-MM-dd HH:mm or yyyy-MM-dd", e3);
                 }
             }
         }
@@ -165,9 +170,7 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                     return LocalDate.parse(s, FORMAT_M_D_YY);
                 } catch (DateTimeParseException e3) {
                     throw new IllegalArgumentException(
-                            "Cannot parse date '" + s
-                                    + "'; expected yyyy-MM-dd, MM-dd-yyyy or M/d/yy",
-                            e3);
+                            "Cannot parse date '" + s + "'; expected yyyy-MM-dd, MM-dd-yyyy or M/d/yy", e3);
                 }
             }
         }
@@ -183,12 +186,11 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     public MaintenanceRecord(String line) {
         String[] parts = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
         if (parts.length != 11) {
-            throw new IllegalArgumentException(
-                    "Maintenance CSV line must have exactly 11 columns "
-                            + "(workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,"
-                            + "problem,problem_date,action,cluster_id,cluster_name); got "
-                            + parts.length
-                            + ". If a field contains commas, quote it (e.g. \"text, with comma\").");
+            throw new IllegalArgumentException("Maintenance CSV line must have exactly 11 columns "
+                    + "(workorder,date_time_opened,date_time_closed,registration,total_time,ata_code,"
+                    + "problem,problem_date,action,cluster_id,cluster_name); got "
+                    + parts.length
+                    + ". If a field contains commas, quote it (e.g. \"text, with comma\").");
         }
 
         workorderNumber = Integer.parseInt(parts[0].trim());
@@ -228,6 +230,14 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         }
     }
 
+    /**
+     * Merges another maintenance record representing the same work order into this one by appending it to this record's
+     * list of combined records. Every differing field is collected for diagnostics; a mismatch on the work order number
+     * is treated as fatal (an error is printed and the JVM exits), since records with different work order numbers must
+     * not be combined.
+     *
+     * @param other the record to combine into this one; expected to share this record's work order number
+     */
     public void combine(MaintenanceRecord other) {
         ArrayList<String> mismatches = new ArrayList<String>();
         if (workorderNumber != other.workorderNumber) mismatches.add("workorderNumber");
@@ -253,6 +263,12 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
         combinedRecords.add(other);
     }
 
+    /**
+     * Orders maintenance records chronologically by their open date.
+     *
+     * @param other the record to compare against
+     * @return a negative, zero, or positive value as this record's open date is before, equal to, or after the other's
+     */
     public int compareTo(MaintenanceRecord other) {
         return openDate.compareTo(other.openDate);
     }
@@ -266,6 +282,12 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 .replace("\t", "\\t");
     }
 
+    /**
+     * Serializes this maintenance record to a pretty-printed JSON object, escaping free-text fields (tail number,
+     * airframe, label, problem, and action text) for safe inclusion.
+     *
+     * @return a JSON representation of this record
+     */
     public String toJSON() {
         return "{\n"
                 + "\t\"workorderNumber\" : \"" + workorderNumber + "\",\n"
@@ -286,6 +308,12 @@ public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
                 + "}";
     }
 
+    /**
+     * Returns a human-readable, single-line summary of this maintenance record's key fields for logging and debugging.
+     *
+     * @return a debug string describing this record
+     */
+    @Override
     public String toString() {
         return "[Maintenance Record - WO#: '" + workorderNumber
                 + "', openDateTime: '" + openDateTime

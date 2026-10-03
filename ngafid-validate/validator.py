@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa: E501
 """NGAFID startup preflight validator.
 
 Runs required checks for configuration, filesystem, DB, and Kafka.
@@ -13,11 +12,10 @@ import importlib.util
 import os
 import re
 import sys
-from datetime import datetime
+from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
-
 
 REQUIRED_TOPICS = [
     "upload",
@@ -85,19 +83,50 @@ EXPECTED_KAFKA_REPLICATION_FACTOR = 1
 
 @dataclass
 class CheckResult:
+    """Outcome of a single startup check.
+
+    Attributes:
+        category: The check's group (e.g. ``CONFIG``, ``DB``, ``KAFKA``).
+        name: Short name of the specific check within the category.
+        ok: Whether the check passed.
+        detail: Human-readable detail about the outcome.
+        action: Suggested remediation when the check failed, or ``None`` on pass.
+    """
+
     category: str
     name: str
     ok: bool
     detail: str
-    action: Optional[str] = None
+    action: str | None = None
 
 
 class Validator:
+    """Runs the NGAFID startup preflight checks and reports their results.
+
+    Discovers the ``validation-scripts/`` check modules, invokes each one's
+    ``run_check`` against this validator, accumulates their :class:`CheckResult`
+    outcomes, and prints a summary whose pass/fail state gates startup. Also holds
+    the shared expectations (required topics, property keys, schema tables, Kafka
+    partition/replication counts) that the individual checks consult.
+    """
+
     def __init__(self, args: argparse.Namespace) -> None:
+        """Initialize the validator from parsed CLI args and startup expectations.
+
+        Stores the args, prepares an empty results list, detects whether it is
+        running inside Docker (via ``/.dockerenv``), and loads the module-level
+        expectation constants (required topics/keys, schema and view tables, jar
+        artifacts, Kafka partition/replication counts) onto instance attributes
+        for the check scripts to read.
+
+        Args:
+            args: Parsed command-line arguments controlling which checks run and
+                their timeouts.
+        """
         self.args = args
-        self.results: List[CheckResult] = []
+        self.results: list[CheckResult] = []
         self.in_docker = Path("/.dockerenv").exists()
-        self.properties: Dict[str, str] = {}
+        self.properties: dict[str, str] = {}
         self.required_topics = REQUIRED_TOPICS
         self.required_prop_keys = REQUIRED_PROP_KEYS
         self.jar_artifacts = JAR_ARTIFACTS
@@ -108,6 +137,12 @@ class Validator:
         self.expected_kafka_replication_factor = EXPECTED_KAFKA_REPLICATION_FACTOR
 
     def run(self) -> int:
+        """Run all discovered checks and print the summary, returning an exit code.
+
+        Returns:
+            A process exit code: ``0`` when every check passed, non-zero when any
+            check failed (as determined by :meth:`_print_summary`).
+        """
         self._run_discovered_checks()
         return self._print_summary()
 
@@ -177,14 +212,14 @@ class Validator:
         name: str,
         ok: bool,
         detail: str,
-        action: Optional[str] = None,
+        action: str | None = None,
     ) -> None:
         self.results.append(CheckResult(category, name, ok, detail, action))
 
     def _pass(self, category: str, name: str, detail: str) -> None:
         self._record(category, name, True, detail)
 
-    def _fail(self, category: str, name: str, detail: str, action: Optional[str] = None) -> None:
+    def _fail(self, category: str, name: str, detail: str, action: str | None = None) -> None:
         self._record(category, name, False, detail, action)
 
     def _check_file_readable(self, category: str, name: str, path: str, action: str) -> bool:
@@ -213,7 +248,7 @@ class Validator:
         self._pass(category, name, f"{path} is {perms} accessible")
         return True
 
-    def _effective_property(self, key: str) -> Optional[str]:
+    def _effective_property(self, key: str) -> str | None:
         if self.in_docker:
             docker_key = f"ngafid.docker.{key.split('ngafid.', 1)[1]}" if key.startswith("ngafid.") else key
             if docker_key in self.properties and self.properties[docker_key].strip():
@@ -243,7 +278,7 @@ class Validator:
                 break
         return current
 
-    def _parse_jdbc_mysql(self, url: str) -> Optional[Tuple[str, int, str]]:
+    def _parse_jdbc_mysql(self, url: str) -> tuple[str, int, str] | None:
         match = re.match(r"^jdbc:mysql://([^/:?#]+)(?::(\d+))?/([^?]+)", url.strip())
         if not match:
             return None
@@ -266,8 +301,8 @@ class Validator:
             return raw.strip().lower() in {"1", "true", "yes", "on"}
         return value.strip().lower() in {"1", "true", "yes", "on"}
 
-    def _parse_properties(self, path: Path) -> Dict[str, str]:
-        properties: Dict[str, str] = {}
+    def _parse_properties(self, path: Path) -> dict[str, str]:
+        properties: dict[str, str] = {}
         if not path.exists():
             return properties
         try:
@@ -286,7 +321,7 @@ class Validator:
         return properties
 
     def _print_summary(self) -> int:
-        log_lines: List[str] = []
+        log_lines: list[str] = []
 
         # Add human-readable date to the top of the log
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -326,7 +361,7 @@ class Validator:
         print(f"Validation log written: {log_path}")
         return 1 if failures else 0
 
-    def _write_results_log(self, lines: List[str], status: str) -> Tuple[str, Optional[str]]:
+    def _write_results_log(self, lines: list[str], status: str) -> tuple[str, str | None]:
         results_dir = Path(self.args.results_dir)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"validationlog_{timestamp}_{status}.log"
@@ -340,7 +375,19 @@ class Validator:
             return str(results_dir / filename), str(exc)
 
 
-def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse the validator's command-line arguments.
+
+    Defines ``--skip-build-artifacts``, ``--timeout`` (DB/Kafka connection
+    timeout), and ``--results-dir`` (defaulting to ``$VALIDATION_RESULTS_DIR`` or
+    ``/validator/validation-results``).
+
+    Args:
+        argv: Argument list to parse; defaults to ``sys.argv`` when ``None``.
+
+    Returns:
+        The parsed arguments namespace.
+    """
     parser = argparse.ArgumentParser(description="Validate NGAFID startup preconditions")
     parser.add_argument(
         "--skip-build-artifacts",
@@ -361,7 +408,15 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
+    """Entry point: parse args, run the validator, and return its exit code.
+
+    Args:
+        argv: Argument list to parse; defaults to ``sys.argv`` when ``None``.
+
+    Returns:
+        The process exit code from :meth:`Validator.run` (``0`` on success).
+    """
     args = parse_args(argv)
     validator = Validator(args)
     return validator.run()

@@ -18,6 +18,13 @@ import org.ngafid.core.flights.export.*;
 import org.ngafid.core.uploads.Upload;
 import org.ngafid.www.ErrorResponse;
 
+/**
+ * Serves flight-data downloads: a flight's time series as CSV (original upload or processed/generated) and as an
+ * X-Plane {@code .fdr} file.
+ *
+ * <p>Each route verifies the session user's access to the requested flight before streaming the file from the
+ * NGAFID archive or generating it from the flight's series.
+ */
 public class DataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DataJavalinRoutes.class.getName());
 
@@ -25,6 +32,14 @@ public class DataJavalinRoutes {
         // Utility class
     }
 
+    /**
+     * Streams a flight's data as a CSV download (identified by the {@code fid} path parameter), after verifying the
+     * user's access to the flight. The {@code generated} flag selects the processed/generated CSV (with derived
+     * columns) versus the original uploaded CSV.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code fid} path parameter
+     * @param generated true to serve the generated CSV with derived columns, false for the original upload
+     */
     public static void getCSV(Context ctx, boolean generated) {
         final String flightIdStr = Objects.requireNonNull(ctx.pathParam("fid"));
         final int flightId = Integer.parseInt(flightIdStr);
@@ -104,6 +119,12 @@ public class DataJavalinRoutes {
         }
     }
 
+    /**
+     * Streams a flight's track as a KML download (identified by the {@code fid} path parameter), after verifying the
+     * user's access to the flight.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code fid} path parameter
+     */
     public static void getKML(Context ctx) {
         final String flightIdStr = Objects.requireNonNull(ctx.pathParam("fid"));
         final int flightId = Integer.parseInt(flightIdStr);
@@ -160,6 +181,14 @@ public class DataJavalinRoutes {
         }
     }
 
+    /**
+     * Generates and streams an X-Plane replay file for a flight (identified by the {@code fid} path parameter),
+     * using the {@code acft_path} (aircraft model path), {@code version} (X-Plane data format version) and
+     * {@code use_msl} (MSL vs AGL altitude) query parameters.
+     *
+     * @param ctx the Javalin request context supplying the session user, the {@code fid} path param and the
+     *     {@code acft_path}/{@code version}/{@code use_msl} query params
+     */
     public static void getXPlane(Context ctx) {
         final String flightIdStr = Objects.requireNonNull(ctx.pathParam("fid"));
         final String aircraftPath = Objects.requireNonNull(ctx.queryParam("acft_path"));
@@ -194,6 +223,11 @@ public class DataJavalinRoutes {
         ctx.result(export.toFdrFile());
     }
 
+    /**
+     * Registers this class's flight-data export routes (CSV, KML, and X-Plane downloads) on the given Javalin app.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(io.javalin.Javalin app) {
         // app.get("/protected/get_csv", DataJavalinRoutes::getCSV);
         // app.get("/protected/get_kml", DataJavalinRoutes::getKML);

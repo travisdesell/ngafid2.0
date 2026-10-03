@@ -44,6 +44,15 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
     private final KafkaConsumer<K, V> consumer;
     private final KafkaProducer<K, V> producer;
 
+    /**
+     * Constructs the consumer: subscribes the Kafka consumer to the main and retry topics, stores the producer (used
+     * to route failed records onward), and starts a background worker thread that processes polled records off a
+     * queue so polling and processing proceed independently (hence "disjoint").
+     *
+     * @param mainThread the application's main thread, used for coordinated shutdown
+     * @param consumer the Kafka consumer to poll records from
+     * @param producer the Kafka producer used to forward records to the retry/dead-letter topics
+     */
     protected DisjointConsumer(Thread mainThread, KafkaConsumer<K, V> consumer, KafkaProducer<K, V> producer) {
         this.mainThread = mainThread;
         this.consumer = consumer;
@@ -86,6 +95,12 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
         consumer.commitSync(offsets);
     }
 
+    /**
+     * Runs the consumer poll loop until shutdown: it polls records (adaptively splitting its wait time between
+     * polling and draining results so the broker's max-poll-interval is respected), hands polled batches to the
+     * worker queue, and commits the offsets of processed results, routing failed records to the retry topic (or the
+     * dead-letter topic if they already failed on retry). Any exception stops the loop and interrupts the worker.
+     */
     protected void run() {
         try {
             while (!done.get()) {
@@ -120,14 +135,41 @@ public abstract class DisjointConsumer<K, V> implements AutoCloseable {
         }
     }
 
+    /**
+     * Hook invoked with each freshly polled batch before it is processed. The default implementation does nothing;
+     * subclasses may override it to prepare shared state for the batch.
+     *
+     * @param records the batch of records about to be processed
+     */
     protected void preProcess(ConsumerRecords<K, V> records) {}
 
+    /**
+     * Returns the name of the primary topic this consumer reads from.
+     *
+     * @return the main topic name
+     */
     protected abstract String getTopicName();
 
+    /**
+     * Returns the name of the retry topic that records failing on the main topic are forwarded to.
+     *
+     * @return the retry topic name
+     */
     protected abstract String getRetryTopicName();
 
+    /**
+     * Returns the name of the dead-letter topic that records failing on the retry topic are forwarded to.
+     *
+     * @return the dead-letter topic name
+     */
     protected abstract String getDLTTopicName();
 
+    /**
+     * Returns the configured Kafka max-poll-interval (milliseconds), used to pace polling so the consumer is not
+     * evicted from its group while the worker is busy.
+     *
+     * @return the maximum poll interval in milliseconds
+     */
     protected abstract long getMaxPollIntervalMS();
 
     /**

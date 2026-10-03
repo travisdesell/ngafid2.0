@@ -69,6 +69,12 @@ public final class FlightPhaseProcessor {
         private final List<FlightPhase> phases;
         private final int numberOfRows;
 
+        /**
+         * Constructs the per-index phase data for a flight.
+         *
+         * @param phases the detected flight phase at each time index
+         * @param numberOfRows the number of time-series rows the phases cover
+         */
         public FlightPhaseData(List<FlightPhase> phases, int numberOfRows) {
             this.phases = phases;
             this.numberOfRows = numberOfRows;
@@ -107,30 +113,18 @@ public final class FlightPhaseProcessor {
     /**
      * Validation result: isValid, touch-and-go split indices (for phase marking),
      * and maxAltAGL. File splitting uses {@link #detectProlongedTaxiSplits}.
+     *
+     * @param isValid whether the flight passed validation (max AltAGL above the ground-context threshold)
+     * @param splitIndices the touch-and-go split indices used for phase marking
+     * @param maxAltAGL the maximum altitude AGL observed, in feet
      */
-    public static class FlightValidationResult {
-        private final boolean isValid;
-        private final List<Integer> splitIndices;
-        private final double maxAltAGL;
+    public record FlightValidationResult(boolean isValid, List<Integer> splitIndices, double maxAltAGL) {
 
-        public FlightValidationResult(boolean isValid, List<Integer> splitIndices, double maxAltAGL) {
-            this.isValid = isValid;
-            this.splitIndices = splitIndices;
-            this.maxAltAGL = maxAltAGL;
-        }
-
-        public boolean isValid() {
-            return isValid;
-        }
-
-        public List<Integer> getSplitIndices() {
-            return splitIndices;
-        }
-
-        public double getMaxAltAGL() {
-            return maxAltAGL;
-        }
-
+        /**
+         * Reports whether the flight contains any touch-and-go events.
+         *
+         * @return true if at least one touch-and-go split index was detected
+         */
         public boolean hasTouchAndGo() {
             return !splitIndices.isEmpty();
         }
@@ -321,8 +315,7 @@ public final class FlightPhaseProcessor {
             rpm = flight.getDoubleTimeSeries(connection, Parameters.E1_RPM);
         } catch (Exception ignored) {
             System.err.println(
-                    "Warning: RPM not available for flight " + flight.getId()
-                            + ", using alternative phase detection");
+                    "Warning: RPM not available for flight " + flight.getId() + ", using alternative phase detection");
         }
         return computeFlightPhasesFromTimeSeries(altAgl, groundSpeed, rpm);
     }
@@ -364,8 +357,12 @@ public final class FlightPhaseProcessor {
      * @param numRows the number of rows to process
      * @return the index after the takeoff block
      */
-    private static int markTaxiAndTakeoff(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                           DoubleTimeSeries groundSpeed, DoubleTimeSeries rpm, int numRows) {
+    private static int markTaxiAndTakeoff(
+            List<FlightPhase> phases,
+            DoubleTimeSeries altAgl,
+            DoubleTimeSeries groundSpeed,
+            DoubleTimeSeries rpm,
+            int numRows) {
         int taxiEndIdx = -1;
         for (int i = 0; i < numRows; i++) {
             if (rpm != null
@@ -407,8 +404,12 @@ public final class FlightPhaseProcessor {
      * @param numRows the number of rows to process
      * @return the first index at or above cruise altitude
      */
-    private static int markClimb(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                 DoubleTimeSeries groundSpeed, int takeoffEnd, int numRows) {
+    private static int markClimb(
+            List<FlightPhase> phases,
+            DoubleTimeSeries altAgl,
+            DoubleTimeSeries groundSpeed,
+            int takeoffEnd,
+            int numRows) {
         int climbIdx = takeoffEnd;
         while (climbIdx < numRows) {
             if (phases.get(climbIdx) != FlightPhase.UNKNOWN) {
@@ -454,8 +455,8 @@ public final class FlightPhaseProcessor {
      * @param groundSpeed the ground speed series
      * @param numRows the number of rows to process
      */
-    private static void markDescentAndLanding(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                              DoubleTimeSeries groundSpeed, int numRows) {
+    private static void markDescentAndLanding(
+            List<FlightPhase> phases, DoubleTimeSeries altAgl, DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 1; i < numRows; i++) {
             if (phases.get(i) == FlightPhase.TAKEOFF) continue;
             if (phases.get(i) != FlightPhase.UNKNOWN) continue;
@@ -472,8 +473,7 @@ public final class FlightPhaseProcessor {
                 phases.set(i, FlightPhase.LANDING);
             } else if (alt < CRUISE_ALT_FT
                     && alt >= LANDING_ALT_FT
-                    && (altChange < -DESCENT_ALT_CHANGE_FT
-                            || phases.get(i - 1) == FlightPhase.DESCENT)) {
+                    && (altChange < -DESCENT_ALT_CHANGE_FT || phases.get(i - 1) == FlightPhase.DESCENT)) {
                 phases.set(i, FlightPhase.DESCENT);
             } else if (alt > PATTERN_ALT_FT && altChange < -DESCENT_ALT_CHANGE_FT) {
                 phases.set(i, FlightPhase.DESCENT);
@@ -488,8 +488,8 @@ public final class FlightPhaseProcessor {
      * @param groundSpeed the ground speed series
      * @param numRows the number of rows to process
      */
-    private static void markGround(List<FlightPhase> phases, DoubleTimeSeries altAgl,
-                                   DoubleTimeSeries groundSpeed, int numRows) {
+    private static void markGround(
+            List<FlightPhase> phases, DoubleTimeSeries altAgl, DoubleTimeSeries groundSpeed, int numRows) {
         for (int i = 0; i < numRows; i++) {
             if (phases.get(i) == FlightPhase.TAKEOFF) continue;
             if (phases.get(i) != FlightPhase.UNKNOWN) continue;
@@ -667,7 +667,7 @@ public final class FlightPhaseProcessor {
 
         // 1. Touch-and-go: ±10 rows around split points; TOUCH_AND_GO only if rolling speed ≥ 15 kts, else GROUND
         if (validation != null && validation.hasTouchAndGo()) {
-            for (int splitIndex : validation.splitIndices) {
+            for (int splitIndex : validation.splitIndices()) {
                 int start = Math.max(0, splitIndex - GO_AROUND_WINDOW_ROWS);
                 int end = Math.min(phaseData.getPhases().size() - 1, splitIndex + GO_AROUND_WINDOW_ROWS);
                 boolean hasRollingSpeed = false;

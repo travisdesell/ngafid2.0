@@ -15,6 +15,10 @@ import org.ngafid.processor.format.FlightBuilder;
  */
 public class ComputeUnitConversion extends ComputeStep {
 
+    /**
+     * Enumerates the supported unit conversions, each carrying its multiplicative conversion factor and the name
+     * of the resulting output unit.
+     */
     public enum UnitConversion {
         METERS_TO_FEET(3.28084),
         RADIAN_TO_DEGREE(180 / Math.PI);
@@ -41,6 +45,15 @@ public class ComputeUnitConversion extends ComputeStep {
     private final String outSeriesName;
     private final UnitConversion unitConversion;
 
+    /**
+     * Constructs a unit-conversion compute step that derives one series from another.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     * @param inParam the name of the input series to convert
+     * @param outSeries the name of the output series to produce
+     * @param conversion the unit conversion to apply
+     */
     public ComputeUnitConversion(
             Connection connection, FlightBuilder builder, String inParam, String outSeries, UnitConversion conversion) {
         super(connection, builder);

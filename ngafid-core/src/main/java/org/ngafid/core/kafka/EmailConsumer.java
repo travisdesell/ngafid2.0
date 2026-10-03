@@ -24,6 +24,14 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
     private static final Logger LOG = Logger.getLogger(EmailConsumer.class.getName());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /**
+     * Constructs the email consumer, delegating to {@link DisjointConsumer} to subscribe to the email topics and start
+     * the background worker that sends the polled emails.
+     *
+     * @param mainThread the application's main thread, used for coordinated shutdown
+     * @param consumer the Kafka consumer to poll email records from
+     * @param producer the Kafka producer used to forward failed emails to the retry/dead-letter topics
+     */
     protected EmailConsumer(
             Thread mainThread, KafkaConsumer<String, String> consumer, KafkaProducer<String, String> producer) {
         super(mainThread, consumer, producer);
@@ -49,6 +57,13 @@ public class EmailConsumer extends DisjointConsumer<String, String> {
         return new KafkaProducer<>(getProperties());
     }
 
+    /**
+     * Command-line entry point for the email consumer service: starts the Docker service heartbeat and then runs the
+     * consumer's poll loop (blocking) to deliver emails from the email topic.
+     *
+     * @param args ignored
+     * @throws UnknownHostException if the heartbeat cannot determine the local host
+     */
     public static void main(String[] args) throws UnknownHostException {
 
         /* Start Docker Service Heartbeat Producer */

@@ -46,6 +46,10 @@ public abstract class WebServer {
         return dockerServiceHeartbeatMonitor;
     }
 
+    /**
+     * Gson adapter that serializes {@link LocalDateTime} as its ISO string and parses incoming values as a
+     * {@link ZonedDateTime} before reducing them to a local date-time, with nulls passed through unchanged.
+     */
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
         public void write(final JsonWriter jsonWriter, final LocalDateTime localDate) throws IOException {
@@ -66,6 +70,10 @@ public abstract class WebServer {
         }
     }
 
+    /**
+     * Gson adapter that serializes and parses {@link OffsetDateTime} using the ISO offset date-time format, with
+     * nulls passed through unchanged.
+     */
     public static class OffsetDateTimeTypeAdapter extends TypeAdapter<OffsetDateTime> {
         private final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
@@ -89,6 +97,10 @@ public abstract class WebServer {
         }
     }
 
+    /**
+     * Gson adapter for {@link Double} that writes non-finite values (NaN, positive and negative infinity) as JSON
+     * null, keeping the output valid JSON since the format cannot represent those values.
+     */
     public static class NonFiniteDoubleAdapter extends TypeAdapter<Double> {
 
         /*
@@ -129,6 +141,15 @@ public abstract class WebServer {
             .registerTypeAdapter(double.class, new NonFiniteDoubleAdapter())
             .create();
 
+    /**
+     * Constructs the web server and runs the full initialization lifecycle in order: the {@link #preInitialize()}
+     * hook, logging, port and thread configuration, HTTPS (only when the port is 443 or 8443), static-file serving,
+     * route registration, auth checks, and exception handling, and finally persistent sessions unless they are
+     * disabled by configuration. Subclasses supply the concrete steps via the abstract {@code configure*} methods.
+     *
+     * @param port the port the server will listen on (443/8443 enable HTTPS)
+     * @param staticFilesLocation the location static files are served from
+     */
     public WebServer(int port, String staticFilesLocation) {
         this.port = port;
         this.staticFilesLocation = staticFilesLocation;
@@ -158,26 +179,64 @@ public abstract class WebServer {
         }
     }
 
+    /**
+     * Hook invoked at the very start of initialization, before any other configuration. The default implementation
+     * does nothing; subclasses override it to perform setup that must run first.
+     */
     protected void preInitialize() {}
 
+    /**
+     * Starts the configured server so it begins accepting requests.
+     */
     public abstract void start();
 
+    /**
+     * Configures the port the server listens on.
+     */
     protected abstract void configurePort();
 
+    /**
+     * Configures HTTPS (TLS keystore/certificate); invoked only when running on an HTTPS port.
+     */
     protected abstract void configureHttps();
 
+    /**
+     * Registers the server's HTTP routes and their handlers.
+     */
     protected abstract void configureRoutes();
 
+    /**
+     * Configures the server's request-handling thread pool.
+     */
     protected abstract void configureThreads();
 
+    /**
+     * Configures the location and serving of static files.
+     */
     protected abstract void configureStaticFilesLocation();
 
+    /**
+     * Configures the authentication/authorization filters that guard protected routes.
+     */
     protected abstract void configureAuthChecks();
 
+    /**
+     * Configures the server's exception handling (typically routing uncaught exceptions to
+     * {@link #exceptionHandler(Exception)}).
+     */
     protected abstract void configureExceptions();
 
+    /**
+     * Configures persistent (database-backed) HTTP sessions.
+     */
     protected abstract void configurePersistentSessions();
 
+    /**
+     * Handles an uncaught server exception by logging it with its full stack trace and emailing the administrators
+     * an exception-notification message.
+     *
+     * @param exception the uncaught exception to report
+     */
     protected void exceptionHandler(Exception exception) {
         LOG.severe("Exception: " + exception);
         LOG.severe("Exception message: " + exception.getMessage());
@@ -201,6 +260,10 @@ public abstract class WebServer {
                 EmailType.ADMIN_EXCEPTION_NOTIFICATION);
     }
 
+    /**
+     * Loads the Java logging configuration from the {@code log.properties} file named in the application config,
+     * logging a warning (rather than failing) if the file cannot be read.
+     */
     protected void configureLogging() {
         try {
             final InputStream logConfig = Files.newInputStream(new File(Config.LOG_PROPERTIES_FILE).toPath());

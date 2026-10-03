@@ -17,6 +17,13 @@ import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
+/**
+ * Serves the fleet aircraft-management pages: the manage-fleet overview, the system-id to tail-number mapping
+ * page, and the airframe-specifications page.
+ *
+ * <p>Routes render Mustache templates seeded with the logged-in user and, for the system-id page, the fleet's
+ * tail records loaded from {@link org.ngafid.core.flights.Tails}.
+ */
 public class AircraftFleetTailsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AircraftFleetTailsJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.GSON;
@@ -25,12 +32,23 @@ public class AircraftFleetTailsJavalinRoutes {
         // Utility class
     }
 
+    /**
+     * JSON response describing the result of mapping a recorder system id to a tail number within a fleet.
+     */
     public static class UpdateTailResponse {
         private final int fleetId;
         private final String systemId;
         private final String tail;
         private final int confirmed;
 
+        /**
+         * Constructs the JSON response describing the result of updating a tail-number mapping.
+         *
+         * @param fleetId the fleet the tail belongs to
+         * @param systemId the recorder system id the tail is mapped from
+         * @param tail the tail number the system id now maps to
+         * @param confirmed whether the mapping is confirmed (1) or still unconfirmed (0)
+         */
         public UpdateTailResponse(int fleetId, String systemId, String tail, int confirmed) {
             this.fleetId = fleetId;
             this.systemId = systemId;
@@ -98,6 +116,12 @@ public class AircraftFleetTailsJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Registers this class's aircraft and fleet-tail management routes (the manage-fleet page and tail-update
+     * endpoints) on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/manage_fleet", AircraftFleetTailsJavalinRoutes::getManageFleet);
         app.get("/protected/system_ids", AircraftFleetTailsJavalinRoutes::getSystemIds);

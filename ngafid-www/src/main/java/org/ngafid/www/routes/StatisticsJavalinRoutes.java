@@ -24,11 +24,23 @@ import org.ngafid.www.Navbar;
 import org.ngafid.www.flights.FlightStatistics;
 import org.ngafid.www.uploads.UploadStatistics;
 
+/**
+ * Serves the statistics pages and endpoints: the per-fleet and aggregate dashboards, aggregate trends, and event
+ * statistics.
+ *
+ * <p>Routes delegate to the nested {@link StatFetcher}, which gathers flight, upload, and event statistics for a
+ * request, scoped to the user's fleet or across all fleets when aggregating.
+ */
 public class StatisticsJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
     private StatisticsJavalinRoutes() {}
 
+    /**
+     * Gathers the flight, upload, and event statistics for a single request, scoped either to the user's fleet or,
+     * when aggregating, across all fleets (fleet id -1), reading its date and airframe filters from the request
+     * context.
+     */
     public static class StatFetcher {
         private final Connection connection;
         private final Context context;
@@ -36,10 +48,28 @@ public class StatisticsJavalinRoutes {
         private final int fleetId;
         private final boolean aggregate;
 
+        /**
+         * Convenience constructor that resolves the current user from the request session, then delegates to
+         * {@link #StatFetcher(Connection, Context, User, boolean)}.
+         *
+         * @param connection the database connection used for the statistics queries
+         * @param context the Javalin request context, supplying the session user and query parameters
+         * @param aggregate true to compute statistics across all fleets, false to scope them to the user's fleet
+         */
         public StatFetcher(Connection connection, Context context, boolean aggregate) {
             this(connection, context, SessionUtility.INSTANCE.getUser(context), aggregate);
         }
 
+        /**
+         * Constructs a statistics fetcher. When {@code aggregate} is true the fleet id is set to -1 so every query
+         * spans all fleets; otherwise it is the user's fleet id, scoping all statistics to that one fleet.
+         *
+         * @param connection the database connection used for the statistics queries
+         * @param context the Javalin request context, read for the {@code startDate}, {@code endDate} and
+         *     {@code airframeID} query parameters
+         * @param user the user the statistics are computed for (determines the fleet when not aggregating)
+         * @param aggregate true to compute statistics across all fleets, false to scope them to the user's fleet
+         */
         public StatFetcher(Connection connection, Context context, User user, boolean aggregate) {
             this.connection = connection;
             this.context = context;
@@ -78,6 +108,14 @@ public class StatisticsJavalinRoutes {
             return this.fleetId <= 0;
         }
 
+        /**
+         * Returns the total flight time, in seconds, for this fetcher's scope. Honors the {@code startDate},
+         * {@code endDate} and optional {@code airframeID} query parameters (defaulting to all dates and all
+         * airframes), and uses the aggregate (all-fleet) or per-fleet {@link FlightStatistics} query accordingly.
+         *
+         * @return the total flight time in seconds
+         * @throws SQLException if the query fails
+         */
         public Double flightTime() throws SQLException {
 
             final String startDateIn = context.queryParam("startDate");
@@ -94,6 +132,13 @@ public class StatisticsJavalinRoutes {
             else return FlightStatistics.getTotalFlightTimeDated(connection, fleetId, startDate, endDate, airframeID);
         }
 
+        /**
+         * Returns the total flight time, in seconds, accumulated so far in the current calendar year for this
+         * fetcher's scope (aggregate across all fleets, or the user's fleet).
+         *
+         * @return the current-year flight time in seconds
+         * @throws SQLException if the query fails
+         */
         public Double yearFlightTime() throws SQLException {
             if (aggregate()) {
                 return FlightStatistics.getAggregateCurrentYearFlightTime(connection, 0);
@@ -102,6 +147,13 @@ public class StatisticsJavalinRoutes {
             }
         }
 
+        /**
+         * Returns the total flight time, in seconds, over the last 30 days for this fetcher's scope (aggregate
+         * across all fleets, or the user's fleet).
+         *
+         * @return the 30-day flight time in seconds
+         * @throws SQLException if the query fails
+         */
         public Double monthFlightTime() throws SQLException {
             if (aggregate()) {
                 return FlightStatistics.getAggregate30DayFlightTime(connection, 0);
@@ -109,6 +161,14 @@ public class StatisticsJavalinRoutes {
             return FlightStatistics.get30DayFlightTime(connection, fleetId, 0);
         }
 
+        /**
+         * Returns the number of flights for this fetcher's scope, honoring the {@code startDate}, {@code endDate}
+         * and optional {@code airframeID} query parameters (defaulting to all dates and all airframes), using the
+         * aggregate or per-fleet query accordingly.
+         *
+         * @return the flight count
+         * @throws SQLException if the query fails
+         */
         public Integer numberFlights() throws SQLException {
 
             final String startDateIn = context.queryParam("startDate");
@@ -125,10 +185,22 @@ public class StatisticsJavalinRoutes {
             else return FlightStatistics.getTotalFlightCountDated(connection, fleetId, startDate, endDate, airframeID);
         }
 
+        /**
+         * Returns the number of distinct aircraft (tail numbers) registered to this fetcher's fleet.
+         *
+         * @return the aircraft count for the fleet
+         * @throws SQLException if the query fails
+         */
         public Integer numberAircraft() throws SQLException {
             return Tails.getNumberTails(connection, fleetId);
         }
 
+        /**
+         * Returns the number of flights recorded so far in the current calendar year for this fetcher's scope.
+         *
+         * @return the current-year flight count
+         * @throws SQLException if the query fails
+         */
         public Integer yearNumberFlights() throws SQLException {
             if (aggregate()) {
                 return FlightStatistics.getAggregateCurrentYearFlightCount(connection, 0);
@@ -137,6 +209,12 @@ public class StatisticsJavalinRoutes {
             }
         }
 
+        /**
+         * Returns the number of flights recorded over the last 30 days for this fetcher's scope.
+         *
+         * @return the 30-day flight count
+         * @throws SQLException if the query fails
+         */
         public Integer monthNumberFlights() throws SQLException {
             if (aggregate()) {
                 return FlightStatistics.getAggregate30DayFlightCount(connection, 0);
@@ -145,6 +223,14 @@ public class StatisticsJavalinRoutes {
             }
         }
 
+        /**
+         * Returns the total number of detected events for this fetcher's scope, honoring the {@code startDate},
+         * {@code endDate} and optional {@code airframeID} query parameters (defaulting to all dates and all
+         * airframes), using the aggregate or per-fleet {@link EventStatistics} query accordingly.
+         *
+         * @return the event count
+         * @throws SQLException if the query fails
+         */
         public Integer totalEvents() throws SQLException {
 
             final String startDateIn = context.queryParam("startDate");
@@ -161,6 +247,12 @@ public class StatisticsJavalinRoutes {
             else return EventStatistics.getTotalEventCountDated(connection, fleetId, startDate, endDate, airframeID);
         }
 
+        /**
+         * Returns the number of events detected so far in the current calendar year for this fetcher's scope.
+         *
+         * @return the current-year event count
+         * @throws SQLException if the query fails
+         */
         public Integer yearEvents() throws SQLException {
             if (aggregate()) {
                 return EventStatistics.getAggregateCurrentYearEventCount(connection);
@@ -169,6 +261,12 @@ public class StatisticsJavalinRoutes {
             }
         }
 
+        /**
+         * Returns the number of events detected in the current month for this fetcher's scope.
+         *
+         * @return the current-month event count
+         * @throws SQLException if the query fails
+         */
         public Integer monthEvents() throws SQLException {
             if (aggregate()) {
                 return EventStatistics.getAggregateCurrentMonthEventCount(connection);
@@ -177,14 +275,36 @@ public class StatisticsJavalinRoutes {
             }
         }
 
+        /**
+         * Returns the total number of fleets, but only in aggregate mode; returns {@code null} for a single-fleet
+         * fetcher since the count is not meaningful there.
+         *
+         * @return the number of fleets when aggregating, or {@code null} otherwise
+         * @throws SQLException if the query fails
+         */
         public Integer numberFleets() throws SQLException {
             return aggregate ? Fleet.getNumberFleets(connection) : null;
         }
 
+        /**
+         * Returns the number of users for this fetcher's scope (all users when aggregating, since the fleet id is
+         * -1, otherwise the users belonging to the fleet).
+         *
+         * @return the user count
+         * @throws SQLException if the query fails
+         */
         public Integer numberUsers() throws SQLException {
             return User.getNumberUsers(connection, fleetId);
         }
 
+        /**
+         * Returns the upload counts (total, OK, warning, error) for this fetcher's scope over the {@code startDate}
+         * /{@code endDate} query-parameter range (defaulting to all dates), using the aggregate or per-fleet query.
+         * This is the shared source for the individual {@code uploads*} accessors below.
+         *
+         * @return the upload counts for the scope and date range
+         * @throws SQLException if the query fails
+         */
         public UploadStatistics.UploadCounts getUploadCounts() throws SQLException {
 
             final String startDateIn = context.queryParam("startDate");
@@ -200,27 +320,69 @@ public class StatisticsJavalinRoutes {
             }
         }
 
+        /**
+         * Returns the total number of uploads for this fetcher's scope and date range.
+         *
+         * @return the total upload count
+         * @throws SQLException if the query fails
+         */
         public Integer uploads() throws SQLException {
             return getUploadCounts().count();
         }
 
+        /**
+         * Returns the number of uploads that imported cleanly (no warnings or errors) for this fetcher's scope and
+         * date range.
+         *
+         * @return the count of successfully imported uploads
+         * @throws SQLException if the query fails
+         */
         public Integer uploadsOK() throws SQLException {
             return getUploadCounts().okUploadCount();
         }
 
+        /**
+         * Returns the number of uploads that have not been imported, computed as the total minus those that
+         * finished OK, with warnings, or with errors (i.e. uploads still pending or otherwise unaccounted for).
+         *
+         * @return the count of not-yet-imported uploads
+         * @throws SQLException if the query fails
+         */
         public Integer uploadsNotImported() throws SQLException {
             var counts = getUploadCounts();
             return counts.count() - (counts.okUploadCount() + counts.warningUploadCount() + counts.errorUploadCount());
         }
 
+        /**
+         * Returns the number of uploads that finished with at least one error, for this fetcher's scope and date
+         * range.
+         *
+         * @return the count of uploads with errors
+         * @throws SQLException if the query fails
+         */
         public Integer uploadsWithError() throws SQLException {
             return getUploadIssueCounts().errorUploadCount();
         }
 
+        /**
+         * Returns the number of uploads that finished with warnings (but no errors), for this fetcher's scope and
+         * date range.
+         *
+         * @return the count of uploads with warnings
+         * @throws SQLException if the query fails
+         */
         public Integer uploadsWithWarning() throws SQLException {
             return getUploadCounts().warningUploadCount();
         }
 
+        /**
+         * Returns the combined upload and flight outcome counts for this fetcher's scope over the {@code startDate}
+         * /{@code endDate} query-parameter range (defaulting to all dates), in a single query. Passes a null fleet
+         * id when aggregating so the query spans all fleets.
+         *
+         * @return the combined upload/flight outcome counts
+         * @throws SQLException if the query fails
+         */
         public UploadStatistics.UploadOutcomeCounts uploadOutcomes() throws SQLException {
             final String startDateIn = context.queryParam("startDate");
             final String endDateIn = context.queryParam("endDate");
@@ -232,14 +394,33 @@ public class StatisticsJavalinRoutes {
                     connection, aggregate() ? null : fleetId, startDate, endDate);
         }
 
+        /**
+         * Returns the number of imported flights that have warnings, for this fetcher's scope and date range.
+         *
+         * @return the count of flights with warnings
+         * @throws SQLException if the query fails
+         */
         public Integer flightsWithWarning() throws SQLException {
             return getUploadIssueCounts().warningFlightCount();
         }
 
+        /**
+         * Returns the number of flights that imported successfully, for this fetcher's scope and date range.
+         *
+         * @return the count of successfully imported flights
+         * @throws SQLException if the query fails
+         */
         public Integer flightsImported() throws SQLException {
             return getUploadIssueCounts().successfulFlightCount();
         }
 
+        /**
+         * Returns the number of flights that failed to import (had errors), for this fetcher's scope and date
+         * range.
+         *
+         * @return the count of flights with errors
+         * @throws SQLException if the query fails
+         */
         public Integer flightsWithError() throws SQLException {
             return getUploadIssueCounts().errorFlightCount();
         }
@@ -255,6 +436,16 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Builds a SQL predicate restricting rows to the given date range and, when an airframe is specified, to that
+     * airframe. Delegates to {@link #buildDateClause} for the date portion and appends an {@code airframe_id}
+     * equality unless {@code airframeID} is negative (meaning "all airframes").
+     *
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @param airframeID the airframe id to filter by, or a negative value for all airframes
+     * @return a parenthesized SQL boolean expression suitable for a WHERE clause
+     */
     public static String buildDateAirframeClause(LocalDate startDate, LocalDate endDate, int airframeID) {
 
         final String dateClause = buildDateClause(startDate, endDate);
@@ -265,6 +456,16 @@ public class StatisticsJavalinRoutes {
         return String.format("(%s AND airframe_id = %d)", dateClause, airframeID);
     }
 
+    /**
+     * Builds a SQL predicate matching the given date range against the stored {@code year}/{@code month} columns.
+     * When the range lies within a single year it produces a simple month-between clause; when it spans years it
+     * produces a compound clause covering the partial start year, the partial end year, and any whole years in
+     * between.
+     *
+     * @param startDate the inclusive start of the date range
+     * @param endDate the inclusive end of the date range
+     * @return a parenthesized SQL boolean expression over the year/month columns
+     */
     public static String buildDateClause(LocalDate startDate, LocalDate endDate) {
 
         final int startYear = startDate.getYear();
@@ -287,6 +488,13 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Handles {@code GET /protected/aggregate}: renders the aggregate (cross-fleet) dashboard page, injecting the
+     * list of all airframes for the client. Responds 401 if the user is not logged in or lacks aggregate-view
+     * access, and 500 on a database error.
+     *
+     * @param ctx the Javalin request context, whose response is rendered or given an error status
+     */
     public static void getAggregate(Context ctx) {
         final String templateFile = "aggregate.html";
 
@@ -326,6 +534,13 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Handles {@code GET /protected/aggregate_trends}: renders the aggregate trends page, injecting the airframes,
+     * unique event names, and tag names needed by the client. Responds 401 if the user is not logged in or lacks
+     * aggregate-view access, and 500 on a database error.
+     *
+     * @param ctx the Javalin request context, whose response is rendered or given an error status
+     */
     public static void getAggregateTrends(Context ctx) {
         final String templateFile = "aggregate_trends.html";
 
@@ -368,6 +583,15 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Handles a request for per-airframe event counts over the {@code startDate}/{@code endDate} range, writing a
+     * JSON map of airframe to event counts. Requires a logged-in user with view access to their fleet, and
+     * additionally aggregate-view access when {@code aggregate} is true (in which case counts span all fleets,
+     * fleet id -1). Responds 401 on failed access checks and 500 on a database error.
+     *
+     * @param ctx the Javalin request context supplying the session user and date-range query parameters
+     * @param aggregate true to return counts across all fleets, false to scope them to the user's fleet
+     */
     public static void getAllEventCountsByAirframe(Context ctx, boolean aggregate) {
         // Defensive: check for user session
         User user = ctx.sessionAttribute("user");
@@ -411,6 +635,13 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Handles a request for the event statistics of a single airframe, identified by the {@code aid} path
+     * parameter, writing the resulting {@link EventStatistics} as JSON scoped to the user's fleet. An {@code aid}
+     * of 0 is treated as the generic (airframe-independent) statistics. Responds 500 on a database error.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code aid} path parameter
+     */
     public static void getOneEventCountsByAirframe(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -430,6 +661,15 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Handles a request for monthly event counts over the {@code startDate}/{@code endDate} range, writing the
+     * result as JSON. The {@code aggregatePage} query parameter selects aggregate (all-fleet, requires
+     * aggregate-view access) versus the user's fleet (requires fleet view access). When the optional
+     * {@code eventName} parameter is present only that event's counts are returned; otherwise the full map is.
+     * Responds 401 on failed access checks and 500 on a database error.
+     *
+     * @param ctx the Javalin request context supplying the session user and the date/scope/event query parameters
+     */
     public static void getMonthlyEventCounts(Context ctx) {
         final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
@@ -478,6 +718,12 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Handles {@code GET /protected/event_statistics}: renders the event-statistics page, injecting all event
+     * definitions and the fleet's airframe id-to-name map for the client. Responds 500 on a database error.
+     *
+     * @param ctx the Javalin request context, whose response is rendered or given an error status
+     */
     public static void getEventStatistics(Context ctx) {
         final String templateFile = "event_statistics.html";
 
@@ -503,6 +749,12 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's statistics routes (the aggregate dashboard, aggregate trends, and event-statistics
+     * pages) on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
         app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);

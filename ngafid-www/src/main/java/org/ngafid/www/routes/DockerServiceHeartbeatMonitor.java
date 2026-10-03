@@ -15,6 +15,13 @@ import org.ngafid.core.Config;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Topic;
 
+/**
+ * Background worker that tracks the liveness of Docker-based NGAFID services by consuming their Kafka heartbeats.
+ *
+ * <p>It polls the status-heartbeat topic, recording the last-seen time per service instance, and exposes
+ * aggregate and per-instance {@link StatusJavalinRoutes.ServiceStatus} values by treating an instance whose last
+ * heartbeat is older than the timeout as failed.
+ */
 public class DockerServiceHeartbeatMonitor implements Runnable {
 
     private static final Logger LOG = Logger.getLogger(DockerServiceHeartbeatMonitor.class.getName());
@@ -29,12 +36,24 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
     private final Map<String, Map<String, Long>> lastSeen = new ConcurrentHashMap<>();
     private final KafkaConsumer<String, String> consumer;
 
+    /**
+     * Constructs a heartbeat monitor backed by a Kafka consumer subscribed to the status-heartbeat topic.
+     *
+     * @param consumerProps the Kafka consumer properties to use
+     */
     public DockerServiceHeartbeatMonitor(Properties consumerProps) {
 
         consumer = new KafkaConsumer<>(consumerProps);
         Topic.STATUS_HEARTBEAT.subscribeWith(consumer);
     }
 
+    /**
+     * Creates and starts the heartbeat monitor when running under Docker: builds the Kafka consumer properties,
+     * constructs the monitor, and runs its poll loop on a daemon thread. Returns {@code null} (and starts nothing)
+     * when the application is not running in Docker.
+     *
+     * @return the started monitor, or {@code null} if not running under Docker
+     */
     public static DockerServiceHeartbeatMonitor initialize() {
 
         // Not running in Docker, do not start heartbeat
@@ -93,6 +112,14 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
         }
     }
 
+    /**
+     * Returns the status of each known instance of a service, keyed by instance id: an instance whose most recent
+     * heartbeat is within the timeout window is {@code OK}, otherwise {@code WARNING}. Returns an empty map if no
+     * instances of the service have ever been seen.
+     *
+     * @param service the service name to report on
+     * @return a map from instance id to its {@link StatusJavalinRoutes.ServiceStatus}
+     */
     public Map<String, StatusJavalinRoutes.ServiceStatus> instanceStatuses(String service) {
 
         Map<String, Long> instances = lastSeen.get(service);
@@ -112,6 +139,14 @@ public class DockerServiceHeartbeatMonitor implements Runnable {
                                 : StatusJavalinRoutes.ServiceStatus.WARNING));
     }
 
+    /**
+     * Returns the overall status of a service, aggregated across its instances: {@code ERROR} if no instances have
+     * ever been seen, otherwise {@code OK} or {@code WARNING} depending on whether instances have heartbeat within
+     * the timeout window.
+     *
+     * @param service the service name to report on
+     * @return the aggregated {@link StatusJavalinRoutes.ServiceStatus} for the service
+     */
     public StatusJavalinRoutes.ServiceStatus status(String service) {
 
         Map<String, Long> serviceInstances = lastSeen.get(service);

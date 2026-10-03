@@ -34,6 +34,16 @@ public final class AirSyncAircraft {
 
     private AirSyncFleet fleet;
 
+    /**
+     * Jackson factory that builds an {@link AirSyncAircraft} from the JSON returned by the AirSync API. Jackson
+     * uses this in place of the private constructor when deserializing an aircraft; the fleet is not part of the
+     * API payload and is attached separately afterward.
+     *
+     * @param id the aircraft's AirSync id
+     * @param tailNumber the aircraft's tail number
+     * @param accountToken the AirSync account token the aircraft belongs to
+     * @return the constructed aircraft, with no fleet yet associated
+     */
     @JsonCreator
     public static AirSyncAircraft create(
             @JsonProperty("id") int id,
@@ -230,6 +240,16 @@ public final class AirSyncAircraft {
         return imports;
     }
 
+    /**
+     * Returns the imports needed to bring this aircraft up to date: only those newer than the last stored
+     * import when one exists, otherwise all available imports.
+     *
+     * @param connection the database connection
+     * @param airSyncFleet the fleet this aircraft belongs to, used for authentication
+     * @return the list of imports to process
+     * @throws IOException if the AirSync request fails
+     * @throws SQLException if a database error occurs
+     */
     public List<AirSyncImport> getImportsForUpdate(Connection connection, AirSyncFleet airSyncFleet)
             throws IOException, SQLException {
         Optional<LocalDateTime> lastImportTime = getLastImportTime(connection);

@@ -58,10 +58,24 @@ import org.ngafid.www.routes.api.TagRoutes;
 import org.ngafid.www.routes.api.UploadRoutes;
 import org.ngafid.www.routes.api.UserRoutes;
 
+/**
+ * The {@link WebServer} implementation backed by the Javalin framework.
+ *
+ * <p>It builds and configures the embedded Javalin/Jetty instance -- JSON mapping, Mustache rendering, static
+ * files, OpenAPI/Swagger/ReDoc plugins, JDBC-backed sessions, and access roles -- and registers every API and
+ * page route group before starting the server.
+ */
 public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
     private Javalin app;
 
+    /**
+     * Constructs the Javalin-backed web server. The superclass constructor drives the full configuration lifecycle
+     * (which the overridden {@code configure*} methods implement against Javalin).
+     *
+     * @param port the port the server will listen on
+     * @param staticFilesLocation the location static files are served from
+     */
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
         LOG.info(() -> "Using static files location: " + staticFilesLocation);

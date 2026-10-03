@@ -7,8 +7,8 @@ import io.javalin.http.NotFoundResponse
 import io.javalin.http.pathParamAsClass
 import io.javalin.openapi.*
 import org.ngafid.core.Database
-import org.ngafid.core.accounts.EmailType
 import org.ngafid.core.accounts.AccountException
+import org.ngafid.core.accounts.EmailType
 import org.ngafid.core.accounts.Fleet
 import org.ngafid.core.accounts.FleetAccess
 import org.ngafid.core.accounts.FleetAccessNamed
@@ -17,8 +17,8 @@ import org.ngafid.core.util.SendEmail
 import org.ngafid.www.ErrorResponse
 import org.ngafid.www.routes.*
 import java.net.URLEncoder
-import java.util.*
 import java.sql.SQLException
+import java.util.*
 import java.util.logging.Logger
 
 object UserRoutes : RouteProvider() {
@@ -70,13 +70,11 @@ object UserRoutes : RouteProvider() {
                     put("email-prefs", UserRoutes::putUserEmailPreferences, Role.LOGGED_IN)
                     patch("fleet-access", UserRoutes::patchUserFleetAccess, Role.LOGGED_IN)
                 }
-
             }
         }
     }
 
     fun postUserCreateFleet(ctx: Context) {
-
         val user = SessionUtility.getUser(ctx)
         val fleetName = ctx.formParam("fleetName")?.trim()
 
@@ -87,16 +85,16 @@ object UserRoutes : RouteProvider() {
             return
         }
 
-        val FLEET_NAME_LENGTH_LIMIT = 256
+        val fleetNameLengthLimit = 256
 
         val validFleetNameRegex = Regex("^[a-zA-Z0-9 @#$%^&*()_+!.,/\\\\'-]+$")
-        if (fleetName.length >= FLEET_NAME_LENGTH_LIMIT || !validFleetNameRegex.matches(fleetName)) {
+        if (fleetName.length >= fleetNameLengthLimit || !validFleetNameRegex.matches(fleetName)) {
             ctx.status(400)
             ctx.json(
                 ErrorResponse(
                     "Invalid Fleet Name",
-                    "Fleet name must be 1-${FLEET_NAME_LENGTH_LIMIT} characters and may only include letters, numbers, spaces, and @#$%^&*()_+!/\\.,"
-                )
+                    "Fleet name must be 1-$fleetNameLengthLimit characters and may only include letters, numbers, spaces, and @#$%^&*()_+!/\\.,",
+                ),
             )
             return
         }
@@ -123,14 +121,13 @@ object UserRoutes : RouteProvider() {
                 ctx.json(ErrorResponse(e))
             } catch (e: SQLException) {
                 connection.rollback()
-                LOG.severe("Error creating fleet '${fleetName}' for user ${user.id}: ${e.message}")
+                LOG.severe("Error creating fleet '$fleetName' for user ${user.id}: ${e.message}")
                 ctx.status(500)
                 ctx.json(ErrorResponse("Fleet Creation Error", e.message ?: "Unknown database error."))
             } finally {
                 connection.autoCommit = previousAutoCommit
             }
         }
-
     }
 
     fun putUserFleetSelected(ctx: Context) {
@@ -139,9 +136,9 @@ object UserRoutes : RouteProvider() {
 
         Database.getConnection().use { connection ->
 
-            //Check that the user has access to this fleet
+            // Check that the user has access to this fleet
             var hasAccess = false
-            val allFleets:ArrayList<FleetAccess> = FleetAccess.getAllFleetAccessEntries(connection, user.getId())
+            val allFleets: ArrayList<FleetAccess> = FleetAccess.getAllFleetAccessEntries(connection, user.getId())
             for (fleetAccess in allFleets) {
                 if (fleetAccess.fleetId == fleetIdSelected) {
                     hasAccess = true
@@ -149,25 +146,22 @@ object UserRoutes : RouteProvider() {
                 }
             }
 
-            //User has no access -> reject request
+            // User has no access -> reject request
             if (!hasAccess) {
                 AccountJavalinRoutes.LOG.severe("INVALID ACCESS: user did not have access to select this fleet.")
                 ctx.status(401)
                 ctx.result("User did not have access to select this fleet.")
 
-            //Otherwise, update their selected fleet
+                // Otherwise, update their selected fleet
             } else {
                 user.setSelectedFleetId(connection, fleetIdSelected)
                 ctx.status(200)
                 ctx.json(user)
             }
-
         }
-
     }
 
     fun putUserLeaveCurrentFleet(ctx: Context) {
-
         val user = SessionUtility.getUser(ctx)
 
         try {
@@ -181,21 +175,18 @@ object UserRoutes : RouteProvider() {
 
         ctx.status(200)
         ctx.json(user)
-
     }
 
     @Throws(SQLException::class)
     fun getUserFullFleetAccess(ctx: Context) {
-
         val user = SessionUtility.getUser(ctx)
 
-        //Get all the fleets this user has access to
+        // Get all the fleets this user has access to
         Database.getConnection().use { connection ->
             val allFleets: ArrayList<FleetAccess> = FleetAccessNamed.getAllFleetAccessEntries(connection, user.getId())
             ctx.status(200)
             ctx.json(allFleets)
         }
-
     }
 
     fun patchUserFleetAccess(ctx: Context) {
@@ -210,7 +201,9 @@ object UserRoutes : RouteProvider() {
 
         // check to see if the logged-in user can update access to this fleet
         if (!user.managesFleet(fleetId)) {
-            AccountJavalinRoutes.LOG.severe("INVALID ACCESS: user did not have access to modify user access rights on this fleet.")
+            AccountJavalinRoutes.LOG.severe(
+                "INVALID ACCESS: user did not have access to modify user access rights on this fleet.",
+            )
             ctx.status(401)
             ctx.result("User did not have access to modify user access rights on this fleet.")
         } else {
@@ -235,25 +228,23 @@ object UserRoutes : RouteProvider() {
 
         // User doesn't have fleet access/authority, reject request
         if (!user.managesFleet(fleetId)) {
-
             AccountJavalinRoutes.LOG.severe("INVALID ACCESS: user did not have access to invite other users.")
             ctx.status(401)
             ctx.result("User did not have access to invite other users.")
 
-        // Otherwise, attempt to send the invite email and write the invite to the database
+            // Otherwise, attempt to send the invite email and write the invite to the database
         } else {
-
             /*
                 Verify that the invited email isn't already associated with this fleet.
                 Should also implicitly prevent a user sending an invite to themselves.
-            */
+             */
             Database.getConnection().use { connection ->
                 val statement = connection.prepareStatement(
                     """
                     SELECT * FROM fleet_access
                     JOIN user ON fleet_access.user_id = user.id
                     WHERE fleet_access.fleet_id = ? AND user.email = ?
-                    """
+                    """,
                 )
                 statement.setInt(1, fleetId)
                 statement.setString(2, inviteEmail)
@@ -262,7 +253,9 @@ object UserRoutes : RouteProvider() {
                 // Target email is already associated with an account that has access to this fleet, reject the invite request
                 if (resultSet.next()) {
                     ctx.status(400)
-                    ctx.result("This email is already associated with an account that has access to this fleet. An invitation was not sent.")
+                    ctx.result(
+                        "This email is already associated with an account that has access to this fleet. An invitation was not sent.",
+                    )
                     return
                 }
             }
@@ -290,7 +283,7 @@ object UserRoutes : RouteProvider() {
                 bccRecipients,
                 "NGAFID Account Creation Invite",
                 body,
-                EmailType.ACCOUNT_CREATION_INVITE
+                EmailType.ACCOUNT_CREATION_INVITE,
             )
 
             /*
@@ -303,14 +296,14 @@ object UserRoutes : RouteProvider() {
                 of existing invitations. Might only be a problem when the
                 sender email doesn't get updated if someone else sends another
                 invite, but this probably won't matter.)
-            */
+             */
             Database.getConnection().use { connection ->
                 val statement = connection.prepareStatement(
                     """
                     INSERT IGNORE INTO multifleet_invites
                         (email, fleet_id, invited_by)
                         VALUES (?, ?, ?)
-                    """
+                    """,
                 )
                 statement.setString(1, inviteEmail)
                 statement.setInt(2, fleetId)
@@ -322,49 +315,39 @@ object UserRoutes : RouteProvider() {
         }
     }
 
-    data class MultifleetInvite(
-        val email: String,
-        val fleetId: Int,
-        val invitedBy: String
-    )
-    data class MultifleetInviteResponse(
-        val inviteEmail: String,
-        val fleetName: String,
-        val fleetId: Int = -1
-    )
+    data class MultifleetInvite(val email: String, val fleetId: Int, val invitedBy: String)
+    data class MultifleetInviteResponse(val inviteEmail: String, val fleetName: String, val fleetId: Int = -1)
 
     @Throws(SQLException::class)
     fun getMultifleetInvites(ctx: Context) {
         val user = SessionUtility.getUser(ctx)
 
-        //Fetch all multifleet invites for this user
+        // Fetch all multifleet invites for this user
         Database.getConnection().use { connection ->
             val statement = connection.prepareStatement(
                 """
                 SELECT * FROM multifleet_invites
                 WHERE email = ?
-                """
+                """,
             )
             statement.setString(1, user.email)
             val resultSet = statement.executeQuery()
 
             val invites = mutableListOf<MultifleetInviteResponse>()
             while (resultSet.next()) {
-
                 val inviteEmail = resultSet.getString("invited_by")
                 val fleetId = resultSet.getInt("fleet_id")
 
                 val fleet = Fleet.get(connection, fleetId)
-                val fleetName = fleet.getName();
+                val fleetName = fleet.getName()
 
                 invites.add(
                     MultifleetInviteResponse(
                         inviteEmail = inviteEmail,
                         fleetName = fleetName,
-                        fleetId = fleetId
-                    )
+                        fleetId = fleetId,
+                    ),
                 )
-
             }
 
             ctx.json(invites)
@@ -373,45 +356,44 @@ object UserRoutes : RouteProvider() {
 
     @Throws(SQLException::class)
     fun removeMultifleetInvite(ctx: Context) {
-
         /*
             NOTE: Removes via the fleet's name, not its ID
-        */
+         */
 
         val user = SessionUtility.getUser(ctx)
         val fleetName = ctx.formParam("fleetName")!!
         val fleet = Fleet.get(Database.getConnection(), fleetName)
         val fleetId = fleet.getId()
 
-        LOG.info("Attempting to remove Multifleet Invite with email: ${user.email} and fleetId: ${fleetId}")
+        LOG.info("Attempting to remove Multifleet Invite with email: ${user.email} and fleetId: $fleetId")
 
-        //Verify that this user is the one who was invited
+        // Verify that this user is the one who was invited
         Database.getConnection().use { connection ->
             val statement = connection.prepareStatement(
                 """
                 SELECT * FROM multifleet_invites
                 WHERE email = ? AND fleet_id = ?
-                """
+                """,
             )
             statement.setString(1, user.email)
             statement.setInt(2, fleetId)
             val resultSet = statement.executeQuery()
 
-            //User is the one who was invited, proceed with removal
+            // User is the one who was invited, proceed with removal
             if (resultSet.next()) {
                 Database.getConnection().use { conn ->
                     val deleteStatement = conn.prepareStatement(
                         """
                         DELETE FROM multifleet_invites
                         WHERE email = ? AND fleet_id = ?
-                        """
+                        """,
                     )
                     deleteStatement.setString(1, user.email)
                     deleteStatement.setInt(2, fleetId)
                     deleteStatement.executeUpdate()
                 }
                 // ctx.json(InvitationRemoved())
-                ctx.status(200);
+                ctx.status(200)
             } else {
                 ctx.status(404)
                 ctx.result("Invitation not found.")
@@ -419,29 +401,27 @@ object UserRoutes : RouteProvider() {
         }
     }
 
-    @Throws (SQLException::class)
+    @Throws(SQLException::class)
     fun acceptMultifleetInvite(ctx: Context) {
-
         val user = SessionUtility.getUser(ctx)
         val fleetName = ctx.formParam("fleetName")!!
         val fleet = Fleet.get(Database.getConnection(), fleetName)
         val fleetId = fleet.getId()
 
-        //Create fleet access entry for this user (with VIEW access)
+        // Create fleet access entry for this user (with VIEW access)
         FleetAccess.create(
             Database.getConnection(),
             user.id,
             fleetId,
-            "VIEW"
+            "VIEW",
         )
 
-        LOG.info("Accepted Multifleet access for user: ${user.email} on fleet: ${fleetName}")
+        LOG.info("Accepted Multifleet access for user: ${user.email} on fleet: $fleetName")
 
-        //Remove the invite now that it has been accepted
+        // Remove the invite now that it has been accepted
         removeMultifleetInvite(ctx)
 
         ctx.status(200)
-
     }
 
     fun getEmailPreferencesMe(ctx: Context) {
@@ -496,7 +476,9 @@ object UserRoutes : RouteProvider() {
 
         // Check to see if the logged-in user can update access to this fleet
         if (!sessionUser.managesFleet(fleetID)) {
-            AccountJavalinRoutes.LOG.severe("INVALID ACCESS: user did not have access to modify user email preferences on this fleet.")
+            AccountJavalinRoutes.LOG.severe(
+                "INVALID ACCESS: user did not have access to modify user email preferences on this fleet.",
+            )
             ctx.status(401)
             ctx.result("User did not have access to modify user email preferences on this fleet.")
             return
@@ -505,7 +487,6 @@ object UserRoutes : RouteProvider() {
         Database.getConnection().use { connection ->
             ctx.json(User.updateUserEmailPreferences(connection, fleetUserID, emailTypesUser))
         }
-
 
         // ERROR -- Unknown Update!
         AccountJavalinRoutes.LOG.severe("INVALID ACCESS: handleUpdateType not specified.")
@@ -588,7 +569,7 @@ object UserRoutes : RouteProvider() {
                 city,
                 address,
                 phoneNumber,
-                zipCode
+                zipCode,
             )
             ctx.json(AccountJavalinRoutes.Profile(user))
         }
@@ -602,24 +583,25 @@ object UserRoutes : RouteProvider() {
             OpenApiResponse("200", [OpenApiContent(User::class)]),
         ],
         path = "/api/user/me",
-        methods = [HttpMethod.GET]
+        methods = [HttpMethod.GET],
     )
     fun getMe(ctx: Context) {
         ctx.json(SessionUtility.getUser(ctx))
     }
 
     @OpenApi(
-        summary = "Obtains user with the specified ID, if currently logged in user has manager permissions over the specified user.",
+        summary = "Obtains user with the specified ID, if currently logged in user " +
+            "has manager permissions over the specified user.",
         operationId = "getUser",
         tags = ["User"],
         pathParams = [OpenApiParam("uid", Int::class, "The user ID")],
         responses = [
             OpenApiResponse("200", [OpenApiContent(User::class)]),
             OpenApiResponse("404", [OpenApiContent(ErrorResponse::class)]),
-            OpenApiResponse("401", [OpenApiContent(ErrorResponse::class)])
+            OpenApiResponse("401", [OpenApiContent(ErrorResponse::class)]),
         ],
         path = "/api/user/{uid}",
-        methods = [HttpMethod.GET]
+        methods = [HttpMethod.GET],
     )
     fun getOne(ctx: Context) {
         val currentUser = SessionUtility.getUser(ctx)
@@ -636,7 +618,6 @@ object UserRoutes : RouteProvider() {
             }
         }
     }
-
 
     /**
      * Fetches user preferences for the currently logged in user

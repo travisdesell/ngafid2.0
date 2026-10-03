@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class FilterTest {
@@ -18,9 +19,7 @@ class FilterTest {
 
     private static void assertContainsAll(String query, String... fragments) {
         for (String fragment : fragments) {
-            assertTrue(
-                    query.contains(fragment),
-                    "Expected query fragment not found: " + fragment + " in " + query);
+            assertTrue(query.contains(fragment), "Expected query fragment not found: " + fragment + " in " + query);
         }
     }
 
@@ -28,8 +27,12 @@ class FilterTest {
         assertEquals(Arrays.asList(expected), parameters);
     }
 
+    /**
+     * Verifies {@code checkOperator} accepts the supported comparison operators and returns null for unsupported ones.
+     */
     @Test
-    void checkOperatorAcceptsSupportedComparators() {
+    @DisplayName("Should accept supported comparison operators")
+    public void checkOperatorAcceptsSupportedComparators() {
         Filter filter = filterOf("Flight ID", ">=", "1");
 
         for (String operator : List.of("<=", "<", "=", ">", ">=")) {
@@ -39,8 +42,13 @@ class FilterTest {
         assertNull(filter.checkOperator("LIKE"));
     }
 
+    /**
+     * Verifies {@code checkSeriesOp} accepts the supported series statistics (min/avg/max) and returns null for an
+     * unsupported one.
+     */
     @Test
-    void checkSeriesOpAcceptsSupportedStatistics() {
+    @DisplayName("Should accept supported series statistics")
+    public void checkSeriesOpAcceptsSupportedStatistics() {
         Filter filter = filterOf("Parameter", "min", "Altitude", ">=", "1");
 
         for (String statistic : List.of("min", "avg", "max")) {
@@ -50,8 +58,13 @@ class FilterTest {
         assertNull(filter.checkSeriesOp("median"));
     }
 
+    /**
+     * Verifies the date/time helpers convert browser-supplied local date-times and times to the stored UTC strings, and
+     * that {@code timePad} zero-pads time components.
+     */
     @Test
-    void dateAndTimeHelpersNormalizeUiInputs() {
+    @DisplayName("Should normalize UI date and time inputs")
+    public void dateAndTimeHelpersNormalizeUiInputs() {
         String convertedDateTime = Filter.getOffsetDateTime("2026-03-09T12:34", EASTERN_TIME);
         String convertedTime = Filter.getOffsetTime("12:34:56", EASTERN_TIME);
 
@@ -64,27 +77,34 @@ class FilterTest {
         assertEquals("12", filter.timePad("12"));
     }
 
+    /**
+     * Verifies the Airframe rule builds the correct "is"/"is not" subquery against the airframes table with the fleet
+     * id and airframe name as parameters.
+     */
     @Test
-    void airframeRuleSupportsIsAndIsNot() {
+    @DisplayName("Should build airframe rule queries for is and is-not")
+    public void airframeRuleSupportsIsAndIsNot() {
         ArrayList<Object> parameters = new ArrayList<>();
         String isQuery = filterOf("Airframe", "is", "C172S").getRuleQuery(5, parameters);
 
-        assertEquals(
-                "flights.airframe_id = (SELECT id FROM airframes WHERE fleet_id = ? AND airframe = ?)",
-                isQuery);
+        assertEquals("flights.airframe_id = (SELECT id FROM airframes WHERE fleet_id = ? AND airframe = ?)", isQuery);
         assertParameters(parameters, 5, "C172S");
 
         parameters.clear();
         String isNotQuery = filterOf("Airframe", "is not", "C172S").getRuleQuery(5, parameters);
 
         assertEquals(
-                "flights.airframe_id != (SELECT id FROM airframes WHERE fleet_id = ? AND airframe = ?)",
-                isNotQuery);
+                "flights.airframe_id != (SELECT id FROM airframes WHERE fleet_id = ? AND airframe = ?)", isNotQuery);
         assertParameters(parameters, 5, "C172S");
     }
 
+    /**
+     * Verifies the Tail Number and System ID rules build the correct is/is-not queries and parameter lists for both
+     * conditions.
+     */
     @Test
-    void tailNumberAndSystemIdRulesSupportBothConditions() {
+    @DisplayName("Should build tail-number and system-id rule queries for both conditions")
+    public void tailNumberAndSystemIdRulesSupportBothConditions() {
         ArrayList<Object> parameters = new ArrayList<>();
         String tailIsQuery = filterOf("Tail Number", "is", "N12345").getRuleQuery(8, parameters);
 
@@ -112,8 +132,13 @@ class FilterTest {
         assertParameters(parameters, 9, "SYS-1");
     }
 
+    /**
+     * Verifies the Duration rule formats its value as an HH:mm:ss string and the Flight ID rule scopes by fleet, each
+     * building the expected query and parameters.
+     */
     @Test
-    void durationAndFlightIdRulesBuildExpectedQueries() {
+    @DisplayName("Should build duration and flight-id rule queries")
+    public void durationAndFlightIdRulesBuildExpectedQueries() {
         ArrayList<Object> parameters = new ArrayList<>();
         String durationQuery = filterOf("Duration", "<=", "1", "2", "3").getRuleQuery(1, parameters);
 
@@ -127,8 +152,13 @@ class FilterTest {
         assertParameters(parameters, 12, "100");
     }
 
+    /**
+     * Verifies the Start/End Date-and-Time rules convert browser date-time values to stored UTC strings and target the
+     * start_time/end_time columns.
+     */
     @Test
-    void startAndEndDateTimeRulesConvertBrowserDateTimeValues() {
+    @DisplayName("Should convert browser date-time values for start/end date-time rules")
+    public void startAndEndDateTimeRulesConvertBrowserDateTimeValues() {
         ArrayList<Object> parameters = new ArrayList<>();
         String startQuery = filterOf("Start Date and Time", ">=", "2026-03-09T12:34", EASTERN_TIME)
                 .getRuleQuery(1, parameters);
@@ -144,8 +174,12 @@ class FilterTest {
         assertParameters(parameters, "2026-03-09 17:34:00");
     }
 
+    /**
+     * Verifies the Start/End Date rules apply {@code DATE(...)} to the correct start_time/end_time columns.
+     */
     @Test
-    void startAndEndDateRulesTargetCorrectColumns() {
+    @DisplayName("Should target the correct columns for start/end date rules")
+    public void startAndEndDateRulesTargetCorrectColumns() {
         ArrayList<Object> parameters = new ArrayList<>();
         String startDateQuery = filterOf("Start Date", "=", "2026-03-09").getRuleQuery(1, parameters);
 
@@ -159,29 +193,37 @@ class FilterTest {
         assertParameters(parameters, "2026-03-10");
     }
 
+    /**
+     * Verifies the Start/End Time rules apply {@code TIME(...)} to the correct columns and convert the time to UTC.
+     */
     @Test
-    void startAndEndTimeRulesTargetCorrectColumns() {
+    @DisplayName("Should target the correct columns for start/end time rules")
+    public void startAndEndTimeRulesTargetCorrectColumns() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String startTimeQuery = filterOf("Start Time", "<", "12:34:56", EASTERN_TIME)
-                .getRuleQuery(1, parameters);
+        String startTimeQuery =
+                filterOf("Start Time", "<", "12:34:56", EASTERN_TIME).getRuleQuery(1, parameters);
 
         assertEquals("TIME(flights.start_time) < ?", startTimeQuery);
         assertParameters(parameters, "17:34:56");
 
         parameters.clear();
-        String endTimeQuery = filterOf("End Time", ">", "12:34:56", EASTERN_TIME)
-                .getRuleQuery(1, parameters);
+        String endTimeQuery =
+                filterOf("End Time", ">", "12:34:56", EASTERN_TIME).getRuleQuery(1, parameters);
 
         assertEquals("TIME(flights.end_time) > ?", endTimeQuery);
         assertParameters(parameters, "17:34:56");
     }
 
+    /**
+     * Verifies the Parameter rule builds a double-series EXISTS subquery using each supported statistic (min/avg/max).
+     */
     @Test
-    void parameterRuleSupportsAllStatistics() {
+    @DisplayName("Should build parameter rule queries for all statistics")
+    public void parameterRuleSupportsAllStatistics() {
         for (String statistic : List.of("min", "avg", "max")) {
             ArrayList<Object> parameters = new ArrayList<>();
-            String query = filterOf("Parameter", statistic, "Altitude", ">=", "42.5")
-                    .getRuleQuery(2, parameters);
+            String query =
+                    filterOf("Parameter", statistic, "Altitude", ">=", "42.5").getRuleQuery(2, parameters);
 
             assertContainsAll(
                     query,
@@ -192,11 +234,16 @@ class FilterTest {
         }
     }
 
+    /**
+     * Verifies the Airport and Runway rules build EXISTS/NOT EXISTS itinerary subqueries for the visited and
+     * not-visited conditions, splitting the airport/runway inputs into parameters.
+     */
     @Test
-    void airportAndRunwayRulesSupportVisitedAndNotVisited() {
+    @DisplayName("Should build airport and runway rule queries for visited and not-visited")
+    public void airportAndRunwayRulesSupportVisitedAndNotVisited() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String airportVisitedQuery = filterOf("Airport", "GFK - Grand Forks", "visited")
-                .getRuleQuery(1, parameters);
+        String airportVisitedQuery =
+                filterOf("Airport", "GFK - Grand Forks", "visited").getRuleQuery(1, parameters);
 
         assertContainsAll(airportVisitedQuery, "EXISTS", "itinerary.airport = ?");
         assertParameters(parameters, "GFK");
@@ -209,25 +256,29 @@ class FilterTest {
         assertParameters(parameters, "GFK");
 
         parameters.clear();
-        String runwayVisitedQuery = filterOf("Runway", "GFK - 35L", "visited")
-                .getRuleQuery(1, parameters);
+        String runwayVisitedQuery = filterOf("Runway", "GFK - 35L", "visited").getRuleQuery(1, parameters);
 
         assertContainsAll(runwayVisitedQuery, "EXISTS", "itinerary.airport = ?", "itinerary.runway = ?");
         assertParameters(parameters, "GFK", "35L");
 
         parameters.clear();
-        String runwayNotVisitedQuery = filterOf("Runway", "GFK - 35L", "not visited")
-                .getRuleQuery(1, parameters);
+        String runwayNotVisitedQuery =
+                filterOf("Runway", "GFK - 35L", "not visited").getRuleQuery(1, parameters);
 
         assertContainsAll(runwayNotVisitedQuery, "NOT EXISTS", "itinerary.airport = ?", "itinerary.runway = ?");
         assertParameters(parameters, "GFK", "35L");
     }
 
+    /**
+     * Verifies the Event Count rule builds a COUNT subquery for both generic events and airframe-specific events (the
+     * latter joining the airframes table), with the expected parameter order.
+     */
     @Test
-    void eventCountRuleSupportsGenericAndAirframeSpecificEvents() {
+    @DisplayName("Should build event-count rule queries for generic and airframe-specific events")
+    public void eventCountRuleSupportsGenericAndAirframeSpecificEvents() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String genericQuery = filterOf("Event Count", "Example Event", ">=", "1")
-                .getRuleQuery(7, parameters);
+        String genericQuery =
+                filterOf("Event Count", "Example Event", ">=", "1").getRuleQuery(7, parameters);
 
         assertContainsAll(
                 genericQuery,
@@ -251,17 +302,18 @@ class FilterTest {
         assertParameters(parameters, "Example Event", "C172S", 7, 7, 2);
     }
 
+    /**
+     * Verifies the Event Severity rule builds the expected query for both generic events and airframe-specific events
+     * (joining the airframes table), with the expected parameter order.
+     */
     @Test
-    void eventSeverityRuleSupportsGenericAndAirframeSpecificEvents() {
+    @DisplayName("Should build event-severity rule queries for generic and airframe-specific events")
+    public void eventSeverityRuleSupportsGenericAndAirframeSpecificEvents() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String genericQuery = filterOf("Event Severity", "Example Event", "=", "2.5")
-                .getRuleQuery(11, parameters);
+        String genericQuery =
+                filterOf("Event Severity", "Example Event", "=", "2.5").getRuleQuery(11, parameters);
 
-        assertContainsAll(
-                genericQuery,
-                "events.flight_id",
-                "events.event_definition_id IN",
-                "events.severity = ?");
+        assertContainsAll(genericQuery, "events.flight_id", "events.event_definition_id IN", "events.severity = ?");
         assertParameters(parameters, "Example Event", 11, "2.5");
 
         parameters.clear();
@@ -277,16 +329,19 @@ class FilterTest {
         assertParameters(parameters, "Example Event", "C172S", 11, 11, "2.5");
     }
 
+    /**
+     * Verifies the Event Duration rule builds a line-span comparison for both generic events and airframe-specific
+     * events (joining the airframes table), with the expected parameter order.
+     */
     @Test
-    void eventDurationRuleSupportsGenericAndAirframeSpecificEvents() {
+    @DisplayName("Should build event-duration rule queries for generic and airframe-specific events")
+    public void eventDurationRuleSupportsGenericAndAirframeSpecificEvents() {
         ArrayList<Object> parameters = new ArrayList<>();
-        String genericQuery = filterOf("Event Duration", "Example Event", ">", "10")
-                .getRuleQuery(4, parameters);
+        String genericQuery =
+                filterOf("Event Duration", "Example Event", ">", "10").getRuleQuery(4, parameters);
 
         assertContainsAll(
-                genericQuery,
-                "events.event_definition_id IN",
-                "((events.end_line - events.start_line) + 1) > ?");
+                genericQuery, "events.event_definition_id IN", "((events.end_line - events.start_line) + 1) > ?");
         assertParameters(parameters, "Example Event", 4, "10");
 
         parameters.clear();
@@ -301,8 +356,13 @@ class FilterTest {
         assertParameters(parameters, "Example Event", "C172S", 4, 4, "10");
     }
 
+    /**
+     * Verifies the Tag rule builds EXISTS/NOT EXISTS flight-tag subqueries for the associated and not-associated
+     * conditions.
+     */
     @Test
-    void tagRuleSupportsAssociatedAndNotAssociated() {
+    @DisplayName("Should build tag rule queries for associated and not-associated")
+    public void tagRuleSupportsAssociatedAndNotAssociated() {
         ArrayList<Object> parameters = new ArrayList<>();
         String associatedQuery = filterOf("Tag", "Checkride", "Is Associated").getRuleQuery(3, parameters);
 
@@ -317,8 +377,13 @@ class FilterTest {
         assertParameters(parameters, 3, "Checkride");
     }
 
+    /**
+     * Verifies a group filter's {@code toQueryString} combines its child rules with the group operator and preserves
+     * the child parameters in order.
+     */
     @Test
-    void groupToQueryStringCombinesChildRulesAndPreservesParameterOrder() {
+    @DisplayName("Should combine child rules and preserve parameter order for a group")
+    public void groupToQueryStringCombinesChildRulesAndPreservesParameterOrder() {
         Filter group = new Filter("OR");
         group.addFilter(filterOf("Start Date", ">=", "2026-03-09"));
         group.addFilter(filterOf("Flight ID", "<", "100"));
@@ -327,10 +392,7 @@ class FilterTest {
         String query = group.toQueryString(13, parameters);
 
         assertContainsAll(
-                query,
-                "(DATE(flights.start_time) >= ?)",
-                " OR ",
-                "(flights.fleet_id = ? AND flights.id < ?)");
+                query, "(DATE(flights.start_time) >= ?)", " OR ", "(flights.fleet_id = ? AND flights.id < ?)");
         assertParameters(parameters, "2026-03-09", 13, "100");
     }
 }

@@ -35,6 +35,12 @@ public class ComputeUTCTime extends ComputeStep {
 
     private static final Set<String> REQUIRED_STRING_COLUMNS = Set.of(LCL_DATE, LCL_TIME, UTC_OFFSET);
 
+    /**
+     * Constructs the UTC-time compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeUTCTime(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
@@ -59,6 +65,12 @@ public class ComputeUTCTime extends ComputeStep {
         return Set.of(UTC_DATE_TIME, UNIX_TIME_SECONDS);
     }
 
+    /**
+     * Reports whether the given value is null, empty, or blank.
+     *
+     * @param date the value to check
+     * @return true if the value is null or contains only whitespace
+     */
     public boolean stringEmpty(String date) {
         return date == null || date.trim().isEmpty();
     }

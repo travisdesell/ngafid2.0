@@ -24,6 +24,12 @@ import org.ngafid.core.flights.Flight;
 import org.ngafid.core.flights.export.CachedCSVWriter;
 import org.ngafid.core.util.filters.Filter;
 
+/**
+ * Collects a fleet's flights and exports their raw CSV data into a single output tree or zip archive.
+ *
+ * <p>Flights are chosen by an optional SQL filter and aircraft-name list, then each flight's cached CSV is copied out
+ * of the archive into the configured output location to produce a bulk download for offline analysis.
+ */
 public class GenerateBulkCSVS {
     private final String outDirectoryRoot;
     private final int fleetId;
@@ -122,6 +128,13 @@ public class GenerateBulkCSVS {
         this.displayInfo();
     }
 
+    /**
+     * Builds a flight-search {@link Filter} that matches any of the given aircraft (airframe) names, OR-ing together
+     * one {@code "Airframe is <name>"} clause per name.
+     *
+     * @param aircraftNamesList the airframe names to include
+     * @return an OR filter matching flights whose airframe is any of the given names
+     */
     public static Filter parseAircraftFilter(List<String> aircraftNamesList) {
         ArrayList<String> aircraftFilterArgs = new ArrayList<>();
 

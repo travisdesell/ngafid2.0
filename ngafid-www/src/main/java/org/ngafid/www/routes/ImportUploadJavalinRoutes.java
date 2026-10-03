@@ -17,6 +17,13 @@ import org.ngafid.core.uploads.Upload;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the paged upload- and import-listing pages for the logged-in user's fleet.
+ *
+ * <p>Routes render Mustache templates with a page of uploads or imports and the computed page count, using the
+ * page-math helpers to clamp requested pages and convert between the 1-based public page numbers shown to users
+ * and the 0-based internal offsets used for the database queries.
+ */
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
     private static final int DEFAULT_PAGE_SIZE = 10;
@@ -61,10 +68,20 @@ public class ImportUploadJavalinRoutes {
         return true;
     }
 
+    /**
+     * Handles the bare uploads route by redirecting to the first (page 0) paginated uploads page.
+     *
+     * @param ctx the Javalin request context, which is issued a redirect
+     */
     public static void getUploads(Context ctx) {
         ctx.redirect(buildPagePath("/protected/uploads", 0));
     }
 
+    /**
+     * Renders the paginated uploads page for the page number requested in the request.
+     *
+     * @param ctx the Javalin request context supplying the requested page number
+     */
     public static void getUploadsPage(Context ctx) {
         renderUploads(ctx, getRequestedPage(ctx), true);
     }
@@ -124,10 +141,20 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
+    /**
+     * Handles the bare imports route by redirecting to the first (page 0) paginated imports page.
+     *
+     * @param ctx the Javalin request context, which is issued a redirect
+     */
     public static void getImports(Context ctx) {
         ctx.redirect(buildPagePath("/protected/imports", 0));
     }
 
+    /**
+     * Renders the paginated imports page for the page number requested in the request.
+     *
+     * @param ctx the Javalin request context supplying the requested page number
+     */
     public static void getImportsPage(Context ctx) {
         renderImports(ctx, getRequestedPage(ctx), true);
     }
@@ -177,6 +204,12 @@ public class ImportUploadJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's import and upload routes (the uploads and imports list pages and their paginated
+     * variants) on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         // app.post("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
         // app.get("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);

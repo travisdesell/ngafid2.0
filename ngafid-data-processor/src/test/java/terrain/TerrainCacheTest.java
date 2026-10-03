@@ -1,13 +1,26 @@
 package terrain;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.ngafid.processor.terrain.TerrainCache.getAltitudeFt;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.ngafid.processor.terrain.TerrainCache;
 
+/**
+ * Tests for {@link TerrainCache}'s coordinate-to-filename logic and terrain altitude lookups.
+ *
+ * <p>The filename test is pure logic and runs by default; the altitude tests resolve real SRTM tiles and are
+ * tagged {@code "terrain"} so they are excluded from the default and CI unit runs.
+ */
 public class TerrainCacheTest {
+    // The altitude tests below resolve real SRTM terrain tiles, so they are tagged "terrain"
+    // and excluded from the default (and CI) unit run. Download the terrain data and run them
+    // with `scripts/test.sh java --terrain` (see CONTRIBUTING.md). New data-backed terrain
+    // tests should carry the same tag. testGetFilenameFromLatLon is pure logic and stays a
+    // plain unit test.
     private void altitudeTest(double latitude, double longitude, double expectedAltitude) {
         try {
             ///  msl is altitude doubled because we run max(0, msl - fileAltitudeFt)
@@ -15,11 +28,16 @@ public class TerrainCacheTest {
             assertEquals(expectedAltitude, actual, 30);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 
+    /**
+     * Verifies that the SRTM tile file name is built with the correct hemisphere prefixes (N/S, E/W) and
+     * zero-padded degrees for all four latitude/longitude quadrants.
+     */
     @Test
+    @DisplayName("Should build the SRTM tile filename for all lat/lon quadrants")
     public void testGetFilenameFromLatLon() {
         // Northeast
         String actual = TerrainCache.getFilenameFromLatLon(90, 90);
@@ -38,28 +56,57 @@ public class TerrainCacheTest {
         assertEquals("S90W090.hgt", actual);
     }
 
+    /**
+     * Verifies that {@code getAltitudeFt} returns Albany, NY's known ground elevation (~267 ft) within tolerance.
+     */
     @Test
+    @DisplayName("Should return Albany's ground altitude within tolerance")
+    @Tag("terrain")
     public void testGetAlbanyAltitudeFt() {
         altitudeTest(42.74871, -73.80550, 267.0);
     }
 
+    /**
+     * Verifies that {@code getAltitudeFt} returns Grand Forks, ND's known ground elevation (~838 ft) within
+     * tolerance.
+     */
     @Test
+    @DisplayName("Should return Grand Forks' ground altitude within tolerance")
+    @Tag("terrain")
     public void testGetGrandForksAltitudeFt() {
         // Grand Forks
         altitudeTest(47.94286, -97.17658, 838.0);
     }
 
+    /**
+     * Verifies that {@code getAltitudeFt} returns Denver, CO's known high-elevation ground altitude (~5373 ft)
+     * within tolerance.
+     */
     @Test
+    @DisplayName("Should return Denver's high-elevation ground altitude within tolerance")
+    @Tag("terrain")
     public void testGetDenverAltitudeFt() {
         altitudeTest(39.85610, -104.67374, 5373.0);
     }
 
+    /**
+     * Verifies that {@code getAltitudeFt} returns Rochester, NY's known ground elevation (~542 ft) within
+     * tolerance.
+     */
     @Test
+    @DisplayName("Should return Rochester's ground altitude within tolerance")
+    @Tag("terrain")
     public void testGetRochesterAltitudeFt() {
         altitudeTest(43.12252, -77.66657, 542.0);
     }
 
+    /**
+     * Verifies that {@code getAltitudeFt} returns Phoenix, AZ's known ground elevation (~1124 ft) within
+     * tolerance.
+     */
     @Test
+    @DisplayName("Should return Phoenix's ground altitude within tolerance")
+    @Tag("terrain")
     public void testGetPhoenixAltitudeFt() {
         altitudeTest(33.43727, -112.00779, 1124.0);
     }

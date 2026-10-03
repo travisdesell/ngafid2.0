@@ -58,6 +58,17 @@ public class EventHelper {
         return options;
     }
 
+    /**
+     * Command-line utility for deleting computed events and event definitions. Deletions can be restricted by fleet
+     * ({@code -f}), upload ({@code -u}), or flight ({@code -l}); {@code -nr/--no-recompute} marks the affected events
+     * completed so the EventObserver does not re-queue them, and {@code -d}/{@code -x} delete an event definition's
+     * associated data (and optionally the definition itself). Prints usage and exits on argument errors.
+     *
+     * @param arguments the command-line arguments selecting what to delete and how
+     * @throws SQLException if a database operation fails
+     * @throws UploadDoesNotExistException if a specified upload id does not exist
+     * @throws IOException if an I/O error occurs
+     */
     public static void main(String[] arguments) throws SQLException, UploadDoesNotExistException, IOException {
         Options options = getOptions();
         CommandLineParser parser = new DefaultParser();

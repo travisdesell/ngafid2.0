@@ -44,10 +44,7 @@ public final class FleetStatisticsCacheRefresh {
         try {
             refreshForFleet(connection, fleetId);
         } catch (SQLException e) {
-            LOG.log(
-                    Level.SEVERE,
-                    "Failed to refresh materialized statistics cache for fleet id " + fleetId,
-                    e);
+            LOG.log(Level.SEVERE, "Failed to refresh materialized statistics cache for fleet id " + fleetId, e);
         }
     }
 
@@ -85,10 +82,8 @@ public final class FleetStatisticsCacheRefresh {
     }
 
     private static void replaceFromView(
-            Connection connection, int fleetId, String table, String view, String columnList)
-            throws SQLException {
-        try (PreparedStatement delete =
-                connection.prepareStatement("DELETE FROM " + table + " WHERE fleet_id = ?")) {
+            Connection connection, int fleetId, String table, String view, String columnList) throws SQLException {
+        try (PreparedStatement delete = connection.prepareStatement("DELETE FROM " + table + " WHERE fleet_id = ?")) {
             delete.setInt(1, fleetId);
             delete.executeUpdate();
         }

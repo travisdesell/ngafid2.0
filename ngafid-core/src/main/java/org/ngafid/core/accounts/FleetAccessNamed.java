@@ -8,6 +8,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
+/**
+ * A {@link FleetAccess} entry augmented with the fleet's resolved display name.
+ *
+ * <p>In addition to the user id, fleet id, and access type, this variant looks up and caches the fleet name so that a
+ * user's access entries can be listed with human-readable fleet names.
+ */
 public final class FleetAccessNamed extends FleetAccess implements Serializable {
 
     private String fleetName;
@@ -16,6 +22,14 @@ public final class FleetAccessNamed extends FleetAccess implements Serializable 
         return fleetName;
     }
 
+    /**
+     * Resolves and caches the fleet's display name by looking up the fleet by its id, so this access entry carries the
+     * name alongside the id.
+     *
+     * @param connection the database connection used to look up the fleet
+     * @throws SQLException if the lookup fails
+     * @throws AccountException if the fleet cannot be resolved
+     */
     public void updateFleetName(Connection connection) throws SQLException, AccountException {
 
         fleetName = Fleet.get(connection, fleetId).getName();

@@ -47,12 +47,22 @@ public final class Upload {
                     + "status, start_time, end_time, n_valid_flights, "
                     + "n_warning_flights, n_error_flights ";
 
+    /**
+     * Identifies how an upload originated: a user-submitted file, an AirSync import, or a derived upload.
+     */
     public enum Kind {
         FILE,
         AIRSYNC,
         DERIVED
     }
 
+    /**
+     * The lifecycle state of an upload, from in-progress transfer through processing to a terminal processed or
+     * failed outcome.
+     *
+     * <p>The enum also classifies states into "imported" and "not imported" sets and exposes whether a state
+     * represents a successfully processed upload.
+     */
     public enum Status {
         UPLOADING,
         UPLOADING_FAILED,
@@ -93,6 +103,13 @@ public final class Upload {
         }
     }
 
+    /**
+     * An {@link AutoCloseable} handle granting exclusive, mutable access to its enclosing upload.
+     *
+     * <p>Construction acquires a MySQL named lock for the upload on a single connection, and {@link #close()} releases
+     * it on that same connection (required for MySQL session-scoped locks), optionally enqueuing the upload for
+     * processing when it was marked complete.
+     */
     public class LockedUpload implements AutoCloseable {
         private final Connection connection;
         private boolean markedComplete = false;
@@ -219,6 +236,12 @@ public final class Upload {
 
         private static KafkaProducer<String, Integer> producer = null;
 
+        /**
+         * Marks the upload as fully received: sets its status to {@code UPLOADED}, stamps the end time in the
+         * database, and flags it complete in memory.
+         *
+         * @throws SQLException if the status update fails
+         */
         public void complete() throws SQLException {
             status = Status.UPLOADED;
             try (PreparedStatement query =
@@ -231,6 +254,14 @@ public final class Upload {
             markedComplete = true;
         }
 
+        /**
+         * Records that a single chunk of a chunked upload has been received: increments the uploaded-chunk count and
+         * byte total, marks the chunk's bit in the chunk-status string, and persists all three to the database.
+         *
+         * @param chunkNumber the index of the received chunk (its position in the chunk-status string)
+         * @param chunkSize the size of the received chunk, in bytes
+         * @throws SQLException if persisting the progress fails
+         */
         public void chunkUploaded(int chunkNumber, long chunkSize) throws SQLException {
             uploadedChunks++;
             bytesUploaded += chunkSize;
@@ -250,6 +281,12 @@ public final class Upload {
             }
         }
 
+        /**
+         * Sets the upload's status to {@code newStatus}, both on the enclosing {@link Upload} and in the database.
+         *
+         * @param newStatus the new status to persist
+         * @throws SQLException if the update fails
+         */
         public void updateStatus(Status newStatus) throws SQLException {
             Upload.this.status = newStatus;
             try (PreparedStatement query = connection.prepareStatement("UPDATE uploads SET status = ? WHERE id = ?")) {
@@ -292,6 +329,15 @@ public final class Upload {
         }
     }
 
+    /**
+     * Returns a {@link LockedUpload} view of this upload bound to the given connection, which exposes the mutating
+     * operations (status changes, chunk/progress updates, completion, removal) that must run while the upload row is
+     * held under lock.
+     *
+     * @param connection the database connection the mutations run on
+     * @return a locked view for performing mutating operations on this upload
+     * @throws SQLException if preparing the locked view fails
+     */
     public LockedUpload getLockedUpload(Connection connection) throws SQLException {
         return new LockedUpload(connection);
     }
@@ -322,6 +368,12 @@ public final class Upload {
     String tail = null;
     // CHECKSTYLE:ON
 
+    /**
+     * Constructs a minimal upload with only its id set, for use as a reference/stub where the full record is not
+     * needed.
+     *
+     * @param id the upload id
+     */
     public Upload(int id) {
         this.id = id;
     }
@@ -372,6 +424,16 @@ public final class Upload {
         return MD5.computeHexHash(md5 + "DERIVED");
     }
 
+    /**
+     * Finds an upload by the user who uploaded it and its MD5 hash, used primarily to detect a duplicate re-upload
+     * of the same file by the same user.
+     *
+     * @param connection the database connection
+     * @param uploaderId the id of the uploading user
+     * @param md5Hash the MD5 hash of the uploaded file
+     * @return the matching upload, or {@code null} if none exists
+     * @throws SQLException if the query fails
+     */
     public static Upload getUploadByUser(Connection connection, int uploaderId, String md5Hash) throws SQLException {
         try (PreparedStatement uploadQuery = connection.prepareStatement(
                 "SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE uploader_id = ? AND md5_hash = ?")) {
@@ -396,6 +458,14 @@ public final class Upload {
      * @param uploadId the id of the upload entry in the database
      *
      * @throws SQLException on a database error
+     */
+    /**
+     * Loads an upload by its id, or returns {@code null} if no upload with that id exists.
+     *
+     * @param connection the database connection
+     * @param uploadId the id of the upload to load
+     * @return the upload, or {@code null} if not found
+     * @throws SQLException if the query fails
      */
     public static Upload getUploadById(Connection connection, int uploadId) throws SQLException {
         try (PreparedStatement uploadQuery =
@@ -482,6 +552,16 @@ public final class Upload {
                 Status.DERIVED);
     }
 
+    /**
+     * Creates a synthetic AirSync upload for a fleet: a single-chunk {@code AIRSYNC}-kind upload (attributed to the
+     * system uploader, with a placeholder {@code airsync.zip} name and a timestamp-based identifier) into which
+     * AirSync-imported flights are placed. Returns the created upload.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet the AirSync upload belongs to
+     * @return the newly created AirSync upload
+     * @throws SQLException if the insert fails
+     */
     public static Upload createAirsyncUpload(Connection connection, int fleetId) throws SQLException {
         Timestamp ts = Timestamp.valueOf(LocalDateTime.now());
         return createUpload(
@@ -583,6 +663,14 @@ public final class Upload {
         }
     }
 
+    /**
+     * Returns all uploads for a fleet (no additional SQL condition).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose uploads to fetch
+     * @return the fleet's uploads
+     * @throws SQLException if the query fails
+     */
     public static List<Upload> getUploads(Connection connection, int fleetId) throws SQLException {
         return getUploads(connection, fleetId, "");
     }
@@ -623,6 +711,15 @@ public final class Upload {
         return uploads;
     }
 
+    /**
+     * Counts the user-file uploads ({@code kind = 'FILE'}) for a fleet, with an optional extra SQL condition.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to count for, or {@code <= 0} to count across all fleets
+     * @param condition an optional SQL fragment appended to the WHERE clause, or null for none
+     * @return the number of matching uploads
+     * @throws SQLException if the query fails
+     */
     public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
         String query = "SELECT count(id) FROM uploads WHERE kind = 'FILE'";
         if (fleetId > 0) query += " AND fleet_id = " + fleetId;
@@ -637,8 +734,18 @@ public final class Upload {
         }
     }
 
-    public static int getNumUploadsByStatus(
-            Connection connection, int fleetId, Upload.Status[] types) throws SQLException {
+    /**
+     * Counts a fleet's uploads whose status is one of the given types, excluding the system/AirSync uploader's
+     * uploads.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet to count for
+     * @param types the statuses to include; an empty array imposes no status filter
+     * @return the number of matching uploads
+     * @throws SQLException if the query fails
+     */
+    public static int getNumUploadsByStatus(Connection connection, int fleetId, Upload.Status[] types)
+            throws SQLException {
 
         String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
 
@@ -676,6 +783,16 @@ public final class Upload {
         }
     }
 
+    /**
+     * Returns a fleet's uploads whose status is one of the given types (excluding the system/AirSync uploader's
+     * uploads), with no row limit.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose uploads to fetch
+     * @param types the statuses to include; an empty array imposes no status filter
+     * @return the matching uploads
+     * @throws SQLException if the query fails
+     */
     public static List<Upload> getUploads(Connection connection, int fleetId, Upload.Status[] types)
             throws SQLException {
         // String query = "SELECT id, fleetId, uploaderId, filename, identifier,
@@ -715,6 +832,17 @@ public final class Upload {
         return uploads;
     }
 
+    /**
+     * Returns a fleet's uploads whose status is one of the given types (excluding the system/AirSync uploader's
+     * uploads), appending the supplied SQL {@code LIMIT} clause for pagination.
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet whose uploads to fetch
+     * @param types the statuses to include; an empty array imposes no status filter
+     * @param sqlLimit a SQL {@code LIMIT} clause (e.g. {@code " LIMIT 0,20"}) appended to the query
+     * @return the matching uploads for the requested page
+     * @throws SQLException if the query fails
+     */
     public static List<Upload> getUploads(Connection connection, int fleetId, Upload.Status[] types, String sqlLimit)
             throws SQLException {
         String query = "SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
@@ -752,6 +880,14 @@ public final class Upload {
         return uploads;
     }
 
+    /**
+     * Reconstructs an upload from an {@code uploads} result row, reading all of its columns (ids, filename,
+     * chunking/progress fields, hashes, status, times, and flight outcome counts). A null parent id is preserved as
+     * {@code null}.
+     *
+     * @param resultSet the result set positioned on the row to read
+     * @throws SQLException if reading the row fails
+     */
     public Upload(ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
 
@@ -808,6 +944,13 @@ public final class Upload {
         return Paths.get(getArchiveDirectory(), getArchiveFilename());
     }
 
+    /**
+     * Opens a zip output stream for writing this upload's archive, creating the parent directory if it does not yet
+     * exist.
+     *
+     * @return a zip output stream positioned at the upload's archive path
+     * @throws IOException if the parent directory or output stream cannot be created
+     */
     public ZipArchiveOutputStream getArchiveOutputStream() throws IOException {
         Path path = getArchivePath();
         Path parent = path.getParent();
@@ -821,7 +964,6 @@ public final class Upload {
         zos.setMethod(ZipArchiveOutputStream.DEFLATED);
         zos.setUseZip64(Zip64Mode.Always);
         return zos;
-
     }
 
     public int getFleetId() {
@@ -844,14 +986,33 @@ public final class Upload {
         return numberChunks;
     }
 
+    /**
+     * Reports whether every chunk of the upload has been received (uploaded-chunk count equals the expected chunk
+     * count).
+     *
+     * @return true if all chunks have been uploaded
+     */
     public boolean completed() {
         return uploadedChunks == numberChunks;
     }
 
+    /**
+     * Reports whether the number of bytes received matches the upload's declared total size, used to validate a
+     * completed upload.
+     *
+     * @return true if the uploaded byte count equals the declared size
+     */
     public boolean checkSize() {
         return bytesUploaded == sizeBytes;
     }
 
+    /**
+     * Populates this (AirSync) upload's grouping string and tail number: the group is its start time, and the tail
+     * is read from the distinct tail of its {@code airsync_imports} rows.
+     *
+     * @param connection the database connection used to look up the tail
+     * @throws SQLException if the lookup fails
+     */
     public void getAirSyncInfo(Connection connection) throws SQLException {
         this.groupString = startTime;
 

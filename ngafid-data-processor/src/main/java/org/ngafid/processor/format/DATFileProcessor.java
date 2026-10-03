@@ -66,6 +66,16 @@ public class DATFileProcessor extends FlightFileProcessor {
     // "IMUEX(0):err"));
     private static final Logger LOG = Logger.getLogger(DATFileProcessor.class.getName());
 
+    /**
+     * Constructs a DAT (DJI) flight-file processor.
+     *
+     * @param connection the database connection to use
+     * @param stream the input stream of the file to process
+     * @param filename the name of the file being processed
+     * @param pipeline the processing pipeline this processor belongs to
+     * @throws IOException if reading the input stream fails
+     * @throws SQLException if a database error occurs while preparing the processor
+     */
     public DATFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException, SQLException {
         // super(connection, convert(pipeline, stream, filename), filename, pipeline);

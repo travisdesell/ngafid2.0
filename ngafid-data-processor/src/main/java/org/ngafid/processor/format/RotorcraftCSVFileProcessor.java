@@ -131,8 +131,7 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
      * @throws FatalFlightFileException if the file format is invalid or the airframe cannot be resolved
      * @throws SQLException if a database error occurs
      */
-    public RotorcraftCSVFileProcessor(
-            Connection connection, InputStream stream, String filename, Pipeline pipeline)
+    public RotorcraftCSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException, FatalFlightFileException, SQLException {
         super(connection, stream, filename, pipeline);
         Optional<String> garminAirframeName = peekGarminAirframeName(stream);
@@ -172,7 +171,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                 }
 
                 Optional<String> recorderAirframeName = peekGarminAirframeName(firstLine);
-                if (recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode).isPresent()) {
+                if (recorderAirframeName
+                        .flatMap(Airframes::resolveGarminRotorcraftAirframeCode)
+                        .isPresent()) {
                     throw fatalTailRegistryMiss(
                             preferredFilenameTail(filename),
                             filename,
@@ -254,7 +255,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
                         .append("', a.id FROM airframes a WHERE a.airframe = '")
                         .append(code)
                         .append("';"));
-        if (recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode).isEmpty()) {
+        if (recorderAirframeName
+                .flatMap(Airframes::resolveGarminRotorcraftAirframeCode)
+                .isEmpty()) {
             message.append(" Add: INSERT INTO tail_airframe_registry (tail, airframe_id)")
                     .append(" SELECT '")
                     .append(tail)
@@ -556,7 +559,9 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
             }
 
             Optional<String> recorderAirframeName = peekGarminAirframeName(firstLine);
-            if (recorderAirframeName.flatMap(Airframes::resolveGarminRotorcraftAirframeCode).isPresent()) {
+            if (recorderAirframeName
+                    .flatMap(Airframes::resolveGarminRotorcraftAirframeCode)
+                    .isPresent()) {
                 throw fatalTailRegistryMiss(
                         preferredFilenameTail(filename),
                         filename,
@@ -739,9 +744,10 @@ public final class RotorcraftCSVFileProcessor extends CSVFileProcessor {
      * Resolves a registry identity from either the file prefix or its immediate parent directory. Garmin exports
      * commonly use generic {@code log_*} basenames inside a tail-number directory.
      *
-     * @param connection database connection
-     * @param path source file path
-     * @return the resolved identity, if one is registered
+     * @param connection the database connection used to look up registered tails
+     * @param path the archive-relative path of the file being processed
+     * @return the resolved filename identity, or {@link Optional#empty()} if none could be determined
+     * @throws SQLException if the registry lookup fails
      */
     static Optional<ParsedFilename> resolveRegisteredFilenameIdentity(Connection connection, String path)
             throws SQLException {

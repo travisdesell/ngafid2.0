@@ -1,9 +1,35 @@
-# flake8: noqa: E501
-from urllib.parse import urlparse
+"""Startup check for optional subsystems: email delivery and chart tiles.
+
+Runs as the ``OPTIONAL`` category of the NGAFID startup validator: when email is
+enabled, verifies the email-info file is mounted and populated; and when a chart
+tile base URL is configured, verifies it is a well-formed http(s) URL. Both
+subsystems are skipped (recorded as passes) when not configured.
+"""
+
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
+from urllib.parse import urlparse
+
+if TYPE_CHECKING:
+    from validator import Validator
 
 
-def run_check(validator):
+def run_check(validator: Validator) -> None:
+    """Validate the optional email and chart-tile subsystems when configured.
+
+    When email is enabled, requires ``/etc/ngafid-email.conf`` to be readable and
+    to hold at least two non-empty lines (username and password); otherwise
+    records the email checks as skipped. When ``ngafid.chart.tile.base.url`` is
+    set, requires it to parse as an http/https URL with a host. All outcomes are
+    recorded through the validator's pass/fail helpers.
+
+    Args:
+        validator: The running startup validator; supplies the email-enabled
+            check, the parsed properties, the file-readable helper, and the
+            pass/fail recording helpers.
+    """
     category = "OPTIONAL"
     email_enabled = validator._is_email_enabled()
     if email_enabled:

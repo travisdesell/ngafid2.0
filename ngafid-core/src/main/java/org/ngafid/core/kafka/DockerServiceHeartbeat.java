@@ -16,6 +16,12 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.ngafid.core.Config;
 
+/**
+ * Publishes periodic heartbeat messages naming the current Docker service to the {@code ngafid.heartbeat} Kafka topic.
+ *
+ * <p>A scheduled executor sends the service name at a fixed interval so other components can monitor which NGAFID
+ * services are alive; heartbeating is only meaningful when running inside a container.
+ */
 public class DockerServiceHeartbeat {
 
     private DockerServiceHeartbeat() {
@@ -48,6 +54,13 @@ public class DockerServiceHeartbeat {
         SCHED.scheduleAtFixedRate(beat, 0, periodMs, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Starts the Docker service heartbeat with auto-detected settings, intended to be called from a consumer's main
+     * method. Resolves the service name from configuration, falling back to detecting it from the running context when
+     * it is unset or a placeholder, then begins periodically publishing heartbeat records to the status topic.
+     *
+     * @throws UnknownHostException if the local host name (used to form the instance id) cannot be determined
+     */
     public static void autostart() throws UnknownHostException {
 
         /*

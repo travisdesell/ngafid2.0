@@ -13,6 +13,13 @@ import org.ngafid.core.util.Compression;
 import org.ngafid.core.util.NormalizedColumn;
 import org.ngafid.core.util.filters.Pair;
 
+/**
+ * A named numeric time series (one column of sampled {@code double} values) for a single flight.
+ *
+ * <p>Holds the per-sample values alongside cached statistics (length, valid length, min/avg/max) and the series name
+ * and data type, and handles persistence to the {@code double_series} table as a compressed blob, lazy decompression
+ * on read, and derivation of new computed series from existing ones.
+ */
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, "
@@ -35,7 +42,15 @@ public class DoubleTimeSeries {
     private double avg;
     private double max = -Double.MAX_VALUE;
 
-    // Construct from an array
+    /**
+     * Constructs a double time series backed by an existing array, treating the first {@code size} elements as the
+     * valid data. The running min, max, average and valid (non-NaN) count are computed up front from that data.
+     *
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @param data the backing array of samples
+     * @param size the number of valid elements at the front of {@code data}
+     */
     public DoubleTimeSeries(String name, String dataType, double[] data, int size) {
         this.name = new DoubleSeriesName(name);
         this.dataType = new TypeName(dataType);
@@ -45,53 +60,150 @@ public class DoubleTimeSeries {
         calculateValidCountMinMaxAvg();
     }
 
+    /**
+     * Constructs a double time series from a full array, using a typed {@link Unit}. The array's length is the size.
+     *
+     * @param name the series name
+     * @param dataType the series' unit
+     * @param data the backing array of samples (its full length is used as the size)
+     */
     public DoubleTimeSeries(String name, Unit dataType, double[] data) {
         this(name, dataType.toString(), data);
     }
 
+    /**
+     * Constructs a double time series from a full array; the array's length is used as the valid size.
+     *
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @param data the backing array of samples
+     */
     public DoubleTimeSeries(String name, String dataType, double[] data) {
         this(name, dataType, data, data.length);
     }
 
+    /**
+     * Constructs an empty double time series with a backing buffer pre-sized to {@code sizeHint}, using a typed
+     * {@link Unit}.
+     *
+     * @param name the series name
+     * @param dataType the series' unit
+     * @param sizeHint the initial buffer capacity (the series starts empty)
+     */
     public DoubleTimeSeries(String name, Unit dataType, int sizeHint) {
         this(name, dataType.toString(), sizeHint);
     }
 
+    /**
+     * Constructs an empty double time series with a backing buffer pre-sized to {@code sizeHint}.
+     *
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @param sizeHint the initial buffer capacity (the series starts empty)
+     */
     public DoubleTimeSeries(String name, String dataType, int sizeHint) {
         this(name, dataType, new double[sizeHint], 0);
     }
 
+    /**
+     * Constructs an empty double time series with a default initial capacity, using a typed {@link Unit}.
+     *
+     * @param name the series name
+     * @param dataType the series' unit
+     */
     public DoubleTimeSeries(String name, Unit dataType) {
         this(name, dataType.toString());
     }
 
+    /**
+     * Constructs an empty double time series with a default initial capacity (16).
+     *
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     */
     public DoubleTimeSeries(String name, String dataType) {
         this(name, dataType, 16);
     }
 
+    /**
+     * Constructs an empty database-aware double time series (buffer pre-sized to {@code sizeHint}) using a typed
+     * {@link Unit}, resolving and caching its name and type ids from the database.
+     *
+     * @param connection the database connection used to resolve the name/type ids
+     * @param name the series name
+     * @param dataType the series' unit
+     * @param sizeHint the initial buffer capacity
+     * @throws SQLException if resolving the name or type id fails
+     */
     public DoubleTimeSeries(Connection connection, String name, Unit dataType, int sizeHint) throws SQLException {
         this(connection, name, dataType.toString(), sizeHint);
     }
 
+    /**
+     * Constructs an empty database-aware double time series (buffer pre-sized to {@code sizeHint}), resolving and
+     * caching its name and type ids from the database so it can later be persisted.
+     *
+     * @param connection the database connection used to resolve the name/type ids
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @param sizeHint the initial buffer capacity
+     * @throws SQLException if resolving the name or type id fails
+     */
     public DoubleTimeSeries(Connection connection, String name, String dataType, int sizeHint) throws SQLException {
         this(name, dataType, sizeHint);
         setNameId(connection);
         setTypeId(connection);
     }
 
+    /**
+     * Constructs an empty database-aware double time series with a default capacity, using a typed {@link Unit}.
+     *
+     * @param connection the database connection used to resolve the name/type ids
+     * @param name the series name
+     * @param dataType the series' unit
+     * @throws SQLException if resolving the name or type id fails
+     */
     public DoubleTimeSeries(Connection connection, String name, Unit dataType) throws SQLException {
         this(connection, name, dataType.toString());
     }
 
+    /**
+     * Constructs an empty database-aware double time series with a default capacity (16).
+     *
+     * @param connection the database connection used to resolve the name/type ids
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @throws SQLException if resolving the name or type id fails
+     */
     public DoubleTimeSeries(Connection connection, String name, String dataType) throws SQLException {
         this(connection, name, dataType, 16);
     }
 
+    /**
+     * Constructs a database-aware double time series by parsing string samples into doubles (using a typed
+     * {@link Unit}), and resolves its name and type ids from the database.
+     *
+     * @param connection the database connection used to resolve the name/type ids
+     * @param name the series name
+     * @param dataType the series' unit
+     * @param stringTimeSeries the raw string samples to parse into doubles
+     * @throws SQLException if resolving the name or type id fails
+     */
     public DoubleTimeSeries(Connection connection, String name, Unit dataType, ArrayList<String> stringTimeSeries)
             throws SQLException {
         this(connection, name, dataType.toString(), stringTimeSeries);
     }
 
+    /**
+     * Constructs a database-aware double time series by parsing string samples into doubles, and resolves its name
+     * and type ids from the database.
+     *
+     * @param connection the database connection used to resolve the name/type ids
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @param stringTimeSeries the raw string samples to parse into doubles
+     * @throws SQLException if resolving the name or type id fails
+     */
     public DoubleTimeSeries(Connection connection, String name, String dataType, ArrayList<String> stringTimeSeries)
             throws SQLException {
         this(name, dataType, stringTimeSeries);
@@ -99,10 +211,27 @@ public class DoubleTimeSeries {
         setTypeId(connection);
     }
 
+    /**
+     * Constructs a double time series by parsing string samples into doubles, using a typed {@link Unit}.
+     *
+     * @param name the series name
+     * @param dataType the series' unit
+     * @param stringTimeSeries the raw string samples to parse into doubles
+     */
     public DoubleTimeSeries(String name, Unit dataType, ArrayList<String> stringTimeSeries) {
         this(name, dataType.toString(), stringTimeSeries);
     }
 
+    /**
+     * Constructs a double time series from raw string samples, parsing each into a double. Blank or whitespace-only
+     * values become {@code NaN}; leading spaces are skipped before parsing. The min, max, average and valid count
+     * are computed as the values are parsed, and a column that is entirely empty logs a warning and yields NaN
+     * statistics.
+     *
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @param stringTimeSeries the raw string samples to parse into doubles
+     */
     public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
         this.name = new DoubleSeriesName(name);
         this.dataType = new TypeName(dataType);
@@ -151,6 +280,15 @@ public class DoubleTimeSeries {
         avg /= validCount;
     }
 
+    /**
+     * Reconstructs a persisted double time series from a {@code double_series} result row: its id, flight id,
+     * resolved name and type, size, precomputed statistics, and the compressed sample blob, which is inflated back
+     * into the backing array.
+     *
+     * @param connection the database connection used to resolve the name and type ids
+     * @param resultSet the result set positioned on the row to read
+     * @throws SQLException if reading the row or resolving the name/type fails
+     */
     public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         flightId = resultSet.getInt(2);
@@ -173,10 +311,30 @@ public class DoubleTimeSeries {
         }
     }
 
+    /**
+     * Creates a double time series of the given length whose values are produced by a per-index calculation, using
+     * a typed {@link Unit}.
+     *
+     * @param name the series name
+     * @param dataType the series' unit
+     * @param length the number of samples to compute
+     * @param calculation the function evaluated at each index to produce its value
+     * @return the computed series
+     */
     public static DoubleTimeSeries computed(String name, Unit dataType, int length, TimeStepCalculation calculation) {
         return computed(name, dataType.toString(), length, calculation);
     }
 
+    /**
+     * Creates a double time series of the given length by evaluating {@code calculation} at each index {@code 0}
+     * through {@code length - 1}.
+     *
+     * @param name the series name
+     * @param dataType the series' unit/data-type name
+     * @param length the number of samples to compute
+     * @param calculation the function evaluated at each index to produce its value
+     * @return the computed series
+     */
     public static DoubleTimeSeries computed(String name, String dataType, int length, TimeStepCalculation calculation) {
         double[] data = new double[length];
         for (int i = 0; i < length; i++) data[i] = calculation.compute(i);
@@ -184,6 +342,16 @@ public class DoubleTimeSeries {
         return new DoubleTimeSeries(name, dataType, data, length);
     }
 
+    /**
+     * Looks up the stored minimum and maximum of a named double series for a flight directly from the database,
+     * without loading the full series.
+     *
+     * @param connection the database connection
+     * @param flightId the flight whose series to query
+     * @param name the double-series name
+     * @return a {@code (min, max)} pair, or {@code null} if the flight has no such series
+     * @throws SQLException if the query fails
+     */
     public static Pair<Double, Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
         String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN "
                 + "double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
@@ -205,6 +373,14 @@ public class DoubleTimeSeries {
         }
     }
 
+    /**
+     * Returns the names of all known double series (the full {@code double_series_names} catalog, ordered by name).
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet id (currently unused; the name catalog is global)
+     * @return the alphabetically ordered list of double-series names
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> names = new ArrayList<>();
 
@@ -277,12 +453,33 @@ public class DoubleTimeSeries {
         }
     }
 
+    /**
+     * Creates a prepared statement for inserting a double-series row (flight id, name/type ids, lengths, stored
+     * statistics, and the compressed data blob) into the {@code double_series} table.
+     *
+     * @param connection the database connection
+     * @return a prepared statement for the double-series insert
+     * @throws SQLException if the statement cannot be prepared
+     */
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         return connection.prepareStatement(
                 "INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, "
                         + "min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     }
 
+    /**
+     * Returns the already-persisted lagged-by-{@code n} version of a series, if one exists, by looking up the
+     * conventionally named series ({@code seriesName} + lag suffix + {@code n}); avoids recomputing a lag that has
+     * been stored before.
+     *
+     * @param connection the database connection
+     * @param flightId the flight the series belongs to
+     * @param seriesName the base series name
+     * @param n the lag amount
+     * @return the stored lagged series, or {@link Optional#empty()} if it has not been computed
+     * @throws IOException if decompressing the stored series fails
+     * @throws SQLException if the lookup query fails
+     */
     public static Optional<DoubleTimeSeries> getExistingLaggedSeries(
             Connection connection, int flightId, String seriesName, int n) throws IOException, SQLException {
         String laggedName = seriesName + LAG_SUFFIX + n;
@@ -293,6 +490,19 @@ public class DoubleTimeSeries {
         return Optional.empty();
     }
 
+    /**
+     * Returns the already-persisted leading-by-{@code n} version of a series, if one exists, by looking up the
+     * conventionally named series ({@code seriesName} + lead suffix + {@code n}); avoids recomputing a lead that has
+     * been stored before.
+     *
+     * @param connection the database connection
+     * @param flightId the flight the series belongs to
+     * @param seriesName the base series name
+     * @param n the lead amount
+     * @return the stored leading series, or {@link Optional#empty()} if it has not been computed
+     * @throws IOException if decompressing the stored series fails
+     * @throws SQLException if the lookup query fails
+     */
     public static Optional<DoubleTimeSeries> getExistingLeadingSeries(
             Connection connection, int flightId, String seriesName, int n) throws IOException, SQLException {
         String laggedName = seriesName + LEAD_SUFFIX + n;
@@ -370,11 +580,24 @@ public class DoubleTimeSeries {
         return avg;
     }
 
+    /**
+     * Returns a debug string with the series name, size, valid count, and min/avg/max statistics.
+     *
+     * @return a human-readable summary of this series
+     */
+    @Override
     public String toString() {
         return "[DoubleTimeSeries '" + name + "' size: " + this.size + ", validCount: " + validCount + ", min: " + min
                 + ", avg: " + avg + ", max: " + max + "]";
     }
 
+    /**
+     * Appends a value to the series, growing the backing buffer (doubling it) when full and updating the running
+     * min, max, average and valid count incrementally. {@code NaN} values are stored but excluded from the
+     * statistics.
+     *
+     * @param d the value to append
+     */
     public void add(double d) {
         // Need to resize
         if (this.size == data.length) {
@@ -403,6 +626,12 @@ public class DoubleTimeSeries {
         }
     }
 
+    /**
+     * Returns the value at the given index.
+     *
+     * @param i the sample index
+     * @return the value stored at index {@code i} (may be {@code NaN})
+     */
     public double get(int i) {
         return data[i];
     }
@@ -411,14 +640,30 @@ public class DoubleTimeSeries {
         return dataType.getName();
     }
 
+    /**
+     * Returns the number of samples in the series (which may be fewer than the backing buffer's capacity).
+     *
+     * @return the number of samples
+     */
     public int size() {
         return this.size;
     }
 
+    /**
+     * Returns the number of valid (non-NaN) samples in the series.
+     *
+     * @return the valid sample count
+     */
     public int validCount() {
         return validCount;
     }
 
+    /**
+     * Returns the backing array directly (not a copy), for performance-sensitive callers. The array may be longer
+     * than {@link #size()}; only the first {@code size()} elements are valid data.
+     *
+     * @return the internal backing array
+     */
     public double[] innerArray() {
         // double[] data = new double[this.size];
         // System.arraycopy(this.data, 0, data, 0, this.size);
@@ -427,6 +672,14 @@ public class DoubleTimeSeries {
         return data;
     }
 
+    /**
+     * Returns a copy of the samples in the half-open index range {@code [from, to)}. As a special case, when
+     * {@code from == to} the range is treated as {@code [from, from + 1)} (a single element).
+     *
+     * @param from the inclusive start index
+     * @param to the exclusive end index
+     * @return a new array containing the requested slice
+     */
     // including index from, up until (excluding)
     // if from == to, we assume from was supposed to be from + 1
     public double[] sliceCopy(int from, int to) {
@@ -436,6 +689,17 @@ public class DoubleTimeSeries {
         return slice;
     }
 
+    /**
+     * Binds this series to the given insert statement and adds it to the statement's batch: it resolves the name and
+     * type ids if needed, sets the flight id, lengths and statistics (writing SQL NULL for NaN min/avg/max), and
+     * stores the samples as a compressed blob.
+     *
+     * @param connection the database connection used to resolve the name/type ids if not already set
+     * @param preparedStatement the insert statement (from {@link #createPreparedStatement}) to populate and batch
+     * @param flightIdAdded the flight id to associate the series with
+     * @throws SQLException if setting a parameter or adding the batch fails
+     * @throws IOException if compressing the sample data fails
+     */
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightIdAdded)
             throws SQLException, IOException {
         if (this.dataType.getId() == -1) setTypeId(connection);
@@ -476,6 +740,15 @@ public class DoubleTimeSeries {
         preparedStatement.addBatch();
     }
 
+    /**
+     * Persists this series to the database for the given flight by inserting a single {@code double_series} row.
+     * Temporary series (see {@code setTemporary}) are skipped and not written.
+     *
+     * @param connection the database connection
+     * @param flightIdToAdd the flight id to associate the series with
+     * @throws IOException if compressing the sample data fails
+     * @throws SQLException if the insert fails
+     */
     public void updateDatabase(Connection connection, int flightIdToAdd) throws IOException, SQLException {
         if (this.temporary) return;
         setTypeId(connection);
@@ -503,6 +776,13 @@ public class DoubleTimeSeries {
         return existingSeries.orElseGet(() -> lag(n));
     }
 
+    /**
+     * Computes a new series lagged by {@code n} samples: element {@code i} holds this series' value at {@code i - n},
+     * with the first {@code n} elements set to {@code NaN} (no earlier sample exists).
+     *
+     * @param n the number of samples to lag by
+     * @return a new lagged series
+     */
     public DoubleTimeSeries lag(int n) {
         DoubleTimeSeries laggedSeries = new DoubleTimeSeries(this.name + LAG_SUFFIX + n, "double");
 
@@ -513,6 +793,16 @@ public class DoubleTimeSeries {
         return laggedSeries;
     }
 
+    /**
+     * Returns the series led by {@code n} samples, reusing the stored leading series if one has already been
+     * persisted, otherwise computing it via {@link #lead(int)}.
+     *
+     * @param connection the database connection used to look up a stored leading series
+     * @param n the number of samples to lead by
+     * @return the leading series (stored or freshly computed)
+     * @throws IOException if decompressing a stored series fails
+     * @throws SQLException if the lookup query fails
+     */
     public DoubleTimeSeries lead(Connection connection, int n) throws IOException, SQLException {
         Optional<DoubleTimeSeries> existingSeries =
                 getExistingLeadingSeries(connection, this.flightId, this.name.getName(), n);
@@ -524,6 +814,13 @@ public class DoubleTimeSeries {
         }
     }
 
+    /**
+     * Computes a new series led by {@code n} samples: element {@code i} holds this series' value at {@code i + n},
+     * with the last {@code n} elements set to {@code NaN} (no later sample exists).
+     *
+     * @param n the number of samples to lead by
+     * @return a new leading series
+     */
     public DoubleTimeSeries lead(int n) {
         DoubleTimeSeries leadingSeries = new DoubleTimeSeries(this.name + LEAD_SUFFIX + n, "double");
 
@@ -535,6 +832,16 @@ public class DoubleTimeSeries {
         return leadingSeries;
     }
 
+    /**
+     * Creates a new database-aware series containing the samples in the half-open index range {@code [from, until)},
+     * carrying over this series' name and data type.
+     *
+     * @param connection the database connection used to resolve the new series' name/type ids
+     * @param from the inclusive start index
+     * @param until the exclusive end index
+     * @return a new series over the requested range
+     * @throws SQLException if resolving the name or type id fails
+     */
     // Creates a new DoubleTimeSeries from a slice in the range [from, until)
     public DoubleTimeSeries subSeries(Connection connection, int from, int until) throws SQLException {
         DoubleTimeSeries newSeries = new DoubleTimeSeries(connection, name.getName(), dataType.getName(), until - from);
@@ -543,6 +850,14 @@ public class DoubleTimeSeries {
         return newSeries;
     }
 
+    /**
+     * Creates a new (non-database-aware) series containing the samples in the half-open index range
+     * {@code [from, until)}, carrying over this series' name and data type.
+     *
+     * @param from the inclusive start index
+     * @param until the exclusive end index
+     * @return a new series over the requested range
+     */
     public DoubleTimeSeries subSeries(int from, int until) {
         DoubleTimeSeries newSeries = new DoubleTimeSeries(name.getName(), dataType.getName(), until - from);
         newSeries.size = until - from;
@@ -554,6 +869,11 @@ public class DoubleTimeSeries {
         return new Pair<>(min, max);
     }
 
+    /**
+     * Returns the index of the last valid (non-NaN) sample, scanning backward from the end of the series.
+     *
+     * @return the index of the last non-NaN value, or -1 if the series is empty or entirely NaN
+     */
     public int getLastValidIndex() {
         int i = size - 1;
         while (i >= 0 && Double.isNaN(data[i])) {
@@ -562,23 +882,63 @@ public class DoubleTimeSeries {
         return i;
     }
 
+    /**
+     * Functional interface for computing a series value from its sample index, used by
+     * {@link #computed(String, String, int, TimeStepCalculation)}.
+     */
     public interface TimeStepCalculation {
+        /**
+         * Computes the value at the given sample index.
+         *
+         * @param i the sample index
+         * @return the computed value for that index
+         */
         double compute(int i);
     }
 
+    /**
+     * A normalized name for a double time series, interned in the {@code double_series_names} table.
+     *
+     * <p>Stores each distinct series name once by id and resolves between name and id through the shared
+     * {@link NormalizedColumn} caching and lookup machinery.
+     */
     public static class DoubleSeriesName extends NormalizedColumn<DoubleSeriesName> {
+        /**
+         * Creates an unresolved double-series name from its string value (no database id assigned yet).
+         *
+         * @param name the series name
+         */
         public DoubleSeriesName(String name) {
             super(name);
         }
 
+        /**
+         * Creates an unresolved double-series name from its database id (the name string is resolved lazily).
+         *
+         * @param id the series-name id
+         */
         public DoubleSeriesName(int id) {
             super(id);
         }
 
+        /**
+         * Resolves a double-series name from its database id, looking up the corresponding name string.
+         *
+         * @param connection the database connection
+         * @param id the series-name id
+         * @throws SQLException if the lookup fails
+         */
         public DoubleSeriesName(Connection connection, int id) throws SQLException {
             super(connection, id);
         }
 
+        /**
+         * Resolves a double-series name from its string value, looking up (or assigning) its database id.
+         *
+         * @param connection the database connection
+         * @param string the series name
+         * @throws SQLException if the lookup or insert fails
+         */
         public DoubleSeriesName(Connection connection, String string) throws SQLException {
             super(connection, string);
         }

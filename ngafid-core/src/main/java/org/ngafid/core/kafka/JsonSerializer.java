@@ -4,6 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.apache.kafka.common.serialization.Serializer;
 
+/**
+ * Kafka {@link Serializer} that serializes message values to JSON bytes using Jackson.
+ *
+ * @param <T> the type of message payloads serialized by this serializer
+ */
 public class JsonSerializer<T> implements Serializer<T> {
     private final ObjectMapper objectMapper = new ObjectMapper();
 

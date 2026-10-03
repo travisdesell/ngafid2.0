@@ -27,8 +27,15 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
             Map.entry(Parameters.UNIX_TIME_SECONDS, Set.of("UNIX Time")),
             Map.entry(
                     Parameters.IAS,
-                    Set.of("Airspeed", "GeneralPurpose-IAS", "GeneralPurpose-TRUE_AS",
-                            "IAS1", "IAS2", "GP.CAS", "AP.IAS", "FDR-CAS")),
+                    Set.of(
+                            "Airspeed",
+                            "GeneralPurpose-IAS",
+                            "GeneralPurpose-TRUE_AS",
+                            "IAS1",
+                            "IAS2",
+                            "GP.CAS",
+                            "AP.IAS",
+                            "FDR-CAS")),
             Map.entry(
                     Parameters.GND_SPD,
                     Set.of(
@@ -107,13 +114,7 @@ public final class RotorcraftFlightBuilder extends FlightBuilder {
                             "FDR-TRQ_1")),
             Map.entry(
                     Parameters.ENGINE_2_TORQUE,
-                    Set.of(
-                            "TRQ_2",
-                            "E2 torque",
-                            "Eng (2) Torque",
-                            "Eng 2 Torque",
-                            "2_Torque",
-                            "Torque 2(%)")),
+                    Set.of("TRQ_2", "E2 torque", "Eng (2) Torque", "Eng 2 Torque", "2_Torque", "Torque 2(%)")),
             Map.entry(
                     Parameters.ALT_AGL,
                     Set.of(

@@ -24,6 +24,13 @@ import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
+/**
+ * Serves the flight-analysis pages and their data endpoints: event severities, turn-to-final, trends, heat maps,
+ * proximity events, Cesium 3D replay, rate-of-closure, LOCI metrics, and flight coordinate lookups.
+ *
+ * <p>Page routes render Mustache templates seeded with fleet metadata (and the Azure Maps/chart-tile keys), while
+ * the data routes return JSON built from the nested response types defined here.
+ */
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.GSON;
@@ -32,6 +39,10 @@ public class AnalysisJavalinRoutes {
         // Utility class
     }
 
+    /**
+     * JSON payload holding a flight's ground track as {@code [longitude, latitude]} pairs, with the index of the
+     * first valid sample so the track can be aligned with other series.
+     */
     public static class Coordinates {
         @JsonProperty
         private final int nanOffset;
@@ -39,6 +50,15 @@ public class AnalysisJavalinRoutes {
         @JsonProperty
         private final List<double[]> coordinates;
 
+        /**
+         * Loads a flight's ground track: reads its Latitude and Longitude series and collects the valid points as
+         * {@code [longitude, latitude]} pairs, skipping samples that are NaN or exactly zero. The index of the
+         * first valid sample is kept as {@code nanOffset} so callers can align the track with other series.
+         *
+         * @param connection the database connection used to load the latitude/longitude series
+         * @param flightId the id of the flight to load coordinates for
+         * @throws Exception if the latitude or longitude series is missing or cannot be read
+         */
         public Coordinates(Connection connection, int flightId) throws Exception {
             final DoubleTimeSeries latitudes =
                     Objects.requireNonNull(DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude"));
@@ -71,6 +91,10 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload holding the x/y series for a rate-of-closure chart, with x offsets numbered from -5 so the
+     * samples leading up to the event are included.
+     */
     public static class RateOfClosurePlotData {
         @JsonProperty
         private final int[] x;
@@ -78,6 +102,13 @@ public class AnalysisJavalinRoutes {
         @JsonProperty
         private final double[] y;
 
+        /**
+         * Builds the x/y plot series for a rate-of-closure chart from a {@link RateOfClosure} result: {@code y} is
+         * the rate-of-closure values and {@code x} is the sample offset relative to the event, numbered from -5 so
+         * the five samples preceding the event are included.
+         *
+         * @param rateOfClosure the computed rate-of-closure data to turn into plot series
+         */
         public RateOfClosurePlotData(RateOfClosure rateOfClosure) {
             this.x = new int[rateOfClosure.getSize()];
             this.y = rateOfClosure.getRateOfClosureArray();
@@ -95,6 +126,10 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload for a single named flight metric whose value is stored as a string so that a NaN can be
+     * serialized as the literal {@code "null"}.
+     */
     public static class FlightMetric {
         @JsonProperty
         private final String value;
@@ -102,12 +137,25 @@ public class AnalysisJavalinRoutes {
         @JsonProperty
         private final String name;
 
+        /**
+         * Constructs a named flight metric, storing its value as a string. Because JSON cannot represent NaN, a NaN
+         * value is stored as the literal string {@code "null"}.
+         *
+         * @param value the metric value (NaN is rendered as {@code "null"})
+         * @param name the metric's display name
+         */
         public FlightMetric(double value, String name) {
             // json does not like NaN so we must make it a null string
             this.value = Double.isNaN(value) ? "null" : String.valueOf(value);
             this.name = name;
         }
 
+        /**
+         * Constructs a flight metric that has no value (stored as {@code "null"}), e.g. a metric that could not be
+         * computed for the flight.
+         *
+         * @param name the metric's display name
+         */
         public FlightMetric(String name) {
             this(Double.NaN, name);
         }
@@ -126,6 +174,10 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload wrapping a list of {@link FlightMetric}s together with the display precision (number of
+     * significant figures) the client should use when rendering them.
+     */
     public static class FlightMetricResponse {
         @JsonProperty
         private final List<FlightMetric> values;
@@ -133,6 +185,13 @@ public class AnalysisJavalinRoutes {
         @JsonProperty
         private final int precision;
 
+        /**
+         * Wraps a list of flight metrics together with the number of significant figures the client should use when
+         * displaying them.
+         *
+         * @param values the flight metrics to return
+         * @param precision the number of significant figures to display the values with
+         */
         public FlightMetricResponse(List<FlightMetric> values, int precision) {
             this.values = values;
             this.precision = precision;
@@ -152,6 +211,11 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload for Cesium 3D flight replay, carrying the altitude-above-ground geo series split by flight
+     * phase (taxiing, take-off, climb, cruise) plus the overall series, the matching per-phase time labels, the
+     * derived start/end times, and the airframe type.
+     */
     public static class CesiumResponse {
         @JsonProperty
         private final List<Double> flightGeoAglTaxiing;
@@ -192,6 +256,23 @@ public class AnalysisJavalinRoutes {
         @JsonProperty
         private final String airframeType;
 
+        /**
+         * Constructs the Cesium replay payload for a flight: the altitude-above-ground geo series split by flight
+         * phase (taxiing, take-off, climb, cruise) plus the overall AGL series, the matching per-phase time-label
+         * lists, and the airframe type. Start and end times are derived from the supplied time-label lists.
+         *
+         * @param flightGeoAglTaxiing the AGL geo series for the taxiing phase
+         * @param flightGeoAglTakeOff the AGL geo series for the take-off phase
+         * @param flightGeoAglClimb the AGL geo series for the climb phase
+         * @param flightGeoAglCruise the AGL geo series for the cruise phase
+         * @param flightGeoInfoAgl the overall AGL geo series for the whole flight
+         * @param flightTaxiingTimes the time labels for the taxiing samples
+         * @param flightTakeOffTimes the time labels for the take-off samples
+         * @param flightClimbTimes the time labels for the climb samples
+         * @param flightCruiseTimes the time labels for the cruise samples
+         * @param flightAglTimes the time labels for the overall AGL samples
+         * @param airframeType the airframe type of the flight
+         */
         public CesiumResponse(
                 List<Double> flightGeoAglTaxiing,
                 List<Double> flightGeoAglTakeOff,
@@ -275,6 +356,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Injects the Azure Maps API key into the given template scopes (under a client-visible variable) when one is
+     * configured via the {@code ngafid.azure.maps.key} property; does nothing if the key is unset or blank.
+     *
+     * @param scopes the mutable template scope map to add the key to
+     */
     public static void addAzureMapsKeyToScopes(Map<String, Object> scopes) {
 
         // Inject Azure Maps API key from properties (only if configured)
@@ -302,6 +389,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the event-severities analysis page ({@code severities.html}) for the logged-in user's fleet. Responds
+     * 500 on a database error.
+     *
+     * @param ctx the Javalin request context, whose response is rendered or given an error status
+     */
     public static void getSeverities(Context ctx) {
         final String templateFile = "severities.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -326,6 +419,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the turn-to-final (TTF) analysis page ({@code ttf.html}) for the logged-in user's fleet. Responds 500
+     * on a database error.
+     *
+     * @param ctx the Javalin request context, whose response is rendered or given an error status
+     */
     public static void getTurnToFinal(Context ctx) {
         final String templateFile = "ttf.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -350,6 +449,14 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns turn-to-final analysis results as JSON for the requested date range and airport, with paging. Reads
+     * the {@code startDate}, {@code endDate}, {@code airport}, {@code limit} (default 1000), {@code offset} (default
+     * 0) and {@code skipCount} query parameters; when {@code skipCount} is true the total-count query is skipped for
+     * speed. Responds with an error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the date/airport/paging query parameters
+     */
     public static void postTurnToFinal(Context ctx) {
         String startDate = ctx.queryParam("startDate");
         String endDate = ctx.queryParam("endDate");
@@ -414,6 +521,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the trends analysis page ({@code trends.html}) for the logged-in user's fleet. Responds 500 on a
+     * database error.
+     *
+     * @param ctx the Javalin request context, whose response is rendered or given an error status
+     */
     public static void getTrends(Context ctx) {
         final String templateFile = "trends.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -437,6 +550,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Renders the heat-map analysis page ({@code heat_map.html}) for the logged-in user, injecting the list of
+     * airframes for the client. Responds with an error status on failure.
+     *
+     * @param ctx the Javalin request context, whose response is rendered or given an error status
+     */
     public static void getHeatMap(Context ctx) {
         final String templateFile = "heat_map.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -460,6 +579,12 @@ public class AnalysisJavalinRoutes {
         ctx.render(templateFile, scopes);
     }
 
+    /**
+     * Returns, as JSON, the heat-map points for a specific event on a specific flight. Responds 401 if the user is
+     * not logged in and an error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user and the event/flight identifiers
+     */
     public static void getHeatmapPointsForEventAndFlight(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
@@ -494,6 +619,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the heat-map points for an entire flight. Responds 401 if the user is not logged in and an
+     * error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user and the flight identifier
+     */
     public static void getHeatmapPointsForFlight(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
@@ -576,6 +707,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns heat-map points as JSON for the current fleet/selection. Responds 401 if the user is not logged in
+     * and an error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user and query parameters
+     */
     public static void getHeatmapPoints(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
@@ -595,6 +732,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the proximity events whose locations fall within a geographic bounding box, scoped to the
+     * logged-in user's fleet. Responds 401 if the user is not logged in and an error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user and the bounding-box query parameters
+     */
     public static void getProximityEventsInBox(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
@@ -653,6 +796,14 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Builds and returns, as JSON, the Cesium 3D-replay data for a flight (and optionally a second
+     * {@code other_flight_id} for a proximity encounter): the per-phase altitude-above-ground geo series and time
+     * labels packaged as a {@link CesiumResponse}. Reads the {@code flight_id} and optional {@code other_flight_id}
+     * query parameters and responds with an error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user and the flight id query parameters
+     */
     public static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
@@ -869,6 +1020,13 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the rate-of-closure plot data for a proximity event identified by the {@code eid} path
+     * parameter. Writes nothing if no rate-of-closure data exists for the event, and responds with an error status
+     * on failure.
+     *
+     * @param ctx the Javalin request context supplying the {@code eid} path parameter
+     */
     public static void postRateOfClosure(Context ctx) {
         final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("eid")));
         try (Connection connection = Database.getConnection()) {
@@ -881,6 +1039,14 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the loss-of-control-inflight (LOCI) metrics for a flight at a specific sample, identified by
+     * the {@code fid} path parameter and the {@code time_index} query parameter, after verifying the user's access
+     * to the flight. Responds with an error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user, {@code fid} path param and
+     *     {@code time_index} query param
+     */
     public static void postLociMetrics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
@@ -916,6 +1082,13 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, a flight's ground-track coordinates (see {@link Coordinates}) for the flight named by the
+     * {@code fid} path parameter, after verifying the user has access to that flight. Responds with an error status
+     * on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user and the {@code fid} path parameter
+     */
     public static void postCoordinates(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.pathParam("fid")));
@@ -935,6 +1108,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Returns, as JSON, the available event column names/values used to build event-definition filters. Responds
+     * 401 if the user is not logged in and an error status on failure.
+     *
+     * @param ctx the Javalin request context supplying the session user and query parameters
+     */
     public static void getEventColumnsValues(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
@@ -992,6 +1171,12 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's analysis routes (severities, turn-to-final, trends, heat map, proximity, Cesium
+     * replay, rate-of-closure, LOCI metrics, coordinates, and event-column lookups) on the given Javalin app.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/protected/severities", AnalysisJavalinRoutes::getSeverities);
         // app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);

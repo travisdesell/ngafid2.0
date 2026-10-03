@@ -6,7 +6,11 @@ VALUES (1, 'Test Fleet with ID 1'),
        (2, 'Test Fleet with ID 2');
 
 --changeset josh:make-dummy-users labels:accounts,users
-INSERT INTO user
+-- Columns are listed explicitly so that later schema changesets which add columns with defaults
+-- (e.g. the rotorcraft-specs permission flags) do not break this positional seed data.
+INSERT INTO user (id, email, password_token, first_name, last_name, address, city, country, state, zip_code,
+                  phone_number, reset_phrase, registration_time, admin, aggregate_view, last_login_time, fleet_selected,
+                  two_factor_enabled, two_factor_secret, backup_codes, two_factor_setup_complete)
 VALUES (1, 'test@email.com', 'aaaaaaaaaaaaaaaaaaaa', 'John', 'Doe', '123 House Road', 'CityName', 'CountryName',
         'StateName', '10001', '', '', CURRENT_DATE, 0, 0, CURRENT_DATE, -1, FALSE, NULL, NULL, FALSE),
        (2, 'test1@email.com', 'aaaaaaaaaaaaaaaaaaaa', 'John Admin', 'Aggregate Doe', '123 House Road', 'CityName',

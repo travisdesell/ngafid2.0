@@ -6,6 +6,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.logging.Logger;
 
+/**
+ * One flight positioned on an aircraft's maintenance timeline, linking it to the surrounding maintenance events.
+ *
+ * <p>Records the flight's time window and tracks the previous and next {@link MaintenanceRecord} relative to the
+ * flight along with the elapsed days and flight counts to each, so flights can be ordered and related to maintenance
+ * activity. Instances are naturally ordered by their timeline position.
+ */
 public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private static final Logger LOG = Logger.getLogger(AircraftTimeline.class.getName());
 
@@ -102,11 +109,25 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
         return previousEvent;
     }
 
+    /**
+     * Links the most recent maintenance event preceding this flight and records how many days elapsed between that
+     * event and this flight.
+     *
+     * @param record the preceding maintenance record
+     * @param newDaysSincePreviousValue the number of days from that record to this flight
+     */
     public void setPreviousEvent(MaintenanceRecord record, long newDaysSincePreviousValue) {
         previousEvent = record;
         this.daysSincePrevious = newDaysSincePreviousValue;
     }
 
+    /**
+     * Links the next maintenance event following this flight and records how many days remain from this flight
+     * until that event.
+     *
+     * @param record the following maintenance record
+     * @param newDaysToNextValue the number of days from this flight to that record
+     */
     public void setNextEvent(MaintenanceRecord record, long newDaysToNextValue) {
         nextEvent = record;
         this.daysToNext = newDaysToNextValue;
@@ -128,6 +149,15 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
         }
     }
 
+    /**
+     * Constructs a timeline entry for one flight from its GMT start and end datetime strings. The raw strings are
+     * retained, the date portion (first 10 characters) is parsed into {@link LocalDate} bounds, and the full strings
+     * are parsed into {@link LocalDateTime} values accepting either second- or minute-precision formats.
+     *
+     * @param flightId the flight this timeline entry represents
+     * @param startTime the flight's GMT start datetime string ({@code yyyy-MM-dd HH:mm[:ss]})
+     * @param endTime the flight's GMT end datetime string ({@code yyyy-MM-dd HH:mm[:ss]})
+     */
     public AircraftTimeline(int flightId, String startTime, String endTime) {
         this.flightId = flightId;
         this.startDateTimeUtc = startTime;
@@ -138,10 +168,24 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
         this.endDateTime = parseDateTime(endTime);
     }
 
+    /**
+     * Orders timeline entries chronologically by their flight start date.
+     *
+     * @param other the entry to compare against
+     * @return a negative, zero, or positive value as this entry's start date is before, equal to, or after the other's
+     */
+    @Override
     public int compareTo(AircraftTimeline other) {
         return startTime.compareTo(other.startTime);
     }
 
+    /**
+     * Returns a human-readable summary of this timeline entry: flight id, start/end dates, and the day/flight gaps
+     * to the surrounding maintenance events.
+     *
+     * @return a debug string describing this timeline entry
+     */
+    @Override
     public String toString() {
         return "[Aircraft Timeline - flightId: '" + flightId
                 + "', startTime: '" + startTime

@@ -14,9 +14,9 @@ class AirSyncAuth(val key: String, val secret: String) {
     var timeObtained: LocalDateTime = LocalDateTime.now()
 
     companion object {
-        private var INSTANCE: AirSyncAuth? = null
+        private var instance: AirSyncAuth? = null
 
-        fun refreshInstance(): Unit {
+        fun refreshInstance() {
             val query = "SELECT api_key, api_secret FROM airsync_fleet_info LIMIT 1"
 
             Database.getConnection().use { connection ->
@@ -27,21 +27,21 @@ class AirSyncAuth(val key: String, val secret: String) {
                         }
                         val key: String = results.getString(1)
                         val secret: String = results.getString(2)
-                        INSTANCE = AirSyncAuth(key, secret)
+                        instance = AirSyncAuth(key, secret)
                     }
                 }
             }
         }
 
         fun getInstance(): AirSyncAuth {
-            if (INSTANCE == null) {
-                refreshInstance();
+            if (instance == null) {
+                refreshInstance()
             }
 
-            println("Bearer: ${INSTANCE?.getBearerString()}")
-            println("Access: $INSTANCE")
+            println("Bearer: ${instance?.getBearerString()}")
+            println("Access: $instance")
 
-            return INSTANCE!!
+            return instance!!
         }
     }
 
@@ -51,13 +51,9 @@ class AirSyncAuth(val key: String, val secret: String) {
         this.accessToken = requestAuthorization()
     }
 
-    fun getBearerString(): String {
-        return "Bearer ${accessToken.accessToken}"
-    }
+    fun getBearerString(): String = "Bearer ${accessToken.accessToken}"
 
-    fun isOutdated(): Boolean {
-        return !LocalDateTime.now().isBefore(timeObtained.plusMinutes(60))
-    }
+    fun isOutdated(): Boolean = !LocalDateTime.now().isBefore(timeObtained.plusMinutes(60))
 
     /**
      * Requests authorization from the AirSync servers using the fleets information stored in the database.
@@ -78,9 +74,8 @@ class AirSyncAuth(val key: String, val secret: String) {
             timeObtained = LocalDateTime.now()
             return Utility.OBJECT_MAPPER.readValue(
                 resp,
-                AccessToken::class.java
+                AccessToken::class.java,
             )
         }
-
     }
 }

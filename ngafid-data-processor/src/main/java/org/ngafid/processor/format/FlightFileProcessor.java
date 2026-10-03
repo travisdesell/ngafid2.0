@@ -29,6 +29,18 @@ public abstract class FlightFileProcessor implements Callable<Void> {
      * Factory type for the creation of a {@link FlightFileProcessor}, mirroring the base constructor.
      */
     public interface Factory {
+        /**
+         * Creates a flight-file processor for the given file.
+         *
+         * @param connection the database connection to use
+         * @param is the input stream of the file
+         * @param filename the name of the file
+         * @param pipeline the processing pipeline the processor belongs to
+         * @return the constructed processor
+         * @throws IOException if reading the file fails
+         * @throws FatalFlightFileException if the file is unrecoverably invalid
+         * @throws SQLException if a database error occurs
+         */
         FlightFileProcessor create(Connection connection, InputStream is, String filename, Pipeline pipeline)
                 throws IOException, FatalFlightFileException, SQLException;
     }
@@ -67,6 +79,12 @@ public abstract class FlightFileProcessor implements Callable<Void> {
         this.pipeline = pipeline;
     }
 
+    /**
+     * Parses the input file into a stream of flight builders.
+     *
+     * @return a stream of the flights parsed from the file
+     * @throws FlightProcessingException if the file cannot be parsed
+     */
     public abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
 
     @Override

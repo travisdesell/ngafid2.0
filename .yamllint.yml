@@ -1,0 +1,23 @@
+---
+# yamllint configuration for the NGAFID monorepo.
+#
+# Prettier is the formatter of record for YAML (see scripts/format.sh), so the
+# rules Prettier deliberately does not apply are relaxed here to avoid conflicts:
+#   - line-length    : Prettier does not wrap YAML lines.
+#   - document-start : Prettier does not add a "---" marker to every file.
+#   - truthy         : GitHub Actions workflows use an "on:" key that yamllint
+#                      would otherwise read as the boolean value "on".
+# The remaining default rules still catch real problems (duplicate keys, bad
+# indentation, trailing spaces, syntax errors).
+
+extends: default
+
+rules:
+  line-length: disable
+  document-start: disable
+  truthy:
+    check-keys: false
+  # Prettier normalizes inline comments to a single space before "#"; accept that
+  # (the default is 2) so the formatter and linter do not disagree.
+  comments:
+    min-spaces-from-content: 1

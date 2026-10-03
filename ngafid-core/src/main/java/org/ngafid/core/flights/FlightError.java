@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.ngafid.core.util.ErrorMessage;
 
+/**
+ * A fatal error recorded against a flight or upload, persisted in {@code flight_errors}.
+ *
+ * <p>Each error links a flight to an interned message (stored by message id via {@code ErrorMessage}) and supports
+ * inserting new errors as well as retrieving the errors recorded for a flight or an entire upload.
+ */
 public class FlightError {
     private static final Logger LOG = Logger.getLogger(FlightError.class.getName());
 
@@ -27,6 +33,16 @@ public class FlightError {
     @JsonProperty
     private String stackTrace;
 
+    /**
+     * Records a flight-processing error for a file in an upload, interning the message text to its message id and
+     * inserting a row into {@code flight_errors}.
+     *
+     * @param connection the database connection
+     * @param uploadId the upload the errored file belongs to
+     * @param filename the name of the file that failed to process
+     * @param message the error message text
+     * @throws SQLException if resolving the message id or the insert fails
+     */
     public static void insertError(Connection connection, int uploadId, String filename, String message)
             throws SQLException {
         try (PreparedStatement exceptionPreparedStatement = connection.prepareStatement(
@@ -39,6 +55,15 @@ public class FlightError {
         }
     }
 
+    /**
+     * Loads all flight-processing errors recorded for an upload, resolving each error's message text from its interned
+     * message id.
+     *
+     * @param connection the database connection
+     * @param uploadId the upload whose errors to load
+     * @return the upload's flight errors (empty if none)
+     * @throws SQLException if the query fails
+     */
     public static ArrayList<FlightError> getFlightErrors(Connection connection, int uploadId) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(
                         "SELECT id, upload_id, filename, message_id FROM flight_errors WHERE upload_id = " + uploadId);
@@ -72,6 +97,14 @@ public class FlightError {
         }
     }
 
+    /**
+     * Reconstructs a flight error from a {@code flight_errors} result row, resolving the error's message text from its
+     * interned message id.
+     *
+     * @param connection the database connection used to resolve the message text
+     * @param resultSet the result set positioned on the row to read
+     * @throws SQLException if reading the row or resolving the message fails
+     */
     public FlightError(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         uploadId = resultSet.getInt(2);

@@ -24,6 +24,13 @@ import org.ngafid.core.airports.Runway;
 import org.ngafid.core.util.Compression;
 import org.ngafid.core.util.TimeUtils;
 
+/**
+ * A single turn-to-final approach extracted from a flight, with the geometry used to assess approach quality.
+ *
+ * <p>Holds the latitude/longitude/altitude arrays of the final approach segment relative to a runway, computes
+ * loss-of-control and stall probability series and center-line/glide-path deviations, and supports caching to and
+ * reconstruction from the database (as a compressed blob) plus a JSON projection for the web API.
+ */
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
     public static final long serialVersionUID = 0x46AF1D77F0002L; // <-- Bumped 2/6/26
@@ -253,11 +260,30 @@ public class TurnToFinal implements Serializable {
         // System.out.printf("%f %f %f %f\n", expDescent, altA, altC, altA - expDescent);
     }
 
+    /**
+     * Returns the aircraft's position at a timestep within this turn-to-final as a {@code [latitude, longitude]} pair.
+     *
+     * @param timestep the index into this turn-to-final's position arrays
+     * @return a two-element array of latitude and longitude at that timestep
+     */
     public double[] getPosition(int timestep) {
         assert timestep < this.nTimesteps;
         return new double[] {latitude[timestep], longitude[timestep]};
     }
 
+    /**
+     * Serializes and compresses a flight's computed turn-to-finals and stores them as a single blob row in
+     * {@code turn_to_final}, tagged with the current {@code serialVersionUID} so stale cache entries can be detected on
+     * read. Each TTF's flight id is set to {@code flightId} before storage. An empty list is cached too, to record that
+     * the flight has no turn-to-finals and avoid recomputation.
+     *
+     * @param connection the database connection
+     * @param flightId the flight the turn-to-finals belong to
+     * @param ttfs the turn-to-finals to cache (may be empty, but not null)
+     * @throws IOException if serialization/compression fails
+     * @throws SQLException if the insert fails
+     * @throws NullPointerException if {@code ttfs} is null
+     */
     public static void cacheTurnToFinal(Connection connection, int flightId, ArrayList<TurnToFinal> ttfs)
             throws IOException, SQLException {
         if (ttfs == null) {
@@ -285,6 +311,18 @@ public class TurnToFinal implements Serializable {
 
     static final String DELETE_QUERY_STR = "DELETE FROM turn_to_final WHERE flight_id = ?";
 
+    /**
+     * Loads a flight's cached turn-to-finals from {@code turn_to_final}, decompressing and deserializing the stored
+     * blob. Returns null when the flight has no cache row, or when the cached entry's version does not match the
+     * current {@code serialVersionUID} (a stale entry), signalling the caller to recompute.
+     *
+     * @param connection the database connection
+     * @param flight the flight whose cached turn-to-finals to load
+     * @return the cached turn-to-finals, or null if absent or stale
+     * @throws SQLException if the query fails
+     * @throws IOException if decompression fails
+     * @throws ClassNotFoundException if the serialized class cannot be resolved during deserialization
+     */
     public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight)
             throws SQLException, IOException, ClassNotFoundException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?");
@@ -445,6 +483,21 @@ public class TurnToFinal implements Serializable {
         return result;
     }
 
+    /**
+     * Computes the turn-to-final segments for a flight from its time series and itinerary. For each approach itinerary,
+     * it walks backward from the minimum-altitude index to bracket the window from roughly 400 ft AGL down to ~15 ft
+     * AGL above the runway, discarding windows with too little altitude change or that never descend near the ground,
+     * then builds one {@link TurnToFinal} per surviving approach from sliced copies of the position, altitude, roll,
+     * and (when present) stall/loss-of-control probability series. Returns an empty list if any required series
+     * is missing.
+     *
+     * @param doubleTimeSeries the flight's double series, keyed by parameter name (LAT, LON, ALT_AGL, ALT_MSL, ROLL,
+     *     GND_SPD required; stall and loss-of-control probabilities optional)
+     * @param itineraries the flight's itinerary legs; only approach legs are considered
+     * @param airframe the flight's airframe, recorded on each produced turn-to-final
+     * @param startTime the flight's start time, recorded on each produced turn-to-final
+     * @return the computed turn-to-finals (empty if required series are missing or no approach qualifies)
+     */
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(
             Map<String, DoubleTimeSeries> doubleTimeSeries,
             List<Itinerary> itineraries,
@@ -483,7 +536,7 @@ public class TurnToFinal implements Serializable {
             Runway runway = airport.getRunway(it.getRunway());
             double runwayAltitude = altitude[to];
 
-            for (;;) {
+            while (true) {
                 if (to < 0) {
                     to = 0;
                     break;
@@ -496,7 +549,7 @@ public class TurnToFinal implements Serializable {
             }
 
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
-            for (;;) {
+            while (true) {
                 if (from < 0) {
                     // We never found a point in time where there is a turn to final
                     // We assume all aircraft that perform a turn to final will reach 400 feet above the runway
@@ -575,6 +628,18 @@ public class TurnToFinal implements Serializable {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    /**
+     * Convenience overload of {@link #getTurnToFinal(Connection, Flight, String)} that loads the flight by id first,
+     * returning them (from cache, or recomputed and cached on a miss), optionally filtered to one airport.
+     *
+     * @param connection the database connection
+     * @param flightId the id of the flight to load
+     * @param airportIataCode the IATA code to filter to, or null for all airports
+     * @return the matching turn-to-finals (empty if none)
+     * @throws SQLException if a query fails
+     * @throws IOException if cache (de)serialization fails
+     * @throws ClassNotFoundException if a serialized class cannot be resolved during deserialization
+     */
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId, String airportIataCode)
             throws SQLException, IOException, ClassNotFoundException {
         // For now just use the flight object to get lat and long series
@@ -638,6 +703,29 @@ public class TurnToFinal implements Serializable {
         }
     }
 
+    /**
+     * A flat, serialization-friendly snapshot of a {@link TurnToFinal} for the web API.
+     *
+     * <p>Mirrors the turn-to-final's exceedence lists, glide-path geometry, position/altitude arrays, runway, and
+     * loss-of-control/stall probability series, with the flight start date rendered as an ISO-8601 string.
+     *
+     * @param locExceedences indices where a loss-of-control exceedence occurred
+     * @param centerLineExceedences indices where runway center-line deviation exceeded tolerance
+     * @param selfDefinedGlideAngle the self-defined glide angle, in degrees
+     * @param latitude the approach-segment latitudes
+     * @param longitude the approach-segment longitudes
+     * @param AltMSL altitude above mean sea level, in feet
+     * @param AltAGL altitude above ground level, in feet
+     * @param distanceFromRunway distance from the runway threshold, in feet
+     * @param flightId the flight id this approach belongs to
+     * @param runway the runway the approach targets
+     * @param airportIataCode the IATA code of the approach airport
+     * @param flightStartDate the flight start date as an ISO-8601 string, or null if unset
+     * @param maxRoll the maximum roll angle over the approach, in degrees
+     * @param selfDefinedGlidePathDeviations per-sample deviations from the self-defined glide path
+     * @param PLOCI per-sample loss-of-control probability series
+     * @param PStall per-sample stall probability series
+     */
     public record TurnToFinalJSON(
             ArrayList<Integer> locExceedences,
             ArrayList<Integer> centerLineExceedences,
@@ -656,6 +744,13 @@ public class TurnToFinal implements Serializable {
             double[] PLOCI,
             double[] PStall) {}
 
+    /**
+     * Builds a flat, serialization-friendly {@link TurnToFinalJSON} snapshot of this turn-to-final for the web API,
+     * copying its exceedence lists, glide-path geometry, position/altitude arrays, runway, and probability series. The
+     * flight start date is rendered as an ISO-8601 string (null if no start date is set).
+     *
+     * @return a JSON data-transfer record mirroring this turn-to-final's fields
+     */
     public TurnToFinalJSON jsonify() {
 
         String startDate = (flightStartDate == null) ? null : flightStartDate.format(TimeUtils.getIso8601Format());

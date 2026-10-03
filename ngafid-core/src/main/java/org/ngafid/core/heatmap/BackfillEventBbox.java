@@ -27,6 +27,14 @@ public final class BackfillEventBbox {
 
     private BackfillEventBbox() {}
 
+    /**
+     * Command-line entry point that backfills the bounding-box columns (min/max latitude and longitude) for events
+     * whose bbox is still NULL. Accepts optional {@code --batch <n>} (update batch size, default 500) and
+     * {@code --limit <n>} (maximum number of events to process) arguments, runs the backfill, and prints a summary of
+     * the counts. Exits with a non-zero status on failure.
+     *
+     * @param args optional {@code --batch <n>} and {@code --limit <n>} flags
+     */
     public static void main(String[] args) {
         int batchSize = 500;
         Integer limit = null;
@@ -91,6 +99,19 @@ public final class BackfillEventBbox {
         }
     }
 
+    /**
+     * Backfills bounding-box columns for events that are missing them. Selects events with a NULL bbox (optionally
+     * capped at {@code limit}), computes each event's lat/lon bounds from its flight's position series, and updates the
+     * row, committing periodically every {@code batchSize} processed events within a manual transaction (restoring the
+     * prior auto-commit setting afterward). Events whose series are missing or contain no valid coordinates are skipped
+     * and counted; per-row update failures are logged and counted rather than aborting the run.
+     *
+     * @param connection the database connection
+     * @param batchSize how many processed events to handle between intermediate commits
+     * @param limit the maximum number of events to process, or null for no limit
+     * @return a result tally of updated, skipped (no series / no valid coords), and errored events
+     * @throws SQLException if selecting the events or managing the transaction fails
+     */
     public static BackfillResult backfill(Connection connection, int batchSize, Integer limit) throws SQLException {
         BackfillResult result = new BackfillResult();
         List<EventRow> rows = new ArrayList<>();
@@ -148,13 +169,12 @@ public final class BackfillEventBbox {
                     LOG.warning("Failed to update event " + row.id + ": " + e.getMessage());
                     result.errors++;
                 }
-                if ((result.updated + result.skippedNoSeries + result.skippedNoValidCoords + result.errors)
-                        % batchSize == 0) {
+                if ((result.updated + result.skippedNoSeries + result.skippedNoValidCoords + result.errors) % batchSize
+                        == 0) {
                     connection.commit();
-                    System.out.println(
-                            "Updated " + result.updated
-                                    + ", skipped " + (result.skippedNoSeries + result.skippedNoValidCoords)
-                                    + ", errors " + result.errors + " so far.");
+                    System.out.println("Updated " + result.updated
+                            + ", skipped " + (result.skippedNoSeries + result.skippedNoValidCoords)
+                            + ", errors " + result.errors + " so far.");
                 }
             }
             connection.commit();
@@ -175,7 +195,7 @@ public final class BackfillEventBbox {
     }
 
     static final class BboxResult {
-        final double[] bbox;
+        private final double[] bbox;
         private final SkipReason skipReason;
 
         BboxResult(double[] bbox) {
@@ -233,6 +253,6 @@ public final class BackfillEventBbox {
                 || maxLon == Double.NEGATIVE_INFINITY) {
             return new BboxResult(SkipReason.NO_VALID_COORDS);
         }
-        return new BboxResult(new double[]{minLat, maxLat, minLon, maxLon});
+        return new BboxResult(new double[] {minLat, maxLat, minLon, maxLon});
     }
 }

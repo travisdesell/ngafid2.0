@@ -16,14 +16,33 @@ public class FlightProcessingException extends Exception {
 
     private List<Exception> exceptions;
 
+    /**
+     * Constructs an aggregate exception wrapping a single underlying exception.
+     *
+     * @param e the exception that occurred during flight processing
+     */
     public FlightProcessingException(Exception e) {
         exceptions = List.<Exception>of(e);
     }
 
+    /**
+     * Constructs an aggregate exception wrapping several exceptions that occurred during (possibly parallel) flight
+     * processing. The list is stored as an unmodifiable view.
+     *
+     * @param exceptions the exceptions that occurred
+     */
     public FlightProcessingException(List<Exception> exceptions) {
         this.exceptions = Collections.<Exception>unmodifiableList(exceptions);
     }
 
+    /**
+     * Builds a combined message from the wrapped exceptions: the single exception's message when there is only one, or
+     * a count header followed by each exception's message when there are several. Null messages are replaced with a
+     * placeholder.
+     *
+     * @return the aggregated exception message
+     */
+    @Override
     public String getMessage() {
         String message;
 

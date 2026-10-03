@@ -7,6 +7,13 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Utility for interning flight error/warning message strings to integer ids in the {@code flight_messages} table.
+ *
+ * <p>Maintains bidirectional in-memory caches so that frequently repeated message text is stored once and resolved
+ * without a database round trip; on a cache miss it looks the message up and inserts it if absent. All members are
+ * static and the class is not instantiable.
+ */
 public final class ErrorMessage {
     private static final Map<String, Integer> ID_MAP = new ConcurrentHashMap<>();
     private static final Map<Integer, String> MESSAGE_MAP = new ConcurrentHashMap<>();
@@ -15,6 +22,16 @@ public final class ErrorMessage {
         throw new UnsupportedOperationException("Utility class cannot be instantiated.");
     }
 
+    /**
+     * Interns a message string to its id in {@code flight_messages}, so repeated error/warning text is stored once.
+     * Checks the in-memory cache first; on a miss, looks the message up in the database (caching and returning its id),
+     * and if it is not present inserts it ({@code INSERT IGNORE}) and recurses to fetch the generated id.
+     *
+     * @param connection the database connection
+     * @param message the message text to resolve to an id
+     * @return the id for the message
+     * @throws SQLException if the lookup or insert fails
+     */
     public static int getMessageId(Connection connection, String message) throws SQLException {
         Integer id = ID_MAP.get(message);
 
@@ -49,6 +66,16 @@ public final class ErrorMessage {
         }
     }
 
+    /**
+     * Resolves an interned message id back to its text, checking the in-memory cache first and falling back to a
+     * {@code flight_messages} lookup (which it caches). Returns a sentinel error string rather than throwing if the id
+     * is not found.
+     *
+     * @param connection the database connection
+     * @param messageId the message id to resolve
+     * @return the message text, or a sentinel string if the id does not exist
+     * @throws SQLException if the query fails
+     */
     public static String getMessage(Connection connection, int messageId) throws SQLException {
         String message = MESSAGE_MAP.get(messageId);
 

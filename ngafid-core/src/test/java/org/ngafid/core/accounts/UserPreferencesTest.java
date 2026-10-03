@@ -13,6 +13,9 @@ import org.junit.jupiter.api.Test;
  */
 public class UserPreferencesTest {
 
+    /**
+     * Verifies the list constructor stores the decimal precision and flight-metrics list and exposes them via getters.
+     */
     @Test
     @DisplayName("Should create UserPreferences with List constructor")
     public void testConstructorWithList() {
@@ -27,6 +30,9 @@ public class UserPreferencesTest {
         assertEquals(flightMetrics, preferences.getFlightMetrics());
     }
 
+    /**
+     * Verifies the array constructor wraps the metrics array into an equivalent list and stores the precision.
+     */
     @Test
     @DisplayName("Should create UserPreferences with array constructor")
     public void testConstructorWithArray() {
@@ -41,6 +47,9 @@ public class UserPreferencesTest {
         assertEquals(Arrays.asList(metrics), preferences.getFlightMetrics());
     }
 
+    /**
+     * Verifies {@code defaultPreferences} yields a precision of 1 and a non-null default metrics list.
+     */
     @Test
     @DisplayName("Should create default preferences")
     public void testDefaultPreferences() {
@@ -55,6 +64,9 @@ public class UserPreferencesTest {
         // The actual content depends on the DEFAULT_METRICS constant
     }
 
+    /**
+     * Verifies {@code getDecimalPrecision} returns the configured precision.
+     */
     @Test
     @DisplayName("Should get decimal precision")
     public void testGetDecimalPrecision() {
@@ -63,6 +75,9 @@ public class UserPreferencesTest {
         assertEquals(5, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies {@code getFlightMetrics} returns the configured metrics list.
+     */
     @Test
     @DisplayName("Should get flight metrics")
     public void testGetFlightMetrics() {
@@ -72,6 +87,9 @@ public class UserPreferencesTest {
         assertEquals(metrics, preferences.getFlightMetrics());
     }
 
+    /**
+     * Verifies {@code update} applies a new precision and reports true when the value changed.
+     */
     @Test
     @DisplayName("Should update decimal precision when different")
     public void testUpdateWithDifferentPrecision() {
@@ -83,6 +101,9 @@ public class UserPreferencesTest {
         assertEquals(5, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies {@code update} is a no-op reporting false when the new precision equals the current one.
+     */
     @Test
     @DisplayName("Should not update decimal precision when same")
     public void testUpdateWithSamePrecision() {
@@ -94,6 +115,9 @@ public class UserPreferencesTest {
         assertEquals(2, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies updating precision from 0 to a positive value changes it and reports true.
+     */
     @Test
     @DisplayName("Should update from 0 to positive precision")
     public void testUpdateFromZeroToPositive() {
@@ -105,6 +129,9 @@ public class UserPreferencesTest {
         assertEquals(3, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies updating precision from a positive value to 0 changes it and reports true.
+     */
     @Test
     @DisplayName("Should update from positive to zero precision")
     public void testUpdateFromPositiveToZero() {
@@ -116,6 +143,9 @@ public class UserPreferencesTest {
         assertEquals(0, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies updating precision from a negative value to a positive one changes it and reports true.
+     */
     @Test
     @DisplayName("Should update from negative to positive precision")
     public void testUpdateFromNegativeToPositive() {
@@ -127,6 +157,9 @@ public class UserPreferencesTest {
         assertEquals(2, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies {@code toString} includes the user id, precision, and metrics list in the expected format.
+     */
     @Test
     @DisplayName("Should have correct toString representation")
     public void testToString() {
@@ -143,6 +176,9 @@ public class UserPreferencesTest {
         assertTrue(result.contains("metrics [altitude, airspeed, vertical_speed]"));
     }
 
+    /**
+     * Verifies {@code toString} renders an empty metrics list as {@code metrics []}.
+     */
     @Test
     @DisplayName("Should have correct toString with empty metrics")
     public void testToStringWithEmptyMetrics() {
@@ -159,6 +195,9 @@ public class UserPreferencesTest {
         assertTrue(result.contains("metrics []"));
     }
 
+    /**
+     * Verifies {@code toString} renders a single-element metrics list correctly.
+     */
     @Test
     @DisplayName("Should have correct toString with single metric")
     public void testToStringWithSingleMetric() {
@@ -175,6 +214,9 @@ public class UserPreferencesTest {
         assertTrue(result.contains("metrics [altitude]"));
     }
 
+    /**
+     * Verifies {@code toString} renders null metrics as {@code metrics null} rather than throwing.
+     */
     @Test
     @DisplayName("Should handle toString with null metrics gracefully")
     public void testToStringWithNullMetrics() {
@@ -191,6 +233,10 @@ public class UserPreferencesTest {
         assertTrue(result.contains("metrics null"));
     }
 
+    /**
+     * Verifies a sequence of updates behaves correctly: changing values report true, a repeated value reports false,
+     * and the stored precision tracks the last applied value.
+     */
     @Test
     @DisplayName("Should handle multiple updates correctly")
     public void testMultipleUpdates() {
@@ -212,6 +258,9 @@ public class UserPreferencesTest {
         assertEquals(0, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies {@code Integer.MAX_VALUE} is accepted as a precision and can subsequently be updated.
+     */
     @Test
     @DisplayName("Should handle edge case with maximum precision")
     public void testMaximumPrecision() {
@@ -224,6 +273,9 @@ public class UserPreferencesTest {
         assertEquals(Integer.MAX_VALUE - 1, preferences.getDecimalPrecision());
     }
 
+    /**
+     * Verifies {@code Integer.MIN_VALUE} is accepted as a precision and can subsequently be updated.
+     */
     @Test
     @DisplayName("Should handle edge case with minimum precision")
     public void testMinimumPrecision() {

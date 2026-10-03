@@ -20,6 +20,12 @@ import org.ngafid.core.Database;
 import org.ngafid.core.kafka.Topic;
 import org.ngafid.core.uploads.UploadDoesNotExistException;
 
+/**
+ * Command-line utility for (re)enqueuing uploads onto the Kafka upload topic for processing.
+ *
+ * <p>Uploads to enqueue may be named directly, selected for an entire fleet, read from a file, or gathered from a SQL
+ * query, letting operators replay or reprocess uploads outside the normal upload flow.
+ */
 public class UploadHelper {
     private static final Logger LOG = Logger.getLogger(UploadHelper.class.getName());
 
@@ -58,6 +64,17 @@ public class UploadHelper {
         return options;
     }
 
+    /**
+     * Command-line utility that enqueues uploads onto the Kafka upload topic for (re)processing. Upload ids can be
+     * supplied directly ({@code -u/--upload}), for a whole fleet ({@code -f/--fleet}), read from a file
+     * ({@code -F/--file}), or gathered from a SQL query ({@code -q/--query}). Prints usage and exits on argument
+     * errors.
+     *
+     * @param arguments the command-line arguments selecting which uploads to enqueue
+     * @throws SQLException if gathering upload ids from the database fails
+     * @throws UploadDoesNotExistException if a specified upload id does not exist
+     * @throws IOException if reading ids from the input file fails
+     */
     public static void main(String[] arguments) throws SQLException, UploadDoesNotExistException, IOException {
         Options options = buildCLIOptions();
         CommandLineParser parser = new DefaultParser();

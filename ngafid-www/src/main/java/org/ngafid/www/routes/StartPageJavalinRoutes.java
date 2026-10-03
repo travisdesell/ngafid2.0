@@ -18,6 +18,12 @@ import org.ngafid.core.flights.Airframes;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the application's landing/start pages (such as the home and welcome pages) shown after login.
+ *
+ * <p>Routes render Mustache templates seeded with the session user, fleet airframes, and any status messages
+ * surfaced to the user on arrival.
+ */
 public class StartPageJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StartPageJavalinRoutes.class.getName());
 
@@ -87,6 +93,11 @@ public class StartPageJavalinRoutes {
         }
     }
 
+    /**
+     * Registers this class's start/landing page routes on the given Javalin application.
+     *
+     * @param app the Javalin application to register the routes on
+     */
     public static void bindRoutes(Javalin app) {
         app.get("/", ctx -> getHome(ctx, null));
         app.get(

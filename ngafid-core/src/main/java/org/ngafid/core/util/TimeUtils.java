@@ -14,6 +14,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
+/**
+ * Static helpers for parsing, normalizing, and converting the varied date/time formats found in flight data.
+ *
+ * <p>Provides shared ISO-8601 and MySQL {@link DateTimeFormatter}s, correction of out-of-range UTC offsets, detection
+ * of the correct formatter for an unknown input, and conversions between SQL strings and {@link OffsetDateTime}. The
+ * class is not instantiable.
+ */
 public final class TimeUtils {
     private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
 
@@ -30,6 +37,10 @@ public final class TimeUtils {
         return MYSQL_FORMAT;
     }
 
+    /**
+     * Gson {@link TypeAdapter} that serializes an {@link OffsetDateTime} as a MySQL-format UTC string; reads are not
+     * supported and always return {@code null}.
+     */
     public static class OffsetDateTimeJSONAdapter extends TypeAdapter<OffsetDateTime> {
 
         @Override
@@ -111,10 +122,25 @@ public final class TimeUtils {
 
     private static DateTimeFormatter STANDARD_FORMAT = DateTimeFormatter.ofPattern("yyyy-M-d H:m:s");
 
+    /**
+     * Formats an offset date-time using the standard {@code yyyy-M-d H:m:s} pattern.
+     *
+     * @param offsetDateTime the date-time to format
+     * @return the formatted date-time string
+     */
     public static String toString(OffsetDateTime offsetDateTime) {
         return offsetDateTime.format(STANDARD_FORMAT);
     }
 
+    /**
+     * Converts a local date, time and UTC offset to the corresponding UTC epoch-second value (correcting malformed
+     * offset strings first).
+     *
+     * @param date the local date ({@code yyyy-M-d})
+     * @param time the local time ({@code H:m:s})
+     * @param offset the UTC offset (e.g. {@code -05:00}; bad values are normalized)
+     * @return the instant as seconds since the Unix epoch
+     */
     public static long toEpochSecond(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt =
@@ -145,6 +171,15 @@ public final class TimeUtils {
         return utcZdt.toEpochSecond();
     }
 
+    /**
+     * Converts a local date, time and UTC offset to a UTC date-time string in {@code yyyy-M-d H:m:s} format
+     * (correcting malformed offset strings first).
+     *
+     * @param date the local date ({@code yyyy-M-d})
+     * @param time the local time ({@code H:m:s})
+     * @param offset the UTC offset (e.g. {@code -05:00}; bad values are normalized)
+     * @return the equivalent UTC date-time string
+     */
     public static String toUTC(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
@@ -167,18 +202,49 @@ public final class TimeUtils {
         return utcZdt.format(DateTimeFormatter.ofPattern("yyyy-M-d H:m:s"));
     }
 
+    /**
+     * Re-expresses a date/time given in one UTC offset at a different UTC offset (same instant), combining the
+     * separate date and time strings first.
+     *
+     * @param originalDate the original local date
+     * @param originalTime the original local time
+     * @param originalOffset the original UTC offset
+     * @param newOffset the UTC offset to convert to
+     * @return the same instant expressed at {@code newOffset}
+     * @throws UnrecognizedDateTimeFormatException if the date/time format cannot be recognized
+     */
     public static OffsetDateTime convertToOffset(
             String originalDate, String originalTime, String originalOffset, String newOffset)
             throws UnrecognizedDateTimeFormatException {
         return convertToOffset(originalDate + " " + originalTime, originalOffset, newOffset);
     }
 
+    /**
+     * Re-expresses a date-time given in one UTC offset at a different UTC offset (same instant), auto-detecting the
+     * input date-time format.
+     *
+     * @param originalDateTime the original local date-time string
+     * @param originalOffset the original UTC offset
+     * @param newOffset the UTC offset to convert to
+     * @return the same instant expressed at {@code newOffset}
+     * @throws UnrecognizedDateTimeFormatException if the date-time format cannot be recognized
+     */
     public static OffsetDateTime convertToOffset(String originalDateTime, String originalOffset, String newOffset)
             throws UnrecognizedDateTimeFormatException {
         DateTimeFormatter dateTimeFormat = findCorrectFormatter(originalDateTime);
         return convertToOffset(dateTimeFormat, originalDateTime, originalOffset, newOffset);
     }
 
+    /**
+     * Re-expresses a date-time (parsed with the supplied formatter) from one UTC offset at a different UTC offset,
+     * preserving the instant (correcting malformed original offset strings first).
+     *
+     * @param formatter the formatter used to parse {@code originalDateTime}
+     * @param originalDateTime the original local date-time string
+     * @param originalOffset the original UTC offset (bad values are normalized)
+     * @param newOffset the UTC offset to convert to
+     * @return the same instant expressed at {@code newOffset}
+     */
     public static OffsetDateTime convertToOffset(
             DateTimeFormatter formatter, String originalDateTime, String originalOffset, String newOffset) {
         LOG.info("Date is " + originalDateTime);
@@ -206,11 +272,27 @@ public final class TimeUtils {
             DateTimeFormatter.ofPattern("M/d/yyyy H:m:s"),
             DateTimeFormatter.ofPattern("M-d-yyyy H:m:s"));
 
+    /**
+     * Parses a date-time string into a {@link LocalDateTime}, auto-detecting which of the supported formats it uses.
+     *
+     * @param dateTimeString the date-time string to parse
+     * @return the parsed local date-time
+     * @throws UnrecognizedDateTimeFormatException if the string matches none of the supported formats
+     */
     public static LocalDateTime parseLocalDateTime(String dateTimeString) throws UnrecognizedDateTimeFormatException {
         var formatter = findCorrectFormatter(dateTimeString);
         return LocalDateTime.parse(dateTimeString, formatter);
     }
 
+    /**
+     * Returns the number of seconds between two date-time strings (both parsed with the format detected from the
+     * start string).
+     *
+     * @param startDateTime the start date-time string
+     * @param endDateTime the end date-time string
+     * @return the elapsed seconds from start to end (negative if end precedes start)
+     * @throws UnrecognizedDateTimeFormatException if the start string's format cannot be recognized
+     */
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
             throws UnrecognizedDateTimeFormatException {
         DateTimeFormatter formatter = findCorrectFormatter(startDateTime);
@@ -234,6 +316,13 @@ public final class TimeUtils {
         return cal.getTime();
     }
 
+    /**
+     * Returns a new {@link Date} that is the given number of seconds before {@code date}.
+     *
+     * @param date the base date
+     * @param seconds the number of seconds to subtract
+     * @return a new date shifted earlier by {@code seconds}
+     */
     public static Date subtractSeconds(Date date, Integer seconds) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
@@ -241,6 +330,13 @@ public final class TimeUtils {
         return cal.getTime();
     }
 
+    /**
+     * Returns a new {@link Date} that is the given number of milliseconds after {@code date}.
+     *
+     * @param date the base date
+     * @param milliseconds the number of milliseconds to add
+     * @return a new date shifted later by {@code milliseconds}
+     */
     public static Date addMilliseconds(Date date, Integer milliseconds) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
@@ -260,27 +356,62 @@ public final class TimeUtils {
         return utcDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
+    /**
+     * Detects the correct formatter for a separate date and time by combining them into one string.
+     *
+     * @param date the date portion
+     * @param time the time portion
+     * @return the matching {@link DateTimeFormatter}
+     * @throws UnrecognizedDateTimeFormatException if the combined string matches no supported format
+     */
     public static DateTimeFormatter findCorrectFormatter(String date, String time)
             throws UnrecognizedDateTimeFormatException {
         return findCorrectFormatter(date + " " + time);
     }
 
+    /**
+     * Converts an ISO-8601 UTC date-time string to the MySQL date-time string format used in the database.
+     *
+     * @param timeUTC the ISO-8601 UTC date-time string
+     * @return the equivalent MySQL-format date-time string
+     */
     public static String utcToSql(String timeUTC) {
         return LocalDateTime.parse(timeUTC, ISO_8601_FORMAT).format(MYSQL_FORMAT);
     }
 
+    /**
+     * Converts an offset date-time to a MySQL date-time string in UTC.
+     *
+     * @param odt the offset date-time to convert
+     * @return the equivalent UTC MySQL-format date-time string
+     */
     public static String utcToSql(OffsetDateTime odt) {
         return odt.atZoneSameInstant(ZoneOffset.UTC).format(MYSQL_FORMAT);
     }
 
+    /**
+     * Parses an ISO-8601 date-time string into an {@link OffsetDateTime}.
+     *
+     * @param dateTimeString the ISO-8601 date-time string
+     * @return the parsed offset date-time
+     */
     public static OffsetDateTime parseUTC(String dateTimeString) {
         return OffsetDateTime.parse(dateTimeString, ISO_8601_FORMAT);
     }
 
+    /**
+     * Parses a MySQL-format date-time string (assumed to be UTC) into an {@link OffsetDateTime} at the UTC offset.
+     *
+     * @param sqlDateTime the MySQL-format date-time string
+     * @return the parsed date-time at UTC
+     */
     public static OffsetDateTime sqlToOffsetDateTime(String sqlDateTime) {
         return LocalDateTime.parse(sqlDateTime, MYSQL_FORMAT).atOffset(ZoneOffset.UTC);
     }
 
+    /**
+     * Checked exception indicating that none of the configured formatters could parse a given date/time string.
+     */
     public static class UnrecognizedDateTimeFormatException extends Exception {}
 
     /**
@@ -311,6 +442,14 @@ public final class TimeUtils {
         private final ArrayList<String> localTimes;
         private final ArrayList<String> utcOffsets;
 
+        /**
+         * Constructs a result holding the parallel per-sample local date, local time, and UTC offset series computed
+         * from a flight's timestamps.
+         *
+         * @param localDates the computed local date for each sample
+         * @param localTimes the computed local time for each sample
+         * @param utcOffsets the UTC offset for each sample
+         */
         public LocalDateTimeResult(
                 ArrayList<String> localDates, ArrayList<String> localTimes, ArrayList<String> utcOffsets) {
             this.localDates = localDates;

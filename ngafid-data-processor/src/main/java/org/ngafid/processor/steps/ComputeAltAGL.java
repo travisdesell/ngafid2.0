@@ -25,6 +25,12 @@ public class ComputeAltAGL extends ComputeStep {
     private static final Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_MSL, LATITUDE, LONGITUDE);
     private static final Set<String> OUTPUT_COLUMNS = Set.of(ALT_AGL);
 
+    /**
+     * Constructs the altitude-above-ground-level compute step.
+     *
+     * @param connection the database connection the step may use
+     * @param builder the flight builder this step reads from and writes to
+     */
     public ComputeAltAGL(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
@@ -49,6 +55,12 @@ public class ComputeAltAGL extends ComputeStep {
         return OUTPUT_COLUMNS;
     }
 
+    /**
+     * Reports whether this step applies to the given airframe name.
+     *
+     * @param airframe the airframe name to check
+     * @return true if the step applies to the airframe
+     */
     public boolean airframeIsValid(String airframe) {
         return true;
     }
