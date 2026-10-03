@@ -145,10 +145,28 @@ scripts/test.sh python         # just the pytest suite
 scripts/test.sh js             # just the Vitest (frontend) suite
 scripts/test.sh --verbose      # stream each runner's full output
 scripts/test.sh --report       # run everything without failing, print counts
+scripts/test.sh java --log-level=DEBUG   # Java tests with debug (LOG.fine) logging
 ```
 
 Valid targets: `all` (default), `java`, `kotlin` (alias for `java`), `python`,
 `js` (Vitest in `ngafid-frontend`).
+
+### Test logging level
+
+Java logs at **WARN** by default, and the Java/Kotlin tests use the same default,
+so a normal run prints only warnings and errors. Pass `--log-level=LEVEL` to see
+more (or less). It sets both logging systems in the test JVMs:
+`java.util.logging`, which NGAFID's own code uses, and slf4j-simple, which the
+third-party libraries (Testcontainers, Liquibase, Kafka, HikariCP, ...) use.
+`LEVEL` is case-insensitive: `OFF`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, or
+the JUL names `SEVERE`, `WARNING`, `CONFIG`, `FINE`, `FINER`, `FINEST`, `ALL`.
+For example, `--log-level=DEBUG` shows `LOG.fine(...)` output.
+
+Under the hood, the root `pom.xml` points surefire at
+[`resources/log.properties`](resources/log.properties) and sets slf4j to `warn`
+through the `ngafid.test.log.config` / `ngafid.test.slf4j.level` properties. The
+flag overrides those properties. If you run Maven directly, you can override them
+the same way, e.g. `mvn test -Dngafid.test.slf4j.level=info`.
 
 ### Requirements
 

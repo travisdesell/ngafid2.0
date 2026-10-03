@@ -139,7 +139,7 @@ Required files:
 
 - `ngafid.properties`
 - `ngafid-db/src/liquibase.docker.properties`
-- `logging.properties`
+- `resources/log.properties` (the Java logging configuration)
 - `email_info.txt` (required only when email is enabled)
 
 Required `ngafid.properties` keys (minimum):

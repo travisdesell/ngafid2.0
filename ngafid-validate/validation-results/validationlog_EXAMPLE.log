@@ -16,7 +16,6 @@
 [PASS] COMPOSE: host alias - host.docker.internal resolves
 [PASS] COMPOSE: compose validator service - ngafid-validate service is defined
 [PASS] COMPOSE: compose validator gating - shared service dependency includes ngafid-validate completion gate
-[PASS] COMPOSE: workspace logging.properties - /workspace/logging.properties exists and is readable
 [PASS] COMPOSE: workspace log.properties - /workspace/resources/log.properties exists and is readable
 [PASS] CONFIG: properties parse - ngafid.properties loaded
 [PASS] CONFIG: required key ngafid.repo.path - present

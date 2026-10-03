@@ -145,7 +145,14 @@ bypass the configured level.
   debugging at `FINE` and genuinely noteworthy operational events at `INFO`; both
   are suppressed by the WARN default and can be enabled per package when needed
   (e.g. `org.ngafid.level=INFO`). Do not commit `System.out`/`System.err` debug
-  prints.
+  prints. Third-party libraries log through slf4j-simple, which is also set to
+  `warn` in
+  [`ngafid-core/src/main/resources/simplelogger.properties`](ngafid-core/src/main/resources/simplelogger.properties).
+  Do not migrate NGAFID code to the SLF4J API; keep using JUL.
+- **Tests** use the same WARN default (wired through surefire in the root
+  `pom.xml`). Use `scripts/test.sh --log-level=DEBUG` (or `INFO`, `TRACE`, ...)
+  to see more output when debugging. Do not raise levels in committed config to
+  get test output.
 - **Python** uses the `logging` module; `ngafid-pydata` (and the other Python
   tools) log at **INFO** by default. Use `logger.debug(...)` for verbose detail.
 - Choose the level deliberately for scale: anything that would fire per-flight or

@@ -9,7 +9,7 @@
 #
 # Usage:
 #   scripts/test.sh [--report] [--verbose] [--e2e] [--terrain] [--security] \
-#       [all|java|kotlin|python|js]
+#       [--log-level=LEVEL] [all|java|kotlin|python|js]
 #
 #   --report    Never exit non-zero: run every suite, print counts, and (in CI)
 #               append a summary to $GITHUB_STEP_SUMMARY. Without it, the script
@@ -27,7 +27,14 @@
 #   --security  Also run the standalone Gradle SQL-injection security-test project
 #               under ngafid-www/src/test/security-test. It targets a running
 #               server configured via its own .env (see CONTRIBUTING.md).
-#   target      Which suites to run (default: all):
+#   --log-level=LEVEL
+#               Logging level for the Java/Kotlin test JVMs (default WARN, the
+#               production default from resources/log.properties). Sets both
+#               java.util.logging (NGAFID code) and slf4j-simple (third-party
+#               libraries). LEVEL is case-insensitive: OFF, ERROR, WARN, INFO,
+#               DEBUG, TRACE, or the JUL names SEVERE, WARNING, CONFIG, FINE,
+#               FINER, FINEST, ALL. E.g. --log-level=DEBUG to see LOG.fine output.
+#   target     Which suites to run (default: all):
 #                 java       -> mvn test (ngafid-core, ngafid-www, ngafid-data-processor, ...)
 #                 kotlin     -> alias for java (Kotlin tests run under Maven too)
 #                 python     -> pytest (ngafid-pydata)
@@ -51,7 +58,9 @@ VERBOSE=0
 RUN_E2E=0
 RUN_TERRAIN=0
 RUN_SECURITY=0
+LOG_LEVEL=""
 TARGET="all"
+USAGE="Usage: scripts/test.sh [--report] [--verbose] [--e2e] [--terrain] [--security] [--log-level=LEVEL] [all|java|kotlin|python|js]"
 for arg in "$@"; do
     case "$arg" in
         --report) REPORT=1 ;;
@@ -59,17 +68,41 @@ for arg in "$@"; do
         --e2e) RUN_E2E=1 ;;
         --terrain) RUN_TERRAIN=1 ;;
         --security) RUN_SECURITY=1 ;;
+        --log-level=*) LOG_LEVEL="${arg#--log-level=}" ;;
         all | java | kotlin | python | js)
             TARGET="$arg"
             ;;
         *)
             echo "Unknown argument: $arg" >&2
-            echo "Usage: scripts/test.sh [--report] [--verbose] [--e2e] [--terrain] [--security]" \
-                "[all|java|kotlin|python|js]" >&2
+            echo "$USAGE" >&2
             exit 2
             ;;
     esac
 done
+
+# Map --log-level onto the java.util.logging level (JUL_LEVEL, for NGAFID code) and the
+# slf4j-simple level (SLF4J_LEVEL, for third-party libraries). Accepts the log4j/SLF4J names
+# and the JUL names, case-insensitively; slf4j has no CONFIG level, so it maps to info.
+JUL_LEVEL=""
+SLF4J_LEVEL=""
+if [[ -n "$LOG_LEVEL" ]]; then
+    case "$(echo "$LOG_LEVEL" | tr '[:lower:]' '[:upper:]')" in
+        OFF) JUL_LEVEL=OFF SLF4J_LEVEL=off ;;
+        ERROR | SEVERE) JUL_LEVEL=SEVERE SLF4J_LEVEL=error ;;
+        WARN | WARNING) JUL_LEVEL=WARNING SLF4J_LEVEL=warn ;;
+        INFO) JUL_LEVEL=INFO SLF4J_LEVEL=info ;;
+        CONFIG) JUL_LEVEL=CONFIG SLF4J_LEVEL=info ;;
+        DEBUG | FINE) JUL_LEVEL=FINE SLF4J_LEVEL=debug ;;
+        TRACE | FINER) JUL_LEVEL=FINER SLF4J_LEVEL=trace ;;
+        FINEST) JUL_LEVEL=FINEST SLF4J_LEVEL=trace ;;
+        ALL) JUL_LEVEL=ALL SLF4J_LEVEL=trace ;;
+        *)
+            echo "Unknown --log-level: $LOG_LEVEL (expected OFF, ERROR, WARN, INFO, DEBUG, TRACE," \
+                "or a JUL level: SEVERE, WARNING, CONFIG, FINE, FINER, FINEST, ALL)" >&2
+            exit 2
+            ;;
+    esac
+fi
 
 REPORTS_DIR="$ROOT/test-reports"
 mkdir -p "$REPORTS_DIR"
@@ -182,6 +215,18 @@ test_java() {
     # Append Docker args only when present (expanding an empty array trips `set -u` on bash < 4.4).
     if [[ ${#DOCKER_MVN_ARGS[@]} -gt 0 ]]; then
         mvn_args+=("${DOCKER_MVN_ARGS[@]}")
+    fi
+    if [[ -n "$JUL_LEVEL" ]]; then
+        # Override the test JVMs' logging (the poms default to resources/log.properties + slf4j
+        # warn). JUL has no level system property, so write a copy of the production config with
+        # only the root .level replaced (keeping its handler/format) and point the tests at it.
+        local log_config="$REPORTS_DIR/java-logging.properties"
+        {
+            grep -v '^[[:space:]]*\.level[[:space:]]*=' "$ROOT/resources/log.properties"
+            echo ".level=$JUL_LEVEL"
+        } >"$log_config"
+        mvn_args+=(-Dngafid.test.log.config="$log_config" -Dngafid.test.slf4j.level="$SLF4J_LEVEL")
+        echo "(--log-level: test logging at $JUL_LEVEL (java.util.logging) / $SLF4J_LEVEL (slf4j))"
     fi
     if [[ "$RUN_E2E" -eq 1 ]]; then
         # Clear ngafid-www's default e2e exclusion so the Selenium tests run too.

@@ -27,6 +27,11 @@
         <jvm.target>25</jvm.target>
         <maven.compiler.release>25</maven.compiler.release>
         <jacoco.skip>false</jacoco.skip>
+        <!-- Logging for the forked unit-test JVMs (see the surefire entry in pluginManagement).
+             Tests use the production java.util.logging config (WARN default) and slf4j-simple at
+             warn; the scripts/test.sh log-level flag overrides both with -D on the mvn command line. -->
+        <ngafid.test.log.config>${project.basedir}/../resources/log.properties</ngafid.test.log.config>
+        <ngafid.test.slf4j.level>warn</ngafid.test.slf4j.level>
 
         <spark.version>2.7.2</spark.version>
         <gson.version>2.13.1</gson.version>
@@ -166,6 +171,24 @@
     <build>
         <pluginManagement>
             <plugins>
+                <!--
+                    Unit-test logging for every module: point the forked test JVM's
+                    java.util.logging at ngafid.test.log.config and set slf4j-simple's default
+                    level. These are set as surefire system properties (not argLine) so they do
+                    not clobber the JaCoCo agent that prepare-agent injects through argLine.
+                    Modules' own surefire systemPropertyVariables merge with these.
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <java.util.logging.config.file>${ngafid.test.log.config}</java.util.logging.config.file>
+                            <org.slf4j.simpleLogger.defaultLogLevel>${ngafid.test.slf4j.level}</org.slf4j.simpleLogger.defaultLogLevel>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+
                 <!-- Kotlin compiler configuration for all modules -->
                 <plugin>
                     <groupId>org.jetbrains.kotlin</groupId>

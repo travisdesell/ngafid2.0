@@ -119,13 +119,19 @@ def _check_compose_startup_contract(validator, category):
         )
 
 
-def _check_workspace_logging_files(validator, category):
-    validator._check_file_readable(
-        category,
-        "workspace logging.properties",
-        "/workspace/logging.properties",
-        "ensure logging.properties exists at repository root",
-    )
+def _check_workspace_logging_files(validator: Validator, category: str) -> None:
+    """Require the Java logging config the services load at runtime.
+
+    Only ``resources/log.properties`` is checked: it is the java.util.logging
+    configuration the web server loads (and the Dockerfile copies to
+    ``/etc/log.properties``). The former repo-root ``logging.properties`` was
+    never loaded by anything and has been removed, so it is no longer required.
+
+    Args:
+        validator: The running startup validator, whose ``_check_file_readable``
+            helper records the pass/fail outcome.
+        category: The report category to file the result under (``COMPOSE``).
+    """
     validator._check_file_readable(
         category,
         "workspace log.properties",
