@@ -51,6 +51,10 @@ type UploadOutcomeCounts = {
 
 const LOADING_STRING = "...";
 
+const MIN_EVENT_PLOT_HEIGHT = 750;
+const EVENT_PLOT_VERTICAL_PADDING = 100;
+const EVENT_PLOT_HEIGHT_PER_TYPE = 32;
+
 const floatOptions = {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -403,6 +407,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
   displayPlots(selectedAirframe: AirframeNameID) {
     const countData = [];
     const percentData = [];
+    const displayedEventNames = new Set<string>();
 
     const fleetPercents = {
       name: this.props.aggregate ? "All Fleets" : "Your Fleet",
@@ -439,6 +444,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
       value.y = value.names;
       value.type = "bar";
       value.orientation = "h";
+      value.names.forEach((eventName: string) => displayedEventNames.add(eventName));
 
       //Don't add airframes to the count plot that the fleet doesn't have
       if (airframes.some((airframe) => airframe.name === value.airframeName)) countData.push(value);
@@ -486,6 +492,12 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
     //Push ngafidPercents data ('All Other Fleets')
     percentData.push(ngafidPercents);
 
+    const sortedEventNames = Array.from(displayedEventNames).sort((left, right) => left.localeCompare(right));
+    const eventPlotHeight = Math.max(
+      MIN_EVENT_PLOT_HEIGHT,
+      sortedEventNames.length * EVENT_PLOT_HEIGHT_PER_TYPE + EVENT_PLOT_VERTICAL_PADDING,
+    );
+
     //for (let j = 0; j < percentData.length; j++) {
     for (let j = percentData.length - 1; j >= 0; j--) {
       const value = percentData[j];
@@ -514,35 +526,7 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
       barmode: "stack" as const,
       //autosize: false,
       //width: 500,
-      height: 750,
-      margin: {
-        l: 250,
-        r: 50,
-        b: 50,
-        t: 50,
-        pad: 4,
-      },
-      legend: {
-        traceorder: "normal" as const,
-      },
-      plot_bgcolor: "transparent",
-      paper_bgcolor: plotBgColor,
-      font: {
-        color: plotTextColor,
-      },
-      xaxis: {
-        gridcolor: plotGridColor,
-      },
-      yaxis: {
-        gridcolor: plotGridColor,
-      },
-    };
-
-    const percentLayout = {
-      title: { text: "Percentage of Flights With Event" },
-      //autosize: false,
-      //width: 500,
-      height: 750,
+      height: eventPlotHeight,
       margin: {
         l: 250,
         r: 50,
@@ -564,6 +548,47 @@ export default class SummaryPage extends React.Component<SummaryPageProps, Summa
       yaxis: {
         gridcolor: plotGridColor,
         autorange: "reversed" as const,
+        categoryorder: "array" as const,
+        categoryarray: sortedEventNames,
+        tickmode: "array" as const,
+        tickvals: sortedEventNames,
+        ticktext: sortedEventNames,
+        automargin: true,
+      },
+    };
+
+    const percentLayout = {
+      title: { text: "Percentage of Flights With Event" },
+      //autosize: false,
+      //width: 500,
+      height: eventPlotHeight,
+      margin: {
+        l: 250,
+        r: 50,
+        b: 50,
+        t: 50,
+        pad: 4,
+      },
+      legend: {
+        traceorder: "normal" as const,
+      },
+      plot_bgcolor: "transparent",
+      paper_bgcolor: plotBgColor,
+      font: {
+        color: plotTextColor,
+      },
+      xaxis: {
+        gridcolor: plotGridColor,
+      },
+      yaxis: {
+        gridcolor: plotGridColor,
+        autorange: "reversed" as const,
+        categoryorder: "array" as const,
+        categoryarray: sortedEventNames,
+        tickmode: "array" as const,
+        tickvals: sortedEventNames,
+        ticktext: sortedEventNames,
+        automargin: true,
       },
     };
 

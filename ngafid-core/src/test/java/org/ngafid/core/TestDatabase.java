@@ -32,12 +32,12 @@ import org.testcontainers.containers.MySQLContainer;
  * and CI). The container, connection pool, and migrated schema are all created lazily the first time this class is
  * referenced.
  *
- * <p>Some tests exercise production code paths that borrow connections from the production {@link org.ngafid.core.Database}
- * singleton (methods that take no {@code Connection} argument). To support those, {@link #configureProductionSingletons()}
- * generates a throwaway {@code ngafid.properties} pointing {@link org.ngafid.core.Config} and
- * {@link org.ngafid.core.Database} at this same container, so production code reaches the migrated test schema instead of
- * failing to initialize for lack of configuration. This wiring is installed from the static initializer, before any test
- * touches those singletons.
+ * <p>Some tests exercise production code paths that borrow connections from the production
+ * {@link org.ngafid.core.Database} singleton (methods that take no {@code Connection} argument). To support those,
+ * {@link #configureProductionSingletons()} generates a throwaway {@code ngafid.properties} pointing
+ * {@link org.ngafid.core.Config} and {@link org.ngafid.core.Database} at this same container, so production
+ * code reaches the migrated test schema instead of failing to initialize for lack of configuration. This wiring
+ * is installed from the static initializer, before any test touches those singletons.
  */
 public final class TestDatabase {
 
@@ -128,10 +128,10 @@ public final class TestDatabase {
      * attempting real delivery. The email-info file is pre-created with a comment first line so {@code SendEmail}'s
      * static initializer treats email as unconfigured instead of trying (and possibly failing) to create it.
      *
-     * <p>The {@code ngafid.config.file} property is always set here: these tests require the throwaway container, so the
-     * production singletons must point at it regardless of any ambient configuration. It is set before any test touches
-     * {@code Config}/{@code Database} because this runs from {@link TestDatabase}'s static initializer, which every
-     * database-backed test triggers first.
+     * <p>The {@code ngafid.config.file} property is always set here: these tests require the throwaway container,
+     * so the production singletons must point at it regardless of any ambient configuration. It is set before any
+     * test touches {@code Config}/{@code Database} because this runs from {@link TestDatabase}'s static initializer,
+     * which every database-backed test triggers first.
      *
      * @throws RuntimeException if the temp configuration files cannot be written
      */

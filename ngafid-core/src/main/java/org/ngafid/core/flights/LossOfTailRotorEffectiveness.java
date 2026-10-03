@@ -305,6 +305,7 @@ public final class LossOfTailRotorEffectiveness {
         if (!Double.isNaN(spec.minFlyingWeightLbs()) && spec.minFlyingWeightLbs() > 0.0) {
             return ((spec.maxGrossWeightLbs() - spec.minFlyingWeightLbs()) * 0.75) + spec.minFlyingWeightLbs();
         }
+
         if (!Double.isNaN(spec.emptyWeightLbs()) && spec.emptyWeightLbs() > 0.0) {
             return ((spec.maxGrossWeightLbs() - spec.emptyWeightLbs()) * 0.75) + spec.emptyWeightLbs();
         }

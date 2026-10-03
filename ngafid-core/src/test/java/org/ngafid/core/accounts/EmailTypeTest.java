@@ -23,10 +23,11 @@ public class EmailTypeTest {
 
     /**
      * Clears the shared {@code email_preferences} table before each test so every test sees only the rows it creates.
-     * The coverage tests that invoke the global {@code EmailType.insertEmailTypesIntoDatabase()} / {@code main} populate
-     * the table for every seeded user from the production {@code Database} pool; without this reset the row-count
-     * assertions in the other tests would depend on execution order. Touching {@link TestDatabase} here also forces the
-     * container and the production {@code Config}/{@code Database} singletons to initialize before any test runs.
+     * The coverage tests that invoke the global {@code EmailType.insertEmailTypesIntoDatabase()} / {@code main}
+     * populate the table for every seeded user from the production {@code Database} pool; without this reset the
+     * row-count assertions in the other tests would depend on execution order. Touching {@link TestDatabase} here
+     * also forces the container and the production {@code Config}/{@code Database} singletons to initialize before
+     * any test runs.
      *
      * @throws SQLException if clearing the table fails
      */

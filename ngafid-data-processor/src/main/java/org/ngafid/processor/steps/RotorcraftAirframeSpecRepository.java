@@ -40,6 +40,7 @@ final class RotorcraftAirframeSpecRepository {
                 if (!resultSet.next()) {
                     return Optional.empty();
                 }
+
                 return Optional.of(toHelicopterSpec(resultSet));
             }
         }
