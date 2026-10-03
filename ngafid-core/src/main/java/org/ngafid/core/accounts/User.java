@@ -10,6 +10,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.ngafid.core.flights.Tails;
 import org.ngafid.core.util.SendEmail;
 
+/**
+ * A registered NGAFID user and the operations on their account.
+ *
+ * <p>Mirrors a row of the {@code user} table -- identity and contact details, admin and aggregate-view flags, password
+ * and reset tokens, and two-factor-authentication state -- and carries the user's fleet access, preferences, and email
+ * preferences. Provides the account lifecycle operations (registration, authentication, password reset, 2FA setup,
+ * and access management) backed by the database.
+ */
 public final class User implements Serializable {
 
     private static final Logger LOG = Logger.getLogger(User.class.getName());

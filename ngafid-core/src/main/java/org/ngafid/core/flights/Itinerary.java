@@ -13,6 +13,13 @@ import org.ngafid.core.airports.Airport;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.airports.Runway;
 
+/**
+ * One stop (takeoff, landing, touch-and-go, or go-around) detected along a flight's path near an airport and runway.
+ *
+ * <p>Built up while scanning a flight's position and altitude series, each itinerary entry tracks the nearest airport
+ * and runway, their minimum distances, the lowest-altitude point, and the approach/takeoff index boundaries, and
+ * classifies the stop type; entries are persisted to and reconstructed from the {@code itinerary} table.
+ */
 public class Itinerary {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final String GO_AROUND = "go_around";

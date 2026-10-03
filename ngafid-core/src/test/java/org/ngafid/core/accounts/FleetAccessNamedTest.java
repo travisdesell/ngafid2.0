@@ -12,6 +12,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ngafid.core.TestDatabase;
 
+/**
+ * Tests for named {@link FleetAccess} levels, run against the Testcontainers MySQL database.
+ *
+ * <p>Seeds fleet, user, and fleet-access fixtures before each test and verifies the access-level semantics over the
+ * seeded rows.
+ */
 public class FleetAccessNamedTest {
 
     private Connection connection;

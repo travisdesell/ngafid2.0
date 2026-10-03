@@ -9,6 +9,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.ngafid.processor.terrain.TerrainCache;
 
+/**
+ * Tests for {@link TerrainCache}'s coordinate-to-filename logic and terrain altitude lookups.
+ *
+ * <p>The filename test is pure logic and runs by default; the altitude tests resolve real SRTM tiles and are
+ * tagged {@code "terrain"} so they are excluded from the default and CI unit runs.
+ */
 public class TerrainCacheTest {
     // The altitude tests below resolve real SRTM terrain tiles, so they are tagged "terrain"
     // and excluded from the default (and CI) unit run. Download the terrain data and run them

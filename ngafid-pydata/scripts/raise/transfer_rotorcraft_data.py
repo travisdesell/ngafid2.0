@@ -1,4 +1,14 @@
 #!/usr/bin/python
+"""Export rotorcraft tail/flight data and upload it to the RAISE SFTP server.
+
+Standalone RAISE data-transfer script: connects to the local NGAFID MySQL
+database, writes a ``system_ids_to_tails__<date>.csv`` mapping of every tail, and
+uploads it (together with the rotorcraft flight data) to the RAISE SFTP server at
+``sftp.rotorcraft.asias.info``. The database and SFTP passwords are read from the
+``NGAFID_DB_PASSWORD`` and ``RAISE_PASSWORD`` environment variables. Intended to
+be run manually; requires the ``raise`` optional dependencies.
+"""
+
 import os
 import os.path
 import sys

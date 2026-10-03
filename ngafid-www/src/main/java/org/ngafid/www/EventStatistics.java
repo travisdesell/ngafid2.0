@@ -21,6 +21,14 @@ import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.util.TimeUtils;
 import org.ngafid.www.flights.FlightStatistics;
 
+/**
+ * Computes and holds event-rate statistics for a fleet's airframes, backing the statistics dashboards and APIs.
+ *
+ * <p>An instance summarizes one airframe's event definitions as {@link AirframeStatistics} entries, while the
+ * static helpers query the precomputed event-count tables to produce fleet and all-fleet totals, monthly series,
+ * and per-event breakdowns. The nested result and builder types ({@link EventCounts}, {@link MonthlyEventCounts},
+ * {@link FlightCounts}, and their builders) package those counts into chart-ready arrays.
+ */
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
 
@@ -700,6 +708,12 @@ public class EventStatistics {
                 connection, "v_fleet_total_event_counts_dated", "fleet_id = " + fleetId + " AND " + clause);
     }
 
+    /**
+     * In-memory lookup tables of flight counts indexed by airframe and fleet, built from a query result set.
+     *
+     * <p>Maintains airframe-to-fleet, fleet-to-airframe, and aggregate-per-airframe maps so callers can resolve
+     * flight totals for any airframe/fleet combination without re-querying.
+     */
     public static class FlightCounts {
 
         // Maps airframeId to another map, which maps fleetId to the number of flights
@@ -1111,6 +1125,15 @@ public class EventStatistics {
         }
     }
 
+    /**
+     * Base accumulator for building an {@link EventCountsWithAggregate} by summing per-key fleet and all-fleet
+     * counts of flights-with-event, total flights, and total events.
+     *
+     * <p>Subclasses define the output key order (event names or month labels) and {@code build()} the dense,
+     * key-aligned count arrays from the sparse maps collected here.
+     *
+     * @param <T> the concrete {@link EventCountsWithAggregate} result type the builder produces
+     */
     public abstract static class EventCountsWithAggregateBuilder<T extends EventCountsWithAggregate> {
         protected final Map<String, Integer> flightsWithEventMap = new HashMap<>();
         protected final Map<String, Integer> totalFlightsMap = new HashMap<>();
@@ -1214,6 +1237,13 @@ public class EventStatistics {
         }
     }
 
+    /**
+     * Holds six parallel count arrays -- the fleet and all-fleet variants of flights-with-event, total-flights,
+     * and total-events -- all indexed by the same ordered key list.
+     *
+     * <p>Serves as the base result type for event-rate series; subclasses add the key labels (event names or
+     * month labels) the positions correspond to.
+     */
     public static class EventCountsWithAggregate {
         private final int[] flightsWithEventCounts;
         private final int[] totalFlightsCounts;
@@ -1255,6 +1285,10 @@ public class EventStatistics {
         }
     }
 
+    /**
+     * An {@link EventCountsWithAggregate} for one airframe/event over time, labeling each array position with the
+     * month it covers so the counts can be rendered as a monthly time series.
+     */
     public static class MonthlyEventCounts extends EventCountsWithAggregate {
         private final String airframeName;
         private final String eventName;
@@ -1298,6 +1332,12 @@ public class EventStatistics {
         }
     }
 
+    /**
+     * Accumulates monthly event counts for one airframe/event and builds a {@link MonthlyEventCounts}.
+     *
+     * <p>Precomputes the ordered list of month labels spanning the requested date range so every month is
+     * represented in the output even when it has no events.
+     */
     public static class MonthlyEventCountsBuilder extends EventCountsWithAggregateBuilder<MonthlyEventCounts> {
         private final String airframeName;
         private final String eventName;
@@ -1344,6 +1384,10 @@ public class EventStatistics {
         }
     }
 
+    /**
+     * An {@link EventCountsWithAggregate} for one airframe across a set of event types, labeling each array
+     * position with the event name it corresponds to.
+     */
     public static class EventCounts extends EventCountsWithAggregate {
         private final String airframeName;
         private final List<String> names;
@@ -1387,6 +1431,12 @@ public class EventStatistics {
         }
     }
 
+    /**
+     * Accumulates per-event counts for one airframe and builds an {@link EventCounts}, keyed by event name.
+     *
+     * <p>Event names can be registered up front so they appear in the output even when they have no recorded
+     * counts.
+     */
     public static class EventCountsBuilder extends EventCountsWithAggregateBuilder<EventCounts> {
         private final String airframeName;
 

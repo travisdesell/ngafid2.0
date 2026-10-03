@@ -18,6 +18,13 @@ import org.ngafid.core.flights.Airframes;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.util.filters.Filter;
 
+/**
+ * Defines the criteria for an event that can be detected in flight data, backed by the {@code event_definitions} table.
+ *
+ * <p>A definition pairs a trigger condition (a serialized {@link org.ngafid.core.util.filters.Filter}) with the
+ * columns it reads, start/stop buffers, the airframe it applies to, and how severity is computed. Definition
+ * id-to-name mappings are cached at class load since definitions change rarely.
+ */
 public class EventDefinition {
     // TODO: Replace with Jackson
     public static final Gson GSON =
@@ -48,6 +55,10 @@ public class EventDefinition {
         }
     }
 
+    /**
+     * Describes how an event's severity is aggregated from its per-sample values: by minimum, maximum, or the
+     * minimum/maximum of absolute values.
+     */
     public enum SeverityType {
         MIN,
         MAX,

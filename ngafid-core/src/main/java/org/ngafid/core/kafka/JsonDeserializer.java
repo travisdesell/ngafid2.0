@@ -4,6 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.apache.kafka.common.serialization.Deserializer;
 
+/**
+ * Kafka {@link Deserializer} that converts JSON message bytes into instances of a configured target type using Jackson.
+ *
+ * <p>The target class is resolved from the {@code json.deserializer.type} consumer configuration entry.
+ *
+ * @param <T> the type that message payloads are deserialized into
+ */
 public class JsonDeserializer<T> implements Deserializer<T> {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private Class<T> targetType;

@@ -17,6 +17,13 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.www.ErrorResponse;
 
+/**
+ * Provides the endpoints that expose a flight's numeric ("double") time series to the client for plotting.
+ *
+ * <p>Handlers return the catalog of all known series names, the series names present for a given flight, and the
+ * sample values of a single named series, verifying the user's flight access first. The nested types model each
+ * JSON response. Note that {@link #bindRoutes(io.javalin.Javalin)} currently registers no routes.
+ */
 public class DoubleSeriesJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(DoubleSeriesJavalinRoutes.class.getName());
 
@@ -24,6 +31,9 @@ public class DoubleSeriesJavalinRoutes {
         // Utility class - prevent instantiation
     }
 
+    /**
+     * JSON response listing every known double-series name from the {@code double_series_names} catalog.
+     */
     public static class AllDoubleSeriesNames {
         @JsonProperty
         private final List<String> names = new ArrayList<String>();
@@ -51,6 +61,10 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
+    /**
+     * JSON response holding one named double time series for a flight as parallel plot arrays of sample indices
+     * ({@code x}) and values ({@code y}).
+     */
     public static class DoubleSeries {
         @JsonProperty
         private final String[] x;
@@ -96,6 +110,9 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
+    /**
+     * JSON response listing the double-series names that are actually present for a specific flight.
+     */
     public static class DoubleSeriesNames {
         @JsonProperty
         private final List<String> names = new ArrayList<String>();

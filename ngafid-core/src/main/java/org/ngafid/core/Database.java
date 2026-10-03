@@ -11,6 +11,12 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
 
+/**
+ * Central access point for the NGAFID relational database, wrapping a shared HikariCP connection pool.
+ *
+ * <p>The pool is configured from {@link Config} and initialized once in a static block; callers borrow connections
+ * via {@link #getConnection()} and are responsible for closing them so they return to the pool.
+ */
 public final class Database {
 
     private static HikariDataSource CONNECTION_POOL = null;

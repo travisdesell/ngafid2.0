@@ -7,6 +7,13 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Utility for interning flight error/warning message strings to integer ids in the {@code flight_messages} table.
+ *
+ * <p>Maintains bidirectional in-memory caches so that frequently repeated message text is stored once and resolved
+ * without a database round trip; on a cache miss it looks the message up and inserts it if absent. All members are
+ * static and the class is not instantiable.
+ */
 public final class ErrorMessage {
     private static final Map<String, Integer> ID_MAP = new ConcurrentHashMap<>();
     private static final Map<Integer, String> MESSAGE_MAP = new ConcurrentHashMap<>();

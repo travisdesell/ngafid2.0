@@ -1,5 +1,12 @@
 package org.ngafid.airsync;
 
+/**
+ * Collects the AirSync partner API base URL and the URL templates for its endpoints.
+ *
+ * <p>Defines constants for authentication, log retrieval and confirmation, and aircraft info, along with the
+ * default page size used when paging through logs. The {@code AIRSYNC_ROOT} constant is switched between the
+ * production and sandbox/dev hosts here.
+ */
 public interface AirSyncEndpoints {
     // This will be the default page size when getting imports;
     // Set this higher to improve performance, lower to reduce memory usage and reliability

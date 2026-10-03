@@ -15,6 +15,13 @@ import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.util.TimeUtils;
 
+/**
+ * Represents a single detected event within a flight, backed by a row in the {@code events} table.
+ *
+ * <p>An event records the matching event definition, the flight and fleet it belongs to, its start/end times and
+ * sample line range, a computed severity, and, for proximity events, the other flight involved. The class also
+ * provides persistence and querying of events against the database.
+ */
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());
     private double severity;

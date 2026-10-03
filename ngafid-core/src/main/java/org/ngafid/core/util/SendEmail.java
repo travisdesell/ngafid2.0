@@ -19,6 +19,13 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.kafka.EmailConsumer;
 import org.ngafid.core.kafka.Topic;
 
+/**
+ * Utility for composing and dispatching NGAFID notification emails.
+ *
+ * <p>Emails are published onto a Kafka topic (via {@link #enqueueEmail}) for the email consumer to deliver, and the
+ * class also handles per-recipient opt-out filtering by {@link EmailType} and the generation of unsubscribe links and
+ * tokens. All members are static; the class is not instantiable.
+ */
 public final class SendEmail {
 
     private SendEmail() {
@@ -211,6 +218,15 @@ public final class SendEmail {
         enqueueEmail(new Email(toRecipients, bccRecipients, subject, body, emailType));
     }
 
+    /**
+     * An immutable, JSON-serializable email message carried as the value of a Kafka email record.
+     *
+     * @param recipients the primary (To) recipient addresses
+     * @param bccRecipients the blind-carbon-copy recipient addresses
+     * @param subject the email subject line
+     * @param body the email body (HTML)
+     * @param emailType the email type, used for per-recipient opt-out handling
+     */
     public record Email(
             List<String> recipients, List<String> bccRecipients, String subject, String body, EmailType emailType) {}
 

@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.ngafid.core.util.ErrorMessage;
 
+/**
+ * A fatal error recorded against a flight or upload, persisted in {@code flight_errors}.
+ *
+ * <p>Each error links a flight to an interned message (stored by message id via {@code ErrorMessage}) and supports
+ * inserting new errors as well as retrieving the errors recorded for a flight or an entire upload.
+ */
 public class FlightError {
     private static final Logger LOG = Logger.getLogger(FlightError.class.getName());
 

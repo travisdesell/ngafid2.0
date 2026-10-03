@@ -14,6 +14,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
+/**
+ * Static helpers for parsing, normalizing, and converting the varied date/time formats found in flight data.
+ *
+ * <p>Provides shared ISO-8601 and MySQL {@link DateTimeFormatter}s, correction of out-of-range UTC offsets, detection
+ * of the correct formatter for an unknown input, and conversions between SQL strings and {@link OffsetDateTime}. The
+ * class is not instantiable.
+ */
 public final class TimeUtils {
     private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
 
@@ -30,6 +37,10 @@ public final class TimeUtils {
         return MYSQL_FORMAT;
     }
 
+    /**
+     * Gson {@link TypeAdapter} that serializes an {@link OffsetDateTime} as a MySQL-format UTC string; reads are not
+     * supported and always return {@code null}.
+     */
     public static class OffsetDateTimeJSONAdapter extends TypeAdapter<OffsetDateTime> {
 
         @Override
@@ -398,6 +409,9 @@ public final class TimeUtils {
         return LocalDateTime.parse(sqlDateTime, MYSQL_FORMAT).atOffset(ZoneOffset.UTC);
     }
 
+    /**
+     * Checked exception indicating that none of the configured formatters could parse a given date/time string.
+     */
     public static class UnrecognizedDateTimeFormatException extends Exception {}
 
     /**

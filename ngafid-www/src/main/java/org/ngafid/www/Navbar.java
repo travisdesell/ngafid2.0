@@ -9,6 +9,13 @@ import org.ngafid.core.Database;
 import org.ngafid.core.accounts.FleetAccess;
 import org.ngafid.core.accounts.User;
 
+/**
+ * Builds the client-side state that drives the shared navigation bar for each rendered page.
+ *
+ * <p>Its sole method inspects the session user and the database to emit a JavaScript snippet of feature flags
+ * (fleet-manager status, pending-user and unconfirmed-tail counts, AirSync, upload and tail-modify access, admin
+ * and view permissions) that the front-end navbar reads when rendering.
+ */
 public class Navbar {
 
     private Navbar() {

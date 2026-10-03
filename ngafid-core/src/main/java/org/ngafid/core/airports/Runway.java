@@ -2,6 +2,12 @@ package org.ngafid.core.airports;
 
 import java.io.Serializable;
 
+/**
+ * Represents a single runway of an airport, optionally with its two endpoint coordinates.
+ *
+ * <p>When coordinates are unknown the lat/lon fields are NaN and {@code hasCoordinates} is false, signalling that
+ * proximity-to-runway calculations are not meaningful for this runway.
+ */
 public class Runway implements Serializable {
 
     private final String siteNumber;

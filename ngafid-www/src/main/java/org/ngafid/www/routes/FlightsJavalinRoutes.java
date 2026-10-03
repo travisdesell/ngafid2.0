@@ -19,6 +19,12 @@ import org.ngafid.core.util.filters.Filter;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the flight-browsing pages: the flights listing, a single-flight view, and the flight-display page.
+ *
+ * <p>Routes render Mustache templates seeded with the matching flights, event definitions, filters, and the
+ * chart-tile base URL needed by the client-side map and plot views.
+ */
 public class FlightsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
 

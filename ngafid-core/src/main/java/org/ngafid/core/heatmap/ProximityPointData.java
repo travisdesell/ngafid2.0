@@ -2,6 +2,9 @@ package org.ngafid.core.heatmap;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Immutable value holding a single sampled point of a proximity event: its position, timestamp, and altitude AGL.
+ */
 public class ProximityPointData {
     private final double latitude;
     private final double longitude;

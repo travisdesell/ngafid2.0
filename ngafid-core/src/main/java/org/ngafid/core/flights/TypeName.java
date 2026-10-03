@@ -4,6 +4,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import org.ngafid.core.util.NormalizedColumn;
 
+/**
+ * A normalized data-type name for a time series column, backed by the {@code data_type_names} table.
+ *
+ * <p>Interns the units/data-type label of a series so it is stored once by id, resolving between name and id through
+ * the shared {@link NormalizedColumn} caching and lookup machinery.
+ */
 public final class TypeName extends NormalizedColumn<TypeName> {
     /**
      * Constructs a data-type name from its name, resolving the id from the in-memory cache only (no database lookup).

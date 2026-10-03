@@ -5,6 +5,12 @@ import java.sql.SQLException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+/**
+ * Base class for tests that need a database connection, managing one against the Testcontainers MySQL instance.
+ *
+ * <p>It opens a fresh {@link TestDatabase} connection before each test and closes it afterward, exposing it to
+ * subclasses via the protected {@code connection} field.
+ */
 public class TestWithConnection {
     protected Connection connection;
 

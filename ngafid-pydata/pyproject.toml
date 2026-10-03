@@ -42,8 +42,17 @@ extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 # A small, sensible default rule set: pycodestyle (E/W), pyflakes (F),
-# isort (I), pyupgrade (UP), and flake8-bugbear (B).
-select = ["E", "F", "W", "I", "UP", "B"]
+# isort (I), pyupgrade (UP), flake8-bugbear (B), and pydocstyle (D). The D rules
+# enforce the CLAUDE.md docstring requirement -- every public module, class, and
+# function (tests included) must carry a Google-style docstring, kept clean in
+# CI. (pydocstyle only inspects public API -- private, underscore-prefixed
+# members are not gated.) See scripts/lint.sh and CONTRIBUTING.md.
+select = ["E", "F", "W", "I", "UP", "B", "D"]
+
+[tool.ruff.lint.pydocstyle]
+# Google-style docstrings (Args:/Returns:/Raises:), matching the existing
+# codebase and the CLAUDE.md "Docstrings" section.
+convention = "google"
 
 [tool.ruff.lint.isort]
 known-first-party = ["foundry_export", "tests"]

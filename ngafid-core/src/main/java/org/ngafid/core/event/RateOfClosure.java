@@ -6,6 +6,12 @@ import java.util.logging.Logger;
 import javax.sql.rowset.serial.SerialBlob;
 import org.ngafid.core.util.Compression;
 
+/**
+ * Holds the per-sample rate-of-closure series for a proximity event and persists it to the database.
+ *
+ * <p>The array captures how quickly two aircraft are approaching each other over the event; it is stored compressed
+ * as a BLOB and read back for display and analysis.
+ */
 public class RateOfClosure {
 
     private static final Logger LOG = Logger.getLogger(RateOfClosure.class.getName());

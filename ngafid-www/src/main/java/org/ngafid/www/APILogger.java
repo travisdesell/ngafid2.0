@@ -7,6 +7,12 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import org.ngafid.core.Database;
 
+/**
+ * Persists a record of each served API request to the {@code api_logs} table for auditing and usage analysis.
+ *
+ * <p>Logging is best-effort: database and host-resolution failures are caught and swallowed so that recording a
+ * request never interferes with serving it.
+ */
 public class APILogger {
     private APILogger() {
         // Utility class

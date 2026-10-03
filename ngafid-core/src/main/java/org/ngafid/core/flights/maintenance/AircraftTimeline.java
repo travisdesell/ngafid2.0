@@ -6,6 +6,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.logging.Logger;
 
+/**
+ * One flight positioned on an aircraft's maintenance timeline, linking it to the surrounding maintenance events.
+ *
+ * <p>Records the flight's time window and tracks the previous and next {@link MaintenanceRecord} relative to the
+ * flight along with the elapsed days and flight counts to each, so flights can be ordered and related to maintenance
+ * activity. Instances are naturally ordered by their timeline position.
+ */
 public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private static final Logger LOG = Logger.getLogger(AircraftTimeline.class.getName());
 

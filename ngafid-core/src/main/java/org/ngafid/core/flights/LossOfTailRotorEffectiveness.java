@@ -273,6 +273,18 @@ public final class LossOfTailRotorEffectiveness {
 
     private LossOfTailRotorEffectiveness() {}
 
+    /**
+     * Physical and weight specification for a helicopter airframe, supplying the constants the LTE model needs.
+     *
+     * @param airframe the airframe name this spec describes
+     * @param maxGrossWeightLbs maximum gross weight, in pounds
+     * @param minFlyingWeightLbs minimum flying weight, in pounds (NaN or non-positive if unknown)
+     * @param emptyWeightLbs empty weight, in pounds (NaN or non-positive if unknown)
+     * @param mainRotorBlades number of main-rotor blades
+     * @param mainRotorDiameterIn main-rotor diameter, in inches
+     * @param mainRotorBladeChordIn main-rotor blade chord, in inches
+     * @param mainRotorMaxContinuousRpm main-rotor maximum continuous rotational speed, in RPM
+     */
     public record HelicopterSpec(
             String airframe,
             double maxGrossWeightLbs,
@@ -283,6 +295,14 @@ public final class LossOfTailRotorEffectiveness {
             double mainRotorBladeChordIn,
             double mainRotorMaxContinuousRpm) {}
 
+    /**
+     * The normalized, model-ready inputs fed into the LTE neural-network calculation for a single sample.
+     *
+     * @param relativeWindDeg relative wind direction in the body frame, in degrees
+     * @param mrctSigma main-rotor collective thrust coefficient divided by air-density ratio sigma
+     * @param mu advance ratio (airspeed normalized by rotor-tip speed)
+     * @param yawRateDps yaw rate, in degrees per second
+     */
     public record NormalizedInputs(double relativeWindDeg, double mrctSigma, double mu, double yawRateDps) {}
 
     /**

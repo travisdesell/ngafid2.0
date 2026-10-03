@@ -6,6 +6,13 @@ import java.util.logging.Logger;
 import org.ngafid.core.airports.Airports;
 import org.ngafid.core.event.Event;
 
+/**
+ * Detects proximity (near-miss) events by comparing a flight's track against those of other flights.
+ *
+ * <p>Provides the geometry used for proximity detection -- 3D and lateral separation between aircraft positions --
+ * and drives the search for other flights whose time span and spatial bounds overlap, recording proximity
+ * {@link Event}s with negative identifiers so they are excluded from the ordinary event-calculation pipeline.
+ */
 public class CalculateProximity {
 
     private CalculateProximity() {

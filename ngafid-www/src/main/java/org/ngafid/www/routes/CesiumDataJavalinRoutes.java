@@ -26,6 +26,13 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.www.ErrorResponse;
 
+/**
+ * Serves the Cesium 3D flight-replay page and the endpoint that produces its path data.
+ *
+ * <p>From a flight's latitude, longitude, altitude, and time series it builds the Cesium flight path, dropping
+ * vertices closer together than {@link #MIN_CESIUM_PATH_SEGMENT_METERS} to suppress GPS dither, and renders the
+ * replay template with the resulting data.
+ */
 public class CesiumDataJavalinRoutes {
 
     private static final Logger LOG = Logger.getLogger(CesiumDataJavalinRoutes.class.getName());

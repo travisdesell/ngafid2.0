@@ -46,6 +46,10 @@ public abstract class WebServer {
         return dockerServiceHeartbeatMonitor;
     }
 
+    /**
+     * Gson adapter that serializes {@link LocalDateTime} as its ISO string and parses incoming values as a
+     * {@link ZonedDateTime} before reducing them to a local date-time, with nulls passed through unchanged.
+     */
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
         public void write(final JsonWriter jsonWriter, final LocalDateTime localDate) throws IOException {
@@ -66,6 +70,10 @@ public abstract class WebServer {
         }
     }
 
+    /**
+     * Gson adapter that serializes and parses {@link OffsetDateTime} using the ISO offset date-time format, with
+     * nulls passed through unchanged.
+     */
     public static class OffsetDateTimeTypeAdapter extends TypeAdapter<OffsetDateTime> {
         private final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
@@ -89,6 +97,10 @@ public abstract class WebServer {
         }
     }
 
+    /**
+     * Gson adapter for {@link Double} that writes non-finite values (NaN, positive and negative infinity) as JSON
+     * null, keeping the output valid JSON since the format cannot represent those values.
+     */
     public static class NonFiniteDoubleAdapter extends TypeAdapter<Double> {
 
         /*

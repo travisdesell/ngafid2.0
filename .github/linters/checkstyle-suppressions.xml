@@ -4,4 +4,5 @@
   "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
   <suppress checks="FileLength" files=".*FlightTest\.java"/>
+  <suppress checks="FileLength" files=".*UserTest\.java"/>
 </suppressions>

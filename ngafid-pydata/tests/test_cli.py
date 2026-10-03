@@ -76,7 +76,7 @@ def test_parse_args_requires_output_dir() -> None:
 
 
 def test_main_returns_1_when_start_after_end(tmp_path: Path) -> None:
-    """main returns 1 and writes nothing when start date is after end date.
+    """Main returns 1 and writes nothing when start date is after end date.
 
     Args:
         tmp_path: Temporary directory used as the output directory.
@@ -105,7 +105,7 @@ def test_main_writes_all_csv_and_avsc(
     patch_connect: Callable[[Any], None],
     tmp_path: Path,
 ) -> None:
-    """main writes every CSV/AVSC pair into a recursively created directory.
+    """Main writes every CSV/AVSC pair into a recursively created directory.
 
     Args:
         fake_connection: A healthy fake database connection.
@@ -130,7 +130,7 @@ def test_main_binds_full_day_date_range(
     patch_connect: Callable[[Any], None],
     tmp_path: Path,
 ) -> None:
-    """main binds the events query to the full inclusive day range.
+    """Main binds the events query to the full inclusive day range.
 
     Args:
         fake_connection: A healthy fake database connection.
@@ -192,7 +192,7 @@ def test_main_returns_2_on_connection_error(
     patch_connect: Callable[[Any], None],
     tmp_path: Path,
 ) -> None:
-    """main returns 2 when the database connection fails.
+    """Main returns 2 when the database connection fails.
 
     Args:
         patch_connect: Helper to patch mysql.connector.connect.
@@ -210,7 +210,7 @@ def test_main_returns_2_on_query_error(
     patch_connect: Callable[[Any], None],
     tmp_path: Path,
 ) -> None:
-    """main returns 2 and still closes the connection when a query fails.
+    """Main returns 2 and still closes the connection when a query fails.
 
     Args:
         make_fake_connection: Factory for fake connections.
@@ -232,7 +232,7 @@ def test_main_prompts_for_password_when_omitted(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """main prompts via getpass when --password is not supplied.
+    """Main prompts via getpass when --password is not supplied.
 
     Args:
         fake_connection: A healthy fake database connection.

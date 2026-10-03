@@ -11,6 +11,12 @@ import java.net.URL;
 import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
 
+/**
+ * Represents a single AirSync account (its name and API token) belonging to a fleet.
+ *
+ * <p>Instances are deserialized from the AirSync partner API and provide the per-account token used to
+ * authenticate subsequent AirSync requests for that account's aircraft.
+ */
 public class AirSyncAccount {
 
     private final String name;

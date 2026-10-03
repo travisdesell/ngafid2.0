@@ -13,6 +13,12 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.ngafid.core.Config;
 
+/**
+ * In-memory registry of airports and runways loaded from the configured data files, with geospatial lookup helpers.
+ *
+ * <p>On load it indexes airports by geohash, FAA site number, and IATA code so callers can efficiently find the
+ * nearest airport and runway to a coordinate; it also provides great-circle distance utilities over the stored data.
+ */
 public final class Airports {
     private static final double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
     private static final double FT_PER_KM = 3280.84;

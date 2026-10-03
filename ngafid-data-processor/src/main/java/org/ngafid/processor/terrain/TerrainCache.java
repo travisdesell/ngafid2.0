@@ -11,6 +11,14 @@ import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.ngafid.core.Config;
 
+/**
+ * Caches SRTM terrain tiles and resolves terrain-relative altitudes for latitude/longitude points.
+ *
+ * <p>Maintains a Guava {@link LoadingCache} of {@link SRTMTile}s keyed by integer tile indices, bounded by the
+ * configured maximum size and loading tiles on demand from the terrain data directory. Provides the lookup used
+ * during flight processing to compute altitude above ground level, plus helpers that map coordinates to the SRTM
+ * distribution's directory and {@code .hgt} file naming scheme.
+ */
 public class TerrainCache {
     private static final Logger LOG = Logger.getLogger(TerrainCache.class.getName());
 

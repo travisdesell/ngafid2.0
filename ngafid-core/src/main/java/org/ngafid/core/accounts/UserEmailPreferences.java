@@ -4,6 +4,12 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+/**
+ * A user's per-type email opt-in settings, mapping each {@link EmailType} key to whether the user receives it.
+ *
+ * <p>Snapshots the current set of known email-type keys (refreshed from the database) at construction and answers
+ * whether the user has opted in to a given type, defaulting to disabled for types absent from the map.
+ */
 public class UserEmailPreferences implements Serializable {
 
     private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());

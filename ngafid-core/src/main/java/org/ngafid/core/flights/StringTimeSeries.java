@@ -9,8 +9,20 @@ import org.ngafid.core.flights.Parameters.Unit;
 import org.ngafid.core.util.Compression;
 import org.ngafid.core.util.NormalizedColumn;
 
+/**
+ * A named time series of {@code String} values (e.g. status or text columns) for a single flight.
+ *
+ * <p>Holds the per-sample string values along with the series name and data type, and handles persistence to the
+ * {@code string_series} table as a compressed blob with lazy decompression on read.
+ */
 public final class StringTimeSeries {
 
+    /**
+     * A normalized name for a string time series, interned in the {@code string_series_names} table.
+     *
+     * <p>Stores each distinct series name once by id and resolves between name and id through the shared
+     * {@link NormalizedColumn} caching and lookup machinery.
+     */
     public static class StringSeriesName extends NormalizedColumn<StringSeriesName> {
         /**
          * Creates an unresolved string-series name from its string value (no database id assigned yet).

@@ -13,6 +13,13 @@ import org.ngafid.core.util.Compression;
 import org.ngafid.core.util.NormalizedColumn;
 import org.ngafid.core.util.filters.Pair;
 
+/**
+ * A named numeric time series (one column of sampled {@code double} values) for a single flight.
+ *
+ * <p>Holds the per-sample values alongside cached statistics (length, valid length, min/avg/max) and the series name
+ * and data type, and handles persistence to the {@code double_series} table as a compressed blob, lazy decompression
+ * on read, and derivation of new computed series from existing ones.
+ */
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, "
@@ -889,6 +896,12 @@ public class DoubleTimeSeries {
         double compute(int i);
     }
 
+    /**
+     * A normalized name for a double time series, interned in the {@code double_series_names} table.
+     *
+     * <p>Stores each distinct series name once by id and resolves between name and id through the shared
+     * {@link NormalizedColumn} caching and lookup machinery.
+     */
     public static class DoubleSeriesName extends NormalizedColumn<DoubleSeriesName> {
         /**
          * Creates an unresolved double-series name from its string value (no database id assigned yet).

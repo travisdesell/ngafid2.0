@@ -5,6 +5,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Loads and exposes NGAFID-wide configuration as typed constants.
+ *
+ * <p>Values are read once from the {@code ngafid.properties} file (with some derived from the runtime environment,
+ * such as whether the process is running inside Docker) and published as static fields for the rest of the system.
+ */
 public final class Config {
     private static final Properties PROPERTIES = new Properties();
     private static final String PROPERTIES_FILE = "ngafid.properties";

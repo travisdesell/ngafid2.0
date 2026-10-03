@@ -18,6 +18,13 @@ import org.ngafid.core.flights.export.*;
 import org.ngafid.core.uploads.Upload;
 import org.ngafid.www.ErrorResponse;
 
+/**
+ * Serves flight-data downloads: a flight's time series as CSV (original upload or processed/generated) and as an
+ * X-Plane {@code .fdr} file.
+ *
+ * <p>Each route verifies the session user's access to the requested flight before streaming the file from the
+ * NGAFID archive or generating it from the flight's series.
+ */
 public class DataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DataJavalinRoutes.class.getName());
 

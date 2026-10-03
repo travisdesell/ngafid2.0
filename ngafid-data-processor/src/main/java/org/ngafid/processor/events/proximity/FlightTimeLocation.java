@@ -9,6 +9,13 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.filters.Pair;
 
+/**
+ * Holds the time span, spatial bounding box, and position/altitude series of a flight for proximity testing.
+ *
+ * <p>Loads a flight's start/end times and its min/max latitude, longitude and MSL altitude so candidate flights
+ * can be cheaply screened for overlapping regions and time windows, and lazily fetches the full latitude,
+ * longitude, altitude and airspeed series needed for detailed proximity comparison.
+ */
 public final class FlightTimeLocation {
     // CHECKSTYLE:OFF
     // set to true if the flight has the required time series values and a start and

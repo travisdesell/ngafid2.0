@@ -1,4 +1,4 @@
-"""Export NGAFID events and related reference tables to CSV files.
+r"""Export NGAFID events and related reference tables to CSV files.
 
 Connects to the NGAFID MySQL database (by default over a local SSH tunnel) and
 writes a set of CSV files into an output directory:
@@ -29,8 +29,8 @@ connection details and the date range are supplied on the command line via
 :mod:`argparse`.
 
 Example:
-    ngafid-export-events \\
-        --start-date 2024-01-01 --end-date 2024-01-31 \\
+    ngafid-export-events \
+        --start-date 2024-01-01 --end-date 2024-01-31 \
         --output-dir export/2024-01
 """
 

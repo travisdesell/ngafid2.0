@@ -17,6 +17,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ngafid.core.TestDatabase;
 
+/**
+ * Tests for {@link EmailType} email-preference handling, run against the Testcontainers MySQL database.
+ *
+ * <p>Exercises reading and writing per-user email preferences in the {@code email_preferences} table, including the
+ * global seeding routine, resetting the table before each test so row-count assertions are order-independent.
+ */
 public class EmailTypeTest {
 
     private Connection connection;

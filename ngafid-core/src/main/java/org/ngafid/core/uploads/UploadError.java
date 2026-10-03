@@ -9,6 +9,11 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.ngafid.core.util.ErrorMessage;
 
+/**
+ * Represents an upload-level error, backed by a row in the {@code upload_errors} table.
+ *
+ * <p>Error message text is interned to a shared message id to avoid duplicating repeated messages across uploads.
+ */
 public class UploadError {
     private static final Logger LOG = Logger.getLogger(UploadError.class.getName());
 

@@ -10,6 +10,13 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a user-labeled time range within a flight, persisted to and loaded from the database.
+ *
+ * <p>Each section records the flight and tail it belongs to, its start/end sample indices, times and values, the
+ * label text, and the parameter names it applies to, preserving raw datetime strings so stored values are not altered
+ * by timezone conversion.
+ */
 public class FlightLabelSection {
     private int id;
     private int flightId;

@@ -17,6 +17,13 @@ import org.ngafid.core.uploads.Upload;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the paged upload- and import-listing pages for the logged-in user's fleet.
+ *
+ * <p>Routes render Mustache templates with a page of uploads or imports and the computed page count, using the
+ * page-math helpers to clamp requested pages and convert between the 1-based public page numbers shown to users
+ * and the 0-based internal offsets used for the database queries.
+ */
 public class ImportUploadJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
     private static final int DEFAULT_PAGE_SIZE = 10;

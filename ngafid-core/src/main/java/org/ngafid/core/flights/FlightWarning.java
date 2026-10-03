@@ -10,6 +10,12 @@ import java.util.List;
 import java.util.logging.Logger;
 import org.ngafid.core.util.ErrorMessage;
 
+/**
+ * A non-fatal warning raised while processing a flight, persisted in {@code flight_warnings}.
+ *
+ * <p>Each warning ties a flight to an interned message (stored by message id via {@code ErrorMessage}) and supports
+ * batched inserts as well as per-flight and per-upload retrieval.
+ */
 public class FlightWarning {
     private static final Logger LOG = Logger.getLogger(FlightWarning.class.getName());
 

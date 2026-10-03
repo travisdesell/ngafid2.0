@@ -22,6 +22,13 @@ import org.ngafid.core.uploads.Upload;
 import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the AirSync management pages that list a fleet's AirSync uploads and imports.
+ *
+ * <p>Each route renders a Mustache template with a paged slice of the fleet's AirSync records, plus the fleet's
+ * last-update timestamp, loaded via {@link org.ngafid.airsync.AirSyncImport} and
+ * {@link org.ngafid.airsync.AirSyncFleet}.
+ */
 public class AirsyncJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AirsyncJavalinRoutes.class.getName());
 

@@ -11,6 +11,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+/**
+ * Registry for mapping aircraft tail numbers to their internal system ids within each fleet.
+ *
+ * <p>This utility class maintains per-fleet, process-wide caches linking system id, tail number, and confirmation
+ * status, falling back to the {@code tails} table to resolve and persist mappings and to track whether a tail number
+ * has been confirmed for a fleet.
+ */
 public final class Tails {
     private static final Logger LOG = Logger.getLogger(Tails.class.getName());
 

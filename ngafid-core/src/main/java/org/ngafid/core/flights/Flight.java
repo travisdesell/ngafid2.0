@@ -27,6 +27,10 @@ import org.ngafid.core.util.filters.Filter;
  */
 public class Flight {
 
+    /**
+     * The processing outcome of a flight: still being processed, completed successfully, completed with warnings, or
+     * failed with an error.
+     */
     public enum FlightStatus {
         PROCESSING,
         SUCCESS,

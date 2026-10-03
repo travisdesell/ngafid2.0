@@ -3,6 +3,10 @@ package org.ngafid.core.flights;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * A single aircraft tail record from the {@code tails} table: its system id, owning fleet, tail number, and whether
+ * the tail number has been confirmed.
+ */
 public class Tail {
     private final String systemId;
     private final int fleetId;

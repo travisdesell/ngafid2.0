@@ -13,6 +13,12 @@ import org.ngafid.core.event.Event;
 import org.ngafid.core.flights.DoubleTimeSeries;
 import org.ngafid.core.flights.Flight;
 
+/**
+ * A {@link CSVWriter} that regenerates a flight's CSV from its stored time series in the database.
+ *
+ * <p>Loads the requested double time series columns for a flight and writes them row by row, rather than reading back a
+ * previously cached export file.
+ */
 public class GeneratedCSVWriter extends CSVWriter {
     private List<DoubleTimeSeries> timeSeries;
 

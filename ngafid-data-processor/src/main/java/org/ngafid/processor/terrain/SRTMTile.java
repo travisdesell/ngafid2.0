@@ -8,6 +8,13 @@ import java.nio.file.Paths;
 import java.util.logging.Logger;
 import org.ngafid.core.Config;
 
+/**
+ * Represents a single one-degree SRTM terrain tile loaded from its {@code .hgt} elevation file.
+ *
+ * <p>Reads the tile's raw elevation grid from disk and exposes terrain elevation lookups (in feet) for
+ * coordinates within the tile, interpolating across the {@value #SRTM_TILE_SIZE}-sample grid. Instances are
+ * created and cached by {@link TerrainCache}.
+ */
 public class SRTMTile {
     private static final Logger LOG = Logger.getLogger(SRTMTile.class.getName());
 

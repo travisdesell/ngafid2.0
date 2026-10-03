@@ -28,6 +28,12 @@ import org.ngafid.processor.format.FlightBuilder;
  */
 public abstract class ComputeStep {
 
+    /**
+     * Factory for constructing a {@link ComputeStep} bound to a specific database connection and flight builder.
+     *
+     * <p>Supplying steps as factories lets the dependency graph defer construction until it has the connection and
+     * builder for a given flight, and lets {@link #required(Factory)} wrap a factory to mark its steps mandatory.
+     */
     public interface Factory {
         /**
          * Creates a compute step bound to the given connection and flight builder.

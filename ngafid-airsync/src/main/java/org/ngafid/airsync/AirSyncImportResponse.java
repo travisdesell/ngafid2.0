@@ -7,6 +7,13 @@ import java.util.List;
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.FlightWarning;
 
+/**
+ * Summarizes a single AirSync import for presentation, joining an {@code airsync_imports} row with its flight's
+ * status and warnings.
+ *
+ * <p>Carries the import and upload identifiers, the tail number, the processing status and receipt time, and the
+ * list of {@link FlightWarning}s loaded for the associated flight.
+ */
 public class AirSyncImportResponse {
     private final int id;
     private final int uploadId;

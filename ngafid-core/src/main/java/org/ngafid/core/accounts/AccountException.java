@@ -1,5 +1,10 @@
 package org.ngafid.core.accounts;
 
+/**
+ * Checked exception for account- and fleet-related failures, carrying a short display title alongside the message.
+ *
+ * <p>The title provides a user-facing category (e.g. for rendering in the web UI) distinct from the detail message.
+ */
 public class AccountException extends Exception {
     private String title;
 

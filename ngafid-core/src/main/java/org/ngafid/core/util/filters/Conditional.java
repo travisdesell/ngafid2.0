@@ -5,6 +5,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * A compiled, evaluatable form of a {@link Filter} tree used to test flight parameters against exceedence rules.
+ *
+ * <p>Each node is either a RULE (a single parameter compared against a value with one of {@code <, <=, >, >=}) or a
+ * GROUP (an {@code AND}/{@code OR} combination of child conditionals). Parameter values are injected via {@link #set}
+ * and the tree is then {@link #evaluate evaluated} with short-circuiting; it can also emit equivalent Java source via
+ * {@link #codeGen}.
+ */
 public class Conditional {
     private static final Logger LOG = Logger.getLogger(Conditional.class.getName());
 

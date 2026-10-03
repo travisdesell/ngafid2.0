@@ -1,5 +1,8 @@
 package org.ngafid.core.uploads;
 
+/**
+ * Checked exception thrown when an upload fails, carrying the name of the file being uploaded at the time.
+ */
 public class UploadException extends Exception {
     private String filename;
 

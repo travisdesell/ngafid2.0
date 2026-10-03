@@ -9,12 +9,17 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * EventMetaData
+ * Stores and retrieves auxiliary key/value measurements associated with an event, such as lateral and vertical
+ * separation distances for proximity events.
  */
 public class EventMetaData {
 
     private static final Logger LOG = Logger.getLogger(EventMetaData.class.getName());
 
+    /**
+     * Enumerates the recognized event-metadata measurements and their stored database names (lateral and vertical
+     * separation distance).
+     */
     public enum EventMetaDataKey {
         LATERAL_DISTANCE("lateral_distance"),
         VERTICAL_DISTANCE("vertical_distance");

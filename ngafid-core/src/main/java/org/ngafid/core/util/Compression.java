@@ -10,6 +10,12 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
 
+/**
+ * Utility for deflate-compressing and inflating byte arrays and SQL {@link java.sql.Blob}s.
+ *
+ * <p>Used to store and retrieve compressed flight time-series data; all members are static and the class is not
+ * instantiable.
+ */
 public final class Compression {
     private Compression() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated.");

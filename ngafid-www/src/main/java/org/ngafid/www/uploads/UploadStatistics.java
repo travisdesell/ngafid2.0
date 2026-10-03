@@ -7,17 +7,51 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 
+/**
+ * Computes upload and flight outcome totals for a fleet or across all fleets, optionally scoped to a date range.
+ *
+ * <p>The static helpers read the precomputed upload-count views for all-time totals and aggregate the
+ * {@code uploads} table directly for dated queries, returning the results as the nested count records.
+ */
 public final class UploadStatistics {
 
     private UploadStatistics() {
         // Utility class; not instantiable.
     }
 
+    /**
+     * Upload totals for a scope: the overall count plus the per-status (OK, warning, error) breakdown.
+     *
+     * @param count the total number of uploads
+     * @param okUploadCount the number of uploads that processed without issues
+     * @param warningUploadCount the number of uploads that processed with warnings
+     * @param errorUploadCount the number of uploads that failed or produced errors
+     */
     public record UploadCounts(int count, int okUploadCount, int warningUploadCount, int errorUploadCount) {}
 
+    /**
+     * Problem-focused upload totals: uploads with errors alongside the per-flight success, warning, and error counts.
+     *
+     * @param errorUploadCount the number of uploads that failed or contained rejected flights
+     * @param successfulFlightCount the number of flights that imported successfully (including warning-only flights)
+     * @param warningFlightCount the number of flights that imported with warnings
+     * @param errorFlightCount the number of flights that were rejected
+     */
     public record UploadIssueCounts(
             int errorUploadCount, int successfulFlightCount, int warningFlightCount, int errorFlightCount) {}
 
+    /**
+     * The full set of upload and flight outcome totals returned by a single aggregate query over the uploads table.
+     *
+     * @param uploadCount the total number of uploads
+     * @param okUploadCount the number of uploads that processed without issues
+     * @param warningUploadCount the number of uploads that processed with warnings
+     * @param failedUploadCount the number of uploads whose status indicates failure
+     * @param errorUploadCount the number of uploads that failed or contained rejected flights
+     * @param successfulFlightCount the number of flights that imported successfully (including warning-only flights)
+     * @param warningFlightCount the number of flights that imported with warnings
+     * @param errorFlightCount the number of flights that were rejected
+     */
     public record UploadOutcomeCounts(
             int uploadCount,
             int okUploadCount,

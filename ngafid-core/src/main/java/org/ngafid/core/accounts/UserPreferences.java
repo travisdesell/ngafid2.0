@@ -4,6 +4,11 @@ import static org.ngafid.core.flights.Parameters.DEFAULT_METRICS;
 
 import java.util.List;
 
+/**
+ * A user's flight-analysis display preferences: the decimal precision for metrics and the set of flight metrics shown.
+ *
+ * <p>Provides a default configuration (precision 1 and the system default metrics) for newly created users.
+ */
 public class UserPreferences {
     private final List<String> flightMetrics;
     private final int userId;

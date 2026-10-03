@@ -13,6 +13,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ngafid.core.TestWithConnection;
 
+/**
+ * Tests for {@link User} accounts and their fleet-access behavior, run against the Testcontainers MySQL database.
+ *
+ * <p>Loads several user fixtures spanning different user/fleet access combinations (granted, denied, and waiting) and
+ * verifies that access checks resolve correctly for each.
+ */
 public class UserTest extends TestWithConnection {
 
     private User user1Fleet1;

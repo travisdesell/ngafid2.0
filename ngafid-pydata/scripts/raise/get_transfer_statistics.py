@@ -1,4 +1,14 @@
 #!/usr/bin/python
+"""Print per-year counts of tails and flights that were sent to RAISE.
+
+Standalone RAISE reporting script: connects to the local NGAFID MySQL database
+and prints, as CSV to stdout, the number of distinct tails and the number of
+flights whose uploads were marked ``sent_to_raise = 1`` for each year from 2018
+through the current year. The database password is read from the
+``NGAFID_DB_PASSWORD`` environment variable. Intended to be run manually;
+requires the ``raise`` optional dependencies.
+"""
+
 import os
 import os.path
 from datetime import datetime

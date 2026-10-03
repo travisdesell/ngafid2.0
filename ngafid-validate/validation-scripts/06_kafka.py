@@ -1,8 +1,33 @@
-# flake8: noqa: E501
+"""Startup check that the Kafka broker is configured and reachable.
+
+Runs as the ``KAFKA`` category of the NGAFID startup validator: confirms the
+Kafka client library is importable, resolves the bootstrap-servers address from
+the effective configuration, and opens an admin-client connection to verify the
+broker is reachable within the configured timeout.
+"""
+
+from __future__ import annotations
+
 import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from validator import Validator
 
 
-def run_check(validator):
+def run_check(validator: Validator) -> None:
+    """Validate the Kafka driver, bootstrap address, and broker connectivity.
+
+    Fails fast (recording a fail and returning) when the ``kafka`` admin client
+    cannot be imported or when the bootstrap-servers address cannot be resolved.
+    Otherwise attempts an admin-client connection using the validator's timeout
+    and records whether the broker was reachable. All outcomes go through the
+    validator's pass/fail helpers.
+
+    Args:
+        validator: The running startup validator; supplies the effective-property
+            resolver, the CLI timeout, and the pass/fail recording helpers.
+    """
     category = "KAFKA"
     try:
         kafka_admin_client = importlib.import_module("kafka").KafkaAdminClient
@@ -149,7 +174,7 @@ def _check_topic_topology(validator, category, admin):
             validator._fail(
                 category,
                 f"topic replication {topic_name}",
-                f"expected replication factor {validator.expected_kafka_replication_factor}, found {sorted(replication_factors)}",
+                f"expected replication factor {validator.expected_kafka_replication_factor}, found {sorted(replication_factors)}",  # noqa: E501
                 "recreate topics with expected replication factor",
             )
         else:

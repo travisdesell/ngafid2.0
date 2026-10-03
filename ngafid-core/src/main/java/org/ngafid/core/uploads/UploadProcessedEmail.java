@@ -9,6 +9,12 @@ import java.util.logging.Logger;
 import org.ngafid.core.accounts.EmailType;
 import org.ngafid.core.util.SendEmail;
 
+/**
+ * Accumulates the per-upload processing summary and sends it as an email once an upload has been processed.
+ *
+ * <p>It tallies valid/warning/error flight counts, event and proximity statistics, timing metrics, and any import
+ * failures across the upload's flights, then formats and dispatches the summary to the configured recipients.
+ */
 public class UploadProcessedEmail {
 
     private static final Logger LOG = Logger.getLogger(UploadProcessedEmail.class.getName());

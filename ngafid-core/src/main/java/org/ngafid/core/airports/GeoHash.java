@@ -4,6 +4,12 @@ import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
+/**
+ * Utility for deriving a coarse geohash string from a latitude/longitude pair.
+ *
+ * <p>Coordinates are formatted to a fixed number of decimal places so that nearby points share a key, giving the
+ * airport index a cheap spatial-bucketing scheme for proximity lookups.
+ */
 public final class GeoHash {
     private static final int HASH_DECIMALS = 2;
     private static final DecimalFormat DECIMAL_FORMAT;

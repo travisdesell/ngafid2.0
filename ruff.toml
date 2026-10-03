@@ -19,5 +19,15 @@ target-version = "py310"
 extend-exclude = [".claude", "*.md"]
 
 [lint]
-# pycodestyle (E/W), pyflakes (F), isort (I), pyupgrade (UP), flake8-bugbear (B).
-select = ["E", "F", "W", "I", "UP", "B"]
+# pycodestyle (E/W), pyflakes (F), isort (I), pyupgrade (UP), flake8-bugbear (B),
+# pydocstyle (D). The D rules enforce the CLAUDE.md docstring requirement: every
+# public module, class, and function (tests included) must carry a Google-style
+# docstring, kept clean in CI. (pydocstyle only inspects public API -- private,
+# underscore-prefixed members are not gated.) See scripts/lint.sh and
+# CONTRIBUTING.md.
+select = ["E", "F", "W", "I", "UP", "B", "D"]
+
+[lint.pydocstyle]
+# Google-style docstrings (Args:/Returns:/Raises:), matching the existing
+# codebase and the CLAUDE.md "Docstrings" section.
+convention = "google"

@@ -47,12 +47,22 @@ public final class Upload {
                     + "status, start_time, end_time, n_valid_flights, "
                     + "n_warning_flights, n_error_flights ";
 
+    /**
+     * Identifies how an upload originated: a user-submitted file, an AirSync import, or a derived upload.
+     */
     public enum Kind {
         FILE,
         AIRSYNC,
         DERIVED
     }
 
+    /**
+     * The lifecycle state of an upload, from in-progress transfer through processing to a terminal processed or
+     * failed outcome.
+     *
+     * <p>The enum also classifies states into "imported" and "not imported" sets and exposes whether a state
+     * represents a successfully processed upload.
+     */
     public enum Status {
         UPLOADING,
         UPLOADING_FAILED,
@@ -93,6 +103,13 @@ public final class Upload {
         }
     }
 
+    /**
+     * An {@link AutoCloseable} handle granting exclusive, mutable access to its enclosing upload.
+     *
+     * <p>Construction acquires a MySQL named lock for the upload on a single connection, and {@link #close()} releases
+     * it on that same connection (required for MySQL session-scoped locks), optionally enqueuing the upload for
+     * processing when it was marked complete.
+     */
     public class LockedUpload implements AutoCloseable {
         private final Connection connection;
         private boolean markedComplete = false;

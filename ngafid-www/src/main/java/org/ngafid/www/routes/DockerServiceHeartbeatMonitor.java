@@ -15,6 +15,13 @@ import org.ngafid.core.Config;
 import org.ngafid.core.kafka.DockerServiceHeartbeat;
 import org.ngafid.core.kafka.Topic;
 
+/**
+ * Background worker that tracks the liveness of Docker-based NGAFID services by consuming their Kafka heartbeats.
+ *
+ * <p>It polls the status-heartbeat topic, recording the last-seen time per service instance, and exposes
+ * aggregate and per-instance {@link StatusJavalinRoutes.ServiceStatus} values by treating an instance whose last
+ * heartbeat is older than the timeout as failed.
+ */
 public class DockerServiceHeartbeatMonitor implements Runnable {
 
     private static final Logger LOG = Logger.getLogger(DockerServiceHeartbeatMonitor.class.getName());

@@ -1,20 +1,16 @@
-"""
-The script serves aviation chart tiles over HTTP and checks for scheduled updates to process new (updated) charts.
-When the program is first started it will check if today is the date for updates, if it is, the script will call
-chartProcessor.py to download new charts and process them.
+"""Serve aviation chart tiles over HTTP and process scheduled chart updates.
 
-If charts chart_processor/charts or any of the subfolders ('sectional', 'terminal-area',
-'ifr-enroute-low', 'ifr-enroute-high') are missing, the script will start downloading charts,
-and when done will start the server.
-The script will download tif file from the closest release date.
+When first started, this script checks whether today is a scheduled update date
+and, if so, invokes ``chartProcessor.py`` to download and process new charts. If
+the charts directory (or any of its ``sectional``, ``terminal-area``,
+``ifr-enroute-low``, ``ifr-enroute-high`` subfolders) is missing, it downloads
+charts from the closest release date before starting the server. To trigger a
+fresh download, delete the charts folder and restart. The script also checks
+nightly (at 00:00) whether an update is due.
 
-To invoke fresh download workflow, just delete charts folder and restart WebServer
+For testing, run an update for a specific date without starting the web server::
 
-The script will also check nightly (at 00:00) if the update is due.
-
-For testing purposes, to run charts update for a particular date without WebServer, provide a
-command argument and run the python script:
-python3 chartServer.py --test-date 12-26-2024
+    python3 chartServer.py --test-date 12-26-2024
 
 @Author: Roman Kozulia
 """
@@ -32,8 +28,9 @@ from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from logging.handlers import RotatingFileHandler
 from socketserver import ThreadingMixIn
+from types import FrameType
 
-"""Configure logging. Log files will be rotating if the size will reach 10 MB""" ""
+# Configure logging. Log files rotate once they reach 10 MB.
 log_file = "./chart_server.log"
 log_dir = os.path.dirname(log_file)
 
@@ -58,8 +55,15 @@ logging.basicConfig(
 stop_event = threading.Event()
 
 
-def parse_arguments():
-    """Parse command-line arguments."""
+def parse_arguments() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Defines ``--test-date`` (run an update for a specific date without starting the
+    server) and ``--config`` (path to the chart service JSON config).
+
+    Returns:
+        The parsed arguments namespace.
+    """
     parser = argparse.ArgumentParser(description="Serve aviation chart tiles and check for updates.")
     parser.add_argument(
         "--test-date", type=str, help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
@@ -73,7 +77,14 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def handle_exit_signal(signum, frame):
+def handle_exit_signal(signum: int, frame: FrameType | None) -> None:
+    """Handle SIGINT/SIGTERM by signalling the update checker to stop and exiting.
+
+    Args:
+        signum: The signal number delivered (e.g. ``signal.SIGINT``).
+        frame: The interrupted stack frame, as passed by the signal machinery;
+            unused but required by the handler signature.
+    """
     logging.info("Received termination signal. Stopping update checker.")
     stop_event.set()
     sys.exit(0)
@@ -107,11 +118,19 @@ except KeyError as e:
     raise ValueError(f"Missing required path in configuration: {e}") from e
 
 
-def free_port(port):
+def free_port(port: int) -> None:
+    """Free up the given TCP port by killing any process currently bound to it.
+
+    Uses ``lsof`` to find processes holding the port and ``kill -9`` to terminate
+    them. No-op on Windows (where ``lsof`` is unavailable) and when the port is
+    already free.
+
+    Args:
+        port: The TCP port number to free.
+    """
     if platform.system() == "Windows":
         logging.info("Port freeing not implemented on Windows.")
         return
-    """Free up the port if it is currently in use."""
     try:
         # Find the PID using the port
         result = subprocess.run(["lsof", "-i", f":{port}"], capture_output=True, text=True, check=True)
@@ -127,12 +146,15 @@ def free_port(port):
         logging.info(f"Port {port} is already free.")
 
 
-def load_schedule():
-    """
-    Load the update schedule from the configuration file.
-    Ensures that the schedule is sorted in the ascending order.
-    Dates are expected in "%m-%d-%Y" format. e.g 12-26-2024
-    :return: array of dates
+def load_schedule() -> list[str]:
+    """Load and sort the chart update schedule from the configuration.
+
+    Flattens the per-year ``update_schedule`` entries in ``CONFIG`` into a single
+    list of date strings and sorts it ascending. Dates are in ``%m-%d-%Y`` format
+    (e.g. ``12-26-2024``). Returns an empty list if the schedule cannot be read.
+
+    Returns:
+        The update dates as ``MM-DD-YYYY`` strings, sorted ascending.
     """
     try:
         # Extract and flatten the update_schedule
@@ -153,13 +175,16 @@ def is_update_due(schedule, today):
     return today in schedule
 
 
-def run_chart_processor(date):
-    """
-    Run the chartProcessor.py script with the given date.
-    :param date: date of tif file release.
-    :return:
-    """
+def run_chart_processor(date: str) -> None:
+    """Run ``chartProcessor.py`` as a subprocess for the given release date.
 
+    Invokes the chart processor with ``--chart_date=<date>`` and logs its output.
+    All failures (non-zero exit, missing script, or any unexpected error) are
+    caught and logged rather than propagated.
+
+    Args:
+        date: The chart release date to process, in ``MM-DD-YYYY`` format.
+    """
     try:
         logging.info(f"Running chartProcessor.py with --chart_date={date}")
         result = subprocess.run(
@@ -175,12 +200,21 @@ def run_chart_processor(date):
         logging.error(f"Unexpected error running chartProcessor: {e}")
 
 
-def get_next_update_date(schedule, today_date):
-    """
-    Find the next update date after today.
-    :param schedule: List of update dates in MM-DD-YYYY format
-    :param today_date: Today's date as a datetime object or string
-    :return: The next update date as a string or None if not found
+def get_next_update_date(schedule: list[str], today_date: str | datetime) -> str | None:
+    """Find the first scheduled update date strictly after today.
+
+    Scans ``schedule`` in order and returns the first date later than
+    ``today_date``. A string ``today_date`` is parsed with the ``%m-%d-%Y``
+    format first.
+
+    Args:
+        schedule: Update dates in ``MM-DD-YYYY`` format (assumed ascending).
+        today_date: Today's date, either a ``datetime`` or an ``MM-DD-YYYY``
+            string.
+
+    Returns:
+        The next update date as an ``MM-DD-YYYY`` string, or ``None`` if there is
+        no future date in the schedule.
     """
     # Convert today_date to datetime if it's a string
     if isinstance(today_date, str):
@@ -194,8 +228,22 @@ def get_next_update_date(schedule, today_date):
     return None  # No future update dates found
 
 
-def start_update_checker():
-    def checker():
+def start_update_checker() -> None:
+    """Start a daemon thread that periodically runs the chart update check.
+
+    Launches the nested ``checker`` loop on a daemon thread so update checking
+    runs in the background while the HTTP server serves tiles. The thread exits
+    with the process (daemon) or when ``stop_event`` is set.
+    """
+
+    def checker() -> None:
+        """Run the update-check loop until ``stop_event`` is set.
+
+        Checks immediately on first run and thereafter only at midnight: when an
+        update is due for today it runs the chart processor, otherwise it logs the
+        next scheduled date. Waits one hour between iterations and logs, without
+        propagating, any error raised during a cycle.
+        """
         schedule = load_schedule()
         isFirstUpdate = True
 
@@ -232,9 +280,7 @@ def start_update_checker():
 
 
 class TileRequestHandler(SimpleHTTPRequestHandler):
-    """
-    Custom handler to serve tiles from the charts directory.
-    """
+    """Serve chart tile files from the charts directory (``BASE_DIR``)."""
 
     BASE_DIR = os.path.abspath(CHARTS_DIR)  # Static base directory
 
@@ -292,25 +338,13 @@ def run_server():
         logging.info("Server stopped.")
 
 
-def parse_arguments():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="Serve aviation chart tiles and check for updates.")
-    parser.add_argument(
-        "--test-date", type=str, help="Run the script in test mode for a specific date (format: YYYY-MM-DD)."
-    )
-    parser.add_argument(
-        "--config",
-        type=str,
-        help="Config file path",
-        default="ngafid-chart-processor/chart_service_config.default.json",
-    )
-    return parser.parse_args()
+def initial_download() -> None:
+    """Download charts on first run when the charts directory is incomplete.
 
-
-def initial_download():
-    """
-    Perform the initial download of charts if the charts directory is empty, missing specific subdirectories,
-    or does not exist.
+    Determines which required subdirectories (``sectional``, ``terminal-area``,
+    ``ifr-enroute-low``, ``ifr-enroute-high``, ``helicopter``) are missing and, if
+    any are, picks the most recent scheduled date on or before today and runs the
+    chart processor for it. No-op when all subdirectories are already present.
     """
     charts_dir = CHARTS_DIR
     required_subdirs = ["sectional", "terminal-area", "ifr-enroute-low", "ifr-enroute-high", "helicopter"]

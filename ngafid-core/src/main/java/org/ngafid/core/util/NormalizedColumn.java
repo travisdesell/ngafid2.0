@@ -7,6 +7,16 @@ import java.sql.SQLException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+/**
+ * Base class for a value stored in a normalization table as an id-to-name mapping, resolving one from the other.
+ *
+ * <p>Subclasses name the backing table (and optionally the id/name columns); this class resolves a column's id from
+ * its name or vice versa, consulting a shared per-table in-memory cache first and falling back to the database,
+ * inserting a new row (and generating an id) when a name is not yet present. Caches are static and shared across all
+ * instances of a given table.
+ *
+ * @param <T> the concrete normalized-column subtype
+ */
 public abstract class NormalizedColumn<T> {
     private static final Logger LOG = Logger.getLogger(NormalizedColumn.class.getName());
 

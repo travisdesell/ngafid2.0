@@ -18,6 +18,13 @@ import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
+/**
+ * Serves the event-definition pages: displaying a fleet's event names, and the admin-only creation, management,
+ * and update pages for event definitions.
+ *
+ * <p>Each route renders a Mustache template seeded with the airframes, double-time-series names, and event
+ * definitions needed to build the client-side forms, enforcing admin access where required.
+ */
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.GSON;

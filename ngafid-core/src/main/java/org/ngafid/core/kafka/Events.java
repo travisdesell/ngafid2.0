@@ -17,6 +17,12 @@ public final class Events {
     public static final long MAX_POLL_INTERVAL_MS = 10 * 60 * 1000;
     public static final long N_RECORDS = 50;
 
+    /**
+     * A unit of work carried on the Kafka event topic: a request to compute one event definition against one flight.
+     *
+     * @param flightId the id of the flight to evaluate
+     * @param eventId the id of the event definition to compute
+     */
     public record EventToCompute(int flightId, int eventId) {}
 
     private static Properties getProperties() {

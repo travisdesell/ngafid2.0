@@ -9,6 +9,14 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+/**
+ * A tree representation of a user-defined flight filter, built from the query-builder UI and rendered into SQL.
+ *
+ * <p>Each node is either a RULE (a single criterion such as airframe, tail number, date range, parameter bound, or
+ * event count/severity) or a GROUP that combines child filters with an {@code AND}/{@code OR} condition. The tree can
+ * be converted into a parameterized MySQL {@code WHERE} clause via {@link #toQueryString}, into human-readable text,
+ * and into the set of referenced column names; operator and aggregate inputs are validated to guard against injection.
+ */
 public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
 

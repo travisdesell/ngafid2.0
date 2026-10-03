@@ -7,6 +7,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
+/**
+ * A fleet account: the organization grouping that owns flights, tails, and the users who may access its data.
+ *
+ * <p>Holds the fleet's database id and name and lazily loads the list of users who have (or are requesting) access.
+ * Provides static lookup/creation helpers backed by the {@code fleet} table.
+ */
 public class Fleet implements Serializable {
     private static final Logger LOG = Logger.getLogger(Fleet.class.getName());
     private final String name;

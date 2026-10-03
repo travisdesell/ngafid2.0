@@ -4,6 +4,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import org.apache.commons.lang3.mutable.MutableDouble;
 
+/**
+ * Represents an airport with its identifiers, location, geohash, and the runways belonging to it.
+ *
+ * <p>The geohash is computed and cached from the coordinates at construction so the airport can be placed into the
+ * spatial index used for nearest-airport lookups; runways are populated after construction via {@link #addRunway}.
+ */
 public class Airport {
     private final String iataCode;
     private final String siteNumber;

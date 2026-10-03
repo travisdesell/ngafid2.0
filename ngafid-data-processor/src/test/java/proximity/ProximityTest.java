@@ -8,6 +8,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ngafid.processor.events.proximity.FlightTimeLocation;
 
+/**
+ * Unit tests for {@link FlightTimeLocation}'s bounding-box overlap logic used to screen candidate flights for
+ * proximity events.
+ *
+ * <p>Exercises {@code hasRegionOverlap} across disjoint and overlapping latitude/longitude regions, with and
+ * without a buffer, in both comparison directions.
+ */
 public class ProximityTest {
 
     private FlightTimeLocation createFlight(double minLat, double maxLat, double minLon, double maxLon) {

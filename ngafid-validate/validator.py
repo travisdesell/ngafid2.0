@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa: E501
 """NGAFID startup preflight validator.
 
 Runs required checks for configuration, filesystem, DB, and Kafka.
@@ -84,6 +83,16 @@ EXPECTED_KAFKA_REPLICATION_FACTOR = 1
 
 @dataclass
 class CheckResult:
+    """Outcome of a single startup check.
+
+    Attributes:
+        category: The check's group (e.g. ``CONFIG``, ``DB``, ``KAFKA``).
+        name: Short name of the specific check within the category.
+        ok: Whether the check passed.
+        detail: Human-readable detail about the outcome.
+        action: Suggested remediation when the check failed, or ``None`` on pass.
+    """
+
     category: str
     name: str
     ok: bool
@@ -92,7 +101,28 @@ class CheckResult:
 
 
 class Validator:
+    """Runs the NGAFID startup preflight checks and reports their results.
+
+    Discovers the ``validation-scripts/`` check modules, invokes each one's
+    ``run_check`` against this validator, accumulates their :class:`CheckResult`
+    outcomes, and prints a summary whose pass/fail state gates startup. Also holds
+    the shared expectations (required topics, property keys, schema tables, Kafka
+    partition/replication counts) that the individual checks consult.
+    """
+
     def __init__(self, args: argparse.Namespace) -> None:
+        """Initialize the validator from parsed CLI args and startup expectations.
+
+        Stores the args, prepares an empty results list, detects whether it is
+        running inside Docker (via ``/.dockerenv``), and loads the module-level
+        expectation constants (required topics/keys, schema and view tables, jar
+        artifacts, Kafka partition/replication counts) onto instance attributes
+        for the check scripts to read.
+
+        Args:
+            args: Parsed command-line arguments controlling which checks run and
+                their timeouts.
+        """
         self.args = args
         self.results: list[CheckResult] = []
         self.in_docker = Path("/.dockerenv").exists()
@@ -107,6 +137,12 @@ class Validator:
         self.expected_kafka_replication_factor = EXPECTED_KAFKA_REPLICATION_FACTOR
 
     def run(self) -> int:
+        """Run all discovered checks and print the summary, returning an exit code.
+
+        Returns:
+            A process exit code: ``0`` when every check passed, non-zero when any
+            check failed (as determined by :meth:`_print_summary`).
+        """
         self._run_discovered_checks()
         return self._print_summary()
 
@@ -340,6 +376,18 @@ class Validator:
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse the validator's command-line arguments.
+
+    Defines ``--skip-build-artifacts``, ``--timeout`` (DB/Kafka connection
+    timeout), and ``--results-dir`` (defaulting to ``$VALIDATION_RESULTS_DIR`` or
+    ``/validator/validation-results``).
+
+    Args:
+        argv: Argument list to parse; defaults to ``sys.argv`` when ``None``.
+
+    Returns:
+        The parsed arguments namespace.
+    """
     parser = argparse.ArgumentParser(description="Validate NGAFID startup preconditions")
     parser.add_argument(
         "--skip-build-artifacts",
@@ -361,6 +409,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Entry point: parse args, run the validator, and return its exit code.
+
+    Args:
+        argv: Argument list to parse; defaults to ``sys.argv`` when ``None``.
+
+    Returns:
+        The process exit code from :meth:`Validator.run` (``0`` on success).
+    """
     args = parse_args(argv)
     validator = Validator(args)
     return validator.run()

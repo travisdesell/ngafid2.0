@@ -10,6 +10,12 @@
  */
 package org.ngafid.core.flights;
 
+/**
+ * Central catalog of flight-parameter and JSON field name constants used throughout flight processing.
+ *
+ * <p>Collects the string names of recorded flight columns, derived parameters, and JSON API fields in one place so they
+ * are referenced symbolically rather than as scattered string literals.
+ */
 public interface Parameters {
     /**
      * JSON-specific parameters

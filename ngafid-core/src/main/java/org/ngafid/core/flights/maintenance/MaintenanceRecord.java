@@ -7,6 +7,13 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+/**
+ * A single maintenance work-order event for an aircraft, parsed from an imported maintenance CSV.
+ *
+ * <p>Captures the work order's open/close and action dates, the affected tail and airframe, the reported problem and
+ * action (raw and cleaned) together with their ATA codes and labels, retaining the raw date strings for debugging.
+ * Instances are naturally ordered chronologically for building an aircraft's maintenance timeline.
+ */
 public class MaintenanceRecord implements Comparable<MaintenanceRecord> {
     private static final Logger LOG = Logger.getLogger(MaintenanceRecord.class.getName());
 

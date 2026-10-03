@@ -24,6 +24,13 @@ import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.Navbar;
 import org.ngafid.www.WebServer;
 
+/**
+ * Serves the flight-analysis pages and their data endpoints: event severities, turn-to-final, trends, heat maps,
+ * proximity events, Cesium 3D replay, rate-of-closure, LOCI metrics, and flight coordinate lookups.
+ *
+ * <p>Page routes render Mustache templates seeded with fleet metadata (and the Azure Maps/chart-tile keys), while
+ * the data routes return JSON built from the nested response types defined here.
+ */
 public class AnalysisJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AnalysisJavalinRoutes.class.getName());
     public static final Gson GSON = WebServer.GSON;
@@ -32,6 +39,10 @@ public class AnalysisJavalinRoutes {
         // Utility class
     }
 
+    /**
+     * JSON payload holding a flight's ground track as {@code [longitude, latitude]} pairs, with the index of the
+     * first valid sample so the track can be aligned with other series.
+     */
     public static class Coordinates {
         @JsonProperty
         private final int nanOffset;
@@ -80,6 +91,10 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload holding the x/y series for a rate-of-closure chart, with x offsets numbered from -5 so the
+     * samples leading up to the event are included.
+     */
     public static class RateOfClosurePlotData {
         @JsonProperty
         private final int[] x;
@@ -111,6 +126,10 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload for a single named flight metric whose value is stored as a string so that a NaN can be
+     * serialized as the literal {@code "null"}.
+     */
     public static class FlightMetric {
         @JsonProperty
         private final String value;
@@ -155,6 +174,10 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload wrapping a list of {@link FlightMetric}s together with the display precision (number of
+     * significant figures) the client should use when rendering them.
+     */
     public static class FlightMetricResponse {
         @JsonProperty
         private final List<FlightMetric> values;
@@ -188,6 +211,11 @@ public class AnalysisJavalinRoutes {
         }
     }
 
+    /**
+     * JSON payload for Cesium 3D flight replay, carrying the altitude-above-ground geo series split by flight
+     * phase (taxiing, take-off, climb, cruise) plus the overall series, the matching per-phase time labels, the
+     * derived start/end times, and the airframe type.
+     */
     public static class CesiumResponse {
         @JsonProperty
         private final List<Double> flightGeoAglTaxiing;

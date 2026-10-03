@@ -17,6 +17,13 @@ import org.ngafid.core.accounts.User;
 import org.ngafid.core.util.SendEmail;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the bug-report feature: the bug-report submission page and the endpoint that emails a submitted report to
+ * the configured NGAFID administrators.
+ *
+ * <p>Submissions are validated (title and body required) and delivered to the semicolon-separated recipients from
+ * {@code ngafid.admin.emails}, optionally BCCing the reporter when they opt to share their address.
+ */
 @SuppressWarnings("LoggerStringConcat")
 public final class BugReportJavalinRoutes {
 

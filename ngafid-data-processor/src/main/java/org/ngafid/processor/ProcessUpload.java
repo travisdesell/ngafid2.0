@@ -380,6 +380,10 @@ public final class ProcessUpload {
         return Upload.Status.PROCESSED_OK;
     }
 
+    /**
+     * Lightweight summary of a processed flight, retaining only the identifier, length, filename and any
+     * malformed-file exceptions so that fully loaded flights need not be held in memory after processing.
+     */
     public static class FlightInfo {
         /**
          * This is a helper class so we don't keep all loaded flights in memory.

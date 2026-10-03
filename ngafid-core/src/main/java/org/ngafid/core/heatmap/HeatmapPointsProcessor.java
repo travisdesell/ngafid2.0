@@ -17,6 +17,13 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.core.util.TimeUtils;
 
+/**
+ * Computes and backfills the geographic points that feed the NGAFID flight heatmap.
+ *
+ * <p>It scans flights for missing heatmap data and, in configurable batches, derives per-sample latitude/longitude
+ * (converting MSL to AGL as needed) and writes the resulting points back to the database. It also provides a
+ * command-line entry point for running the backfill across all flights with missing points.
+ */
 public class HeatmapPointsProcessor {
     private static final Logger LOG = Logger.getLogger(HeatmapPointsProcessor.class.getName());
 

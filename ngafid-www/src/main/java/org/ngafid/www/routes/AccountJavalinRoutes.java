@@ -22,6 +22,13 @@ import org.ngafid.www.ErrorResponse;
 import org.ngafid.www.MustacheHandler;
 import org.ngafid.www.Navbar;
 
+/**
+ * Serves the account-management pages and their supporting endpoints: account creation, forgot/reset/update
+ * password, profile and preferences editing, two-factor settings, and email unsubscribe.
+ *
+ * <p>Page routes render Mustache templates seeded with the session user and fleet data, while the nested response
+ * types model the JSON returned by the login, logout, password, account-creation, and profile flows.
+ */
 public class AccountJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
@@ -29,6 +36,10 @@ public class AccountJavalinRoutes {
         // Utility class
     }
 
+    /**
+     * JSON response describing the outcome of a login attempt, including whether the session ended up logged in,
+     * logged out, waiting for approval, or denied, plus any authenticated user.
+     */
     public static class LoginResponse {
         @JsonProperty
         private final boolean loggedOut;
@@ -93,6 +104,9 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * JSON response describing the outcome of a logout request and the resulting session state.
+     */
     public static class LogoutResponse {
         @JsonProperty
         private final boolean loggedOut;
@@ -147,6 +161,10 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * JSON response for a forgot-password request, reporting whether the submitted email matched a registered
+     * account (and therefore triggered a reset email).
+     */
     public static class ForgotPasswordResponse {
         @JsonProperty
         private final String message;
@@ -175,6 +193,9 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * JSON response describing a newly created account, pairing the created user with the account type assigned.
+     */
     public static class CreatedAccount {
         @JsonProperty
         private final String accountType;
@@ -202,6 +223,10 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * JSON response describing the outcome of a password reset and the resulting session state (logged in, denied
+     * for an invalid/expired token, waiting, or logged out).
+     */
     public static class ResetSuccessResponse {
         @JsonProperty
         private final boolean loggedOut;
@@ -266,6 +291,9 @@ public class AccountJavalinRoutes {
         }
     }
 
+    /**
+     * JSON response wrapping a single user for the account-profile endpoint.
+     */
     public static class Profile {
         @JsonProperty
         private final User user;

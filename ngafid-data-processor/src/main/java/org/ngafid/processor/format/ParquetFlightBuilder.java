@@ -13,6 +13,12 @@ import org.ngafid.core.flights.Parameters;
 import org.ngafid.core.flights.StringTimeSeries;
 import org.ngafid.processor.steps.*;
 
+/**
+ * {@link FlightBuilder} for flights ingested from Parquet files.
+ *
+ * <p>Takes already-parsed double and string time series and defines the subset of compute steps applicable to
+ * Parquet-sourced flights (start/end time, altitude above ground, and airport proximity).
+ */
 public class ParquetFlightBuilder extends FlightBuilder {
 
     /**

@@ -11,6 +11,14 @@ import java.util.logging.Logger;
 import org.ngafid.core.util.NormalizedColumn;
 import org.ngafid.core.util.filters.Pair;
 
+/**
+ * Central registry of aircraft airframe names, types, and their database identifiers.
+ *
+ * <p>This utility class holds the canonical airframe-name constants and fixed-wing/rotorcraft classification sets,
+ * maps recorder-reported names to canonical codes (including Garmin rotorcraft aliases), and provides lookups between
+ * airframe names, ids, and types backed by the {@code airframes}/{@code airframe_types}/{@code fleet_airframes} tables
+ * with process-wide caching.
+ */
 public final class Airframes {
     private Airframes() {}
 
@@ -175,6 +183,12 @@ public final class Airframes {
         return Optional.empty();
     }
 
+    /**
+     * Key for an airframe-name alias, scoping the alias to a specific fleet (or all fleets when {@code fleetId} is -1).
+     *
+     * @param name the recorder-reported airframe name to be aliased
+     * @param fleetId the fleet the alias applies to, or -1 for all fleets
+     */
     public record AliasKey(String name, int fleetId) {}
 
     /**
@@ -200,6 +214,11 @@ public final class Airframes {
             Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
     // CHECKSTYLE:ON
+    /**
+     * A normalized airframe type (e.g. fixed wing, rotorcraft, UAS) backed by the {@code airframe_types} table.
+     *
+     * <p>Resolves between a type name and its database id through the shared {@link NormalizedColumn} cache.
+     */
     public static class Type extends NormalizedColumn<Type> {
         @Override
         protected String getTableName() {
@@ -238,6 +257,12 @@ public final class Airframes {
         }
     }
 
+    /**
+     * A single airframe resolved to its database id, name, and {@link Type}.
+     *
+     * <p>Instances resolve by name or by id against the {@code airframes} table, caching name/id/type mappings in
+     * process-wide concurrent maps, and can lazily insert a new airframe row when a name is seen for the first time.
+     */
     public static class Airframe {
         private static final ConcurrentHashMap<String, Pair<Type, Integer>> NAME_TO_TYPE_AND_ID =
                 new ConcurrentHashMap<>();
@@ -436,6 +461,12 @@ public final class Airframes {
         }
     }
 
+    /**
+     * A lightweight pairing of an airframe's name with its database id, used for list/dropdown style results.
+     *
+     * @param name the airframe name
+     * @param id the airframe's database id
+     */
     public record AirframeNameID(String name, int id) {
         /*...*/
     }

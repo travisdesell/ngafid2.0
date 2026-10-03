@@ -24,11 +24,23 @@ import org.ngafid.www.Navbar;
 import org.ngafid.www.flights.FlightStatistics;
 import org.ngafid.www.uploads.UploadStatistics;
 
+/**
+ * Serves the statistics pages and endpoints: the per-fleet and aggregate dashboards, aggregate trends, and event
+ * statistics.
+ *
+ * <p>Routes delegate to the nested {@link StatFetcher}, which gathers flight, upload, and event statistics for a
+ * request, scoped to the user's fleet or across all fleets when aggregating.
+ */
 public class StatisticsJavalinRoutes {
     public static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
     private StatisticsJavalinRoutes() {}
 
+    /**
+     * Gathers the flight, upload, and event statistics for a single request, scoped either to the user's fleet or,
+     * when aggregating, across all fleets (fleet id -1), reading its date and airframe filters from the request
+     * context.
+     */
     public static class StatFetcher {
         private final Connection connection;
         private final Context context;

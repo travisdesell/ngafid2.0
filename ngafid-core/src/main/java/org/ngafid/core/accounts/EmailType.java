@@ -11,6 +11,13 @@ import java.util.Set;
 import java.util.logging.Logger;
 import org.ngafid.core.Database;
 
+/**
+ * Enumerates the categories of notification email the system can send, each with a stable string key.
+ *
+ * <p>The keys back the {@code email_preferences} table and drive per-user opt-in/opt-out handling; admin-only types are
+ * marked by an {@code ADMIN} substring in their key and are hidden from non-admin users. New types are added here and
+ * then synchronized to the database via the generation scripts.
+ */
 public enum EmailType {
 
     // -------------------------------------------------------------------------------------------------------------

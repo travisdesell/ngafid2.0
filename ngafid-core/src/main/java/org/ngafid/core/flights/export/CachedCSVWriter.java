@@ -14,6 +14,12 @@ import org.ngafid.core.Database;
 import org.ngafid.core.flights.Flight;
 import org.ngafid.core.uploads.Upload;
 
+/**
+ * A {@link CSVWriter} that serves a flight's CSV from the original uploaded file cached inside a zip archive.
+ *
+ * <p>Locates the flight's entry within the stored upload zip and streams its contents, reusing the raw uploaded data
+ * instead of regenerating it from the database.
+ */
 public class CachedCSVWriter extends CSVWriter {
     private File zipFile;
     private ZipEntry entry;

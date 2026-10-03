@@ -7,6 +7,9 @@ import org.apache.commons.cli.*;
 import org.ngafid.core.Database;
 import org.ngafid.core.flights.Flight;
 
+/**
+ * Command-line entry point that exports one or more flights from the database to per-flight CSV files.
+ */
 public final class ExtractFlights {
     private ExtractFlights() {}
 

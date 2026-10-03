@@ -11,6 +11,13 @@ import java.time.LocalDate;
 import java.util.logging.Logger;
 import org.ngafid.core.util.TimeUtils;
 
+/**
+ * Computes aggregate flight-time totals for a fleet or across all fleets from the precomputed statistics tables.
+ *
+ * <p>The static helpers assemble SQL filter clauses (by fleet, airframe, and date range) and sum
+ * {@code flight_time_seconds} from the relevant summary table, supporting both per-fleet and all-fleet
+ * aggregate dashboards.
+ */
 public final class FlightStatistics {
 
     private FlightStatistics() {
