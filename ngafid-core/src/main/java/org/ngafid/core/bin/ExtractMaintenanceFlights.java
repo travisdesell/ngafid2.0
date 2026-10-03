@@ -8,6 +8,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.logging.Logger;
 import org.ngafid.core.Config;
 import org.ngafid.core.Database;
 import org.ngafid.core.agl_converter.MSLtoAGLConverter;
@@ -29,6 +30,8 @@ import org.ngafid.core.flights.maintenance.MaintenanceRecord;
  * - --validate-verify: verify validation output against DB
  */
 public final class ExtractMaintenanceFlights {
+    private static final Logger LOG = Logger.getLogger(ExtractMaintenanceFlights.class.getName());
+
     /** Maintenance records are UTC; DB is GMT. All timeline logic uses GMT. */
     private static final DateTimeFormatter MYSQL_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -253,7 +256,7 @@ public final class ExtractMaintenanceFlights {
                     if (rs.next()) tailRows = rs.getInt(1);
                 }
             }
-            System.err.println("[DEBUG TAIL] tail=" + tailNumber + " -> " + tailRows + " row(s) in tails");
+            LOG.fine("maintenance tail=" + tailNumber + " -> " + tailRows + " row(s) in tails");
         }
 
         PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM flights f "
@@ -271,8 +274,8 @@ public final class ExtractMaintenanceFlights {
         stmt.close();
 
         if (debug) {
-            System.err.println("[DEBUG TIME] window=" + windowStartGmt + " to " + windowEndGmt + " (open=" + openDate
-                    + " close=" + closeDate + ") -> " + count + " flight(s)");
+            LOG.fine("maintenance window=" + windowStartGmt + " to " + windowEndGmt + " (open=" + openDate + " close="
+                    + closeDate + ") -> " + count + " flight(s)");
         }
         return count;
     }
@@ -334,7 +337,7 @@ public final class ExtractMaintenanceFlights {
                     MaintenanceRecord record = new MaintenanceRecord(line);
                     boolean tailExists = tailExistsInDb(connection, record.getTailNumber());
                     if (total <= 5) {
-                        System.err.println("[DEBUG] tail=" + record.getTailNumber()
+                        LOG.fine("maintenance record tail=" + record.getTailNumber()
                                 + " open=" + record.getOpenDate() + " close=" + record.getCloseDate()
                                 + " tail_in_db=" + tailExists);
                     }

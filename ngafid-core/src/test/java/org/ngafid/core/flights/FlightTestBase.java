@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 import org.ngafid.core.TestWithConnection;
 import org.ngafid.core.util.filters.Filter;
 
@@ -22,6 +23,8 @@ import org.ngafid.core.util.filters.Filter;
  * receives a fresh {@code connection} against the Testcontainers MySQL instance before each test.
  */
 public class FlightTestBase extends TestWithConnection {
+    private static final Logger LOG = Logger.getLogger(FlightTestBase.class.getName());
+
     // Helper methods for test setup
     protected void createTestAirframeIfNotExists() throws SQLException {
         try (PreparedStatement stmt =
@@ -94,14 +97,14 @@ public class FlightTestBase extends TestWithConnection {
      * @param flightId flight ID to create
      */
     protected void createTestFlight(int flightId) throws SQLException {
-        System.err.println("DEBUG: Starting createTestFlight for flightId=" + flightId);
+        LOG.fine(() -> "Starting createTestFlight for flightId=" + flightId);
 
         // Ensure we have the necessary test data
-        System.err.println("DEBUG: Creating test airframe...");
+        LOG.fine("Creating test airframe...");
         createTestAirframeIfNotExists();
-        System.err.println("DEBUG: Creating test upload...");
+        LOG.fine("Creating test upload...");
         createTestUploadIfNotExists();
-        System.err.println("DEBUG: Creating test tail...");
+        LOG.fine("Creating test tail...");
         createTestTailIfNotExists(flightId);
 
         // First, check if the flight already exists
@@ -109,7 +112,7 @@ public class FlightTestBase extends TestWithConnection {
             checkStmt.setInt(1, flightId);
             try (ResultSet rs = checkStmt.executeQuery()) {
                 if (rs.next() && rs.getInt(1) > 0) {
-                    System.err.println("DEBUG: Flight " + flightId + " already exists, returning");
+                    LOG.fine(() -> "Flight " + flightId + " already exists, returning");
                     // Flight already exists, return
                     return;
                 }
@@ -151,7 +154,8 @@ public class FlightTestBase extends TestWithConnection {
             }
         }
 
-        System.err.println("DEBUG: Attempting to insert flight " + flightId + " with airframeId=" + airframeId);
+        final int resolvedAirframeId = airframeId;
+        LOG.fine(() -> "Attempting to insert flight " + flightId + " with airframeId=" + resolvedAirframeId);
         try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO flights (id, fleet_id, uploader_id, upload_id, airframe_id, system_id, "
                         + "start_time, end_time, filename, md5_hash, number_rows, status) "
@@ -170,7 +174,7 @@ public class FlightTestBase extends TestWithConnection {
             stmt.setString(12, "SUCCESS");
 
             int rowsAffected = stmt.executeUpdate();
-            System.err.println("DEBUG: Flight " + flightId + " insertion result: rowsAffected=" + rowsAffected);
+            LOG.fine(() -> "Flight " + flightId + " insertion result: rowsAffected=" + rowsAffected);
             if (rowsAffected == 0) {
                 throw new SQLException("Failed to insert flight " + flightId + " - no rows affected");
             }

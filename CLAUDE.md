@@ -132,6 +132,26 @@ exercises it is incomplete.
   PR. Tests that need external infrastructure are tagged and opt-in (see
   `CONTRIBUTING.md`); the default/CI suites must not depend on it.
 
+## Logging (required)
+
+Emit diagnostics through the logging framework, never through raw
+`System.out`/`System.err` prints (or stray committed `console.log` in TS/JS) that
+bypass the configured level.
+
+- **Java** uses `java.util.logging` (JUL). The default level is **WARN**
+  (`WARNING`) — configured in [`resources/log.properties`](resources/log.properties)
+  — so only warnings and errors are logged by default, which keeps production logs
+  from growing too large against the size of the NGAFID database. Log verbose
+  debugging at `FINE` and genuinely noteworthy operational events at `INFO`; both
+  are suppressed by the WARN default and can be enabled per package when needed
+  (e.g. `org.ngafid.level=INFO`). Do not commit `System.out`/`System.err` debug
+  prints.
+- **Python** uses the `logging` module; `ngafid-pydata` (and the other Python
+  tools) log at **INFO** by default. Use `logger.debug(...)` for verbose detail.
+- Choose the level deliberately for scale: anything that would fire per-flight or
+  per-row across the full dataset must be `FINE` (Java) / `debug` (Python), never
+  `INFO`/`WARN`.
+
 ## Keep the README, CONTRIBUTING, and documentation in sync (required)
 
 Whenever an edit changes how code behaves, update the documentation that
