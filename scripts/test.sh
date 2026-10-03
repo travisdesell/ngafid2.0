@@ -117,13 +117,20 @@ summary() {
 }
 
 # Record a suite result, updating FAILED and printing/append-summarizing it.
-#   $1 = label, $2 = status (OK|PROBLEMS|SKIP), $3 = detail
+#   $1 = label, $2 = status (OK|PROBLEMS|SKIP), $3 = detail, $4 = report file (optional)
+# On PROBLEMS, also prints the tail of the report (unless --verbose already streamed
+# it), so the failure is visible in the CI log without the report file itself.
 record() {
-    local label="$1" status="$2" detail="$3"
+    local label="$1" status="$2" detail="$3" report="${4:-}"
     echo "[$status] $label: $detail"
     summary "- **$label**: $status -- $detail"
     if [[ "$status" == "PROBLEMS" ]]; then
         FAILED=1
+        if [[ "$VERBOSE" -eq 0 && -n "$report" && -f "$report" ]]; then
+            echo "----- last 40 lines of $report -----"
+            tail -n 40 "$report"
+            echo "-----"
+        fi
     fi
 }
 
@@ -265,7 +272,7 @@ test_java() {
     if [[ "$status" -eq 0 ]]; then
         record "Java/Kotlin (mvn test)" "OK" "$detail"
     else
-        record "Java/Kotlin (mvn test)" "PROBLEMS" "$detail -- see $report"
+        record "Java/Kotlin (mvn test)" "PROBLEMS" "$detail -- see $report" "$report"
     fi
 }
 
@@ -297,7 +304,7 @@ test_python() {
     if [[ "$status" -eq 0 ]]; then
         record "Python (pytest)" "OK" "${detail:-all tests passed}"
     else
-        record "Python (pytest)" "PROBLEMS" "${detail:-failures} -- see $report"
+        record "Python (pytest)" "PROBLEMS" "${detail:-failures} -- see $report" "$report"
     fi
 }
 
@@ -315,7 +322,7 @@ test_security() {
     if [[ "$RUN_STATUS" -eq 0 ]]; then
         record "Security (Gradle SQLi)" "OK" "passed"
     else
-        record "Security (Gradle SQLi)" "PROBLEMS" "see $report"
+        record "Security (Gradle SQLi)" "PROBLEMS" "see $report" "$report"
     fi
 }
 
@@ -340,7 +347,7 @@ test_js() {
     if [[ "$status" -eq 0 ]]; then
         record "JS/TS (Vitest)" "OK" "${detail:-all tests passed}"
     else
-        record "JS/TS (Vitest)" "PROBLEMS" "${detail:-failures} -- see $report"
+        record "JS/TS (Vitest)" "PROBLEMS" "${detail:-failures} -- see $report" "$report"
     fi
 }
 

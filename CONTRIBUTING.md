@@ -179,7 +179,8 @@ the same way, e.g. `mvn test -Dngafid.test.slf4j.level=info`.
   (`pip install -e 'ngafid-pydata[dev]'`, Python >= 3.10). If `pytest` is not on
   `PATH` the suite is skipped with a note.
 - **Node** -- the `js` suite runs [Vitest](https://vitest.dev/) in
-  `ngafid-frontend`; it needs Node.js and the frontend dependencies
+  `ngafid-frontend`; it needs Node.js **24 or newer** (the frontend's
+  `engines`; Vitest and jsdom will not start on Node 20) and the frontend dependencies
   (`cd ngafid-frontend && npm ci`). If `npm` or `node_modules` is missing the
   suite is skipped with a note.
 

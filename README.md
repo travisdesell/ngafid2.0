@@ -28,7 +28,7 @@ You will need the following software packages:
 1. MySQL
 2. Maven
 3. Java (JDK) 25 — see the version note below
-4. Node.js
+4. Node.js 24 or newer (required by `ngafid-frontend`'s `engines`)
 5. Kafka
 
 ### Installing the toolchain (macOS / Homebrew)

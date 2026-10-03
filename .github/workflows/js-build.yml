@@ -15,8 +15,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
-        # node-version: [18.x, 20.x, 22.x]
+        # Match ngafid-frontend's engines (node >= 24).
+        node-version: [24.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -45,7 +45,4 @@ jobs:
           CI: true
         run: npm run build --if-present
 
-# Bring back when there are tests
-#      - name: Run tests
-#        working-directory: ngafid-frontend
-#        run: npm run test --if-present
+# The frontend unit tests (Vitest) run in the Test workflow (test.yaml) via scripts/test.sh.
