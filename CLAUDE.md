@@ -111,7 +111,28 @@ under that linter — do not introduce new lint errors or warnings. If a lint
 rule genuinely must be suppressed, do so narrowly (a scoped inline suppression)
 and explain why in a comment, rather than disabling the rule broadly.
 
-## Keep the README and documentation in sync (required)
+## Tests (required)
+
+Any code you **add or modify** must come with unit tests that verify its
+correctness, in the same change set. Tests are part of the change, not a
+follow-up: a new function, a bug fix, or a behavioral change without a test that
+exercises it is incomplete.
+
+- **Java / Kotlin** — JUnit 5 tests under the module's `src/test`. Database-backed
+  code uses the shared Testcontainers MySQL (see `ngafid-core`'s `TestDatabase`).
+- **Python** — `pytest` tests under `ngafid-pydata/tests` (or the relevant
+  package's tests).
+- **JS / TS** — Vitest tests (`*.test.ts` / `*.test.tsx` beside the code under
+  `ngafid-frontend/src`), with React Testing Library for components. See the
+  example tests `ngafid-frontend/src/map_utils.test.ts` (pure utility) and
+  `ngafid-frontend/src/info_hint.test.tsx` (component).
+- Cover the meaningful behavior **and** the edge cases (boundaries, error and
+  empty paths), not just the happy path; keep tests deterministic and fast.
+- Everything must pass via `scripts/test.sh` (the same suites CI runs) before a
+  PR. Tests that need external infrastructure are tagged and opt-in (see
+  `CONTRIBUTING.md`); the default/CI suites must not depend on it.
+
+## Keep the README, CONTRIBUTING, and documentation in sync (required)
 
 Whenever an edit changes how code behaves, update the documentation that
 describes it in the same change set, and surface the impact to the user before
@@ -122,6 +143,13 @@ the docs describing the old behavior is incomplete.
   argument, a config/property key, an output file or its columns, or an entry
   point, update every place that documents it (the relevant `README.md`, and any
   `--help`/usage text) to match.
+- When you change how developers build, lint, test, or run the project — the
+  `scripts/` helpers (`lint.sh`, `format.sh`, `test.sh`) and their targets/flags,
+  the CI workflows, tooling or tooling versions, or the testing/linting
+  frameworks and their configs — update [`CONTRIBUTING.md`](CONTRIBUTING.md) in
+  the same change set so its instructions stay accurate. Treat `CONTRIBUTING.md`
+  exactly like the `README.md`: a process change that leaves it describing the old
+  workflow is incomplete.
 - For the Python tooling under [`ngafid-pydata/`](ngafid-pydata), keep
   [`ngafid-pydata/README.md`](ngafid-pydata/README.md) in step with the
   `foundry_export` CLI: the connection defaults, the command-line arguments, and
@@ -133,3 +161,33 @@ the docs describing the old behavior is incomplete.
   docs describing an interface the code no longer supports -- name the
   divergence, state what changed, and propose the concrete doc edits so the user
   can decide how to reconcile it.
+
+## Design for the production database's scale (required)
+
+The production NGAFID database is **massive and continually growing** — on the
+order of **2.5 million flights** and **3 million flight hours**, and climbing.
+Code that touches it must be written for that scale: an approach that looks fine
+against a handful of local/test rows can make a page unusable or overload the
+database in production.
+
+When writing webpages, endpoints, or queries, always weigh **query time, index
+usage, and the amount of data transferred**:
+
+- **Never load whole tables (or whole result sets) into memory or send them to the
+  browser.** Paginate, stream, or aggregate on the database side, and return only
+  the rows and columns actually needed — no `SELECT *` on the large/wide tables.
+- **Keep queries index-friendly.** Filter and join on indexed columns, avoid
+  wrapping indexed columns in functions inside `WHERE`, and check the query plan
+  for full scans over the big tables (flights, events, and the per-flight
+  time-series data) before shipping. When a new access pattern needs an index, add
+  it and document it.
+- **Avoid N+1 query patterns** — do not run one query per flight/row in a loop;
+  use a single set-based query or a join.
+- **Aggregate and filter server-side**, not in the browser: compute counts,
+  summaries, and rollups in SQL and transfer the small result, rather than
+  shipping raw rows for the client to reduce.
+- **Bound every request.** Paginate list endpoints, cap date ranges and result
+  sizes, and prefer incremental/lazy loading for large views (maps, plots, time
+  series) so one page view cannot pull millions of rows.
+- When a change adds or alters a query or view over the large tables, call it out
+  in review and note its expected cost (what it scans, how much it returns).

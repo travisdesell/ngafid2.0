@@ -261,6 +261,8 @@ export default defineConfig([
             "**/webpack.config.js",
             "**/tailwind.config.js",
             "**/eslint.config.mjs",
+            "**/vitest.config.mts",
+            "**/vitest.setup.ts",
         ],
     }
     

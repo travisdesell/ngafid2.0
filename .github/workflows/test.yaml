@@ -2,8 +2,9 @@ name: Test
 
 # Blocking PR gate. Runs scripts/test.sh -- the SAME unit tests developers run
 # locally -- so local == CI. It covers the Java/Kotlin modules (Maven: ngafid-core
-# via Testcontainers MySQL, ngafid-www, ngafid-data-processor, ...) and the Python
-# tooling (pytest in ngafid-pydata). The Selenium end-to-end tests (tag "e2e") and
+# via Testcontainers MySQL, ngafid-www, ngafid-data-processor, ...), the Python
+# tooling (pytest in ngafid-pydata), and the frontend (Vitest in ngafid-frontend).
+# The Selenium end-to-end tests (tag "e2e") and
 # the TerrainCache altitude tests (tag "terrain") are excluded here because they
 # need a running server/browser and the large out-of-repo terrain data; run them
 # locally with `scripts/test.sh --e2e` / `--terrain` (see CONTRIBUTING.md).
@@ -38,8 +39,19 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ngafid-frontend/package-lock.json
+
       - name: Install ngafid-pydata (with test dependencies)
         run: pip install './ngafid-pydata[dev]'
+
+      - name: Install frontend dependencies (for the Vitest suite)
+        working-directory: ngafid-frontend
+        run: npm ci
 
       - name: Install DAT2CSV dependency (needed to resolve the Maven build)
         run: >-

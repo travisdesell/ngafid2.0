@@ -31,7 +31,7 @@
 #                 java       -> mvn test (ngafid-core, ngafid-www, ngafid-data-processor, ...)
 #                 kotlin     -> alias for java (Kotlin tests run under Maven too)
 #                 python     -> pytest (ngafid-pydata)
-#                 js         -> no unit tests yet (reported as a skip)
+#                 js         -> Vitest (ngafid-frontend; npm test)
 #
 # A suite whose toolchain is missing is SKIPPED with a note (not failed), so the
 # script is useful on a machine that has only some toolchains installed.
@@ -276,11 +276,27 @@ test_security() {
 
 test_js() {
     echo
-    echo "=== JS/TS (frontend) ==="
-    # ngafid-frontend currently has no unit-test suite (package.json "test" is a
-    # placeholder). Reported as a skip so `all` stays green; add a real runner here
-    # (e.g. jest/vitest) when the frontend gains tests.
-    record "JS/TS (frontend)" "SKIP" "no JS/TS unit tests defined yet"
+    echo "=== JS/TS (frontend, Vitest) ==="
+    if ! command -v npm >/dev/null 2>&1; then
+        record "JS/TS (Vitest)" "SKIP" "npm not found (install Node.js)"
+        return
+    fi
+    if [[ ! -d "$ROOT/ngafid-frontend/node_modules" ]]; then
+        record "JS/TS (Vitest)" "SKIP" "dependencies missing (run: cd ngafid-frontend && npm ci)"
+        return
+    fi
+    # `npm test` runs `vitest run` (one-shot, non-watch) over src/**/*.{test,spec}.*
+    local report="$REPORTS_DIR/js.txt"
+    run_capture "$report" bash -c "cd '$ROOT/ngafid-frontend' && npm test --silent"
+    local status=$RUN_STATUS
+    # Vitest prints a summary line like "Tests  10 passed (10)"; surface it verbatim.
+    local detail
+    detail="$(grep -E '^[[:space:]]*Tests[[:space:]]' "$report" | tail -1 | sed -E 's/^[[:space:]]*//; s/[[:space:]]+/ /g' || true)"
+    if [[ "$status" -eq 0 ]]; then
+        record "JS/TS (Vitest)" "OK" "${detail:-all tests passed}"
+    else
+        record "JS/TS (Vitest)" "PROBLEMS" "${detail:-failures} -- see $report"
+    fi
 }
 
 case "$TARGET" in

@@ -120,13 +120,16 @@ These concerns should be properly addressed before requesting a review.
 
 ## Testing
 
-All unit tests must pass before you open a PR; CI enforces this. A single helper
+All unit tests must pass before you open a PR; CI enforces this. **Code you add or
+change should come with tests that verify it** — JUnit for Java/Kotlin, pytest for
+Python, and Vitest for JS/TS (see the repository `CLAUDE.md`). A single helper
 script runs **every** module's tests -- the same tests CI runs -- and skips any
 suite whose toolchain is missing:
 
 - **`scripts/test.sh`** runs the Java/Kotlin tests (Maven: `ngafid-core`,
-  `ngafid-www`, `ngafid-data-processor`, ...) and the Python tests (pytest in
-  `ngafid-pydata`), and exits non-zero if anything fails.
+  `ngafid-www`, `ngafid-data-processor`, ...), the Python tests (pytest in
+  `ngafid-pydata`), and the frontend tests (Vitest in `ngafid-frontend`), and
+  exits non-zero if anything fails.
 
 The usual check before opening a PR:
 
@@ -139,12 +142,13 @@ It takes an optional target and a few flags:
 ```bash
 scripts/test.sh java           # just the Maven (Java/Kotlin) suites
 scripts/test.sh python         # just the pytest suite
+scripts/test.sh js             # just the Vitest (frontend) suite
 scripts/test.sh --verbose      # stream each runner's full output
 scripts/test.sh --report       # run everything without failing, print counts
 ```
 
 Valid targets: `all` (default), `java`, `kotlin` (alias for `java`), `python`,
-`js` (no unit tests yet -- reported as a skip).
+`js` (Vitest in `ngafid-frontend`).
 
 ### Requirements
 
@@ -156,6 +160,26 @@ Valid targets: `all` (default), `java`, `kotlin` (alias for `java`), `python`,
 - **Python** -- the `python` suite needs `pytest` and the `ngafid-pydata` package
   (`pip install -e 'ngafid-pydata[dev]'`, Python >= 3.10). If `pytest` is not on
   `PATH` the suite is skipped with a note.
+- **Node** -- the `js` suite runs [Vitest](https://vitest.dev/) in
+  `ngafid-frontend`; it needs Node.js and the frontend dependencies
+  (`cd ngafid-frontend && npm ci`). If `npm` or `node_modules` is missing the
+  suite is skipped with a note.
+
+### Frontend (JS/TS) tests
+
+Tests live next to the code as `*.test.ts` / `*.test.tsx` under
+`ngafid-frontend/src`, run by **Vitest** with **React Testing Library** for
+components (jsdom environment; `@testing-library/jest-dom` matchers are registered
+in `ngafid-frontend/vitest.setup.ts`). Two worked examples to copy from:
+[`src/map_utils.test.ts`](ngafid-frontend/src/map_utils.test.ts) (a pure utility)
+and [`src/info_hint.test.tsx`](ngafid-frontend/src/info_hint.test.tsx) (a
+component).
+
+```bash
+cd ngafid-frontend
+npm test            # run once (what scripts/test.sh and CI run)
+npm run test:watch  # re-run on change while developing
+```
 
 ### Opt-in test suites
 
