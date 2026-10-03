@@ -86,7 +86,7 @@ export function SeveritiesPage() {
   const [endYear, setEndYear] = useState(date.getFullYear());
   const [endMonth, setEndMonth] = useState(date.getMonth() + 1);
   const [datesChanged, setDatesChanged] = useState(false);
-  const [eventMetaData, setEventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
+  const [eventMetaData] = useState<Record<number, EventMetaDataItem[]>>({});
   const [eventChecked, setEventChecked] = useState<{ [key: string]: boolean }>(initialEventFlags.checked);
   const [eventsEmpty, setEventsEmpty] = useState<{ [key: string]: boolean }>(initialEventFlags.empty);
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
@@ -209,24 +209,6 @@ export function SeveritiesPage() {
     element.click();
 
     document.body.removeChild(element);
-  };
-
-  const getEventMetaData = (eventId: number) => {
-    let eventMetaData: EventMetaDataItem[] | null = null;
-    $.ajax({
-      type: "GET",
-      url: `/api/event/${eventId}/meta`,
-      dataType: "json",
-      async: false,
-      success: (response) => {
-        eventMetaData = response;
-      },
-      error: (jqXHR, textStatus, errorThrown) => {
-        showErrorModal("Error Loading Event Metadata ", errorThrown);
-      },
-    });
-
-    return eventMetaData;
   };
 
   const displayPlot = useCallback(
@@ -423,63 +405,6 @@ export function SeveritiesPage() {
     },
     [eventChecked, eventSeveritiesState],
   );
-
-  const fetchAllEventSeverities = useCallback(() => {
-    setLoading(true);
-    console.log("Showing loading spinner!");
-
-    const startDate = buildStartDate(startYear, startMonth);
-    const endDate = buildEndDate(endYear, endMonth);
-
-    const submissionData = {
-      startDate: startDate,
-      endDate: endDate,
-      eventNames: JSON.stringify(eventNames),
-      tagName: tagName,
-    };
-
-    $.ajax({
-      type: "GET",
-      url: "/api/event/severities",
-      data: submissionData,
-      success: (response: EventSeverities) => {
-        setLoading(false);
-        if (response.err_msg) {
-          showErrorModal(response.err_title, response.err_msg);
-          return;
-        }
-
-        const next: EventSeverities = {};
-        const newEventsEmpty: Record<string, boolean> = {};
-
-        for (const [eventName, countsByAirframe] of Object.entries(response)) {
-          const hasAnyData = Object.values(countsByAirframe).some((arr) => Array.isArray(arr) && arr.length > 0);
-          newEventsEmpty[eventName] = !hasAnyData;
-          next[eventName] = hasAnyData ? countsByAirframe : {};
-        }
-
-        //Build "ANY Event"
-        const anyEvent: EventSeverityByAirframe = {};
-        for (const countsByAirframe of Object.values(next)) {
-          for (const [airframeName, eventCountArray] of Object.entries(countsByAirframe)) {
-            if (!anyEvent[airframeName]) anyEvent[airframeName] = [];
-
-            anyEvent[airframeName] = anyEvent[airframeName].concat(eventCountArray);
-          }
-        }
-
-        if (Object.keys(anyEvent).length) next["ANY Event"] = anyEvent;
-
-        setEventsEmpty(newEventsEmpty);
-        setEventSeveritiesState(next);
-        setHasQueried(true);
-      },
-      error: (jqXHR, textStatus, errorThrown) => {
-        setLoading(false);
-        showErrorModal("Error Loading Uploads", errorThrown);
-      },
-    });
-  }, [startMonth, startYear, endMonth, endYear, tagName, setLoading]);
 
   const fetchEventSeverities = (eventName: string) => {
     setLoading(true);

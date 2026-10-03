@@ -1,7 +1,6 @@
 import "bootstrap";
 
 import { showErrorModal } from "./error_modal.js";
-import { showConfirmModal } from "./confirm_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import React from "react";

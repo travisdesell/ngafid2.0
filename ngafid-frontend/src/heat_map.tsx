@@ -37,8 +37,6 @@ import Point from "ol/geom/Point";
 import Style from "ol/style/Style";
 import Fill from "ol/style/Fill";
 import Icon from "ol/style/Icon";
-import Circle from "ol/style/Circle";
-import Stroke from "ol/style/Stroke";
 
 // Heatmap and WebGL imports
 import Heatmap from "ol/layer/Heatmap";
@@ -391,10 +389,6 @@ const ICON_IMAGE_RED = new Icon({
   anchor: [0.5, 0.5],
 });
 
-const RED_POINT_STYLE = new Style({
-  image: ICON_IMAGE_RED,
-});
-
 const BLUE_POINT_STYLE = new Style({
   image: ICON_IMAGE_RED,
 });
@@ -572,7 +566,7 @@ const HeatMapPage: React.FC = () => {
   // =======================
 
   // UI State
-  const [airframes, setAirframes] = useState<string[]>(airframesList);
+  const [airframes] = useState<string[]>(airframesList);
   const [eventChecked, setEventChecked] = useState<EventChecked>(() => {
     const checked: EventChecked = {};
     for (const name of allEventNames) checked[name] = false;
@@ -586,7 +580,7 @@ const HeatMapPage: React.FC = () => {
   const [startMonth, setStartMonth] = useState<number>(1);
   const [endYear, setEndYear] = useState<number>(date.getFullYear());
   const [endMonth, setEndMonth] = useState<number>(date.getMonth() + 1);
-  const [datesChanged, setDatesChanged] = useState<boolean>(false);
+  const [, setDatesChanged] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -613,13 +607,13 @@ const HeatMapPage: React.FC = () => {
   const [heatmapLayer1, setHeatmapLayer1] = useState<Heatmap | null>(null);
   const [heatmapLayer2, setHeatmapLayer2] = useState<Heatmap | null>(null);
   const [markerSource, setMarkerSource] = useState<VectorSource | null>(null);
-  const [markerLayer, setMarkerLayer] = useState<VectorLayer | null>(null);
+  const [, setMarkerLayer] = useState<VectorLayer | null>(null);
   const [gridLayer, setGridLayer] = useState<WebGLVectorLayer | null>(null);
   const [gridSource, setGridSource] = useState<VectorSource | null>(null);
 
   // Event Data State
   const [proximityEventPoints, setProximityEventPoints] = useState<ProximityEventPoints[]>([]);
-  const [coordinateRegistry, setCoordinateRegistry] = useState<{ [key: string]: CoordinateEventGroup }>({});
+  const [, setCoordinateRegistry] = useState<{ [key: string]: CoordinateEventGroup }>({});
 
   // Time Header Update State
   const [datesOrAirframeChanged, setDatesOrAirframeChanged] = useState<boolean>(false);
@@ -744,7 +738,7 @@ const HeatMapPage: React.FC = () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [handleMouseMove]);
+  }, [handleMouseMove, handleMouseUp]);
 
   // =======================
   // SECTION: Map Layer Management
@@ -2135,6 +2129,11 @@ const HeatMapPage: React.FC = () => {
         }
       });
     }
+    // Init effect: builds the OpenLayers map once (guarded by !map) and registers long-lived map
+    // handlers that close over openPopups and fetchMultipleEventColumnsValues. Those are intentionally
+    // excluded from the deps so the map is not rebuilt whenever they change; this effect must re-run
+    // only on [mapRef, map, mapStyle].
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapRef, map, mapStyle]);
 
   // =======================
@@ -2202,9 +2201,6 @@ const HeatMapPage: React.FC = () => {
     console.log(`[DEBUG] Events fetched: count=${events.length}`);
     if (events.length > 0) {
       console.log("[DEBUG] First event:", events[0]);
-      // Debug: Check what event definition IDs we actually received
-      const receivedEventDefinitionIds = [...new Set(events.map((e: RawApiEvent) => e.event_definition_id))];
-
       // Check if we received any events that don't match our requested IDs
       const unexpectedEvents = events.filter(
         (e: RawApiEvent) => !filters.eventDefinitionIds.includes(e.event_definition_id),

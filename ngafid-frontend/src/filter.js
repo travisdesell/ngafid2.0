@@ -454,14 +454,13 @@ class Rule extends React.Component {
 export function Group(props) {
   const [showSavePopover, setShowSavePopover] = React.useState(false);
   const [showLoadPopover, setShowLoadPopover] = React.useState(false);
-  const [loadPopoverTarget, setLoadPopoverTarget] = React.useState(null);
-  const [savePopoverTarget, setSavePopoverTarget] = React.useState(null);
+  const [, setLoadPopoverTarget] = React.useState(null);
+  const [, setSavePopoverTarget] = React.useState(null);
   const [storedFilters, setStoredFilters] = React.useState(props.storedFilters ?? []);
   const [editingFilter, setEditingFilter] = React.useState({});
-  const [filterSaved, setFilterSaved] = React.useState(false);
+  const [, setFilterSaved] = React.useState(false);
   const [filterName, setFilterName] = React.useState("");
   const [filterColor, setFilterColor] = React.useState(Colors.randomValue());
-  const [filterValid, setFilterValid] = React.useState(false);
   const [filterNeedsApplied, setFilterNeedsApplied] = React.useState(false);
 
   /*

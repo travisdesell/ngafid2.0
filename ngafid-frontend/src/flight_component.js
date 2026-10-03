@@ -1133,7 +1133,7 @@ class Flight extends React.Component {
       const { root, element } = popup;
       try {
         root.render(null);
-      } catch (e) {
+      } catch {
         /* ignore */
       }
       if (element && element.parentNode) element.parentNode.removeChild(element);
@@ -1147,7 +1147,7 @@ class Flight extends React.Component {
     if (tip) {
       try {
         tip.root.render(null);
-      } catch (e) {
+      } catch {
         /* ignore */
       }
       if (tip.element && tip.element.parentNode) tip.element.parentNode.removeChild(tip.element);
@@ -1297,7 +1297,7 @@ class Flight extends React.Component {
           map.getView().fit(extent, { size: map.getSize(), padding: [20, 20, 20, 20], maxZoom: 15 });
           return;
         }
-      } catch (e) {
+      } catch {
         /* ignore */
       }
       setTimeout(tryFit, 50);
@@ -1505,7 +1505,6 @@ class Flight extends React.Component {
       if (sec.visibleOnChart === false) return;
       const startIndex = sec.startIndex;
       const endIndex = sec.endIndex;
-      const color = LABELING_SECTION_COLORS[colorIndex % LABELING_SECTION_COLORS.length];
       if (startIndex === endIndex) {
         const f = new Feature({ geometry: new Point(points[startIndex]), name: "LabelingClickSection" });
         f.set("colorIndex", colorIndex % LABELING_SECTION_COLORS.length);
@@ -1685,7 +1684,7 @@ class Flight extends React.Component {
     if (labelingViewMode !== "chart" || !firstData || !firstData.x) {
       try {
         Plotly.relayout("plot", plotlyLayoutGlobal);
-      } catch (e) {
+      } catch {
         /* plot may not exist */
       }
       return;
@@ -1800,7 +1799,7 @@ class Flight extends React.Component {
 
     try {
       Plotly.relayout("plot", plotlyLayoutGlobal);
-    } catch (e) {
+    } catch {
       /* plot may not exist */
     }
   }
@@ -2029,7 +2028,6 @@ class Flight extends React.Component {
         url: `/api/flight/${this.props.flightInfo.id}/coordinates`,
         async: true,
         success: (response) => {
-          const coordinates = response.coordinates;
           const points = response.coordinates.map((lonLat) => fromLonLat(lonLat));
 
           const color = this.state.color;
